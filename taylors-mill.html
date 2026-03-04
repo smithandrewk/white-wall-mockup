@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taylor's Mill — WhiteWall Studios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'wws-black': '#000000',
+            'wws-dark': '#383838',
+            'wws-light': '#F4F4F2',
+            'wws-gray': '#E0E0E0',
+            'wws-accent': '#FCD518',
+            'tm-warm': '#C4A882',
+            'pv-cool': '#8BA7B8',
+          },
+          fontFamily: {
+            'display': ['"Cormorant Garamond"', 'serif'],
+            'body': ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+    .nav-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.45)); }
+  </style>
+</head>
+<body class="bg-white text-wws-black">
+
+  <!-- Navigation — Taylor's Mill context -->
+  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-white/90 border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/808d62d9-47c6-42d0-8ebe-af501b7692ee/WWS+Logo_Black.jpg?format=300w" alt="WhiteWall Studios" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
+        <span class="flex items-center gap-2 text-tm-warm">
+          <span class="w-2 h-2 rounded-full bg-tm-warm"></span>
+          Taylor's Mill
+        </span>
+        <a href="#about" class="hover:text-wws-dark transition">About</a>
+        <a href="#features" class="hover:text-wws-dark transition">Features</a>
+        <a href="gallery.html?location=taylors-mill" class="hover:text-wws-dark transition">Gallery</a>
+        <a href="#booking" class="hover:text-wws-dark transition">Book Now</a>
+        <a href="powdersville.html" class="text-xs text-wws-dark/60 hover:text-pv-cool transition border-l border-wws-gray pl-6">Switch to Powdersville &rarr;</a>
+      </div>
+      <button id="menu-toggle" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <!-- Location indicator bar -->
+    <div class="h-[2px] bg-tm-warm"></div>
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
+      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="gallery.html?location=taylors-mill">Gallery</a>
+        <a href="#booking">Book Now</a>
+        <a href="powdersville.html" class="text-pv-cool">Switch to Powdersville &rarr;</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative h-[80vh] min-h-[500px] pt-[72px]">
+    <div class="absolute inset-0">
+      <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/0e24a6c4-a1f8-4c41-8efd-7a284498b3b4/WhiteWhite+Studios+Still+V2_-26.jpg?format=2500w"
+           alt="Taylor's Mill Studio Interior"
+           class="w-full h-full object-cover">
+    </div>
+    <div class="hero-overlay absolute inset-0"></div>
+    <div class="relative z-10 flex flex-col items-center justify-end h-full pb-20 px-8 text-white text-center">
+      <div class="w-16 h-[1px] bg-tm-warm mb-6"></div>
+      <h1 class="font-display text-6xl md:text-7xl font-light mb-4 tracking-wide">Taylor's Mill</h1>
+      <p class="text-base tracking-widest uppercase opacity-80 mb-2">The Original Natural Light Studio</p>
+      <p class="text-sm opacity-60 mb-8">250 Mill St, Taylors, SC &middot; 1,000 sq ft</p>
+      <a href="#booking" class="inline-block border border-white/60 px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
+        Book This Studio
+      </a>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+      <div>
+        <div class="w-3 h-3 rounded-full bg-tm-warm mb-6"></div>
+        <h2 class="font-display text-4xl font-light mb-6">The studio that started it all</h2>
+        <p class="text-wws-dark leading-relaxed mb-4">
+          The original studio that our community has known and loved for over four years with 1,200+ bookings. Beautiful natural light pours through oversized mill windows, creating the perfect canvas for portrait sessions, branding shoots, and headshots.
+        </p>
+        <p class="text-wws-dark leading-relaxed">
+          Located in the historic Taylors Mill complex, this 1,000 sq ft space offers timeless character with exposed brick, original hardwood floors, and a curated selection of props and backdrops.
+        </p>
+      </div>
+      <div class="aspect-[4/5] overflow-hidden rounded-sm">
+        <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/3b633888-9f1f-40da-b5bd-c7ea9ec60615/2W2A9532.jpg?format=1000w"
+             alt="Taylor's Mill Interior"
+             class="w-full h-full object-cover">
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="bg-wws-light py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <h3 class="font-display text-3xl font-light text-center mb-16">What's Included</h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-tm-warm text-2xl mb-3">&#9737;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Natural Light</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Oversized mill windows fill the space with beautiful, diffused natural light throughout the day.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-tm-warm text-2xl mb-3">&#9881;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Props & Backdrops</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Curated collection of furniture, backdrops, and styling props included with every booking.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-tm-warm text-2xl mb-3">&#9889;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Gear Rental</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">$50/booking: 2x 100W Amaran Bi-Color Lights, 1x 200W Daylight, softbox, and extension cords.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-tm-warm text-2xl mb-3">&#128274;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Self-Service Access</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Keypad entry gives you the freedom to come and go on your schedule. No staff needed.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-tm-warm text-2xl mb-3">&#127912;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Mill Character</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Exposed brick, original hardwood floors, and industrial charm create a timeless backdrop.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-tm-warm text-2xl mb-3">&#128197;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Always Open</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Creativity doesn't run on a clock. Book any time that works for you, day or night.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Best For -->
+  <section class="py-24 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h3 class="font-display text-3xl font-light mb-8">Best For</h3>
+      <div class="flex flex-wrap justify-center gap-3">
+        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Portrait Sessions</span>
+        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Branding Shoots</span>
+        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Headshots</span>
+        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Smaller Productions</span>
+        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Natural Light Photography</span>
+      </div>
+      <p class="text-xs text-wws-dark/60 mt-6">
+        Note: Taylor's Mill is not available for events. Looking for event space? <a href="powdersville.html" class="underline hover:text-pv-cool">Check out Powdersville &rarr;</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Booking CTA -->
+  <section id="booking" class="bg-wws-black text-white py-24 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="w-3 h-3 rounded-full bg-tm-warm mx-auto mb-6"></div>
+      <h3 class="font-display text-4xl font-light mb-4">Book Taylor's Mill</h3>
+      <p class="text-white/60 text-sm mb-8 max-w-lg mx-auto">
+        Ready to create? Book your session at Taylor's Mill. Self-service keypad entry means you're in full control of your creative time.
+      </p>
+      <a href="https://whitewallstudios.co/booking-taylors-mill" target="_blank" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent hover:text-black transition-all duration-300">
+        Book Now
+      </a>
+      <p class="text-white/30 text-xs mt-6">48-hour cancellation/reschedule policy</p>
+    </div>
+  </section>
+
+  <!-- Location Info -->
+  <section class="py-16 px-6">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+      <div>
+        <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Taylor's Mill</h4>
+        <p class="text-xs text-wws-dark">250 Mill St, Ste. BL1223, Taylors, SC 29687</p>
+        <p class="text-xs text-wws-dark mt-1">Text: (803) 682-5691 &middot; contact@whitewallstudios.co</p>
+      </div>
+      <a href="powdersville.html" class="flex items-center gap-3 text-sm text-wws-dark hover:text-pv-cool transition group">
+        <span>Explore our Powdersville location</span>
+        <span class="group-hover:translate-x-1 transition-transform">&rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-12 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-center md:text-left">
+        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+      </div>
+      <div class="flex gap-6">
+        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+  </script>
+
+</body>
+</html>

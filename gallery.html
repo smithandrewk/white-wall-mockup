@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — WhiteWall Studios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'wws-black': '#000000',
+            'wws-dark': '#383838',
+            'wws-light': '#F4F4F2',
+            'wws-gray': '#E0E0E0',
+            'wws-accent': '#FCD518',
+            'tm-warm': '#C4A882',
+            'pv-cool': '#8BA7B8',
+          },
+          fontFamily: {
+            'display': ['"Cormorant Garamond"', 'serif'],
+            'body': ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+    .nav-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+    .masonry { columns: 2; column-gap: 12px; }
+    @media (min-width: 768px) { .masonry { columns: 3; } }
+    .masonry-item { break-inside: avoid; margin-bottom: 12px; }
+
+    .filter-btn.active { background-color: #000; color: #fff; }
+
+    .gallery-img {
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .gallery-img.hidden-filter {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-white text-wws-black">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-white/90 border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/808d62d9-47c6-42d0-8ebe-af501b7692ee/WWS+Logo_Black.jpg?format=300w" alt="WhiteWall Studios" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
+        <a href="index.html" class="hover:text-wws-dark transition">Home</a>
+        <a href="taylors-mill.html" class="hover:text-wws-dark transition">Taylor's Mill</a>
+        <a href="powdersville.html" class="hover:text-wws-dark transition">Powdersville</a>
+        <a href="gallery.html" class="text-wws-black border-b border-wws-black pb-0.5">Gallery</a>
+        <a href="index.html#contact" class="hover:text-wws-dark transition">Contact</a>
+      </div>
+      <button id="menu-toggle" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
+      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
+        <a href="index.html">Home</a>
+        <a href="taylors-mill.html">Taylor's Mill</a>
+        <a href="powdersville.html">Powdersville</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="index.html#contact">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="pt-32 pb-12 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+      <h1 class="font-display text-5xl md:text-6xl font-light mb-4">Gallery</h1>
+      <p class="text-sm text-wws-dark tracking-wide">Work created by talented photographers and creatives at WhiteWall Studios</p>
+    </div>
+  </section>
+
+  <!-- Filter Tabs -->
+  <section class="px-6 pb-12">
+    <div class="max-w-6xl mx-auto flex justify-center gap-3">
+      <button class="filter-btn active text-xs tracking-[0.15em] uppercase px-6 py-2 border border-wws-black rounded-full transition-all" data-filter="all">
+        All
+      </button>
+      <button class="filter-btn text-xs tracking-[0.15em] uppercase px-6 py-2 border border-wws-gray rounded-full hover:border-tm-warm transition-all" data-filter="taylors-mill">
+        <span class="inline-block w-2 h-2 rounded-full bg-tm-warm mr-1 align-middle"></span>
+        Taylor's Mill
+      </button>
+      <button class="filter-btn text-xs tracking-[0.15em] uppercase px-6 py-2 border border-wws-gray rounded-full hover:border-pv-cool transition-all" data-filter="powdersville">
+        <span class="inline-block w-2 h-2 rounded-full bg-pv-cool mr-1 align-middle"></span>
+        Powdersville
+      </button>
+    </div>
+  </section>
+
+  <!-- Masonry Gallery -->
+  <section class="px-6 pb-24">
+    <div class="max-w-6xl mx-auto">
+      <div class="masonry" id="gallery-grid">
+
+        <!-- Taylor's Mill shots -->
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/e70ba997-8a35-4447-8929-a489482597f4/mary-162.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/8c351545-9ee3-4701-94d9-6ac87b587351/WhiteWall+Powdersville-7.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/6be993c5-938e-4ba4-bedb-c1a464135206/mary-216.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/1682cf5b-a346-4ba1-9838-5f7aa4317532/ModernRomanticsxMolly_January2022-214.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/094cef9c-2417-416b-8390-a73114886dc5/WhiteWall+Powdersville-20.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/031f35f9-7e73-4576-8a96-e4dce627ced2/2W2A0013+copy.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/51a1a7f5-7957-41ec-bf2d-f99d34aa2d60/Kayla+Still+V2.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/55307297-c21b-4594-b8d9-ba81c05b46c5/ModernRomanticsxMolly_January2022-224.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/3614e6dd-45dc-48a6-adce-5c80ab5122b6/MadelineMoves-13.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/3b633888-9f1f-40da-b5bd-c7ea9ec60615/2W2A9532.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/0a73648e-57ec-43ce-b8fe-3c59ef2be8c8/ModernRomanticsxMolly_January2022-17.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="taylors-mill">
+          <div class="relative group overflow-hidden rounded-sm">
+            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/5bc6b87a-1b12-4c5e-8b25-dc7726b5df31/2W2A9111.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-wws-black text-white py-16 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h3 class="font-display text-3xl font-light mb-4">Ready to create?</h3>
+      <p class="text-white/60 text-sm mb-8">Book your session and make something beautiful.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="taylors-mill.html#booking" class="inline-flex items-center justify-center gap-2 border border-tm-warm px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-tm-warm hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Book Taylor's Mill
+        </a>
+        <a href="powdersville.html#booking" class="inline-flex items-center justify-center gap-2 border border-pv-cool px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-pv-cool hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Book Powdersville
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-12 px-6 border-t border-white/10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-center md:text-left">
+        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+      </div>
+      <div class="flex gap-6">
+        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+
+    // Gallery filtering
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const galleryItems = document.querySelectorAll('.gallery-img');
+
+    // Check URL params for pre-selected filter
+    const urlParams = new URLSearchParams(window.location.search);
+    const locationParam = urlParams.get('location');
+    if (locationParam) {
+      filterBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.filter === locationParam) {
+          btn.classList.add('active');
+        }
+      });
+      galleryItems.forEach(item => {
+        if (item.dataset.location !== locationParam) {
+          item.classList.add('hidden-filter');
+        }
+      });
+    }
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filter = btn.dataset.filter;
+
+        // Update active button
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Filter images
+        galleryItems.forEach(item => {
+          if (filter === 'all' || item.dataset.location === filter) {
+            item.classList.remove('hidden-filter');
+          } else {
+            item.classList.add('hidden-filter');
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Powdersville — WhiteWall Studios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'wws-black': '#000000',
+            'wws-dark': '#383838',
+            'wws-light': '#F4F4F2',
+            'wws-gray': '#E0E0E0',
+            'wws-accent': '#FCD518',
+            'tm-warm': '#C4A882',
+            'pv-cool': '#8BA7B8',
+          },
+          fontFamily: {
+            'display': ['"Cormorant Garamond"', 'serif'],
+            'body': ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+    .nav-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.45)); }
+  </style>
+</head>
+<body class="bg-white text-wws-black">
+
+  <!-- Navigation — Powdersville context -->
+  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-white/90 border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/808d62d9-47c6-42d0-8ebe-af501b7692ee/WWS+Logo_Black.jpg?format=300w" alt="WhiteWall Studios" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
+        <span class="flex items-center gap-2 text-pv-cool">
+          <span class="w-2 h-2 rounded-full bg-pv-cool"></span>
+          Powdersville
+        </span>
+        <a href="#about" class="hover:text-wws-dark transition">About</a>
+        <a href="#features" class="hover:text-wws-dark transition">Features</a>
+        <a href="#events" class="hover:text-wws-dark transition">Events</a>
+        <a href="gallery.html?location=powdersville" class="hover:text-wws-dark transition">Gallery</a>
+        <a href="#booking" class="hover:text-wws-dark transition">Book Now</a>
+        <a href="taylors-mill.html" class="text-xs text-wws-dark/60 hover:text-tm-warm transition border-l border-wws-gray pl-6">&larr; Switch to Taylor's Mill</a>
+      </div>
+      <button id="menu-toggle" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <!-- Location indicator bar -->
+    <div class="h-[2px] bg-pv-cool"></div>
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
+      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="#events">Events</a>
+        <a href="gallery.html?location=powdersville">Gallery</a>
+        <a href="#booking">Book Now</a>
+        <a href="taylors-mill.html" class="text-tm-warm">&larr; Switch to Taylor's Mill</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative h-[80vh] min-h-[500px] pt-[72px]">
+    <div class="absolute inset-0">
+      <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/8c351545-9ee3-4701-94d9-6ac87b587351/WhiteWall+Powdersville-7.jpg?format=2500w"
+           alt="Powdersville Studio Interior"
+           class="w-full h-full object-cover">
+    </div>
+    <div class="hero-overlay absolute inset-0"></div>
+    <div class="relative z-10 flex flex-col items-center justify-end h-full pb-20 px-8 text-white text-center">
+      <div class="w-16 h-[1px] bg-pv-cool mb-6"></div>
+      <h1 class="font-display text-6xl md:text-7xl font-light mb-4 tracking-wide">Powdersville</h1>
+      <p class="text-base tracking-widest uppercase opacity-80 mb-2">The Flagship Studio & Event Space</p>
+      <p class="text-sm opacity-60 mb-8">2699 Powdersville Rd, Easley, SC &middot; 2,000+ sq ft</p>
+      <a href="#booking" class="inline-block border border-white/60 px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
+        Book This Studio
+      </a>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+      <div>
+        <div class="w-3 h-3 rounded-full bg-pv-cool mb-6"></div>
+        <h2 class="font-display text-4xl font-light mb-6">Our flagship space</h2>
+        <p class="text-wws-dark leading-relaxed mb-4">
+          Over double the size of our Taylor's Mill location, Powdersville is our brand-new flagship space, purpose-built for creators who need room to work. 2,000+ sq ft, fully private, with features designed for both photo/video production and small events.
+        </p>
+        <p class="text-wws-dark leading-relaxed">
+          A 12ft garage door for easy load-in, on-site parking, a private en-suite bathroom, and remote blackout shades give you total control over your environment.
+        </p>
+      </div>
+      <div class="aspect-[4/5] overflow-hidden rounded-sm">
+        <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/094cef9c-2417-416b-8390-a73114886dc5/WhiteWall+Powdersville-20.jpg?format=1000w"
+             alt="Powdersville Interior"
+             class="w-full h-full object-cover">
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="bg-wws-light py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <h3 class="font-display text-3xl font-light text-center mb-16">What's Included</h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-pv-cool text-2xl mb-3">&#9737;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">2,000+ Sq Ft</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Over double the size of Taylor's Mill. Room for large productions, multiple setups, or intimate events.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-pv-cool text-2xl mb-3">&#127879;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Event Approved</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Approved for small events and gatherings. Perfect for launch parties, intimate receptions, and brand activations.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-pv-cool text-2xl mb-3">&#9889;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Pro Gear Rental</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">$100/booking: 660W RGB Amaran fixture, large 5ft softbox, 360W RGB fixture, wall-mounted extension cords.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-pv-cool text-2xl mb-3">&#128694;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">12ft Garage Door</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Drive right up for easy load-in/load-out. Perfect for equipment-heavy shoots and event setup.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-pv-cool text-2xl mb-3">&#127769;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Blackout Shades</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Remote-controlled blackout shades give you full lighting control, from natural light to total darkness.</p>
+        </div>
+        <div class="bg-white p-8 rounded-sm">
+          <div class="text-pv-cool text-2xl mb-3">&#128663;</div>
+          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">On-Site Parking</h4>
+          <p class="text-xs text-wws-dark leading-relaxed">Dedicated on-site parking for you and your clients. Private en-suite bathroom included.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Events Section -->
+  <section id="events" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+      <div class="aspect-[4/3] overflow-hidden rounded-sm order-2 md:order-1">
+        <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/0a73648e-57ec-43ce-b8fe-3c59ef2be8c8/ModernRomanticsxMolly_January2022-17.jpg?format=1000w"
+             alt="Event at Powdersville"
+             class="w-full h-full object-cover">
+      </div>
+      <div class="order-1 md:order-2">
+        <div class="inline-block bg-pv-cool/10 text-pv-cool text-xs tracking-widest uppercase px-4 py-2 rounded-full mb-6">Event Space</div>
+        <h2 class="font-display text-4xl font-light mb-6">Host your next event</h2>
+        <p class="text-wws-dark leading-relaxed mb-4">
+          Powdersville is approved for small events and gatherings. The open floor plan, dedicated parking, and private facilities make it ideal for:
+        </p>
+        <ul class="text-sm text-wws-dark space-y-2 mb-6">
+          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Launch parties and brand activations</li>
+          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Intimate receptions and gatherings</li>
+          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Workshop and class hosting</li>
+          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Pop-up markets and showcases</li>
+        </ul>
+        <a href="#booking" class="text-xs tracking-[0.2em] uppercase font-medium border-b border-wws-black pb-1">
+          Inquire About Events &rarr;
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Best For -->
+  <section class="bg-wws-light py-24 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h3 class="font-display text-3xl font-light mb-8">Best For</h3>
+      <div class="flex flex-wrap justify-center gap-3">
+        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Small Events & Gatherings</span>
+        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Large Productions</span>
+        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Video Shoots</span>
+        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Equipment-Heavy Sessions</span>
+        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Client-Facing Productions</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Booking CTA -->
+  <section id="booking" class="bg-wws-black text-white py-24 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="w-3 h-3 rounded-full bg-pv-cool mx-auto mb-6"></div>
+      <h3 class="font-display text-4xl font-light mb-4">Book Powdersville</h3>
+      <p class="text-white/60 text-sm mb-8 max-w-lg mx-auto">
+        Ready to create something big? Book our flagship space. Self-service keypad entry, on-site parking, and total privacy.
+      </p>
+      <a href="https://whitewallstudios.co/booking-powdersville" target="_blank" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent hover:text-black transition-all duration-300">
+        Book Now
+      </a>
+      <p class="text-white/30 text-xs mt-6">48-hour cancellation/reschedule policy</p>
+    </div>
+  </section>
+
+  <!-- Location Info -->
+  <section class="py-16 px-6">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+      <div>
+        <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Powdersville</h4>
+        <p class="text-xs text-wws-dark">2699 Powdersville Rd, Easley, SC 29642</p>
+        <p class="text-xs text-wws-dark mt-1">Text: (803) 682-5691 &middot; contact@whitewallstudios.co</p>
+      </div>
+      <a href="taylors-mill.html" class="flex items-center gap-3 text-sm text-wws-dark hover:text-tm-warm transition group">
+        <span class="group-hover:-translate-x-1 transition-transform">&larr;</span>
+        <span>Explore our Taylor's Mill location</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-12 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-center md:text-left">
+        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+      </div>
+      <div class="flex gap-6">
+        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+  </script>
+
+</body>
+</html>
