@@ -32,7 +32,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
-    .nav-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
     .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.45)); }
   </style>
 </head>
@@ -123,32 +122,32 @@
       <h3 class="font-display text-3xl font-light text-center mb-16">What's Included</h3>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <div class="bg-white p-8 rounded-sm">
-          <div class="text-pv-cool text-2xl mb-3">&#9737;</div>
+          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
           <h4 class="font-medium text-sm uppercase tracking-wide mb-2">2,000+ Sq Ft</h4>
           <p class="text-xs text-wws-dark leading-relaxed">Over double the size of Taylor's Mill. Room for large productions, multiple setups, or intimate events.</p>
         </div>
         <div class="bg-white p-8 rounded-sm">
-          <div class="text-pv-cool text-2xl mb-3">&#127879;</div>
+          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.74 3.74L16.18 20 12 16.77 7.82 20l.92-6.97L4 9.27l5.91-1.01z"/></svg>
           <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Event Approved</h4>
           <p class="text-xs text-wws-dark leading-relaxed">Approved for small events and gatherings. Perfect for launch parties, intimate receptions, and brand activations.</p>
         </div>
         <div class="bg-white p-8 rounded-sm">
-          <div class="text-pv-cool text-2xl mb-3">&#9889;</div>
+          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
           <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Pro Gear Rental</h4>
           <p class="text-xs text-wws-dark leading-relaxed">$100/booking: 660W RGB Amaran fixture, large 5ft softbox, 360W RGB fixture, wall-mounted extension cords.</p>
         </div>
         <div class="bg-white p-8 rounded-sm">
-          <div class="text-pv-cool text-2xl mb-3">&#128694;</div>
+          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
           <h4 class="font-medium text-sm uppercase tracking-wide mb-2">12ft Garage Door</h4>
           <p class="text-xs text-wws-dark leading-relaxed">Drive right up for easy load-in/load-out. Perfect for equipment-heavy shoots and event setup.</p>
         </div>
         <div class="bg-white p-8 rounded-sm">
-          <div class="text-pv-cool text-2xl mb-3">&#127769;</div>
+          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Blackout Shades</h4>
           <p class="text-xs text-wws-dark leading-relaxed">Remote-controlled blackout shades give you full lighting control, from natural light to total darkness.</p>
         </div>
         <div class="bg-white p-8 rounded-sm">
-          <div class="text-pv-cool text-2xl mb-3">&#128663;</div>
+          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <h4 class="font-medium text-sm uppercase tracking-wide mb-2">On-Site Parking</h4>
           <p class="text-xs text-wws-dark leading-relaxed">Dedicated on-site parking for you and your clients. Private en-suite bathroom included.</p>
         </div>
@@ -170,11 +169,11 @@
         <p class="text-wws-dark leading-relaxed mb-4">
           Powdersville is approved for small events and gatherings. The open floor plan, dedicated parking, and private facilities make it ideal for:
         </p>
-        <ul class="text-sm text-wws-dark space-y-2 mb-6">
-          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Launch parties and brand activations</li>
-          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Intimate receptions and gatherings</li>
-          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Workshop and class hosting</li>
-          <li class="flex items-center gap-2"><span class="text-pv-cool">&#10003;</span> Pop-up markets and showcases</li>
+        <ul class="text-sm text-wws-dark space-y-3 mb-6">
+          <li class="flex items-center gap-3"><svg class="w-4 h-4 text-pv-cool flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Launch parties and brand activations</li>
+          <li class="flex items-center gap-3"><svg class="w-4 h-4 text-pv-cool flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Intimate receptions and gatherings</li>
+          <li class="flex items-center gap-3"><svg class="w-4 h-4 text-pv-cool flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Workshop and class hosting</li>
+          <li class="flex items-center gap-3"><svg class="w-4 h-4 text-pv-cool flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Pop-up markets and showcases</li>
         </ul>
         <a href="#booking" class="text-xs tracking-[0.2em] uppercase font-medium border-b border-wws-black pb-1">
           Inquire About Events &rarr;
