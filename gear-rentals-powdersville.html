@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Rentals — Powdersville — WhiteWall Studios</title>
+  <meta name="description" content="Lighting, backdrops, rolling walls, chairs, tables, PA system, and TV rentals available at WhiteWall Studios Powdersville.">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { 'wws-black': '#000000', 'wws-dark': '#383838', 'wws-light': '#F4F4F2', 'wws-gray': '#E0E0E0', 'pv-cool': '#8BA7B8', 'tm-warm': '#C4A882' },
+          fontFamily: { 'display': ['"Cormorant Garamond"', 'serif'], 'body': ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-white text-wws-black">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
+        <a href="powdersville.html" class="hover:text-wws-dark transition flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville
+        </a>
+        <a href="powdersville.html#booking" class="hover:text-wws-dark transition">Book Now</a>
+        <a href="gear-rentals-taylors-mill.html" class="text-xs text-wws-dark/60 hover:text-tm-warm transition border-l border-wws-gray pl-6">TM Gear Rentals &rarr;</a>
+      </div>
+      <button id="menu-toggle" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <div class="h-[2px] bg-pv-cool"></div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
+      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
+        <a href="powdersville.html">Powdersville</a>
+        <a href="powdersville.html#booking">Book Now</a>
+        <a href="gear-rentals-taylors-mill.html" class="text-tm-warm">TM Gear Rentals &rarr;</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="pt-32 pb-12 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 text-pv-cool text-xs tracking-widest uppercase mb-4">
+        <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville
+      </div>
+      <h1 class="font-display text-5xl md:text-6xl font-light mb-4">Equipment Rentals</h1>
+      <p class="text-sm text-wws-dark tracking-wide">Add-on equipment available during your Powdersville booking</p>
+    </div>
+  </section>
+
+  <!-- Lighting -->
+  <section class="px-6 pb-16">
+    <div class="max-w-5xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 class="font-display text-3xl font-light mb-2">Pro Lighting Package</h2>
+          <p class="text-pv-cool font-medium text-lg mb-4">$100 / booking</p>
+          <ul class="text-sm text-wws-dark leading-relaxed space-y-2 list-disc list-inside">
+            <li>1x 660W RGB Amaran Fixture</li>
+            <li>1x Large 5ft Softbox</li>
+            <li>1x 360W RGB Fixture</li>
+            <li>Wall-mounted extension cords</li>
+          </ul>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <a href="images/gear-rentals/whitewall-powdersville_v1-2.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="lighting">
+            <img src="images/gear-rentals/whitewall-powdersville_v1-2.jpg" alt="Pro lighting equipment" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <a href="images/gear-rentals/whitewall-powdersville_v1-4.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="lighting">
+            <img src="images/gear-rentals/whitewall-powdersville_v1-4.jpg" alt="Lighting setup detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <a href="images/gear-rentals/whitewall-powdersville_v1-5.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="lighting">
+            <img src="images/gear-rentals/whitewall-powdersville_v1-5.jpg" alt="Studio lighting" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <a href="images/gear-rentals/img_6341.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="lighting">
+            <img src="images/gear-rentals/img_6341.jpg" alt="Gear rental detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Backdrops -->
+  <section class="bg-wws-light px-6 py-16">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="font-display text-3xl font-light mb-2">Backdrops</h2>
+      <p class="text-pv-cool font-medium text-lg mb-2">$15 / single &middot; $50 / all backdrops</p>
+      <p class="text-sm text-wws-dark mb-8">7 colors available. Choose your color during booking.</p>
+      <div class="grid grid-cols-4 md:grid-cols-7 gap-3">
+        <div class="text-center">
+          <a href="images/powdersville/black.jpg" class="glightbox block aspect-square overflow-hidden rounded-sm mb-2" data-gallery="backdrops">
+            <img src="images/powdersville/black.jpg" alt="Black backdrop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <p class="text-xs text-wws-dark">Black</p>
+        </div>
+        <div class="text-center">
+          <a href="images/powdersville/charcoal-gray.jpg" class="glightbox block aspect-square overflow-hidden rounded-sm mb-2" data-gallery="backdrops">
+            <img src="images/powdersville/charcoal-gray.jpg" alt="Charcoal Gray backdrop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <p class="text-xs text-wws-dark">Charcoal</p>
+        </div>
+        <div class="text-center">
+          <a href="images/powdersville/olive-green.jpg" class="glightbox block aspect-square overflow-hidden rounded-sm mb-2" data-gallery="backdrops">
+            <img src="images/powdersville/olive-green.jpg" alt="Olive Green backdrop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <p class="text-xs text-wws-dark">Olive</p>
+        </div>
+        <div class="text-center">
+          <a href="images/powdersville/pink.jpg" class="glightbox block aspect-square overflow-hidden rounded-sm mb-2" data-gallery="backdrops">
+            <img src="images/powdersville/pink.jpg" alt="Pink backdrop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <p class="text-xs text-wws-dark">Pink</p>
+        </div>
+        <div class="text-center">
+          <a href="images/powdersville/red.jpg" class="glightbox block aspect-square overflow-hidden rounded-sm mb-2" data-gallery="backdrops">
+            <img src="images/powdersville/red.jpg" alt="Red backdrop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <p class="text-xs text-wws-dark">Red</p>
+        </div>
+        <div class="text-center">
+          <a href="images/powdersville/tan_beige.jpg" class="glightbox block aspect-square overflow-hidden rounded-sm mb-2" data-gallery="backdrops">
+            <img src="images/powdersville/tan_beige.jpg" alt="Tan/Beige backdrop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <p class="text-xs text-wws-dark">Tan</p>
+        </div>
+        <div class="text-center">
+          <a href="images/powdersville/white.jpg" class="glightbox block aspect-square overflow-hidden rounded-sm mb-2" data-gallery="backdrops">
+            <img src="images/powdersville/white.jpg" alt="White backdrop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <p class="text-xs text-wws-dark">White</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rolling Walls -->
+  <section class="px-6 py-16">
+    <div class="max-w-5xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="grid grid-cols-3 gap-2">
+          <a href="images/gear-rentals/whitewall-powdersville_v1-7.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="walls">
+            <img src="images/gear-rentals/whitewall-powdersville_v1-7.jpg" alt="Rolling wall" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <a href="images/gear-rentals/whitewall-powdersville_v1-8.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="walls">
+            <img src="images/gear-rentals/whitewall-powdersville_v1-8.jpg" alt="Rolling wall setup" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <a href="images/gear-rentals/whitewall-powdersville_v1-10.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="walls">
+            <img src="images/gear-rentals/whitewall-powdersville_v1-10.jpg" alt="Rolling wall detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+        </div>
+        <div>
+          <h2 class="font-display text-3xl font-light mb-2">Rolling Walls</h2>
+          <p class="text-pv-cool font-medium text-lg mb-4">$30 / wall &middot; $70 / all walls</p>
+          <p class="text-sm text-wws-dark leading-relaxed">Moveable walls to create separate areas, backdrops, or room divisions. Perfect for multi-setup shoots or creating distinct zones during events.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Event Rentals (Chairs, Tables, PA, TV) -->
+  <section class="bg-wws-light px-6 py-16">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="font-display text-3xl font-light text-center mb-12">Event Equipment</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <!-- Chairs -->
+        <div class="bg-white rounded-sm overflow-hidden">
+          <a href="images/gear-rentals/3a0e2a4d-a859-493f-8474-89ff51c17233.jpg" class="glightbox block aspect-square overflow-hidden" data-gallery="event">
+            <img src="images/gear-rentals/3a0e2a4d-a859-493f-8474-89ff51c17233.jpg" alt="Chair rental" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <div class="p-4">
+            <h3 class="font-medium text-sm mb-1">Chairs</h3>
+            <p class="text-pv-cool text-sm font-medium mb-2">$100 / stack of 25</p>
+            <p class="text-xs text-wws-dark">Up to 4 stacks available (100 chairs max).</p>
+          </div>
+        </div>
+
+        <!-- Tables -->
+        <div class="bg-white rounded-sm overflow-hidden">
+          <a href="images/gear-rentals/0c32739b-287b-45aa-ae11-c98d6f960a9f.jpg" class="glightbox block aspect-square overflow-hidden" data-gallery="event">
+            <img src="images/gear-rentals/0c32739b-287b-45aa-ae11-c98d6f960a9f.jpg" alt="Table rental" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <div class="p-4">
+            <h3 class="font-medium text-sm mb-1">Tables</h3>
+            <p class="text-pv-cool text-sm font-medium mb-2">$15 / table</p>
+            <p class="text-xs text-wws-dark">Folding tables for events and setups.</p>
+          </div>
+        </div>
+
+        <!-- PA System -->
+        <div class="bg-white rounded-sm overflow-hidden">
+          <a href="images/gear-rentals/whitewall-powdersville_v2-28.jpg" class="glightbox block aspect-square overflow-hidden" data-gallery="event">
+            <img src="images/gear-rentals/whitewall-powdersville_v2-28.jpg" alt="PA system rental" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <div class="p-4">
+            <h3 class="font-medium text-sm mb-1">PA System</h3>
+            <p class="text-pv-cool text-sm font-medium mb-2">Price on booking</p>
+            <p class="text-xs text-wws-dark">Speaker system for events and presentations.</p>
+          </div>
+        </div>
+
+        <!-- TV -->
+        <div class="bg-white rounded-sm overflow-hidden">
+          <a href="images/gear-rentals/whitewall-powdersville_v2-34.jpg" class="glightbox block aspect-square overflow-hidden" data-gallery="event">
+            <img src="images/gear-rentals/whitewall-powdersville_v2-34.jpg" alt="TV rental" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+          </a>
+          <div class="p-4">
+            <h3 class="font-medium text-sm mb-1">TV Display</h3>
+            <p class="text-pv-cool text-sm font-medium mb-2">Price on booking</p>
+            <p class="text-xs text-wws-dark">Large display for presentations and events.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-wws-black text-white py-16 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h3 class="font-display text-3xl font-light mb-4">Add equipment to your booking</h3>
+      <p class="text-white/60 text-sm mb-8">Select your add-ons during the checkout process.</p>
+      <a href="powdersville.html#booking" class="inline-flex items-center justify-center gap-2 bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-pv-cool hover:text-white transition-all duration-300">
+        <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Book Powdersville
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-12 px-6 border-t border-white/10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-center md:text-left">
+        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+        <div class="flex gap-4 mt-2"><a href="privacy.html" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="terms.html" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
+      </div>
+      <div class="flex gap-6">
+        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+  <script>
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+    const lightbox = GLightbox({ selector: '.glightbox' });
+  </script>
+
+</body>
+</html>

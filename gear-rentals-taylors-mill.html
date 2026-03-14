@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Rentals — Taylor's Mill — WhiteWall Studios</title>
+  <meta name="description" content="Lighting equipment rental available at WhiteWall Studios Taylor's Mill location.">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { 'wws-black': '#000000', 'wws-dark': '#383838', 'wws-light': '#F4F4F2', 'wws-gray': '#E0E0E0', 'tm-warm': '#C4A882', 'pv-cool': '#8BA7B8' },
+          fontFamily: { 'display': ['"Cormorant Garamond"', 'serif'], 'body': ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-white text-wws-black">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
+        <a href="taylors-mill.html" class="hover:text-wws-dark transition flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+        </a>
+        <a href="taylors-mill.html#booking" class="hover:text-wws-dark transition">Book Now</a>
+        <a href="gear-rentals-powdersville.html" class="text-xs text-wws-dark/60 hover:text-pv-cool transition border-l border-wws-gray pl-6">PV Gear Rentals &rarr;</a>
+      </div>
+      <button id="menu-toggle" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <div class="h-[2px] bg-tm-warm"></div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
+      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
+        <a href="taylors-mill.html">Taylor's Mill</a>
+        <a href="taylors-mill.html#booking">Book Now</a>
+        <a href="gear-rentals-powdersville.html" class="text-pv-cool">PV Gear Rentals &rarr;</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="pt-32 pb-12 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 text-tm-warm text-xs tracking-widest uppercase mb-4">
+        <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+      </div>
+      <h1 class="font-display text-5xl md:text-6xl font-light mb-4">Equipment Rental</h1>
+      <p class="text-sm text-wws-dark tracking-wide">Lighting package available as an add-on to your Taylor's Mill booking</p>
+    </div>
+  </section>
+
+  <!-- Lighting Package -->
+  <section class="px-6 pb-16">
+    <div class="max-w-3xl mx-auto">
+      <div class="bg-wws-light p-8 md:p-12 rounded-sm text-center">
+        <h2 class="font-display text-3xl font-light mb-2">Lighting Package</h2>
+        <p class="text-tm-warm font-medium text-2xl mb-6">$50 / booking</p>
+        <ul class="text-sm text-wws-dark leading-relaxed space-y-2 list-none max-w-sm mx-auto text-left">
+          <li class="flex items-center gap-3">
+            <svg class="w-4 h-4 text-tm-warm flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            2x 100W Amaran Bi-Color Lights
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-4 h-4 text-tm-warm flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            1x 200W Amaran Daylight Light
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-4 h-4 text-tm-warm flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            1x Softbox
+          </li>
+          <li class="flex items-center gap-3">
+            <svg class="w-4 h-4 text-tm-warm flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            2x 25' Extension Cords
+          </li>
+        </ul>
+        <a href="taylors-mill.html#booking" class="inline-block mt-8 bg-wws-black text-white px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-tm-warm transition-all duration-300">
+          Book with Lighting
+        </a>
+      </div>
+      <p class="text-center text-xs text-wws-dark/60 mt-8">
+        Need more equipment? Our <a href="gear-rentals-powdersville.html" class="underline hover:text-pv-cool">Powdersville location</a> offers a full range of equipment rentals including backdrops, rolling walls, chairs, tables, PA system, and TV.
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-12 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-center md:text-left">
+        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+        <div class="flex gap-4 mt-2"><a href="privacy.html" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="terms.html" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
+      </div>
+      <div class="flex gap-6">
+        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+  </script>
+
+</body>
+</html>

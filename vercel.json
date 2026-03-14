@@ -1,0 +1,27 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
+  "redirects": [
+    { "source": "/contact", "destination": "/#contact", "statusCode": 301 },
+    { "source": "/white", "destination": "/gallery", "statusCode": 301 },
+    { "source": "/booking-studio", "destination": "/powdersville#booking", "statusCode": 301 },
+    { "source": "/gear-rentals", "destination": "/gear-rentals-powdersville", "statusCode": 301 },
+    { "source": "/beauty-area", "destination": "/powdersville", "statusCode": 301 },
+    { "source": "/membership-subscriptions", "destination": "/", "statusCode": 301 },
+    { "source": "/pricing", "destination": "/", "statusCode": 301 }
+  ]
+}

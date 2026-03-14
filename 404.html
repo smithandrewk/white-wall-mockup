@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found — WhiteWall Studios</title>
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'wws-black': '#000000',
+            'wws-dark': '#383838',
+            'wws-light': '#F4F4F2',
+            'wws-gray': '#E0E0E0',
+            'wws-accent': '#FCD518',
+            'tm-warm': '#C4A882',
+            'pv-cool': '#8BA7B8',
+          },
+          fontFamily: {
+            'display': ['"Cormorant Garamond"', 'serif'],
+            'body': ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-white text-wws-black min-h-screen flex flex-col">
+
+  <!-- Navigation -->
+  <nav class="bg-white border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10">
+      </a>
+    </div>
+  </nav>
+
+  <!-- 404 Content -->
+  <main class="flex-1 flex items-center justify-center px-6 py-24">
+    <div class="text-center max-w-lg">
+      <p class="font-display text-8xl font-light text-wws-gray mb-4">404</p>
+      <h1 class="font-display text-3xl font-light mb-4">Page not found</h1>
+      <p class="text-sm text-wws-dark mb-10">
+        The page you're looking for doesn't exist or has been moved. Let's get you back on track.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="index.html" class="inline-block bg-wws-black text-white px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-dark transition-all duration-300">
+          Back to Home
+        </a>
+        <a href="taylors-mill.html#booking" class="inline-flex items-center justify-center gap-2 border border-tm-warm px-6 py-3 text-xs tracking-[0.2em] uppercase hover:bg-tm-warm hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
+        </a>
+        <a href="powdersville.html#booking" class="inline-flex items-center justify-center gap-2 border border-pv-cool px-6 py-3 text-xs tracking-[0.2em] uppercase hover:bg-pv-cool hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-8 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+      <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

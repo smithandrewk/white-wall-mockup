@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Props & Styling — WhiteWall Studios</title>
+  <meta name="description" content="Free props, plants, and styling items included with every booking at WhiteWall Studios Powdersville.">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'wws-black': '#000000',
+            'wws-dark': '#383838',
+            'wws-light': '#F4F4F2',
+            'wws-gray': '#E0E0E0',
+            'wws-accent': '#FCD518',
+            'tm-warm': '#C4A882',
+            'pv-cool': '#8BA7B8',
+          },
+          fontFamily: {
+            'display': ['"Cormorant Garamond"', 'serif'],
+            'body': ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-white text-wws-black">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
+        <a href="index.html" class="hover:text-wws-dark transition">Home</a>
+        <a href="taylors-mill.html" class="hover:text-wws-dark transition">Taylor's Mill</a>
+        <a href="powdersville.html" class="hover:text-wws-dark transition">Powdersville</a>
+        <a href="gallery.html" class="hover:text-wws-dark transition">Gallery</a>
+        <a href="index.html#contact" class="hover:text-wws-dark transition">Contact</a>
+      </div>
+      <button id="menu-toggle" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
+      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
+        <a href="index.html">Home</a>
+        <a href="taylors-mill.html">Taylor's Mill</a>
+        <a href="powdersville.html">Powdersville</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="index.html#contact">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="pt-32 pb-12 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="font-display text-5xl md:text-6xl font-light mb-4">Props & Styling</h1>
+      <p class="text-sm text-wws-dark tracking-wide mb-2">Everything shown below is included free with every booking</p>
+      <div class="inline-block bg-green-50 border border-green-300 text-green-700 text-xs font-medium px-4 py-2 rounded-full mt-4">
+        Free with Every Booking
+      </div>
+    </div>
+  </section>
+
+  <!-- Plants Section -->
+  <section class="px-6 pb-16">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="font-display text-3xl font-light mb-2">Plants & Greenery</h2>
+      <p class="text-sm text-wws-dark mb-8">A curated collection of plants and greenery to add life and texture to your shoot. Mix and match to create the perfect ambiance.</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <a href="images/props/whitewall-powdersville_v1-15.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-15.jpg" alt="Studio plant arrangement" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-16.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-16.jpg" alt="Tropical greenery prop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-17.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-17.jpg" alt="Potted plant styling" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-18.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-18.jpg" alt="Plant collection detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-19.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-19.jpg" alt="Greenery arrangement" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-20.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-20.jpg" alt="Studio plant detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-21.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-21.jpg" alt="Leaf detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-22.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="plants">
+          <img src="images/props/whitewall-powdersville_v1-22.jpg" alt="Plant styling option" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Props Section -->
+  <section class="bg-wws-light px-6 py-16">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="font-display text-3xl font-light mb-2">Furniture & Styling Props</h2>
+      <p class="text-sm text-wws-dark mb-8">Chairs, stools, shelving, and decorative items available for your creative vision. All included — no extra charge.</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <a href="images/props/whitewall-powdersville_v1-25.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-25.jpg" alt="Styling prop furniture" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-26.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-26.jpg" alt="Studio prop detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-27.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-27.jpg" alt="Decorative prop" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-28.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-28.jpg" alt="Styling accessory" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-29.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-29.jpg" alt="Prop collection" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-30.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-30.jpg" alt="Studio furniture piece" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-38.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-38.jpg" alt="Prop arrangement" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+        <a href="images/props/whitewall-powdersville_v1-39.jpg" class="glightbox aspect-square overflow-hidden rounded-sm" data-gallery="props">
+          <img src="images/props/whitewall-powdersville_v1-39.jpg" alt="Styling element" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-wws-black text-white py-16 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h3 class="font-display text-3xl font-light mb-4">Ready to create?</h3>
+      <p class="text-white/60 text-sm mb-8">All props and styling items are included free with every booking.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="taylors-mill.html#booking" class="inline-flex items-center justify-center gap-2 border border-tm-warm px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-tm-warm hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Book Taylor's Mill
+        </a>
+        <a href="powdersville.html#booking" class="inline-flex items-center justify-center gap-2 border border-pv-cool px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-pv-cool hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Book Powdersville
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-12 px-6 border-t border-white/10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-center md:text-left">
+        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+        <div class="flex gap-4 mt-2"><a href="privacy.html" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="terms.html" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
+      </div>
+      <div class="flex gap-6">
+        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+  <script>
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+    const lightbox = GLightbox({ selector: '.glightbox' });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /guides
+
+Sitemap: https://whitewallstudios.co/sitemap.xml

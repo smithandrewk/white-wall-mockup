@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ — WhiteWall Studios</title>
+  <meta name="description" content="Frequently asked questions about booking, access, cancellation, and studio policies at WhiteWall Studios.">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { 'wws-black': '#000000', 'wws-dark': '#383838', 'wws-light': '#F4F4F2', 'wws-gray': '#E0E0E0', 'tm-warm': '#C4A882', 'pv-cool': '#8BA7B8' },
+          fontFamily: { 'display': ['"Cormorant Garamond"', 'serif'], 'body': ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .faq-answer.open { max-height: 500px; }
+    .faq-chevron { transition: transform 0.3s ease; }
+    .faq-chevron.open { transform: rotate(180deg); }
+  </style>
+</head>
+<body class="bg-white text-wws-black">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
+        <a href="index.html" class="hover:text-wws-dark transition">Home</a>
+        <a href="taylors-mill.html" class="hover:text-wws-dark transition">Taylor's Mill</a>
+        <a href="powdersville.html" class="hover:text-wws-dark transition">Powdersville</a>
+        <a href="gallery.html" class="hover:text-wws-dark transition">Gallery</a>
+        <a href="index.html#contact" class="hover:text-wws-dark transition">Contact</a>
+      </div>
+      <button id="menu-toggle" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
+      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
+        <a href="index.html">Home</a>
+        <a href="taylors-mill.html">Taylor's Mill</a>
+        <a href="powdersville.html">Powdersville</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="index.html#contact">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="pt-32 pb-12 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h1 class="font-display text-5xl md:text-6xl font-light mb-4">Frequently Asked Questions</h1>
+      <p class="text-sm text-wws-dark tracking-wide">Everything you need to know about booking and visiting our studios</p>
+    </div>
+  </section>
+
+  <!-- FAQ Accordion -->
+  <section class="px-6 pb-24">
+    <div class="max-w-3xl mx-auto divide-y divide-wws-gray/50">
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">How do I access the studio?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">Both studios are self-service with keypad entry. After booking, you'll receive an email with your unique access code and detailed directions. You can arrive and get started on your own schedule — no staff required.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">What's the cancellation policy?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">You may cancel or reschedule up to <strong>48 hours</strong> before your session at no charge. Cancellations within 48 hours are non-refundable.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">How do refunds work?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">Approved refunds are processed within 3-5 business days to your original payment method.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can I add or subtract hours from my booking?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">Yes! You can adjust your booking time through the rescheduling link in your confirmation email, subject to availability. Changes must be made at least 48 hours in advance.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">What about natural light? When is it best?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">Both studios are designed for natural light photography. The best natural light is typically mid-morning through mid-afternoon. Taylor's Mill has oversized mill windows; Powdersville has large windows plus remote blackout shades if you want to control the light or shoot with artificial lighting.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can I bring my dog?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">Yes, well-behaved pets are welcome at both studios! Just make sure to clean up after them and keep the space in the same condition you found it.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">What if I'm running late?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">Your booking time is your booking time — the studio is yours for that window. If you arrive late, your session still ends at the scheduled time. We can't extend into the next booking.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Which studio should I book?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4"><strong>Taylor's Mill</strong> is ideal for portrait sessions, headshots, boudoir, and intimate natural light photography. It's 1,000 sq ft in a historic mill setting. <strong>Powdersville</strong> is our 2,000+ sq ft flagship — best for events, large productions, heavy equipment load-in, and anything requiring more space or privacy. Events are only available at Powdersville.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can I host an event at Taylor's Mill?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">No — Taylor's Mill is not available for events. For events, please book our <a href="powdersville.html" class="underline hover:text-pv-cool">Powdersville location</a>, which is event-approved for gatherings of all sizes.</p>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Are props and styling items included?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <p class="text-sm text-wws-dark leading-relaxed pt-4">Yes! All props, plants, and styling items are included free with every booking. Check out our <a href="props.html" class="underline hover:text-wws-dark">props page</a> to see everything available. Equipment rentals (lighting, backdrops, rolling walls, etc.) are available as paid add-ons.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-wws-black text-white py-16 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h3 class="font-display text-3xl font-light mb-4">Still have questions?</h3>
+      <p class="text-white/60 text-sm mb-8">Text us at (803) 682-5691 or email contact@whitewallstudios.co</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="taylors-mill.html#booking" class="inline-flex items-center justify-center gap-2 border border-tm-warm px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-tm-warm hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Book Taylor's Mill
+        </a>
+        <a href="powdersville.html#booking" class="inline-flex items-center justify-center gap-2 border border-pv-cool px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-pv-cool hover:text-white transition-all duration-300">
+          <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Book Powdersville
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-wws-black text-white py-12 px-6 border-t border-white/10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-center md:text-left">
+        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+        <div class="flex gap-4 mt-2"><a href="privacy.html" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="terms.html" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
+      </div>
+      <div class="flex gap-6">
+        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+
+    document.querySelectorAll('.faq-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const answer = btn.nextElementSibling;
+        const chevron = btn.querySelector('.faq-chevron');
+        answer.classList.toggle('open');
+        chevron.classList.toggle('open');
+      });
+    });
+  </script>
+
+</body>
+</html>

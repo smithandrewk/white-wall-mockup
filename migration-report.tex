@@ -1,0 +1,632 @@
+% WhiteWall Studios — Squarespace Migration Report
+% Compile with: xelatex migration-report.tex
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[margin=0.75in,top=0.65in,bottom=0.65in]{geometry}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{microtype}
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+% ── Colors ──────────────────────────────────────────────────────
+\definecolor{wwsBlack}{HTML}{000000}
+\definecolor{wwsDark}{HTML}{383838}
+\definecolor{wwsLight}{HTML}{F4F4F2}
+\definecolor{wwsGray}{HTML}{E0E0E0}
+\definecolor{wwsAccent}{HTML}{FCD518}
+\definecolor{wwsTaylors}{HTML}{C4A882}
+\definecolor{wwsPowders}{HTML}{8BA7B8}
+\definecolor{tableHead}{HTML}{383838}
+\definecolor{tableStripe}{HTML}{FAFAF8}
+\definecolor{greenSave}{HTML}{2E7D32}
+
+% ── Fonts ───────────────────────────────────────────────────────
+\setmainfont{CormorantGaramond}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=400}}},
+]
+
+\newfontfamily\cormorantlight{CormorantGaramond}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=300}}},
+]
+
+\newfontfamily\cormorantsemibold{CormorantGaramond}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=600}}},
+]
+
+\newfontfamily\interfont{Inter}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=400}}},
+]
+
+\newfontfamily\interlight{Inter}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=300}}},
+]
+
+\newfontfamily\intermedium{Inter}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=500}}},
+]
+
+\newfontfamily\intersemibold{Inter}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=600}}},
+]
+
+\newfontfamily\interbold{Inter}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  UprightFeatures={RawFeature={+axis={wght=700}}},
+]
+
+% ── Page style ─────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{{\interfont\fontsize{6.5}{8}\selectfont\color{wwsDark!50} WhiteWall Studios \enspace\textbar\enspace Migration Report \enspace\textbar\enspace March 2026}}
+\fancyfoot[R]{{\interfont\fontsize{6.5}{8}\selectfont\color{wwsDark!50} \thepage\,/\,\pageref{LastPage}}}
+
+% ── Section styling ─────────────────────────────────────────────
+\newcommand{\reportsection}[1]{%
+  \vspace{10pt}%
+  {\cormorantsemibold\fontsize{16}{18}\selectfont\color{wwsBlack}#1}%
+  \par\vspace{2pt}%
+  {\color{wwsAccent}\rule{\linewidth}{1.5pt}}%
+  \par\vspace{4pt}%
+}
+
+\newcommand{\reportsubsection}[1]{%
+  \vspace{6pt}%
+  {\intersemibold\fontsize{9}{11}\selectfont\color{wwsDark}\MakeUppercase{#1}}%
+  \par\vspace{1pt}%
+  {\color{wwsGray}\rule{\linewidth}{0.4pt}}%
+  \par\vspace{3pt}%
+}
+
+% ── Callout box ────────────────────────────────────────────────
+\newcommand{\callout}[2][wwsLight]{%
+  \par\vspace{4pt}%
+  \noindent\begin{tikzpicture}
+    \node[fill=#1, rounded corners=3pt, inner sep=8pt, text width=\dimexpr\linewidth-16pt\relax] {%
+      {\interfont\fontsize{8}{10.5}\selectfont #2}%
+    };
+  \end{tikzpicture}%
+  \par\vspace{4pt}%
+}
+
+% ── Accent callout ─────────────────────────────────────────────
+\newcommand{\accentcallout}[1]{%
+  \par\vspace{4pt}%
+  \noindent\begin{tikzpicture}
+    \node[fill=wwsAccent!15, rounded corners=3pt, inner sep=8pt, text width=\dimexpr\linewidth-16pt\relax] {%
+      {\interfont\fontsize{8}{10.5}\selectfont #1}%
+    };
+  \end{tikzpicture}%
+  \par\vspace{4pt}%
+}
+
+% ── Tag command ────────────────────────────────────────────────
+\newcommand{\statustag}[2][wwsGray]{%
+  \tikz[baseline=(tag.base)]{%
+    \node[fill=#1!20, rounded corners=2pt, inner xsep=5pt, inner ysep=2pt] (tag)
+      {\intersemibold\fontsize{6.5}{8}\selectfont #2};%
+  }%
+}
+
+% ── Body text default ──────────────────────────────────────────
+\newcommand{\bodytext}{\interfont\fontsize{8.5}{11.5}\selectfont}
+
+% ── List styling ───────────────────────────────────────────────
+\setlist[itemize]{leftmargin=12pt, itemsep=1pt, parsep=0pt, topsep=2pt}
+\setlist[enumerate]{leftmargin=14pt, itemsep=1pt, parsep=0pt, topsep=2pt}
+
+\begin{document}
+\bodytext
+
+% ════════════════════════════════════════════════════════════════
+% HEADER
+% ════════════════════════════════════════════════════════════════
+\begin{minipage}[c]{0.45\linewidth}
+  \raisebox{-4pt}{\includegraphics[height=28pt]{wws-logo.png}}%
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.50\linewidth}
+  \raggedleft
+  {\cormorantlight\fontsize{20}{22}\selectfont Migration Report}\\[2pt]
+  {\interfont\fontsize{7.5}{9}\selectfont\color{wwsDark} Squarespace to Modern Stack \enspace\textbar\enspace March 2026}
+\end{minipage}
+
+\vspace{4pt}
+{\color{wwsBlack}\rule{\linewidth}{1pt}}
+\vspace{2pt}
+{\interfont\fontsize{7.5}{9}\selectfont\color{wwsDark!70} Prepared by Andrew Smith for Drew Shahoud \& Max}
+\vspace{4pt}
+
+% ════════════════════════════════════════════════════════════════
+% EXECUTIVE SUMMARY
+% ════════════════════════════════════════════════════════════════
+\reportsection{Executive Summary}
+
+\callout{%
+  WhiteWall Studios is paying \textbf{\$300--700+/year} for Squarespace and using it as a brochure site. The same site can be hosted for \textbf{free} on modern platforms like Vercel or GitHub Pages, with better performance, full analytics, and the ability to add AI-powered features and automations that Squarespace cannot support at any price.%
+}
+
+\begin{minipage}[t]{0.48\linewidth}
+{\intersemibold\fontsize{8}{10}\selectfont What you're paying for:}
+\begin{itemize}
+  \item 29 static pages with images and text
+  \item A \$0 product-as-booking-form workaround
+  \item Placeholder subscription plans
+  \item One possibly-inactive signup form
+\end{itemize}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+{\intersemibold\fontsize{8}{10}\selectfont What you'd gain by moving:}
+\begin{itemize}
+  \item \textbf{\$280--720/year} in savings
+  \item Full analytics (session recordings, heatmaps)
+  \item Custom automations (Zapier, Make, n8n)
+  \item AI-powered features (Claude chatbot, smart routing)
+\end{itemize}
+\end{minipage}
+
+% ════════════════════════════════════════════════════════════════
+% CURRENT COSTS
+% ════════════════════════════════════════════════════════════════
+\reportsection{What You're Currently Paying}
+
+\begin{center}
+\interfont\fontsize{7.5}{10}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold Item} & {\color{white}\intersemibold Monthly} & {\color{white}\intersemibold Annual} \\
+\midrule
+Squarespace Core (annual billing) & \$23/mo & \textbf{\$276/yr} \\
+\rowcolor{tableStripe}
+Squarespace Core (monthly billing) & \$33/mo & \textbf{\$396/yr} \\
+Custom domain (whitewallstudios.co) & Included yr 1 & \textasciitilde\$20/yr \\
+\rowcolor{tableStripe}
+Acuity Scheduling (if separate) & \$20+/mo & \textbf{\$240+/yr} \\
+\midrule
+\textbf{Total (annual, no Acuity)} & & \textbf{\textasciitilde\$296/yr} \\
+\rowcolor{tableStripe}
+\textbf{Total (annual, with Acuity)} & & \textbf{\textasciitilde\$536/yr} \\
+\textbf{Total (monthly, with Acuity)} & & \textbf{\textasciitilde\$656/yr} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\callout{%
+  \textbf{Note on Acuity:} No Acuity embed was found on the live site. If you're using Acuity standalone (sending booking links directly), it's billed separately from Squarespace and works with \emph{any} platform. Leaving Squarespace doesn't affect Acuity.%
+}
+
+% ════════════════════════════════════════════════════════════════
+% SITE AUDIT
+% ════════════════════════════════════════════════════════════════
+\reportsection{Site Audit: What Squarespace Actually Does for You}
+
+\begin{multicols}{2}
+
+\reportsubsection{Heavily Used}
+\begin{itemize}
+  \item \textbf{Static pages} (29 total): home, locations, studio sets, gear rentals, FAQs, contact
+  \item \textbf{Image hosting/CDN}: all photos via Squarespace CDN
+  \item \textbf{Gallery}: 36-image masonry grid with lightbox
+  \item \textbf{SSL + hosting}: standard web hosting
+  \item \textbf{Mobile responsive layout}
+\end{itemize}
+
+\reportsubsection{Lightly Used}
+\begin{itemize}
+  \item \textbf{Commerce}: only as a booking workaround (two \$0 products added to cart to initiate booking)
+  \item \textbf{Subscription products}: three plans at \$40/\$70/\$100, placeholder content, appears unused
+  \item \textbf{One form}: free trial signup (yoga, boxing, etc.)
+  \item \textbf{Facebook Pixel} tracking
+  \item \textbf{reCAPTCHA} on forms
+\end{itemize}
+
+\columnbreak
+
+\reportsubsection{Not Used At All}
+\begin{itemize}
+  \item No Acuity Scheduling embeds or links
+  \item No email marketing integration
+  \item No blog
+  \item No member areas
+  \item No Google Analytics
+  \item No chat widget
+\end{itemize}
+
+\reportsubsection{Placeholder / Dead Content}
+\begin{itemize}
+  \item Terms \& Conditions: empty
+  \item Privacy Policy: empty
+  \item FAQs-1: duplicate with template questions
+  \item Free Trial: fitness class form (likely template leftover)
+\end{itemize}
+
+\end{multicols}
+
+\accentcallout{%
+  \textbf{Bottom line:} You're paying for a CMS/hosting platform and using it as a brochure site. The only Squarespace-native feature in real use is the image gallery with lightbox, which is trivially replaced by a free JavaScript library.%
+}
+
+% ════════════════════════════════════════════════════════════════
+% HOSTING OPTIONS
+% ════════════════════════════════════════════════════════════════
+\newpage
+\reportsection{Where to Host: Vercel, GitHub Pages, and Others}
+
+Your site is static HTML/CSS/JS. Hosting is effectively free on any modern platform. All deploy the same way: push code to GitHub, site updates automatically. No FTP, no manual uploads, no waiting for Squarespace to rebuild.
+
+\vspace{4pt}
+\begin{center}
+\interfont\fontsize{7.5}{10}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold Platform} & {\color{white}\intersemibold Free Tier} & {\color{white}\intersemibold Best For} & {\color{white}\intersemibold Deploy Method} \\
+\midrule
+\textbf{Vercel} & 100GB bandwidth, unlimited deploys & Server-side features (API routes, AI) & Git push auto-deploys \\
+\rowcolor{tableStripe}
+\textbf{GitHub Pages} & 100GB bandwidth, 10 builds/hr & Simplest setup, zero config & Git push auto-deploys \\
+\textbf{Cloudflare Pages} & Unlimited bandwidth, 500 builds/mo & Fastest global CDN & Git push auto-deploys \\
+\rowcolor{tableStripe}
+\textbf{Netlify} & 100GB bandwidth, 300 build min/mo & Built-in forms, easy setup & Git push auto-deploys \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\reportsubsection{Recommendation: Vercel}
+
+Vercel is free for this use case and provides the clearest upgrade path. If WhiteWall ever wants to add server-side features (AI chatbot, dynamic pricing, automated emails), Vercel supports them natively via \textbf{serverless functions} and \textbf{API routes}, without needing a separate server.
+
+GitHub Pages is the simplest option if the goal is purely static hosting with zero complexity.
+
+\callout{%
+  \textbf{How deployment works:} Your site lives in a GitHub repository. When you push a change (or Andrew pushes one for you), the hosting platform automatically builds and deploys the updated site. Typical deploy time: 10--30 seconds. No downtime during deploys.%
+}
+
+% ════════════════════════════════════════════════════════════════
+% SERVICE REPLACEMENT
+% ════════════════════════════════════════════════════════════════
+\reportsection{Full Service Replacement Map}
+
+Every service Squarespace provides has a free or cheaper replacement:
+
+\vspace{4pt}
+\begin{center}
+\interfont\fontsize{7.5}{10}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}X r >{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold Component} & {\color{white}\intersemibold Solution} & {\color{white}\intersemibold Cost} & {\color{white}\intersemibold Notes} \\
+\midrule
+Hosting & Vercel / GitHub Pages & \$0/mo & Free at this scale \\
+\rowcolor{tableStripe}
+Domain & Cloudflare or Namecheap & \textasciitilde\$10/yr & At-cost, no markup \\
+SSL & Included with any host & \$0 & Automatic HTTPS \\
+\rowcolor{tableStripe}
+Image CDN & Cloudflare or Vercel & \$0 & Edge-served images \\
+Scheduling & Acuity (keep) or Cal.com & \$0--20/mo & Embed on site \\
+\rowcolor{tableStripe}
+Forms & Formspree or Vercel serverless & \$0/mo & Free tier sufficient \\
+Gallery & GLightbox / PhotoSwipe & \$0 & Lightweight JS libraries \\
+\rowcolor{tableStripe}
+Memberships & Stripe Checkout + Billing & Per-txn & No monthly platform fee \\
+Facebook Pixel & Script tag & \$0 & Copy-paste \\
+\rowcolor{tableStripe}
+reCAPTCHA & Script tag & \$0 & Same setup as now \\
+\textbf{Analytics} & \textbf{PostHog} (see below) & \$0 & Far superior to Squarespace \\
+\rowcolor{tableStripe}
+\textbf{Automations} & \textbf{Zapier / Make / n8n} & \$0--20/mo & Not possible on Squarespace \\
+\textbf{AI Features} & \textbf{Claude API via Vercel} & Pay-per-use & Not possible on Squarespace \\
+\midrule
+\rowcolor{tableStripe}
+\multicolumn{2}{@{}l}{\intersemibold\textbf{Total}} & \textbf{\textasciitilde\$10/yr} & + optional services \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ════════════════════════════════════════════════════════════════
+% WHAT YOU UNLOCK
+% ════════════════════════════════════════════════════════════════
+\reportsection{What You Unlock by Leaving Squarespace}
+
+Squarespace is a walled garden. On a standard web stack, you get access to the entire modern web ecosystem. Here are three categories of tools that become available:
+
+\reportsubsection{Analytics: PostHog (Free, Replaces Squarespace Analytics)}
+
+Squarespace gives you basic page views. PostHog gives you:
+
+\begin{multicols}{2}
+\begin{itemize}
+  \item \textbf{Session recordings}: watch exactly how visitors navigate. See where they hesitate, what they click, where they drop off before booking.
+  \item \textbf{Heatmaps}: visual overlay of clicks and scroll depth on each page.
+  \item \textbf{Funnels}: track the path from landing to booking. ``80\% see the gallery, but only 10\% click Book Now.''
+  \item \textbf{A/B testing}: test two page versions and measure which converts better.
+  \item \textbf{Feature flags}: roll out changes to 10\% of visitors, check data, then go to 100\%.
+\end{itemize}
+\end{multicols}
+
+\callout{%
+  \textbf{Free tier:} 1 million events/month, 5,000 session recordings/month. More than enough for WhiteWall's traffic. This level of analytics is \emph{not available on Squarespace at any price tier}.%
+}
+
+\reportsubsection{Automations: Zapier, Make, and n8n}
+
+Connect your site events to anything. Examples relevant to WhiteWall:
+
+\begin{multicols}{2}
+\begin{itemize}
+  \item New booking $\to$ auto-send confirmation email with studio access codes, parking info, prep checklist
+  \item New booking $\to$ add row to Google Sheets for revenue tracking per location
+  \item Form submission $\to$ create a lead in your CRM (or a Google Sheet)
+  \item New booking $\to$ send SMS reminder 24 hours before the session
+  \item Membership signup $\to$ auto-add to a private email list
+  \item Low booking week $\to$ auto-post Instagram story with availability
+\end{itemize}
+\end{multicols}
+
+\callout{%
+  Zapier free tier: 100 tasks/month. Make.com: even more generous. n8n: fully free and self-hosted. On Squarespace, you're limited to their handful of built-in integrations. Off Squarespace, your site can talk to \emph{literally anything with an API}.%
+}
+
+\reportsubsection{AI-Powered Features (Claude via Vercel)}
+
+With Vercel, you can add server-side API routes that run AI models. This is where a modern stack truly separates from Squarespace:
+
+\begin{multicols}{2}
+\begin{itemize}
+  \item \textbf{AI booking assistant}: a chat widget that answers questions about studios, pricing, and availability, then walks visitors through booking. Powered by Claude, trained on your content.
+  \item \textbf{Smart inquiry routing}: AI reads contact form submissions and auto-categorizes them (booking inquiry, gear rental, event inquiry, partnership pitch), then routes to the right person or sends an auto-reply.
+  \item \textbf{Auto-generated social captions}: upload a gallery photo, AI writes an Instagram caption with hashtags matching your brand voice.
+  \item \textbf{Dynamic FAQ}: instead of a static page, a conversational interface that answers any question about the studios.
+  \item \textbf{Personalized landing pages}: returning visitors see content tailored to their location preference (Taylor's Mill vs.\ Powdersville) based on previous browsing.
+\end{itemize}
+\end{multicols}
+
+\accentcallout{%
+  \textbf{Cost:} Claude API is pay-per-use. A booking assistant handling 100 conversations/month costs roughly \textbf{\$2--5/month} in API fees. Compare that to a \$49/mo chatbot SaaS. \textbf{None of this is possible on Squarespace} -- you can't run server-side code, call APIs, or add custom logic.%
+}
+
+% ════════════════════════════════════════════════════════════════
+% COST COMPARISON
+% ════════════════════════════════════════════════════════════════
+\newpage
+\reportsection{Cost Comparison}
+
+\begin{center}
+\interfont\fontsize{7.5}{10}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r r@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold} & {\color{white}\intersemibold Squarespace (Current)} & {\color{white}\intersemibold Keep Acuity} & {\color{white}\intersemibold Switch to Cal.com} \\
+\midrule
+Hosting & \$276--468/yr & \$0 & \$0 \\
+\rowcolor{tableStripe}
+Scheduling & \$240+/yr & \$240/yr & \$0 \\
+Domain & \textasciitilde\$20/yr & \textasciitilde\$10/yr & \textasciitilde\$10/yr \\
+\midrule
+\rowcolor{tableStripe}
+\textbf{Year 1 Total} & \textbf{\$536--728} & \textbf{\textasciitilde\$250} & \textbf{\textasciitilde\$10} \\
+\textbf{5-Year Total} & \textbf{\$2,680--3,640} & \textbf{\textasciitilde\$1,250} & \textbf{\textasciitilde\$50} \\
+\rowcolor{tableStripe}
+\textbf{5-Year Savings} & -- & {\color{greenSave}\textbf{\$1,430--2,390}} & {\color{greenSave}\textbf{\$2,630--3,590}} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ════════════════════════════════════════════════════════════════
+% SCHEDULING
+% ════════════════════════════════════════════════════════════════
+\reportsection{Scheduling \& Booking}
+
+\reportsubsection{Current State}
+
+The live site handles booking like this:
+\begin{enumerate}
+  \item Customer clicks ``Book Now''
+  \item Adds a \$0.00 product to Squarespace cart
+  \item Checks out (giving contact info)
+  \item WWS follows up via email/text to schedule
+\end{enumerate}
+
+\textbf{Key point:} Acuity is not tied to Squarespace. It's billed separately and works with any platform. If you leave Squarespace, embed Acuity on the new site -- zero disruption to your booking flow.
+
+\reportsubsection{Scheduling Options Compared}
+
+\begin{center}
+\interfont\fontsize{7.5}{10}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X c c c@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold Feature} & {\color{white}\intersemibold Acuity (\$20+/mo)} & {\color{white}\intersemibold Cal.com (Free)} & {\color{white}\intersemibold Calendly (\$10/mo)} \\
+\midrule
+Unlimited bookings & Yes & Yes & Yes \\
+\rowcolor{tableStripe}
+Multiple event types & Yes & Yes & Paid only \\
+Embed on any site & Yes & Yes & Yes \\
+\rowcolor{tableStripe}
+Google Calendar sync & Yes & Yes & Yes \\
+Payment at booking & Yes & Yes (Stripe) & Yes (Stripe) \\
+\rowcolor{tableStripe}
+Confirmation emails & Yes & Yes & Yes \\
+Works without Squarespace & Yes & Yes & Yes \\
+\midrule
+\rowcolor{tableStripe}
+\textbf{Cost/year} & \textbf{\textasciitilde\$240+} & \textbf{\$0} & \textbf{\textasciitilde\$120} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ════════════════════════════════════════════════════════════════
+% EDITING / CMS
+% ════════════════════════════════════════════════════════════════
+\reportsection{If You Want to Edit Pages Yourselves}
+
+The one thing Squarespace does well is its visual editor. Here are the alternatives:
+
+\vspace{4pt}
+\begin{center}
+\interfont\fontsize{7.5}{10}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}X r@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold Option} & {\color{white}\intersemibold How It Works} & {\color{white}\intersemibold Cost} \\
+\midrule
+\textbf{Decap CMS} & Git-based CMS with visual editor in browser. Edits go to GitHub. & \$0 \\
+\rowcolor{tableStripe}
+\textbf{Tina CMS} & Similar to Decap with live visual editing. & \$0 (free tier) \\
+\textbf{Notion as CMS} & Write in Notion, site pulls content automatically. & \$0 \\
+\rowcolor{tableStripe}
+\textbf{Just ask Andrew} & Text me, I push the change in 5 minutes. & \$0 + friendship \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ════════════════════════════════════════════════════════════════
+% MIGRATION EFFORT
+% ════════════════════════════════════════════════════════════════
+\reportsection{Migration Effort}
+
+\reportsubsection{What We Already Have}
+\begin{itemize}
+  \item 4-page HTML mockup with the full design system built
+  \item Design system sheets (letter + phone PDF) for reference
+  \item Font files (Cormorant Garamond, Inter)
+  \item Logo asset
+\end{itemize}
+
+\reportsubsection{What Needs to Be Built}
+
+\begin{center}
+\interfont\fontsize{7.5}{10}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r >{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold Task} & {\color{white}\intersemibold Effort} & {\color{white}\intersemibold Notes} \\
+\midrule
+Convert remaining pages to static HTML & 8--12 hrs & 4 pages already done \\
+\rowcolor{tableStripe}
+Image hosting + photo migration & 1--2 hrs & Download from Squarespace CDN \\
+Gallery with lightbox & 1--2 hrs & GLightbox or PhotoSwipe \\
+\rowcolor{tableStripe}
+FAQ accordion & 30 min & Standard component \\
+Cal.com setup (2 locations) & 1--2 hrs & Event types + embed \\
+\rowcolor{tableStripe}
+Stripe subscriptions (if needed) & 2--3 hrs & Products + checkout links \\
+Contact form & 30 min & Formspree or similar \\
+\rowcolor{tableStripe}
+Facebook Pixel & 15 min & Script tag \\
+DNS migration & 30 min & Point domain to new host \\
+\rowcolor{tableStripe}
+Testing + polish & 2--3 hrs & Cross-browser, mobile, links \\
+\midrule
+\textbf{Total} & \textbf{16--24 hrs} & \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\reportsubsection{Migration Steps}
+
+\begin{enumerate}
+  \item Finish remaining pages using the existing mockup as a template
+  \item Set up Vercel (or Cloudflare Pages) and connect the GitHub repo
+  \item Set up Cal.com with two location-specific booking types
+  \item If subscriptions are active, set up Stripe Billing
+  \item Migrate images from Squarespace CDN
+  \item Add Facebook Pixel, reCAPTCHA, forms
+  \item Test everything
+  \item Switch DNS (5-minute cutover, no downtime if prepped)
+\end{enumerate}
+
+% ════════════════════════════════════════════════════════════════
+% RISKS
+% ════════════════════════════════════════════════════════════════
+\reportsection{Risks \& Considerations}
+
+\begin{itemize}
+  \item \textbf{Editing without code:} If Drew/Max frequently edit page content, they'll need a CMS (Decap, Tina) or someone to make HTML changes. Squarespace's visual editor is the one thing that's hard to replace for free.
+  \item \textbf{Email:} You use Google Workspace (MX records), not Squarespace email. No email migration needed.
+  \item \textbf{SEO:} Redirect old Squarespace URLs to new ones. Squarespace uses paths like \texttt{/about-taylors-mill-location} which we can keep or redirect.
+  \item \textbf{Domain transfer:} whitewallstudios.co needs to be transferred from Squarespace. Standard process, \textasciitilde10 minutes + up to 5 day transfer window.
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════════
+% QUESTIONS TO CONFIRM
+% ════════════════════════════════════════════════════════════════
+\reportsection{Questions to Confirm Before Moving}
+
+\begin{enumerate}
+  \item Are the \$40/\$70/\$100 membership plans live and collecting payments, or still in setup?
+  \item Is the free trial fitness form actually being used by customers?
+  \item Do you use Acuity standalone (sending booking links via text/email)?
+  \item Who currently makes content edits on the Squarespace site, and how often?
+\end{enumerate}
+
+% ════════════════════════════════════════════════════════════════
+% SUMMARY
+% ════════════════════════════════════════════════════════════════
+\reportsection{Summary}
+
+\begin{center}
+\interfont\fontsize{8}{10.5}\selectfont
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{tableHead}
+{\color{white}\intersemibold Question} & {\color{white}\intersemibold Answer} \\
+\midrule
+Can you leave Squarespace? & \textbf{Yes, easily.} The site is mostly static pages with images. \\
+\rowcolor{tableStripe}
+What Squarespace features do you depend on? & Hosting, image CDN, and a hacky \$0 product-as-booking-form. That's it. \\
+How much would you save? & \textbf{\$280--720/year}, up to \textbf{\$3,590 over 5 years}. \\
+\rowcolor{tableStripe}
+What happens to Acuity? & Nothing. Keep it as-is and embed on the new site, or switch to Cal.com. \\
+What's the migration effort? & \textasciitilde16--24 hours. We're \textasciitilde25\% done with the mockup already. \\
+\rowcolor{tableStripe}
+What do you lose? & Squarespace's visual page editor. Everything else is free or cheaper. \\
+What do you gain? & PostHog analytics, Zapier automations, AI features, full control. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\vfill
+{\color{wwsGray}\rule{\linewidth}{0.4pt}}
+{\interfont\fontsize{6.5}{8}\selectfont\color{wwsDark!50} WhiteWall Studios \enspace\textbar\enspace Squarespace Migration Report v1.0 \enspace\textbar\enspace March 2026 \enspace\textbar\enspace Prepared by Andrew Smith}
+
+\end{document}

@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gallery — WhiteWall Studios</title>
+  <meta name="description" content="Photo gallery from WhiteWall Studios — see work created at our Taylor's Mill and Powdersville locations by photographers and creatives.">
+  <meta property="og:title" content="Gallery — WhiteWall Studios">
+  <meta property="og:description" content="See what creators make at WhiteWall Studios.">
+  <meta property="og:image" content="https://whitewallstudios.co/images/powdersville/whitewall-powdersville_v2-1.jpg">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -28,6 +35,7 @@
       }
     }
   </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -52,7 +60,7 @@
   <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
       <a href="index.html" class="flex items-center gap-3">
-        <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/808d62d9-47c6-42d0-8ebe-af501b7692ee/WWS+Logo_Black.jpg?format=300w" alt="WhiteWall Studios" class="h-10">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10">
       </a>
       <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
         <a href="index.html" class="hover:text-wws-dark transition">Home</a>
@@ -108,135 +116,246 @@
     <div class="max-w-6xl mx-auto">
       <div class="masonry" id="gallery-grid">
 
-        <!-- Taylor's Mill shots -->
+        <!-- Alternating TM and PV for balanced visual flow -->
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-1.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-1.jpg" alt="Powdersville studio natural light space" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
+            </div>
+          </div>
+        </div>
+
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/e70ba997-8a35-4447-8929-a489482597f4/mary-162.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/mary-162.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/mary-162.jpg" alt="Portrait session at Taylor's Mill" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="powdersville">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/8c351545-9ee3-4701-94d9-6ac87b587351/WhiteWall+Powdersville-7.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/powdersville/whitewall-powdersville_v2-3.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-3.jpg" alt="Powdersville studio open floor plan" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/6be993c5-938e-4ba4-bedb-c1a464135206/mary-216.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/modern-romantics-214.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/modern-romantics-214.jpg" alt="Styled shoot at Taylor's Mill" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="masonry-item gallery-img" data-location="taylors-mill">
-          <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/1682cf5b-a346-4ba1-9838-5f7aa4317532/ModernRomanticsxMolly_January2022-214.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="powdersville">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/094cef9c-2417-416b-8390-a73114886dc5/WhiteWall+Powdersville-20.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/powdersville/whitewall-powdersville_v2-7.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-7.jpg" alt="Powdersville natural light through windows" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-10.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-10.jpg" alt="Powdersville studio detail" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/031f35f9-7e73-4576-8a96-e4dce627ced2/2W2A0013+copy.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/kayla-still.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/kayla-still.jpg" alt="Creative portrait at Taylor's Mill" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-14.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-14.jpg" alt="Powdersville studio wide angle" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/51a1a7f5-7957-41ec-bf2d-f99d34aa2d60/Kayla+Still+V2.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/2W2A0013-copy.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/2W2A0013-copy.jpg" alt="Studio shoot at Taylor's Mill" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-20.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-20.jpg" alt="Powdersville studio setup area" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-23.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-23.jpg" alt="Powdersville natural light and plants" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/55307297-c21b-4594-b8d9-ba81c05b46c5/ModernRomanticsxMolly_January2022-224.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/mary-216.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/mary-216.jpg" alt="Natural light portrait at Taylor's Mill" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-25.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-25.jpg" alt="Powdersville studio styling area" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/3614e6dd-45dc-48a6-adce-5c80ab5122b6/MadelineMoves-13.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/modern-romantics-224.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/modern-romantics-224.jpg" alt="Styled editorial at Taylor's Mill" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-27.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-27.jpg" alt="Powdersville studio full space view" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v1-31.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v1-31.jpg" alt="Powdersville getting-ready area" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/3b633888-9f1f-40da-b5bd-c7ea9ec60615/2W2A9532.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/madeline-moves-13.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/madeline-moves-13.jpg" alt="Fitness shoot at Taylor's Mill" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-4.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-4.jpg" alt="Powdersville studio corner detail" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/0a73648e-57ec-43ce-b8fe-3c59ef2be8c8/ModernRomanticsxMolly_January2022-17.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/gallery/2W2A9111.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/gallery/2W2A9111.jpg" alt="Session at Taylor's Mill studio" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-16.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-16.jpg" alt="Powdersville studio bright interior" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
 
         <div class="masonry-item gallery-img" data-location="taylors-mill">
           <div class="relative group overflow-hidden rounded-sm">
-            <img src="https://images.squarespace-cdn.com/content/v1/617bdc330c03f441086046e2/5bc6b87a-1b12-4c5e-8b25-dc7726b5df31/2W2A9111.jpg?format=750w" alt="" class="w-full block hover:scale-105 transition-transform duration-500">
+            <a href="images/taylors-mill/taylors-mill-interior.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/taylors-mill/taylors-mill-interior.jpg" alt="Taylor's Mill studio interior" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill
-              </span>
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tm-warm"></span> Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="masonry-item gallery-img" data-location="powdersville">
+          <div class="relative group overflow-hidden rounded-sm">
+            <a href="images/powdersville/whitewall-powdersville_v2-12.jpg" class="glightbox" data-gallery="gallery">
+              <img src="images/powdersville/whitewall-powdersville_v2-12.jpg" alt="Powdersville studio garage door area" class="w-full block hover:scale-105 transition-transform duration-500">
+            </a>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-white text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pv-cool"></span> Powdersville</span>
             </div>
           </div>
         </div>
@@ -267,6 +386,7 @@
       <div class="text-center md:text-left">
         <p class="font-display text-xl mb-1">WhiteWall Studios</p>
         <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+        <div class="flex gap-4 mt-2"><a href="privacy.html" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="terms.html" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
       </div>
       <div class="flex gap-6">
         <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
@@ -275,11 +395,15 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
   <script>
     // Mobile menu
     document.getElementById('menu-toggle').addEventListener('click', () => {
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
+
+    // Initialize GLightbox
+    const lightbox = GLightbox({ selector: '.glightbox' });
 
     // Gallery filtering
     const filterBtns = document.querySelectorAll('.filter-btn');

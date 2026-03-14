@@ -1,0 +1,177 @@
+% Custom Site vs. Squarespace — Summary for Drew & Max
+% Compile with: xelatex custom-vs-squarespace-summary.tex
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[margin=0.7in,top=0.6in,bottom=0.6in]{geometry}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{colortbl}
+\usepackage{hyperref}
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+% ── Colors ──────────────────────────────────────────────────────
+\definecolor{wwsBlack}{HTML}{000000}
+\definecolor{wwsDark}{HTML}{383838}
+\definecolor{wwsLight}{HTML}{F4F4F2}
+\definecolor{wwsGray}{HTML}{E0E0E0}
+\definecolor{wwsAccent}{HTML}{FCD518}
+\definecolor{secBg}{HTML}{F7F7F5}
+\definecolor{greenGood}{HTML}{2E7D32}
+\definecolor{redBad}{HTML}{C62828}
+
+% ── Fonts ───────────────────────────────────────────────────────
+\setmainfont{Inter}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  BoldFont=*,
+  BoldFeatures={FakeBold=1.5},
+  ItalicFont=*,
+  ItalicFeatures={FakeSlant=0.2},
+]
+\newfontfamily\headingfont{CormorantGaramond}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  BoldFont=*,
+  BoldFeatures={FakeBold=1.5},
+]
+
+% ── Section styling ─────────────────────────────────────────────
+\newcommand{\sectionhead}[1]{%
+  \vspace{10pt}%
+  {\headingfont\Large\bfseries #1}\\[-3pt]%
+  {\color{wwsAccent}\rule{\linewidth}{1.5pt}}%
+  \vspace{2pt}%
+}
+
+\newcommand{\prositem}[1]{\item[\textcolor{greenGood}{\textbf{+}}] #1}
+\newcommand{\consitem}[1]{\item[\textcolor{redBad}{\textbf{--}}] #1}
+
+\begin{document}
+
+% ── Header ──────────────────────────────────────────────────────
+\begin{center}
+{\headingfont\LARGE\bfseries Custom Site vs.\ Squarespace}\\[2pt]
+{\color{wwsDark}\small A quick breakdown for Drew \& Max\quad|\quad March 2026\quad|\quad Prepared by Andrew}
+\end{center}
+
+\vspace{-2pt}
+{\color{wwsGray}\rule{\linewidth}{0.5pt}}
+
+% ── The Situation ───────────────────────────────────────────────
+\sectionhead{Where Things Stand}
+
+Your site is 29 static pages with images and a workaround booking flow (\$0 products added to a Squarespace cart). You don't use any Squarespace-only features. Your two external services---\textbf{Acuity Scheduling} and \textbf{Square Payments}---work on any platform. They're not tied to Squarespace and wouldn't change at all.
+
+Moving to a custom site hosted on Vercel or Cloudflare Pages would cost \textbf{\textasciitilde\$10/year} (just the domain) vs.\ \textbf{\$300--700/year} on Squarespace. But the real argument isn't cost---it's \textbf{speed, flexibility, and protection}.
+
+% ── Speed ───────────────────────────────────────────────────────
+\sectionhead{Speed: Why Changes Get Faster}
+
+I use an AI-powered coding tool (Claude Code) that can build, edit, and maintain websites extremely fast---but \textbf{it can't touch Squarespace}. Squarespace is a closed platform. Every change you request on Squarespace costs me 3--5$\times$ the time it would on a custom site.
+
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{3.8cm} X X@{}}
+\toprule
+\textbf{Task} & \textbf{On Squarespace} & \textbf{On Custom Site} \\
+\midrule
+Change colors/fonts site-wide & Click through every section & One command, done in seconds \\
+Add a new studio set page & Copy page, edit every block & Duplicate template, auto-fill \\
+Redesign the gallery & Limited to SQ gallery blocks & Any layout, full control \\
+Add features (chat, automations) & \textcolor{redBad}{\textbf{Not possible}} & Built \& deployed same day \\
+Fix something on all 29 pages & Edit each page one by one & One command updates all \\
+\bottomrule
+\end{tabularx}
+
+% ── ADA ─────────────────────────────────────────────────────────
+\sectionhead{ADA Compliance: Custom Is Safer}
+
+You may have heard about serial ADA lawsuits---lawyers scan websites with automated tools and sue small businesses over accessibility failures (missing image descriptions, poor contrast, keyboard issues). \textbf{Over 4,000 federal cases were filed in 2024 alone}, and small businesses are the primary target.
+
+The \textbf{risk of getting sued is the same} on either platform---serial plaintiffs scan the output, not the tech stack. But your ability to \textbf{fix issues} is dramatically better on a custom site:
+
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{3.8cm} X X@{}}
+\toprule
+& \textbf{Squarespace} & \textbf{Custom Site} \\
+\midrule
+Baseline accessibility & Some built-in support & WCAG 2.1 AA from day one \\
+Control over fixes & Can't modify SQ's code & Full control over everything \\
+Third-party code & SQ injects code you can't audit & You choose what's on the page \\
+Ongoing compliance & Manual checks, no tooling & Claude Code audits \& fixes all pages in one pass \\
+\bottomrule
+\end{tabularx}
+
+\vspace{4pt}
+On Squarespace, some accessibility problems are \textbf{baked into the platform} and you literally cannot fix them.
+
+% ── Services ────────────────────────────────────────────────────
+\sectionhead{Your External Services Stay Put}
+
+\begin{itemize}[nosep, leftmargin=1.2em]
+\item \textbf{Acuity Scheduling} --- Works standalone. One embed line on the new site. Same links, same flow.
+\item \textbf{Square Payments} --- Processed externally. Works anywhere. No change needed.
+\end{itemize}
+
+Nothing breaks. Nothing migrates. They just keep working.
+
+% ── Cost ────────────────────────────────────────────────────────
+\sectionhead{Cost Comparison}
+
+\begin{tabularx}{\linewidth}{@{}X r r@{}}
+\toprule
+& \textbf{Squarespace (current)} & \textbf{Custom Site} \\
+\midrule
+Hosting & \$276--468/yr & \$0 \\
+Domain & \textasciitilde\$20/yr & \textasciitilde\$10/yr \\
+Acuity (if keeping) & \$240/yr & \$240/yr \\
+\midrule
+\textbf{Annual total} & \textbf{\$536--728} & \textbf{\$250} \\
+\textbf{5-year total} & \textbf{\$2,680--3,640} & \textbf{\$1,250} \\
+\bottomrule
+\end{tabularx}
+
+\vspace{4pt}
+If you switch from Acuity to a free alternative (Cal.com), the custom site drops to \textbf{\textasciitilde\$10/year}.
+
+% ── What You'd Lose ────────────────────────────────────────────
+\sectionhead{The One Tradeoff}
+
+You'd lose \textbf{Squarespace's visual drag-and-drop editor}. If you need a text or image change:
+
+\begin{enumerate}[nosep, leftmargin=1.5em]
+\item Text me---I push the change in under 5 minutes (Claude Code makes this trivial).
+\item Or we set up a free browser-based CMS so you can edit content yourselves.
+\end{enumerate}
+
+If you rarely edit the site yourselves (which seems to be the case), this doesn't matter.
+
+% ── Timeline ────────────────────────────────────────────────────
+\sectionhead{Timeline}
+
+We already have a 4-page mockup built with the design system, fonts, and logo. Remaining work: \textbf{\textasciitilde16--24 hours} to finish all pages, set up hosting, migrate images, and go live. Realistically \textbf{1--2 weeks} of part-time sessions.
+
+% ── Bottom Line ─────────────────────────────────────────────────
+\vspace{6pt}
+\begin{tikzpicture}
+\fill[wwsLight, rounded corners=4pt] (0,0) rectangle (\linewidth, 1.4);
+\node[anchor=west, text width=\linewidth-1cm] at (0.5, 0.7) {%
+  {\headingfont\large\bfseries Bottom Line:}\quad
+  {\small You're paying \$300--700/yr for a platform that slows down every change, can't be automated, limits your features, and gives you less control over ADA compliance. The migration is straightforward and your external services don't change.}%
+};
+\end{tikzpicture}
+
+\end{document}
