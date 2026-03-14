@@ -20,7 +20,7 @@ window.WWS_BOOKING_CONFIG = {
         { id: "pv-3", label: "3 hours", hours: 3, description: "Larger set builds and multi-look shoots.", acuityTypeKey: "powdersville_3hr" },
         { id: "pv-4", label: "4 hours", hours: 4, description: "Small events start here.", supportsEvents: true, acuityTypeKey: "powdersville_4hr" },
         { id: "pv-6", label: "6 hours", hours: 6, description: "Expanded events and brand activations.", supportsEvents: true, acuityTypeKey: "powdersville_6hr" },
-        { id: "pv-full", label: "Full day", hours: 8, description: "All-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
+        { id: "pv-full", label: "Full day", hours: 18, description: "6 AM–11 PM — all-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
       ],
       addons: [
         {
@@ -124,7 +124,10 @@ window.WWS_BOOKING_CONFIG = {
       durations: [
         { id: "tm-1", label: "1 hour", hours: 1, description: "Quick portraits, headshots, and pickups.", acuityTypeKey: "taylors_mill_1hr" },
         { id: "tm-2", label: "2 hours", hours: 2, description: "The standard Taylor's Mill session.", acuityTypeKey: "taylors_mill_2hr" },
-        { id: "tm-3", label: "3 hours", hours: 3, description: "Longer natural light sessions and branded shoots.", acuityTypeKey: "taylors_mill_3hr" }
+        { id: "tm-3", label: "3 hours", hours: 3, description: "Longer natural light sessions and branded shoots.", acuityTypeKey: "taylors_mill_3hr" },
+        { id: "tm-4", label: "Half day", hours: 4, description: "Extended sessions and small productions.", acuityTypeKey: "taylors_mill_4hr" },
+        { id: "tm-6", label: "6 hours", hours: 6, description: "Large productions and brand activations.", acuityTypeKey: "taylors_mill_6hr" },
+        { id: "tm-full", label: "Full day", hours: 12, description: "All-day studio access.", acuityTypeKey: "taylors_mill_full_day" }
       ],
       addons: [
         {
@@ -160,63 +163,66 @@ window.WWS_BOOKING_CONFIG = {
   ],
   integrations: {
     acuity: {
-      enabled: false,
-      mode: "placeholder",
-      accountUrl: "",
+      enabled: true,
+      mode: "scheduler",
+      accountUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772",
       embedScriptUrl: "https://embed.acuityscheduling.com/js/embed.js",
       locations: {
         powdersville: {
-          fallbackSchedulerUrl: "",
+          fallbackSchedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772",
           durations: {
             "pv-1": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "89113040",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=89113040"
             },
             "pv-2": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "89113116",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=89113116"
             },
             "pv-3": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "89114444",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=89114444"
             },
             "pv-4": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "89114517",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=89114517"
             },
             "pv-6": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "89114539",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=89114539"
             },
             "pv-full": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "89114581",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=89114581"
             }
           }
         },
         "taylors-mill": {
-          fallbackSchedulerUrl: "",
+          fallbackSchedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772",
           durations: {
             "tm-1": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "38342199",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=38342199"
             },
             "tm-2": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "28312352",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=28312352"
             },
             "tm-3": {
-              appointmentTypeId: "",
-              schedulerUrl: "",
-              iframeSrc: ""
+              appointmentTypeId: "28312534",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=28312534"
+            },
+            "tm-4": {
+              appointmentTypeId: "28312549",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=28312549"
+            },
+            "tm-6": {
+              appointmentTypeId: "36030598",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=36030598"
+            },
+            "tm-full": {
+              appointmentTypeId: "28312569",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=28312569"
             }
           }
         }
