@@ -8,11 +8,11 @@ window.WWS_BOOKING_CONFIG = {
       address: "2699 Powdersville Rd, Easley, SC 29642",
       eyebrow: "Flagship studio + event space",
       description:
-        "Self-service booking for productions, photo sessions, and approved events. This scaffold follows the current Powdersville-first rollout and reserves event questions for 4hr+ bookings.",
+        "Self-service booking for productions, photo sessions, and approved events. Event options are available for 4hr+ bookings.",
       policies: [
         "Events are only available at Powdersville.",
-        "4hr, 6hr, and full-day bookings can trigger the event flow.",
-        "50+ attendee events stay bookable but should be flagged for follow-up."
+        "4hr, 6hr, and full-day bookings include event options.",
+        "Events with 50+ attendees require confirmation from our team."
       ],
       durations: [
         { id: "pv-1", label: "1 hour", hours: 1, description: "Quick portraits, pickups, and tight creative blocks.", acuityTypeKey: "powdersville_1hr" },
@@ -58,7 +58,7 @@ window.WWS_BOOKING_CONFIG = {
           image: "images/gear-rentals/whitewall-powdersville_v1-10.jpg",
           allPrice: 70,
           singlePrice: 30,
-          description: "Scaffold uses placeholder wall labels until Drew confirms naming.",
+          description: "Modular rolling walls for custom studio setups.",
           walls: [
             { id: "wall-1", label: "Wall 1" },
             { id: "wall-2", label: "Wall 2" },
@@ -115,11 +115,11 @@ window.WWS_BOOKING_CONFIG = {
       address: "250 Mill St, Ste. BL1223, Taylors, SC 29687",
       eyebrow: "Original natural light studio",
       description:
-        "Taylor's Mill keeps the booking flow lighter: no events, just session timing, visual add-ons, and contact handoff.",
+        "Book a natural light studio session at Taylor's Mill. Choose your duration, add backdrops or lighting, and schedule online.",
       policies: [
         "Taylor's Mill is not available for events.",
-        "The scaffold currently exposes 1hr, 2hr, and 3hr session types.",
-        "Shared add-ons stay visual here so the Square handoff can match Powdersville."
+        "Sessions available from 1 hour to full day.",
+        "Backdrops and lighting available as add-ons."
       ],
       durations: [
         { id: "tm-1", label: "1 hour", hours: 1, description: "Quick portraits, headshots, and pickups.", acuityTypeKey: "taylors_mill_1hr" },

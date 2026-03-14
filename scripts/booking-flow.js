@@ -333,7 +333,6 @@
               ${duration.supportsEvents ? '<span class="summary-pill" style="border:1px solid rgba(139,167,184,0.45);color:#d6e7ef">Event eligible</span>' : ""}
             </div>
             <p class="ui-copy" style="margin-top:1rem">${duration.description}</p>
-            <p class="ui-copy-muted" style="margin-top:1rem">Acuity type key: ${duration.acuityTypeKey}</p>
           </button>
         `;
       })
@@ -348,19 +347,8 @@
     }
 
     const acuityState = getAcuityState();
-    const isLive = acuityState.isReady;
-    const appointmentTypeLabel = acuityState.durationConfig.appointmentTypeId
-      ? `Type ${acuityState.durationConfig.appointmentTypeId}`
-      : "Type pending";
 
-    status.innerHTML = `
-      <span class="status-pill ${isLive ? "is-live" : "is-pending"}">
-        <span style="display:inline-flex;width:0.55rem;height:0.55rem;border-radius:999px;background:${isLive ? "#d3f8d2" : "#ffd7a8"}"></span>
-        ${isLive ? "Acuity ready" : "Acuity placeholder"}
-      </span>
-      <span class="status-pill">Canonical route: /book-${location.slug}</span>
-      <span class="status-pill">${appointmentTypeLabel}</span>
-    `;
+    status.innerHTML = "";
 
     if (acuityState.mode === "iframe" && acuityState.durationConfig.iframeSrc) {
       renderAcuityIframe(embed, acuityState);
@@ -376,47 +364,14 @@
   }
 
   function renderAcuityPlaceholder(embed, acuityState) {
-    embed.innerHTML = `
-      <div class="info-card panel-pad">
-        <p class="ui-kicker">Scheduler slot</p>
-        <h3 class="ui-display-sm" style="margin-top:0.75rem">Acuity embed goes here</h3>
-        <p class="ui-copy" style="margin-top:1rem">
-          This duration is not mapped yet. Add an Acuity <code>iframeSrc</code> or <code>schedulerUrl</code> for the selected duration in
-          <code>scripts/booking-config.js</code>, then switch Acuity from placeholder mode to a live mode.
-        </p>
-        <div class="helper-list" style="margin-top:1.25rem">
-          <div class="helper-item">
-            <span class="helper-dot" style="background:${location.accent}"></span>
-            <span>Selected duration: <code>${acuityState.selectedDuration.label}</code></span>
-          </div>
-          <div class="helper-item">
-            <span class="helper-dot" style="background:${location.accent}"></span>
-            <span>Duration key: <code>${acuityState.selectedDuration.id}</code></span>
-          </div>
-          <div class="helper-item">
-            <span class="helper-dot" style="background:${location.accent}"></span>
-            <span>Acuity type key: <code>${acuityState.selectedDuration.acuityTypeKey}</code></span>
-          </div>
-          <div class="helper-item">
-            <span class="helper-dot" style="background:${location.accent}"></span>
-            <span>Configured mode: <code>${acuityState.mode}</code></span>
-          </div>
-        </div>
-      </div>
-    `;
+    embed.innerHTML = "";
   }
 
   function renderAcuityIframe(embed, acuityState) {
     embed.innerHTML = `
       <div class="info-card panel-pad">
-        <p class="ui-kicker">Embedded Acuity scheduler</p>
-        <div class="scheduler-actions">
-          <span class="code-pill">Duration <code>${acuityState.selectedDuration.label}</code></span>
-          <span class="code-pill">Key <code>${acuityState.selectedDuration.id}</code></span>
-          <span class="code-pill">Acuity <code>${acuityState.selectedDuration.acuityTypeKey}</code></span>
-        </div>
         <iframe
-          title="Acuity scheduler for ${escapeAttribute(location.name)} ${escapeAttribute(acuityState.selectedDuration.label)}"
+          title="Schedule ${escapeAttribute(acuityState.selectedDuration.label)} at ${escapeAttribute(location.name)}"
           class="scheduler-frame"
           src="${escapeAttribute(acuityState.durationConfig.iframeSrc)}"
           loading="lazy">
@@ -426,23 +381,7 @@
   }
 
   function renderAcuityScheduler(embed, acuityState) {
-    var dynamicUrl = buildAcuityUrl(acuityState.schedulerUrl);
-    embed.innerHTML = `
-      <div class="info-card panel-pad">
-        <p class="ui-kicker">Acuity scheduler handoff</p>
-        <h3 class="ui-display-sm" style="margin-top:0.75rem">Continue in Acuity</h3>
-        <p class="ui-copy" style="margin-top:1rem">
-          Pick your date and time on the next page. Your contact info will be filled in automatically.
-        </p>
-        <div class="scheduler-actions">
-          <span class="code-pill">Duration <code>${acuityState.selectedDuration.label}</code></span>
-          <span class="code-pill">Key <code>${acuityState.selectedDuration.id}</code></span>
-        </div>
-        <div class="scheduler-actions">
-          <a class="booking-button booking-button-primary" href="${escapeAttribute(dynamicUrl)}" target="_blank" rel="noreferrer">Schedule on Acuity</a>
-        </div>
-      </div>
-    `;
+    embed.innerHTML = "";
   }
 
   function renderEventStep() {
@@ -454,8 +393,7 @@
     if (location.slug !== "powdersville") {
       container.innerHTML = `
         <div class="note-card">
-          <p class="ui-kicker">Taylor's Mill policy</p>
-          <p class="ui-copy-strong" style="margin-top:0.75rem">Events are not available at Taylor's Mill. The rest of this flow stays streamlined for photo and video sessions.</p>
+          <p class="ui-copy-strong">Events are not available at Taylor's Mill. This location is for photo and video sessions only.</p>
         </div>
       `;
       return;
@@ -465,9 +403,8 @@
     if (!selectedDuration || !selectedDuration.supportsEvents) {
       container.innerHTML = `
         <div class="note-card">
-          <p class="ui-kicker">Powdersville event gate</p>
-          <p class="ui-copy-strong" style="margin-top:0.75rem">This scaffold keeps the event flow locked until a 4hr, 6hr, or full-day booking is selected.</p>
-          <p class="ui-copy" style="margin-top:0.75rem">That matches the current migration plan and preserves the simpler flow for shorter production sessions.</p>
+          <p class="ui-copy-strong">Events are available for 4-hour, 6-hour, and full-day bookings.</p>
+          <p class="ui-copy" style="margin-top:0.75rem">Select a longer duration on the previous step to add event details.</p>
         </div>
       `;
       return;
@@ -477,7 +414,7 @@
       state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
         ? `
           <div class="warning-card" style="margin-top:1rem">
-            You entered a numeric participant count while the event answer is set to "No." This should be treated as a likely event and reviewed before final integration.
+            Looks like you have attendees — did you mean to select "Event booking" above?
           </div>
         `
         : "";
@@ -486,7 +423,7 @@
       /^\d+$/.test(state.participants.trim()) && Number(state.participants) >= 50
         ? `
           <div class="warning-card" style="margin-top:1rem">
-            50+ attendees should stay bookable, but the final integration should notify WhiteWall for follow-up approval.
+            For events with 50+ attendees, our team will follow up to confirm details.
           </div>
         `
         : "";
@@ -496,18 +433,18 @@
         <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no">
           <p class="ui-kicker">Use this for</p>
           <h3 class="ui-display-sm" style="margin-top:0.75rem">Photo / video session</h3>
-          <p class="ui-copy" style="margin-top:1rem">Keep the event branch collapsed and treat this as a standard creative booking.</p>
+          <p class="ui-copy" style="margin-top:1rem">Standard photo, video, or production session.</p>
         </button>
         <button type="button" class="booking-choice ${state.eventIntent === "yes" ? "is-active" : ""}" data-action="set-event-intent" data-value="yes">
           <p class="ui-kicker">Use this for</p>
           <h3 class="ui-display-sm" style="margin-top:0.75rem">Event booking</h3>
-          <p class="ui-copy" style="margin-top:1rem">Reveal the event description, clean-up acknowledgement, and self-service notices.</p>
+          <p class="ui-copy" style="margin-top:1rem">Parties, receptions, workshops, and gatherings.</p>
         </button>
       </div>
 
       <div style="margin-top:1.5rem">
         <label class="ui-field-label" for="participants">Participant count</label>
-        <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="If this is not an event, type NA.">
+        <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
       </div>
 
       ${warning}
