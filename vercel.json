@@ -18,7 +18,9 @@
   "redirects": [
     { "source": "/contact", "destination": "/#contact", "statusCode": 301 },
     { "source": "/white", "destination": "/gallery", "statusCode": 301 },
-    { "source": "/booking-studio", "destination": "/powdersville#booking", "statusCode": 301 },
+    { "source": "/booking-studio", "destination": "/book-powdersville", "statusCode": 301 },
+    { "source": "/booking-powdersville", "destination": "/book-powdersville", "statusCode": 301 },
+    { "source": "/booking-taylors-mill", "destination": "/book-taylors-mill", "statusCode": 301 },
     { "source": "/gear-rentals", "destination": "/gear-rentals-powdersville", "statusCode": 301 },
     { "source": "/beauty-area", "destination": "/powdersville", "statusCode": 301 },
     { "source": "/membership-subscriptions", "destination": "/", "statusCode": 301 },

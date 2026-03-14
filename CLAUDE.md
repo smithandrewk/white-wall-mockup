@@ -40,3 +40,35 @@ When editing mixed-location UI, preserve this ordering:
 Why this is documented here:
 - Future Claude sessions may work from repo context rather than message history.
 - This note is intended to make the ordering decision explicit so it is not accidentally reverted.
+
+## Booking URL Strategy
+
+Canonical booking routes now use the `book-*` pattern:
+
+- `/book-powdersville`
+- `/book-taylors-mill`
+
+When editing booking links or adding new booking UI:
+- point internal CTAs to the canonical `/book-*` routes
+- keep redirects in `vercel.json` for legacy `/booking-*` paths
+- keep Powdersville first anywhere both booking destinations appear together
+
+## Booking Scaffold Handoff
+
+Current booking scaffold files:
+
+- `book-powdersville.html`
+- `book-taylors-mill.html`
+- `scripts/booking-config.js`
+- `scripts/booking-flow.js`
+- `styles/booking.css`
+- `client/acuity-integration-handoff.md`
+
+Important implementation notes:
+
+- The booking flow is scaffolded, not live.
+- Acuity is now configured per duration, not just per location.
+- `scripts/booking-config.js` supports `placeholder`, `iframe`, and `scheduler` Acuity modes.
+- Powdersville event logic is preserved: only 4hr+ durations are event-eligible in the scaffold.
+- Taylor's Mill remains non-event.
+- If previewing via a dumb static server like `python -m http.server`, direct page URLs require `.html`; Vercel `cleanUrls` still provide the real `/book-powdersville` and `/book-taylors-mill` routes in deployment.
