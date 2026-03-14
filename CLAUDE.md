@@ -19,3 +19,24 @@ This project involves multiple large HTML files. Follow these rules to avoid blo
 - `design-sheet.tex` / `design-sheet.pdf` - LaTeX design sheet
 - `fonts/` - Web fonts
 - `wws-logo.png` - Logo asset
+
+## Active Product Directives
+
+### Powdersville First
+
+As of March 14, 2026, Drew explicitly asked that **Powdersville be the first/default option anywhere the site presents both locations together**.
+
+This was already implemented in the repo because Drew texted:
+- "make powdersville the first option in everything. So Powdersville first on site, then Taylor's mill. Same with [Gallery] page. Pop up powdersville first, then Taylor's mill, etc."
+
+Treat this as a standing product decision unless Drew reverses it later.
+
+When editing mixed-location UI, preserve this ordering:
+- Navigation on shared pages: `Powdersville` before `Taylor's Mill`
+- Homepage location presentation: Powdersville first
+- Gallery location filters and booking CTAs: Powdersville first
+- Any future booking chooser, modal, popup, comparison card set, or CTA group: Powdersville first
+
+Why this is documented here:
+- Future Claude sessions may work from repo context rather than message history.
+- This note is intended to make the ordering decision explicit so it is not accidentally reverted.
