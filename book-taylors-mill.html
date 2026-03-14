@@ -113,31 +113,38 @@
 
         <div class="mt-8 booking-step" data-step-panel="4">
           <p class="text-xs tracking-[0.25em] uppercase text-white/44">Step 4</p>
-          <h2 class="font-display text-4xl mt-3">Contact + integrations</h2>
+          <h2 class="font-display text-4xl mt-3">Your info</h2>
+          <p class="text-sm text-white/58 mt-4">We'll pass this to Acuity so you don't have to type it again.</p>
           <div class="choice-grid is-two-up mt-8">
             <div class="booking-panel-soft p-5">
-              <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3" for="contact-name">Full name</label>
-              <input id="contact-name" class="booking-input" data-input="contact-name" placeholder="Your name">
+              <div class="flex gap-4">
+                <div class="flex-1">
+                  <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3" for="contact-first-name">First name</label>
+                  <input id="contact-first-name" class="booking-input" data-input="contact-first-name" placeholder="First name">
+                </div>
+                <div class="flex-1">
+                  <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3" for="contact-last-name">Last name</label>
+                  <input id="contact-last-name" class="booking-input" data-input="contact-last-name" placeholder="Last name">
+                </div>
+              </div>
               <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3 mt-5" for="contact-email">Email</label>
               <input id="contact-email" class="booking-input" data-input="contact-email" placeholder="you@example.com" type="email">
               <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3 mt-5" for="contact-phone">Phone</label>
               <input id="contact-phone" class="booking-input" data-input="contact-phone" placeholder="(555) 555-5555" type="tel">
               <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3 mt-5" for="contact-notes">Notes</label>
-              <textarea id="contact-notes" class="booking-textarea" data-input="contact-notes" placeholder="Anything the team should know before wiring the final form?"></textarea>
+              <textarea id="contact-notes" class="booking-textarea" data-input="contact-notes" placeholder="Anything the studio should know?"></textarea>
               <label class="visually-hidden" for="contact-company">Company</label>
               <input id="contact-company" class="visually-hidden" name="company" autocomplete="off" tabindex="-1">
             </div>
             <div class="booking-panel-soft p-5">
-              <p class="text-xs tracking-[0.2em] uppercase text-white/54">Integration readiness</p>
+              <p class="text-xs tracking-[0.2em] uppercase text-white/54">Scheduling handoff</p>
               <div class="mt-5" data-integration-readiness></div>
-              <div class="summary-divider my-6"></div>
-              <p class="text-sm text-white/58">Config lives in <code>scripts/booking-config.js</code>. The same file now owns both locations so later Acuity IDs and Square links do not get hard-coded into separate HTML pages.</p>
             </div>
           </div>
 
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="3">Back</button>
-            <button type="button" class="booking-button booking-button-primary" data-complete-button disabled></button>
+            <span data-complete-slot></span>
           </div>
         </div>
       </section>

@@ -31,7 +31,8 @@
       selfService: false
     },
     contact: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phone: "",
       notes: ""
@@ -204,18 +205,27 @@
         return;
       }
 
-      if (target.matches("[data-input='contact-name']")) {
-        state.contact.name = target.value;
+      if (target.matches("[data-input='contact-first-name']")) {
+        state.contact.firstName = target.value;
+        renderStepContent();
+        return;
+      }
+
+      if (target.matches("[data-input='contact-last-name']")) {
+        state.contact.lastName = target.value;
+        renderStepContent();
         return;
       }
 
       if (target.matches("[data-input='contact-email']")) {
         state.contact.email = target.value;
+        renderStepContent();
         return;
       }
 
       if (target.matches("[data-input='contact-phone']")) {
         state.contact.phone = target.value;
+        renderStepContent();
         return;
       }
 
@@ -416,25 +426,20 @@
   }
 
   function renderAcuityScheduler(embed, acuityState) {
+    var dynamicUrl = buildAcuityUrl(acuityState.schedulerUrl);
     embed.innerHTML = `
       <div class="info-card panel-pad">
         <p class="ui-kicker">Acuity scheduler handoff</p>
         <h3 class="ui-display-sm" style="margin-top:0.75rem">Continue in Acuity</h3>
         <p class="ui-copy" style="margin-top:1rem">
-          This duration is wired to a live Acuity scheduler URL. Use this if WhiteWall wants the custom shell to hand off to Acuity instead of embedding the calendar inline.
+          Pick your date and time on the next page. Your contact info will be filled in automatically.
         </p>
         <div class="scheduler-actions">
           <span class="code-pill">Duration <code>${acuityState.selectedDuration.label}</code></span>
           <span class="code-pill">Key <code>${acuityState.selectedDuration.id}</code></span>
-          <span class="code-pill">Acuity <code>${acuityState.selectedDuration.acuityTypeKey}</code></span>
         </div>
         <div class="scheduler-actions">
-          <a class="booking-button booking-button-primary" href="${escapeAttribute(acuityState.schedulerUrl)}" target="_blank" rel="noreferrer">Open scheduler</a>
-          ${
-            acuityState.accountUrl
-              ? `<a class="booking-button booking-button-secondary" href="${escapeAttribute(acuityState.accountUrl)}" target="_blank" rel="noreferrer">Open account page</a>`
-              : ""
-          }
+          <a class="booking-button booking-button-primary" href="${escapeAttribute(dynamicUrl)}" target="_blank" rel="noreferrer">Schedule on Acuity</a>
         </div>
       </div>
     `;
@@ -669,34 +674,58 @@
 
   function renderIntegrations() {
     const container = document.querySelector("[data-integration-readiness]");
-    const button = document.querySelector("[data-complete-button]");
-    if (!container || !button) {
+    const buttonSlot = document.querySelector("[data-complete-slot]");
+    if (!container) {
       return;
     }
 
-    const acuityReady = getAcuityState().isReady;
-    const squareReady = Boolean(config.integrations.square.enabled);
-    const formReady = Boolean(config.integrations.forms.submissionEndpoint);
+    const acuityState = getAcuityState();
+    const hasContact = state.contact.firstName && state.contact.email;
 
-    container.innerHTML = `
-      <div class="summary-list">
-        <div class="summary-line">
-          <span>Acuity scheduler</span>
-          <span style="color:${acuityReady ? "#d3f8d2" : "#ffd7a8"}">${acuityReady ? "Configured" : "Pending"}</span>
+    if (acuityState.isReady) {
+      var dynamicUrl = buildAcuityUrl(acuityState.schedulerUrl);
+      container.innerHTML = `
+        <div class="summary-list">
+          <div class="summary-line">
+            <span>Duration</span>
+            <span>${acuityState.selectedDuration.label}</span>
+          </div>
+          <div class="summary-line">
+            <span>Name</span>
+            <span>${escapeHtml(state.contact.firstName || "\u2014")} ${escapeHtml(state.contact.lastName || "")}</span>
+          </div>
+          <div class="summary-line">
+            <span>Email</span>
+            <span>${escapeHtml(state.contact.email || "\u2014")}</span>
+          </div>
+          <div class="summary-line">
+            <span>Phone</span>
+            <span>${escapeHtml(state.contact.phone || "\u2014")}</span>
+          </div>
         </div>
-        <div class="summary-line">
-          <span>Square handoff</span>
-          <span style="color:${squareReady ? "#d3f8d2" : "#ffd7a8"}">${squareReady ? "Configured" : "Pending"}</span>
-        </div>
-        <div class="summary-line">
-          <span>Submission endpoint</span>
-          <span style="color:${formReady ? "#d3f8d2" : "#ffd7a8"}">${formReady ? "Configured" : "Pending"}</span>
-        </div>
-      </div>
-    `;
+        <p class="ui-copy" style="margin-top:1.25rem">Your info will be pre-filled on the scheduling page. Pick your date, confirm add-ons, and pay — all through Acuity.</p>
+      `;
 
-    button.disabled = !(acuityReady && squareReady && formReady);
-    button.textContent = button.disabled ? "Waiting on Acuity / Square wiring" : "Continue to payment";
+      if (buttonSlot) {
+        buttonSlot.innerHTML = `
+          <a class="booking-button booking-button-primary" href="${escapeAttribute(dynamicUrl)}" target="_blank" rel="noreferrer">
+            ${hasContact ? "Schedule on Acuity" : "Schedule on Acuity (no contact info yet)"}
+          </a>
+        `;
+      }
+    } else {
+      container.innerHTML = `
+        <div class="summary-list">
+          <div class="summary-line">
+            <span>Acuity scheduler</span>
+            <span style="color:#ffd7a8">Not configured</span>
+          </div>
+        </div>
+      `;
+      if (buttonSlot) {
+        buttonSlot.innerHTML = `<button type="button" class="booking-button booking-button-primary" disabled>Acuity not configured</button>`;
+      }
+    }
   }
 
   function renderSummary() {
@@ -777,6 +806,27 @@
   function currentDurationSupportsEvents() {
     const selectedDuration = getSelectedDuration();
     return Boolean(selectedDuration && selectedDuration.supportsEvents);
+  }
+
+  function buildAcuityUrl(baseUrl) {
+    var params = [];
+    if (state.contact.firstName) {
+      params.push("firstName=" + encodeURIComponent(state.contact.firstName));
+    }
+    if (state.contact.lastName) {
+      params.push("lastName=" + encodeURIComponent(state.contact.lastName));
+    }
+    if (state.contact.email) {
+      params.push("email=" + encodeURIComponent(state.contact.email));
+    }
+    if (state.contact.phone) {
+      params.push("phone=" + encodeURIComponent(state.contact.phone));
+    }
+    if (!params.length) {
+      return baseUrl;
+    }
+    var separator = baseUrl.indexOf("?") !== -1 ? "&" : "?";
+    return baseUrl + separator + params.join("&");
   }
 
   function getAcuityState() {
