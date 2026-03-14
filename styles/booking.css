@@ -21,11 +21,14 @@ body.booking-page {
     radial-gradient(circle at top right, rgba(196, 168, 130, 0.18), transparent 28%),
     linear-gradient(180deg, #040404 0%, #0a0a0a 48%, #050505 100%);
   color: #ffffff;
+  overflow-x: hidden;
 }
 
 .booking-grid {
   display: grid;
   gap: 1.5rem;
+  max-width: 100%;
+  min-width: 0;
 }
 
 @media (min-width: 1024px) {
@@ -41,6 +44,7 @@ body.booking-page {
   backdrop-filter: blur(24px);
   border-radius: 1.5rem;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.28);
+  min-width: 0;
 }
 
 .booking-panel-soft {
@@ -130,6 +134,8 @@ body.booking-page {
   border: 1px solid var(--wws-border);
   background: rgba(255, 255, 255, 0.04);
   color: var(--wws-muted);
+  min-width: 0;
+  overflow: hidden;
   transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
 }
 
@@ -161,6 +167,8 @@ body.booking-page {
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .choice-grid {
@@ -195,6 +203,8 @@ body.booking-page {
   width: 100%;
   padding: 1.1rem;
   text-align: left;
+  min-width: 0;
+  overflow-wrap: break-word;
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
