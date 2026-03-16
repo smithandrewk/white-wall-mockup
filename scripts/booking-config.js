@@ -60,11 +60,12 @@ window.WWS_BOOKING_CONFIG = {
           allPrice: 70,
           singlePrice: 30,
           description: "Modular rolling walls for custom studio setups.",
+          allImage: "images/gear-rentals/whitewall-powdersville_v1-8.jpg",
           walls: [
-            { id: "wall-1", label: "Wall 1" },
-            { id: "wall-2", label: "Wall 2" },
-            { id: "wall-3", label: "Wall 3" },
-            { id: "wall-4", label: "Wall 4" }
+            { id: "wall-1", label: "Wall 1", image: "images/gear-rentals/whitewall-powdersville_v1-9.jpg" },
+            { id: "wall-2", label: "Wall 2", image: "images/gear-rentals/whitewall-powdersville_v1-11.jpg" },
+            { id: "wall-3", label: "Wall 3", image: "images/gear-rentals/whitewall-powdersville_v1-12.jpg" },
+            { id: "wall-4", label: "Wall 4", image: "images/gear-rentals/whitewall-powdersville_v1-14.jpg" }
           ]
         },
         {

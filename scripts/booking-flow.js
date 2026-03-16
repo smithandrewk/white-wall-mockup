@@ -595,26 +595,29 @@
 
     if (addon.type === "walls") {
       return `
-        <div class="ui-stack-sm">
-          <div class="addon-chip-row">
-            <button type="button" class="addon-chip ${addonState.mode === "all" ? "is-active" : ""}" data-action="set-addon-mode" data-addon-id="${addon.id}" data-mode="all">
-              All walls ${currency.format(addon.allPrice)}
-            </button>
-            <button type="button" class="addon-chip ${addonState.mode === "single" ? "is-active" : ""}" data-action="set-addon-mode" data-addon-id="${addon.id}" data-mode="single">
-              Per wall ${currency.format(addon.singlePrice)}
-            </button>
-          </div>
-          <div class="addon-chip-row">
-            ${addon.walls
-              .map(
-                (wall) => `
-                  <button type="button" class="addon-chip ${addonState.walls.includes(wall.id) ? "is-active" : ""}" data-action="toggle-wall" data-addon-id="${addon.id}" data-wall-id="${wall.id}">
-                    ${wall.label}
-                  </button>
-                `
-              )
-              .join("")}
-          </div>
+        <div class="backdrop-carousel">
+          <button type="button" class="backdrop-card ${addonState.mode === "all" ? "is-selected" : ""}" data-action="set-addon-mode" data-addon-id="${addon.id}" data-mode="all">
+            <img src="${addon.allImage || addon.image}" alt="All walls">
+            <div class="backdrop-card-body">
+              <span class="backdrop-card-label">All Walls</span>
+              <span class="backdrop-card-price">${currency.format(addon.allPrice)}</span>
+            </div>
+            <span class="backdrop-check ${addonState.mode === "all" ? "is-visible" : ""}">&#10003;</span>
+          </button>
+          ${addon.walls
+            .map(
+              (wall) => `
+                <button type="button" class="backdrop-card ${addonState.walls.includes(wall.id) ? "is-selected" : ""}" data-action="toggle-wall" data-addon-id="${addon.id}" data-wall-id="${wall.id}">
+                  <img src="${wall.image || addon.image}" alt="${escapeHtml(wall.label)}">
+                  <div class="backdrop-card-body">
+                    <span class="backdrop-card-label">${wall.label}</span>
+                    <span class="backdrop-card-price">${currency.format(addon.singlePrice)}</span>
+                  </div>
+                  <span class="backdrop-check ${addonState.walls.includes(wall.id) ? "is-visible" : ""}">&#10003;</span>
+                </button>
+              `
+            )
+            .join("")}
         </div>
       `;
     }
