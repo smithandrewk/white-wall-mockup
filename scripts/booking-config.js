@@ -47,8 +47,8 @@ window.WWS_BOOKING_CONFIG = {
           id: "lighting",
           type: "toggle",
           name: "Lighting rental",
-          image: "images/gear-rentals/img_6344.jpg",
-          price: 100,
+          image: "images/gear-rentals/img_6341.jpg",
+          price: 125,
           description:
             "660W RGB Amaran Ray, 360W RGB Amaran Ray, 60in and 47in softboxes, wall-mounted extensions, rolling C-stands, sandbags, and clamps."
         },
