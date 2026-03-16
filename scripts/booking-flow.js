@@ -295,7 +295,7 @@
 
     const steps = [
       { index: 1, label: "Timing" },
-      { index: 2, label: "Event details" },
+      { index: 2, label: "Session details" },
       { index: 3, label: "Add-ons" },
       { index: 4, label: "Finish" }
     ];
