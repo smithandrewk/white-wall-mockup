@@ -37,6 +37,13 @@
       phone: "",
       notes: ""
     },
+    intake: {
+      business: "",
+      participants: "",
+      instagram: "",
+      readEmail: false
+    },
+    termsAccepted: false,
     addons: {}
   };
 
@@ -90,6 +97,7 @@
       }
 
       if (action === "go-step") {
+        if (actionTarget.disabled) return;
         const step = Number(actionTarget.dataset.step);
         setStep(step);
         return;
@@ -232,6 +240,18 @@
       if (target.matches("[data-input='contact-notes']")) {
         state.contact.notes = target.value;
       }
+
+      if (target.matches("[data-input='intake-business']")) {
+        state.intake.business = target.value;
+      }
+
+      if (target.matches("[data-input='intake-participants']")) {
+        state.intake.participants = target.value;
+      }
+
+      if (target.matches("[data-input='intake-instagram']")) {
+        state.intake.instagram = target.value;
+      }
     });
 
     document.addEventListener("change", (event) => {
@@ -250,6 +270,16 @@
       if (target.matches("[data-check='self-service']")) {
         state.acknowledgements.selfService = target.checked;
       }
+
+      if (target.matches("[data-check='read-email']")) {
+        state.intake.readEmail = target.checked;
+        updateTermsGate();
+      }
+
+      if (target.matches("[data-check='terms']")) {
+        state.termsAccepted = target.checked;
+        updateTermsGate();
+      }
     });
   }
 
@@ -262,6 +292,7 @@
     renderIntegrations();
     renderSummary();
     renderStepVisibility();
+    updateTermsGate();
   }
 
   function renderLocationSwitcher() {
@@ -737,6 +768,12 @@
   function setStep(step) {
     state.step = clamp(step, 1, 4);
     renderStepContent();
+  }
+
+  function updateTermsGate() {
+    var btn = document.querySelector("[data-requires-terms]");
+    if (!btn) return;
+    btn.disabled = !state.termsAccepted;
   }
 
   function resetEventState() {
