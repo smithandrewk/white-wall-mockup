@@ -323,16 +323,11 @@
     container.innerHTML = location.durations
       .map((duration) => {
         const isActive = duration.id === state.durationId;
+        const eventEligible = duration.hours >= 2;
         return `
-          <button type="button" class="booking-choice ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}">
-            <div class="ui-row">
-              <div>
-                <p class="ui-kicker ui-kicker-strong">${duration.label}</p>
-                <h3 class="ui-display-sm" style="margin-top:0.75rem">${duration.hours >= 8 ? "Full Day" : duration.hours + "hr"}</h3>
-              </div>
-              ${duration.supportsEvents ? '<span class="summary-pill" style="border:1px solid rgba(139,167,184,0.4);color:#5a7d8f">Event eligible</span>' : ""}
-            </div>
-            <p class="ui-copy" style="margin-top:1rem">${duration.description}</p>
+          <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}">
+            <span class="duration-pill-label">${duration.label}</span>
+            ${eventEligible ? '<span class="duration-pill-badge">Event eligible</span>' : ""}
           </button>
         `;
       })
