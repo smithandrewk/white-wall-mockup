@@ -679,15 +679,15 @@
     durationName.textContent = selectedDuration ? selectedDuration.label : "Not selected";
 
     if (location.slug === "powdersville" && currentDurationSupportsEvents()) {
-      let text = state.eventIntent === "yes" ? "Event flow selected" : "Session flow selected";
+      let text = state.eventIntent === "yes" ? "Event" : "Session";
       if (state.participants) {
-        text += " - Participants: " + state.participants;
+        text += " \u00b7 " + state.participants + " guests";
       }
       eventLine.textContent = text;
     } else if (location.slug === "taylors-mill") {
-      eventLine.textContent = "Events disabled for this location";
+      eventLine.textContent = "Session only";
     } else {
-      eventLine.textContent = "Events unlock on 4hr+ Powdersville bookings";
+      eventLine.textContent = "Session";
     }
 
     const summaryItems = location.addons
