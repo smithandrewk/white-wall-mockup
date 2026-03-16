@@ -44,6 +44,7 @@
       readEmail: false
     },
     termsAccepted: false,
+    waiverSigned: false,
     addons: {}
   };
 
@@ -187,6 +188,13 @@
         return;
       }
 
+      if (action === "sign-waiver") {
+        state.waiverSigned = true;
+        renderWaiver();
+        updateWaiverGate();
+        return;
+      }
+
       if (action === "set-event-intent") {
         state.eventIntent = actionTarget.dataset.value;
         if (state.eventIntent !== "yes") {
@@ -290,9 +298,11 @@
     renderEventStep();
     renderAddons();
     renderIntegrations();
+    renderWaiver();
     renderSummary();
     renderStepVisibility();
     updateTermsGate();
+    updateWaiverGate();
   }
 
   function renderLocationSwitcher() {
@@ -327,8 +337,9 @@
     const steps = [
       { index: 1, label: "Timing" },
       { index: 2, label: "Details" },
-      { index: 3, label: "Add-ons" },
-      { index: 4, label: "Schedule" }
+      { index: 3, label: "Waiver" },
+      { index: 4, label: "Add-ons" },
+      { index: 5, label: "Schedule" }
     ];
 
     progress.innerHTML = steps
@@ -766,8 +777,90 @@
   }
 
   function setStep(step) {
-    state.step = clamp(step, 1, 4);
+    state.step = clamp(step, 1, 5);
     renderStepContent();
+  }
+
+  function renderWaiver() {
+    var container = document.querySelector("[data-waiver-content]");
+    if (!container) return;
+
+    var fullName = (state.contact.firstName + " " + state.contact.lastName).trim();
+    var displayName = fullName || "Your Name";
+    var today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+    var signatureBlock = state.waiverSigned
+      ? `
+        <div class="waiver-signed">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-3">Signed</p>
+          <p class="waiver-signature">${escapeHtml(fullName || "—")}</p>
+          <div class="waiver-signature-line"></div>
+          <p class="text-xs text-black/45 mt-2">${escapeHtml(displayName)} &mdash; ${today}</p>
+        </div>
+      `
+      : `
+        <div class="waiver-unsigned">
+          <p class="text-sm text-black/55 mb-4">By clicking below, you acknowledge that you have read and agree to the terms of this waiver, and your name will serve as your electronic signature.</p>
+          <button type="button" class="booking-button booking-button-primary" data-action="sign-waiver">
+            Sign as ${escapeHtml(displayName)}
+          </button>
+        </div>
+      `;
+
+    container.innerHTML = `
+      <div class="booking-panel-soft p-5">
+        <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-3">Your details</p>
+        <div class="summary-list">
+          <div class="summary-line"><span>Name</span><span>${escapeHtml(displayName)}</span></div>
+          <div class="summary-line"><span>Email</span><span>${escapeHtml(state.contact.email || "—")}</span></div>
+          <div class="summary-line"><span>Phone</span><span>${escapeHtml(state.contact.phone || "—")}</span></div>
+          <div class="summary-line"><span>Business</span><span>${escapeHtml(state.intake.business || "—")}</span></div>
+          <div class="summary-line"><span>Participants</span><span>${escapeHtml(state.intake.participants || "—")}</span></div>
+        </div>
+      </div>
+
+      <div class="booking-panel-soft p-5 mt-6">
+        <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Liability waiver &amp; release of claims</p>
+        <div class="text-sm text-black/60 leading-relaxed space-y-3 max-h-80 overflow-y-auto pr-2" style="scrollbar-width:thin">
+          <p><strong>ASSUMPTION OF RISK AND WAIVER OF LIABILITY</strong></p>
+          <p>I, <strong>${escapeHtml(displayName)}</strong>, hereby acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located at <strong>${escapeHtml(location.name)}</strong> ("the Studio"):</p>
+
+          <p><strong>1. Assumption of Risk.</strong> I understand that the Studio is a self-service facility and that no WhiteWall Studios staff will be present on-site during my booking. I voluntarily assume all risks associated with my use of the Studio, including but not limited to risks arising from the use of studio equipment, props, lighting, and the physical space itself.</p>
+
+          <p><strong>2. Liability Waiver.</strong> I, on behalf of myself and all members of my party, hereby release, waive, and discharge WhiteWall Studios, LLC, its owners, officers, employees, and agents from any and all claims, damages, losses, or liabilities arising out of or related to my use of the Studio, except to the extent caused by the gross negligence or willful misconduct of WhiteWall Studios, LLC.</p>
+
+          <p><strong>3. Property Responsibility.</strong> I accept full financial responsibility for any damage to the Studio space, equipment, props, or furnishings caused by myself or any member of my party. I agree to pay the replacement value of any damaged items.</p>
+
+          <p><strong>4. Condition of Space.</strong> I agree to return all props, furniture, and equipment to their original positions before departing. I understand that failure to leave the space in its original condition will result in a cleaning fee of $100.</p>
+
+          <p><strong>5. Security Cameras.</strong> I acknowledge that security cameras are in operation within the Studio and that recordings are accessible to WhiteWall Studios, LLC.</p>
+
+          <p><strong>6. Prohibited Activities.</strong> I understand that smoking, open flames, and firearms are strictly prohibited inside the Studio. The use of haze machines is only permitted with bookings of four (4) hours or longer.</p>
+
+          <p><strong>7. Noise Acknowledgment.</strong> I understand that the Studio is not sound-proof and agree to be respectful of neighboring tenants and businesses.</p>
+
+          <p><strong>8. Liability for Party.</strong> I assume full legal responsibility for all individuals I bring into the Studio space, including clients, talent, crew, and guests. I will ensure that every person involved in the shoot signs a liability waiver upon entry. Failure to do so may result in a permanent ban.</p>
+
+          <p><strong>9. Cancellation Policy.</strong> I understand that cancellations made fewer than 48 hours prior to my booking will result in a full charge.</p>
+
+          <p><strong>10. Booking Compliance.</strong> I will vacate the Studio by the end of my booked time. I have confirmed that my booking time (AM vs. PM) is correct.</p>
+
+          <p><strong>11. Binding Agreement.</strong> I agree that this waiver, together with the Terms &amp; Conditions accepted in the previous step, constitutes a binding contract between myself and WhiteWall Studios, LLC. This waiver shall be governed by the laws of the State of South Carolina.</p>
+
+          <p><strong>12. Electronic Signature.</strong> I agree that my electronic signature below has the same legal force and effect as a handwritten signature.</p>
+        </div>
+      </div>
+
+      <div class="booking-panel-soft p-5 mt-6">
+        ${signatureBlock}
+      </div>
+    `;
+  }
+
+  function updateWaiverGate() {
+    var btn = document.querySelector("[data-requires-waiver]");
+    if (!btn) return;
+    btn.disabled = !state.waiverSigned;
   }
 
   function updateTermsGate() {
