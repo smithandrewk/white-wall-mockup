@@ -323,7 +323,7 @@
     container.innerHTML = location.durations
       .map((duration) => {
         const isActive = duration.id === state.durationId;
-        const eventEligible = duration.hours >= 2;
+        const eventEligible = location.slug === "powdersville" && duration.hours >= 2;
         return `
           <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}">
             <span class="duration-pill-label">${duration.label}</span>
