@@ -45,16 +45,16 @@
   <script src="/scripts/booking-flow.js" defer></script>
 </head>
 <body class="booking-page min-h-screen" data-booking-location="taylors-mill">
-  <nav class="border-b border-white/10">
+  <nav class="border-b border-black/10">
     <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
       <a href="/" class="flex items-center gap-3">
         <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10 rounded-full">
       </a>
-      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-white/60">
-        <a href="/" class="hover:text-white transition">Home</a>
-        <a href="/powdersville" class="hover:text-white transition">Powdersville</a>
-        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill</a>
-        <a href="/gallery" class="hover:text-white transition">Gallery</a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/powdersville" class="hover:text-black transition">Powdersville</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
       </div>
     </div>
   </nav>
@@ -64,7 +64,7 @@
       <p class="text-xs tracking-[0.35em] uppercase text-tm-warm" data-location-eyebrow></p>
       <div class="mt-5 max-w-4xl">
         <h1 class="font-display text-5xl md:text-7xl leading-none">Book <span data-location-name></span></h1>
-        <p class="text-lg text-white/68 mt-5 max-w-3xl" data-location-description></p>
+        <p class="text-lg text-black/55 mt-5 max-w-3xl" data-location-description></p>
       </div>
       <div class="mt-8" data-location-switcher></div>
     </div>
@@ -78,7 +78,7 @@
         <div class="mt-8 booking-step is-active" data-step-panel="1">
           <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p class="text-xs tracking-[0.25em] uppercase text-white/44">Step 1</p>
+              <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 1</p>
               <h2 class="font-display text-4xl mt-3">Choose timing</h2>
             </div>
             <div data-acuity-status class="flex flex-wrap gap-3"></div>
@@ -91,7 +91,7 @@
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="2">
-          <p class="text-xs tracking-[0.25em] uppercase text-white/44">Step 2</p>
+          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 2</p>
           <h2 class="font-display text-4xl mt-3">Location rules</h2>
           <div class="mt-8" data-event-step></div>
           <div class="mt-8 flex flex-wrap gap-3">
@@ -101,9 +101,9 @@
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="3">
-          <p class="text-xs tracking-[0.25em] uppercase text-white/44">Step 3</p>
+          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 3</p>
           <h2 class="font-display text-4xl mt-3">Visual add-ons</h2>
-          <p class="text-sm text-white/58 mt-4">Enhance your session with backdrops and lighting.</p>
+          <p class="text-sm text-black/50 mt-4">Enhance your session with backdrops and lighting.</p>
           <div class="choice-grid is-two-up mt-8" data-addon-list></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="2">Back</button>
@@ -112,32 +112,32 @@
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="4">
-          <p class="text-xs tracking-[0.25em] uppercase text-white/44">Step 4</p>
+          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 4</p>
           <h2 class="font-display text-4xl mt-3">Your info</h2>
-          <p class="text-sm text-white/58 mt-4">We'll pass this to Acuity so you don't have to type it again.</p>
+          <p class="text-sm text-black/50 mt-4">We'll pass this to Acuity so you don't have to type it again.</p>
           <div class="choice-grid is-two-up mt-8">
             <div class="booking-panel-soft p-5">
               <div class="flex gap-4">
                 <div class="flex-1">
-                  <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3" for="contact-first-name">First name</label>
+                  <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3" for="contact-first-name">First name</label>
                   <input id="contact-first-name" class="booking-input" data-input="contact-first-name" placeholder="First name">
                 </div>
                 <div class="flex-1">
-                  <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3" for="contact-last-name">Last name</label>
+                  <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3" for="contact-last-name">Last name</label>
                   <input id="contact-last-name" class="booking-input" data-input="contact-last-name" placeholder="Last name">
                 </div>
               </div>
-              <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3 mt-5" for="contact-email">Email</label>
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="contact-email">Email</label>
               <input id="contact-email" class="booking-input" data-input="contact-email" placeholder="you@example.com" type="email">
-              <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3 mt-5" for="contact-phone">Phone</label>
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="contact-phone">Phone</label>
               <input id="contact-phone" class="booking-input" data-input="contact-phone" placeholder="(555) 555-5555" type="tel">
-              <label class="block text-xs tracking-[0.2em] uppercase text-white/54 mb-3 mt-5" for="contact-notes">Notes</label>
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="contact-notes">Notes</label>
               <textarea id="contact-notes" class="booking-textarea" data-input="contact-notes" placeholder="Anything the studio should know?"></textarea>
               <label class="visually-hidden" for="contact-company">Company</label>
               <input id="contact-company" class="visually-hidden" name="company" autocomplete="off" tabindex="-1">
             </div>
             <div class="booking-panel-soft p-5">
-              <p class="text-xs tracking-[0.2em] uppercase text-white/54">Ready to book</p>
+              <p class="text-xs tracking-[0.2em] uppercase text-black/45">Ready to book</p>
               <div class="mt-5" data-integration-readiness></div>
             </div>
           </div>
@@ -153,13 +153,13 @@
         <div class="booking-panel p-6 md:p-8">
           <div class="flex items-center justify-between gap-4">
             <div>
-              <p class="text-xs tracking-[0.2em] uppercase text-white/44">Booking summary</p>
+              <p class="text-xs tracking-[0.2em] uppercase text-black/40">Booking summary</p>
               <h2 class="font-display text-4xl mt-3" data-location-name></h2>
             </div>
-            <span class="summary-pill" style="border:1px solid rgba(196,168,130,0.35);color:#f0e1d0">Taylor's Mill</span>
+            <span class="summary-pill" style="border:1px solid rgba(196,168,130,0.4);color:#8a7254">Taylor's Mill</span>
           </div>
 
-          <p class="text-sm text-white/54 mt-4" data-location-address></p>
+          <p class="text-sm text-black/45 mt-4" data-location-address></p>
 
           <div class="summary-divider my-6"></div>
 
@@ -177,7 +177,7 @@
           <div class="summary-divider my-6"></div>
 
           <div>
-            <p class="text-xs tracking-[0.2em] uppercase text-white/44">Add-on subtotal</p>
+            <p class="text-xs tracking-[0.2em] uppercase text-black/40">Add-on subtotal</p>
             <div class="mt-4 summary-list" data-summary-addons></div>
             <div class="summary-divider my-6"></div>
             <div class="summary-line text-lg">
@@ -189,7 +189,7 @@
           <div class="summary-divider my-6"></div>
 
           <div>
-            <p class="text-xs tracking-[0.2em] uppercase text-white/44">Good to know</p>
+            <p class="text-xs tracking-[0.2em] uppercase text-black/40">Good to know</p>
             <ul class="helper-list mt-5" data-location-policies></ul>
           </div>
         </div>
@@ -198,12 +198,12 @@
   </main>
 
   <footer class="px-6 pb-10">
-    <div class="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs tracking-[0.18em] uppercase text-white/42">
+    <div class="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs tracking-[0.18em] uppercase text-black/38">
       <span>WhiteWall Studios</span>
       <div class="flex flex-wrap gap-4">
-        <a href="/powdersville" class="hover:text-white transition">Powdersville page</a>
-        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill page</a>
-        <a href="/faq" class="hover:text-white transition">FAQ</a>
+        <a href="/powdersville" class="hover:text-black transition">Powdersville page</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill page</a>
+        <a href="/faq" class="hover:text-black transition">FAQ</a>
       </div>
     </div>
   </footer>

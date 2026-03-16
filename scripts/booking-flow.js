@@ -330,7 +330,7 @@
                 <p class="ui-kicker ui-kicker-strong">${duration.label}</p>
                 <h3 class="ui-display-sm" style="margin-top:0.75rem">${duration.hours >= 8 ? "Full Day" : duration.hours + "hr"}</h3>
               </div>
-              ${duration.supportsEvents ? '<span class="summary-pill" style="border:1px solid rgba(139,167,184,0.45);color:#d6e7ef">Event eligible</span>' : ""}
+              ${duration.supportsEvents ? '<span class="summary-pill" style="border:1px solid rgba(139,167,184,0.4);color:#5a7d8f">Event eligible</span>' : ""}
             </div>
             <p class="ui-copy" style="margin-top:1rem">${duration.description}</p>
           </button>
@@ -503,7 +503,7 @@
               <p class="ui-kicker">${priceLine}</p>
               <h3 class="ui-display-sm" style="margin-top:0.5rem">${addon.name}</h3>
             </div>
-            <span class="summary-pill" style="border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6)">
+            <span class="summary-pill" style="border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)">
               ${formatAddonSubtotal(addon)}
             </span>
           </div>
