@@ -551,26 +551,29 @@
 
     if (addon.type === "backdrops") {
       return `
-        <div class="ui-stack-sm">
-          <div class="addon-chip-row">
-            <button type="button" class="addon-chip ${addonState.mode === "all" ? "is-active" : ""}" data-action="set-addon-mode" data-addon-id="${addon.id}" data-mode="all">
-              All backdrops ${currency.format(addon.allPrice)}
-            </button>
-            <button type="button" class="addon-chip ${addonState.mode === "single" ? "is-active" : ""}" data-action="set-addon-mode" data-addon-id="${addon.id}" data-mode="single">
-              Single color ${currency.format(addon.singlePrice)}
-            </button>
-          </div>
-          <div class="addon-chip-row">
-            ${addon.colors
-              .map(
-                (color) => `
-                  <button type="button" class="addon-chip ${addonState.colors.includes(color.id) ? "is-active" : ""}" data-action="toggle-color" data-addon-id="${addon.id}" data-color-id="${color.id}">
-                    ${color.label}
-                  </button>
-                `
-              )
-              .join("")}
-          </div>
+        <div class="backdrop-carousel">
+          <button type="button" class="backdrop-card ${addonState.mode === "all" ? "is-selected" : ""}" data-action="set-addon-mode" data-addon-id="${addon.id}" data-mode="all">
+            <img src="${addon.allImage || addon.image}" alt="All backdrops">
+            <div class="backdrop-card-body">
+              <span class="backdrop-card-label">All Backdrops</span>
+              <span class="backdrop-card-price">${currency.format(addon.allPrice)}</span>
+            </div>
+            <span class="backdrop-check ${addonState.mode === "all" ? "is-visible" : ""}">&#10003;</span>
+          </button>
+          ${addon.colors
+            .map(
+              (color) => `
+                <button type="button" class="backdrop-card ${addonState.colors.includes(color.id) ? "is-selected" : ""}" data-action="toggle-color" data-addon-id="${addon.id}" data-color-id="${color.id}">
+                  <img src="${color.image || addon.image}" alt="${escapeHtml(color.label)}">
+                  <div class="backdrop-card-body">
+                    <span class="backdrop-card-label">${color.label}</span>
+                    <span class="backdrop-card-price">${currency.format(addon.singlePrice)}</span>
+                  </div>
+                  <span class="backdrop-check ${addonState.colors.includes(color.id) ? "is-visible" : ""}">&#10003;</span>
+                </button>
+              `
+            )
+            .join("")}
         </div>
       `;
     }

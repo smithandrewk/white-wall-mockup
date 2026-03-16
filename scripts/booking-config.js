@@ -32,14 +32,15 @@ window.WWS_BOOKING_CONFIG = {
             "Shared between sessions. Only roll down what you need so each paper roll lasts as long as possible.",
           allPrice: 50,
           singlePrice: 15,
+          allImage: "images/taylors-mill/whitewall-studios-backdrop.jpg",
           colors: [
-            { id: "black", label: "Black" },
-            { id: "charcoal-gray", label: "Charcoal Gray" },
-            { id: "olive-green", label: "Olive Green" },
-            { id: "pink", label: "Pink" },
-            { id: "red", label: "Red" },
-            { id: "tan-beige", label: "Tan / Beige" },
-            { id: "white", label: "White" }
+            { id: "black", label: "Black", image: "images/powdersville/black.jpg" },
+            { id: "charcoal-gray", label: "Charcoal Gray", image: "images/powdersville/charcoal-gray.jpg" },
+            { id: "olive-green", label: "Olive Green", image: "images/powdersville/olive-green.jpg" },
+            { id: "pink", label: "Pink", image: "images/powdersville/pink.jpg" },
+            { id: "red", label: "Red", image: "images/powdersville/red.jpg" },
+            { id: "tan-beige", label: "Tan / Beige", image: "images/powdersville/tan_beige.jpg" },
+            { id: "white", label: "White", image: "images/powdersville/white.jpg" }
           ]
         },
         {
@@ -139,14 +140,15 @@ window.WWS_BOOKING_CONFIG = {
             "Shared between sessions. Only roll down what you need so each paper roll lasts as long as possible.",
           allPrice: 50,
           singlePrice: 15,
+          allImage: "images/taylors-mill/whitewall-studios-backdrop.jpg",
           colors: [
-            { id: "black", label: "Black" },
-            { id: "charcoal-gray", label: "Charcoal Gray" },
-            { id: "olive-green", label: "Olive Green" },
-            { id: "pink", label: "Pink" },
-            { id: "red", label: "Red" },
-            { id: "tan-beige", label: "Tan / Beige" },
-            { id: "white", label: "White" }
+            { id: "black", label: "Black", image: "images/powdersville/black.jpg" },
+            { id: "charcoal-gray", label: "Charcoal Gray", image: "images/powdersville/charcoal-gray.jpg" },
+            { id: "olive-green", label: "Olive Green", image: "images/powdersville/olive-green.jpg" },
+            { id: "pink", label: "Pink", image: "images/powdersville/pink.jpg" },
+            { id: "red", label: "Red", image: "images/powdersville/red.jpg" },
+            { id: "tan-beige", label: "Tan / Beige", image: "images/powdersville/tan_beige.jpg" },
+            { id: "white", label: "White", image: "images/powdersville/white.jpg" }
           ]
         },
         {

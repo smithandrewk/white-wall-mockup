@@ -366,6 +366,96 @@ body.booking-page {
   max-width: 100%;
 }
 
+.backdrop-carousel {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.5rem;
+}
+
+.backdrop-carousel::-webkit-scrollbar {
+  height: 4px;
+}
+
+.backdrop-carousel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 2px;
+}
+
+.backdrop-carousel::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+}
+
+.backdrop-card {
+  flex: 0 0 140px;
+  scroll-snap-align: start;
+  border: 2px solid var(--wws-border);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+  position: relative;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.backdrop-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.backdrop-card.is-selected {
+  border-color: var(--wws-text);
+}
+
+.backdrop-card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+
+.backdrop-card-body {
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.backdrop-card-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.backdrop-card-price {
+  font-size: 0.65rem;
+  color: var(--wws-text-muted);
+}
+
+.backdrop-check {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background: var(--wws-text);
+  color: #ffffff;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.backdrop-check.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .summary-list {
   display: grid;
   gap: 0.85rem;
