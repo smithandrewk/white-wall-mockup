@@ -97,29 +97,10 @@
         <div class="mt-8 booking-step" data-step-panel="2">
           <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 2</p>
           <h2 class="font-display text-4xl mt-3">Session details</h2>
+
           <div class="mt-8" data-event-step></div>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="1">Back</button>
-            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="3">Continue to add-ons</button>
-          </div>
-        </div>
 
-        <div class="mt-8 booking-step" data-step-panel="3">
-          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 3</p>
-          <h2 class="font-display text-4xl mt-3">Visual add-ons</h2>
-          <p class="text-sm text-black/50 mt-4">Enhance your session with backdrops and lighting.</p>
-          <div class="choice-grid is-two-up mt-8" data-addon-list></div>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="2">Back</button>
-            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="4">Continue to finish</button>
-          </div>
-        </div>
-
-        <div class="mt-8 booking-step" data-step-panel="4">
-          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 4</p>
-          <h2 class="font-display text-4xl mt-3">Your info</h2>
-          <p class="text-sm text-black/50 mt-4">We'll pass this to Acuity so you don't have to type it again.</p>
-          <div class="choice-grid is-two-up mt-8">
+          <div class="mt-8">
             <div class="booking-panel-soft p-5">
               <div class="flex gap-4">
                 <div class="flex-1">
@@ -140,12 +121,34 @@
               <label class="visually-hidden" for="contact-company">Company</label>
               <input id="contact-company" class="visually-hidden" name="company" autocomplete="off" tabindex="-1">
             </div>
+          </div>
+
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="1">Back</button>
+            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="3">Continue to add-ons</button>
+          </div>
+        </div>
+
+        <div class="mt-8 booking-step" data-step-panel="3">
+          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 3</p>
+          <h2 class="font-display text-4xl mt-3">Optional add-ons</h2>
+          <p class="text-sm text-black/50 mt-4">Enhance your session with backdrops and lighting.</p>
+          <div class="choice-grid is-two-up mt-8" data-addon-list></div>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="2">Back</button>
+            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="4">Continue to schedule</button>
+          </div>
+        </div>
+
+        <div class="mt-8 booking-step" data-step-panel="4">
+          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 4</p>
+          <h2 class="font-display text-4xl mt-3">Schedule your session</h2>
+          <div class="mt-8">
             <div class="booking-panel-soft p-5">
               <p class="text-xs tracking-[0.2em] uppercase text-black/45">Ready to book</p>
               <div class="mt-5" data-integration-readiness></div>
             </div>
           </div>
-
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="3">Back</button>
             <span data-complete-slot></span>

@@ -10,8 +10,8 @@ window.WWS_BOOKING_CONFIG = {
       description:
         "Our Powdersville location is a fully, 100% self-service photo studio. Select the time you'd like, fill in some details, and include any optional add-ons. You will receive a confirmation email with important information, YouTube videos to watch, passcodes, etc. Thank you for booking with us!",
       policies: [
-        "Events are only available at Powdersville.",
-        "4hr, 6hr, and full-day bookings include event options.",
+        "2-hour through full-day bookings can be used for events.",
+        "1-hour sessions cannot be used for events.",
         "Events with 50+ attendees require confirmation from our team."
       ],
       durations: [

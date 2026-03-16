@@ -85,7 +85,7 @@
         if (!currentDurationSupportsEvents()) {
           resetEventState();
         }
-        renderStepContent();
+        setStep(2);
         return;
       }
 
@@ -295,9 +295,9 @@
 
     const steps = [
       { index: 1, label: "Timing" },
-      { index: 2, label: "Session details" },
+      { index: 2, label: "Details" },
       { index: 3, label: "Add-ons" },
-      { index: 4, label: "Finish" }
+      { index: 4, label: "Schedule" }
     ];
 
     progress.innerHTML = steps
