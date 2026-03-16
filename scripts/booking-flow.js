@@ -481,7 +481,22 @@
       return;
     }
 
+    var scrollPositions = {};
+    container.querySelectorAll(".backdrop-carousel").forEach(function (el) {
+      var addonId = el.closest("[data-addon-card-id]");
+      if (addonId) {
+        scrollPositions[addonId.dataset.addonCardId] = el.scrollLeft;
+      }
+    });
+
     container.innerHTML = location.addons.map(renderAddonCard).join("");
+
+    container.querySelectorAll(".backdrop-carousel").forEach(function (el) {
+      var addonId = el.closest("[data-addon-card-id]");
+      if (addonId && scrollPositions[addonId.dataset.addonCardId]) {
+        el.scrollLeft = scrollPositions[addonId.dataset.addonCardId];
+      }
+    });
   }
 
   function renderAddonCard(addon) {
@@ -490,7 +505,7 @@
     const controls = renderAddonControls(addon, addonState);
 
     return `
-      <article class="addon-card">
+      <article class="addon-card" data-addon-card-id="${addon.id}">
         <img src="${addon.image}" alt="${escapeHtml(addon.name)}">
         <div class="addon-card-content">
           <div class="ui-row-start">
