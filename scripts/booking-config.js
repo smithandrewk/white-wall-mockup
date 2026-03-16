@@ -95,7 +95,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "tv",
           type: "toggle",
           name: "86in rolling TV",
-          image: "images/gear-rentals/whitewall-powdersville_v2-36.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v2-38.jpg",
           price: 50,
           description: "4K smart TV with HDMI access and laptop tray."
         },
@@ -103,7 +103,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "pa-system",
           type: "toggle",
           name: "PA system",
-          image: "images/gear-rentals/whitewall-powdersville_v2-30.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v2-31.jpg",
           price: 40,
           description: "Wired microphone and speaker package."
         }
