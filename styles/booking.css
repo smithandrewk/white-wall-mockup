@@ -133,6 +133,20 @@ body.booking-page {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--wws-panel);
+  margin: -1.5rem -1.5rem 0;
+  padding: 1rem 1.5rem;
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+@media (min-width: 768px) {
+  .progress-track {
+    margin: -2rem -2rem 0;
+    padding: 1.25rem 2rem;
+  }
 }
 
 .progress-step {
