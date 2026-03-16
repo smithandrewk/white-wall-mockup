@@ -232,6 +232,11 @@ body.booking-page {
 
 .booking-step.is-active {
   display: block;
+  background: #eaeae8;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
 }
 
 .booking-input,
