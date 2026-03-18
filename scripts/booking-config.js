@@ -15,12 +15,12 @@ window.WWS_BOOKING_CONFIG = {
         "Events with 50+ attendees require confirmation from our team."
       ],
       durations: [
-        { id: "pv-1", label: "1 hour", hours: 1, description: "Quick portraits, pickups, and tight creative blocks.", acuityTypeKey: "powdersville_1hr" },
-        { id: "pv-2", label: "2 hours", hours: 2, description: "Most portrait and branding sessions.", acuityTypeKey: "powdersville_2hr" },
-        { id: "pv-3", label: "3 hours", hours: 3, description: "Larger set builds and multi-look shoots.", acuityTypeKey: "powdersville_3hr" },
-        { id: "pv-4", label: "4 hours", hours: 4, description: "Small events start here.", supportsEvents: true, acuityTypeKey: "powdersville_4hr" },
-        { id: "pv-6", label: "6 hours", hours: 6, description: "Expanded events and brand activations.", supportsEvents: true, acuityTypeKey: "powdersville_6hr" },
-        { id: "pv-full", label: "Full day", hours: 18, description: "6 AM–11 PM — all-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
+        { id: "pv-1", label: "1 hour", hours: 1, price: 130, description: "Quick portraits, pickups, and tight creative blocks.", acuityTypeKey: "powdersville_1hr" },
+        { id: "pv-2", label: "2 hours", hours: 2, price: 200, description: "Most portrait and branding sessions.", acuityTypeKey: "powdersville_2hr" },
+        { id: "pv-3", label: "3 hours", hours: 3, price: 270, description: "Larger set builds and multi-look shoots.", acuityTypeKey: "powdersville_3hr" },
+        { id: "pv-4", label: "4 hours", hours: 4, price: 350, description: "Small events start here.", supportsEvents: true, acuityTypeKey: "powdersville_4hr" },
+        { id: "pv-6", label: "6 hours", hours: 6, price: 500, description: "Expanded events and brand activations.", supportsEvents: true, acuityTypeKey: "powdersville_6hr" },
+        { id: "pv-full", label: "Full day", hours: 18, price: 980, description: "6 AM–11 PM — all-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
       ],
       addons: [
         {
@@ -124,12 +124,12 @@ window.WWS_BOOKING_CONFIG = {
         "Backdrops and lighting available as add-ons."
       ],
       durations: [
-        { id: "tm-1", label: "1 hour", hours: 1, description: "Quick portraits, headshots, and pickups.", acuityTypeKey: "taylors_mill_1hr" },
-        { id: "tm-2", label: "2 hours", hours: 2, description: "The standard Taylor's Mill session.", acuityTypeKey: "taylors_mill_2hr" },
-        { id: "tm-3", label: "3 hours", hours: 3, description: "Longer natural light sessions and branded shoots.", acuityTypeKey: "taylors_mill_3hr" },
-        { id: "tm-4", label: "Half day", hours: 4, description: "Extended sessions and small productions.", acuityTypeKey: "taylors_mill_4hr" },
-        { id: "tm-6", label: "6 hours", hours: 6, description: "Large productions and brand activations.", acuityTypeKey: "taylors_mill_6hr" },
-        { id: "tm-full", label: "Full day", hours: 12, description: "All-day studio access.", acuityTypeKey: "taylors_mill_full_day" }
+        { id: "tm-1", label: "1 hour", hours: 1, price: 110, description: "Quick portraits, headshots, and pickups.", acuityTypeKey: "taylors_mill_1hr" },
+        { id: "tm-2", label: "2 hours", hours: 2, price: 170, description: "The standard Taylor's Mill session.", acuityTypeKey: "taylors_mill_2hr" },
+        { id: "tm-3", label: "3 hours", hours: 3, price: 230, description: "Longer natural light sessions and branded shoots.", acuityTypeKey: "taylors_mill_3hr" },
+        { id: "tm-4", label: "Half day", hours: 4, price: 280, description: "Extended sessions and small productions.", acuityTypeKey: "taylors_mill_4hr" },
+        { id: "tm-6", label: "6 hours", hours: 6, price: 420, description: "Large productions and brand activations.", acuityTypeKey: "taylors_mill_6hr" },
+        { id: "tm-full", label: "Full day", hours: 12, price: 550, description: "All-day studio access.", acuityTypeKey: "taylors_mill_full_day" }
       ],
       addons: [
         {
@@ -167,7 +167,7 @@ window.WWS_BOOKING_CONFIG = {
   integrations: {
     acuity: {
       enabled: true,
-      mode: "scheduler",
+      mode: "api",
       accountUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772",
       embedScriptUrl: "https://embed.acuityscheduling.com/js/embed.js",
       locations: {
@@ -238,12 +238,8 @@ window.WWS_BOOKING_CONFIG = {
       }
     },
     square: {
-      enabled: false,
-      mode: "links",
-      checkoutLinks: {
-        powdersville: {},
-        "taylors-mill": {}
-      }
+      enabled: true,
+      mode: "payment-links"
     },
     forms: {
       submissionEndpoint: "",

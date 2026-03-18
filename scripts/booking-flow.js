@@ -45,7 +45,15 @@
     },
     termsAccepted: false,
     waiverSigned: false,
-    addons: {}
+    addons: {},
+    selectedDate: "",
+    selectedTime: "",
+    availableDates: [],
+    availableTimes: [],
+    calendarMonth: new Date().toISOString().slice(0, 7),
+    isLoadingDates: false,
+    isLoadingTimes: false,
+    isSubmitting: false
   };
 
   location.addons.forEach((addon) => {
@@ -93,6 +101,11 @@
         if (!currentDurationSupportsEvents()) {
           resetEventState();
         }
+        // Reset calendar state since availability changes per duration
+        state.availableDates = [];
+        state.availableTimes = [];
+        state.selectedDate = "";
+        state.selectedTime = "";
         setStep(2);
         return;
       }
@@ -185,6 +198,36 @@
           addonState.mode = "none";
         }
         renderStepContent();
+        return;
+      }
+
+      if (action === "select-date") {
+        var date = actionTarget.dataset.date;
+        state.selectedDate = date;
+        state.selectedTime = "";
+        var aptId = getAppointmentTypeID();
+        if (aptId) fetchAvailableTimes(aptId, date);
+        return;
+      }
+
+      if (action === "select-time") {
+        state.selectedTime = actionTarget.dataset.time;
+        renderScheduleStep();
+        return;
+      }
+
+      if (action === "navigate-month") {
+        var delta = Number(actionTarget.dataset.delta);
+        var mParts = state.calendarMonth.split("-");
+        var mDate = new Date(Number(mParts[0]), Number(mParts[1]) - 1 + delta, 1);
+        state.calendarMonth = mDate.toISOString().slice(0, 7);
+        var aptId2 = getAppointmentTypeID();
+        if (aptId2) fetchAvailableDates(aptId2, state.calendarMonth);
+        return;
+      }
+
+      if (action === "pay-and-book") {
+        handlePayAndBook();
         return;
       }
 
@@ -294,10 +337,9 @@
   function renderStepContent() {
     renderProgress();
     renderDurations();
-    renderAcuity();
     renderEventStep();
     renderAddons();
-    renderIntegrations();
+    renderScheduleStep();
     renderWaiver();
     renderSummary();
     renderStepVisibility();
@@ -339,7 +381,7 @@
       { index: 2, label: "Details" },
       { index: 3, label: "Waiver" },
       { index: 4, label: "Add-ons" },
-      { index: 5, label: "Schedule" }
+      { index: 5, label: "Schedule & Pay" }
     ];
 
     progress.innerHTML = steps
@@ -366,9 +408,10 @@
       .map((duration) => {
         const isActive = duration.id === state.durationId;
         const eventEligible = location.slug === "powdersville" && duration.hours >= 2;
+        const priceTag = duration.price ? currency.format(duration.price) : "";
         return `
           <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}">
-            <span class="duration-pill-label">${duration.label}</span>
+            <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.4);font-weight:400">' + priceTag + '</span>' : ''}</span>
             ${eventEligible ? '<span class="duration-pill-badge">Event eligible</span>' : ""}
           </button>
         `;
@@ -376,49 +419,250 @@
       .join("");
   }
 
-  function renderAcuity() {
-    const status = document.querySelector("[data-acuity-status]");
-    const embed = document.querySelector("[data-acuity-embed]");
-    if (!status || !embed) {
+  // --- Schedule & Pay (Step 5) ---
+
+  function getAppointmentTypeID() {
+    const selectedDuration = getSelectedDuration();
+    if (!selectedDuration) return null;
+    const locationSlug = location.slug === "taylors-mill" ? "taylors-mill" : "powdersville";
+    const acuityLocations = config.integrations.acuity.locations || {};
+    const locConfig = acuityLocations[locationSlug] || {};
+    const durConfig = (locConfig.durations || {})[selectedDuration.id] || {};
+    return durConfig.appointmentTypeId || null;
+  }
+
+  async function fetchAvailableDates(appointmentTypeID, month) {
+    state.isLoadingDates = true;
+    state.availableDates = [];
+    state.availableTimes = [];
+    state.selectedDate = "";
+    state.selectedTime = "";
+    renderScheduleStep();
+    try {
+      const res = await fetch(`/api/availability-dates?appointmentTypeID=${appointmentTypeID}&month=${month}`);
+      if (!res.ok) throw new Error("Failed to load dates");
+      const data = await res.json();
+      state.availableDates = data.dates || [];
+    } catch (err) {
+      console.error(err);
+      state.availableDates = [];
+    }
+    state.isLoadingDates = false;
+    renderScheduleStep();
+  }
+
+  async function fetchAvailableTimes(appointmentTypeID, date) {
+    state.isLoadingTimes = true;
+    state.availableTimes = [];
+    state.selectedTime = "";
+    renderScheduleStep();
+    try {
+      const res = await fetch(`/api/availability-times?appointmentTypeID=${appointmentTypeID}&date=${date}`);
+      if (!res.ok) throw new Error("Failed to load times");
+      const data = await res.json();
+      state.availableTimes = (data.times || []).map(function (t) { return t.time; });
+    } catch (err) {
+      console.error(err);
+      state.availableTimes = [];
+    }
+    state.isLoadingTimes = false;
+    renderScheduleStep();
+  }
+
+  function renderScheduleStep() {
+    var container = document.querySelector("[data-schedule-step]");
+    if (!container) return;
+
+    var appointmentTypeID = getAppointmentTypeID();
+    if (!appointmentTypeID) {
+      container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a duration first to see availability.</p></div>';
       return;
     }
 
-    const acuityState = getAcuityState();
+    container.innerHTML =
+      renderCalendar() +
+      renderTimeSlots() +
+      renderOrderSummary();
+  }
 
-    status.innerHTML = "";
+  function renderCalendar() {
+    var parts = state.calendarMonth.split("-");
+    var year = Number(parts[0]);
+    var month = Number(parts[1]) - 1;
+    var monthName = new Date(year, month, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+    var firstDay = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var today = new Date().toISOString().slice(0, 10);
 
-    if (acuityState.mode === "iframe" && acuityState.durationConfig.iframeSrc) {
-      renderAcuityIframe(embed, acuityState);
-      return;
+    var dayHeaders = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+      .map(function (d) { return '<span class="calendar-day-header">' + d + '</span>'; })
+      .join("");
+
+    var cells = "";
+    for (var i = 0; i < firstDay; i++) {
+      cells += '<span class="calendar-day is-empty"></span>';
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateStr = state.calendarMonth + "-" + String(d).padStart(2, "0");
+      var isAvailable = state.availableDates.indexOf(dateStr) !== -1;
+      var isSelected = dateStr === state.selectedDate;
+      var isPast = dateStr < today;
+      var cls = "calendar-day";
+      if (isSelected) cls += " is-selected";
+      else if (isAvailable && !isPast) cls += " is-available";
+      else cls += " is-unavailable";
+
+      if (isAvailable && !isPast) {
+        cells += '<button type="button" class="' + cls + '" data-action="select-date" data-date="' + dateStr + '">' + d + '</button>';
+      } else {
+        cells += '<span class="' + cls + '">' + d + '</span>';
+      }
     }
 
-    if (acuityState.mode === "scheduler" && acuityState.schedulerUrl) {
-      renderAcuityScheduler(embed, acuityState);
-      return;
+    var spinner = state.isLoadingDates ? '<div class="booking-spinner"></div>' : '';
+    var noAvail = !state.isLoadingDates && state.availableDates.length === 0
+      ? '<p class="ui-copy-muted" style="margin-top:1rem;text-align:center">No availability this month</p>'
+      : '';
+
+    return '<div class="booking-panel-soft p-5">' +
+      '<div class="calendar-nav">' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="-1" style="padding:0.5rem 0.8rem">&larr;</button>' +
+        '<span class="ui-copy-strong">' + monthName + '</span>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="1" style="padding:0.5rem 0.8rem">&rarr;</button>' +
+      '</div>' +
+      spinner +
+      '<div class="booking-calendar">' + dayHeaders + cells + '</div>' +
+      noAvail +
+    '</div>';
+  }
+
+  function renderTimeSlots() {
+    if (!state.selectedDate) return '';
+
+    if (state.isLoadingTimes) {
+      return '<div class="booking-panel-soft p-5 mt-5"><div class="booking-spinner"></div></div>';
     }
 
-    renderAcuityPlaceholder(embed, acuityState);
+    if (state.availableTimes.length === 0) {
+      return '<div class="booking-panel-soft p-5 mt-5"><p class="ui-copy-muted" style="text-align:center">No time slots available for this date</p></div>';
+    }
+
+    var pills = state.availableTimes.map(function (t) {
+      var d = new Date(t);
+      var label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      var isSelected = t === state.selectedTime;
+      var cls = "time-slot" + (isSelected ? " is-selected" : "");
+      return '<button type="button" class="' + cls + '" data-action="select-time" data-time="' + escapeAttribute(t) + '">' + label + '</button>';
+    }).join("");
+
+    return '<div class="booking-panel-soft p-5 mt-5">' +
+      '<p class="ui-kicker" style="margin-bottom:1rem">Available times for ' + state.selectedDate + '</p>' +
+      '<div class="time-slot-grid">' + pills + '</div>' +
+    '</div>';
   }
 
-  function renderAcuityPlaceholder(embed, acuityState) {
-    embed.innerHTML = "";
+  function renderOrderSummary() {
+    if (!state.selectedTime) return '';
+
+    var selectedDuration = getSelectedDuration();
+    var sessionPrice = selectedDuration ? (selectedDuration.price || 0) : 0;
+    var addonTotal = 0;
+    var addonLines = [];
+
+    location.addons.forEach(function (addon) {
+      var summary = getAddonSummary(addon);
+      if (summary) {
+        addonLines.push(summary);
+        addonTotal += summary.amount;
+      }
+    });
+
+    var grandTotal = sessionPrice + addonTotal;
+    var timeLabel = new Date(state.selectedTime).toLocaleString("en-US", {
+      weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
+    });
+
+    var addonHtml = addonLines.length
+      ? addonLines.map(function (item) {
+          return '<div class="summary-line summary-line-muted"><span>' + item.label + '</span><span>' + currency.format(item.amount) + '</span></div>';
+        }).join("")
+      : '';
+
+    var btnDisabled = state.isSubmitting ? ' disabled' : '';
+    var btnLabel = state.isSubmitting ? 'Processing…' : 'Pay & Book — ' + currency.format(grandTotal);
+
+    return '<div class="booking-panel-soft p-5 mt-5">' +
+      '<p class="ui-kicker" style="margin-bottom:1rem">Order summary</p>' +
+      '<div class="summary-list">' +
+        '<div class="summary-line"><span>' + escapeHtml(selectedDuration.label) + ' session</span><span>' + currency.format(sessionPrice) + '</span></div>' +
+        addonHtml +
+        '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
+        '<div class="summary-line" style="font-size:1.1rem"><span><strong>Total</strong></span><span class="order-total"><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
+      '</div>' +
+      '<p class="ui-copy-muted" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
+      '<div style="margin-top:1.5rem">' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="pay-and-book"' + btnDisabled + '>' + btnLabel + '</button>' +
+      '</div>' +
+      '<p class="ui-copy-muted" style="margin-top:0.75rem;font-size:0.8rem">You\'ll be redirected to Square to complete payment securely.</p>' +
+    '</div>';
   }
 
-  function renderAcuityIframe(embed, acuityState) {
-    embed.innerHTML = `
-      <div class="info-card panel-pad">
-        <iframe
-          title="Schedule ${escapeAttribute(acuityState.selectedDuration.label)} at ${escapeAttribute(location.name)}"
-          class="scheduler-frame"
-          src="${escapeAttribute(acuityState.durationConfig.iframeSrc)}"
-          loading="lazy">
-        </iframe>
-      </div>
-    `;
-  }
+  async function handlePayAndBook() {
+    if (state.isSubmitting) return;
+    state.isSubmitting = true;
+    renderScheduleStep();
 
-  function renderAcuityScheduler(embed, acuityState) {
-    embed.innerHTML = "";
+    var appointmentTypeID = getAppointmentTypeID();
+
+    try {
+      // Verify the slot is still available
+      var verifyRes = await fetch("/api/verify-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentTypeID: appointmentTypeID,
+          datetime: state.selectedTime
+        })
+      });
+      var verifyData = await verifyRes.json();
+      if (!verifyData.available) {
+        alert("Sorry, that time slot is no longer available. Please select a different time.");
+        state.selectedTime = "";
+        state.isSubmitting = false;
+        fetchAvailableTimes(appointmentTypeID, state.selectedDate);
+        return;
+      }
+
+      // Create appointment (unpaid) and get Acuity payment link
+      var apptRes = await fetch("/api/create-appointment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentTypeID: appointmentTypeID,
+          datetime: state.selectedTime,
+          location: location.slug,
+          contact: state.contact,
+          intake: state.intake,
+          addons: state.addons,
+          eventIntent: state.eventIntent,
+          participants: state.participants,
+          eventDescription: state.eventDescription,
+          waiverSigned: state.waiverSigned
+        })
+      });
+      var apptData = await apptRes.json();
+      if (!apptData.paymentUrl) {
+        throw new Error(apptData.error || "No payment URL returned");
+      }
+
+      // Redirect to Acuity's Square payment page
+      window.location.href = apptData.paymentUrl;
+    } catch (err) {
+      console.error("Checkout error:", err);
+      alert("Something went wrong creating your checkout. Please try again.");
+      state.isSubmitting = false;
+      renderScheduleStep();
+    }
   }
 
   function renderEventStep() {
@@ -667,67 +911,14 @@
     return "";
   }
 
-  function renderIntegrations() {
-    const container = document.querySelector("[data-integration-readiness]");
-    const buttonSlot = document.querySelector("[data-complete-slot]");
-    if (!container) {
-      return;
-    }
-
-    const acuityState = getAcuityState();
-    const hasContact = state.contact.firstName && state.contact.email;
-
-    if (acuityState.isReady) {
-      var dynamicUrl = buildAcuityUrl(acuityState.schedulerUrl);
-      container.innerHTML = `
-        <div class="summary-list">
-          <div class="summary-line">
-            <span>Duration</span>
-            <span>${acuityState.selectedDuration.label}</span>
-          </div>
-          <div class="summary-line">
-            <span>Name</span>
-            <span>${escapeHtml(state.contact.firstName || "\u2014")} ${escapeHtml(state.contact.lastName || "")}</span>
-          </div>
-          <div class="summary-line">
-            <span>Email</span>
-            <span>${escapeHtml(state.contact.email || "\u2014")}</span>
-          </div>
-          <div class="summary-line">
-            <span>Phone</span>
-            <span>${escapeHtml(state.contact.phone || "\u2014")}</span>
-          </div>
-        </div>
-        <p class="ui-copy" style="margin-top:1.25rem">Your info will be pre-filled on the scheduling page. Pick your date, confirm add-ons, and pay — all through Acuity.</p>
-      `;
-
-      if (buttonSlot) {
-        buttonSlot.innerHTML = `
-          <a class="booking-button booking-button-primary" href="${escapeAttribute(dynamicUrl)}" target="_blank" rel="noreferrer">
-            ${hasContact ? "Schedule on Acuity" : "Schedule on Acuity (no contact info yet)"}
-          </a>
-        `;
-      }
-    } else {
-      container.innerHTML = `
-        <div class="summary-list">
-          <div class="summary-line">
-            <span>Acuity scheduler</span>
-            <span style="color:#ffd7a8">Not configured</span>
-          </div>
-        </div>
-      `;
-      if (buttonSlot) {
-        buttonSlot.innerHTML = `<button type="button" class="booking-button booking-button-primary" disabled>Acuity not configured</button>`;
-      }
-    }
-  }
+  // renderIntegrations removed — replaced by renderScheduleStep above
 
   function renderSummary() {
     const durationName = document.querySelector("[data-summary-duration]");
     const eventLine = document.querySelector("[data-summary-event]");
     const addons = document.querySelector("[data-summary-addons]");
     const total = document.querySelector("[data-summary-total]");
+    const sessionPriceEl = document.querySelector("[data-summary-session-price]");
 
     if (!durationName || !eventLine || !addons || !total) {
       return;
@@ -735,6 +926,12 @@
 
     const selectedDuration = getSelectedDuration();
     durationName.textContent = selectedDuration ? selectedDuration.label : "Not selected";
+
+    if (sessionPriceEl) {
+      sessionPriceEl.textContent = selectedDuration && selectedDuration.price
+        ? currency.format(selectedDuration.price)
+        : "—";
+    }
 
     if (location.slug === "powdersville" && currentDurationSupportsEvents()) {
       let text = state.eventIntent === "yes" ? "Event" : "Session";
@@ -765,9 +962,10 @@
           .join("")
       : '<p class="ui-empty">No add-ons selected yet.</p>';
 
-    total.textContent = currency.format(
-      summaryItems.reduce((sum, item) => sum + item.amount, 0)
-    );
+    const addonTotal = summaryItems.reduce((sum, item) => sum + item.amount, 0);
+    const sessionPrice = selectedDuration && selectedDuration.price ? selectedDuration.price : 0;
+    const grandTotal = sessionPrice + addonTotal;
+    total.textContent = currency.format(grandTotal);
   }
 
   function renderStepVisibility() {
@@ -779,6 +977,14 @@
   function setStep(step) {
     state.step = clamp(step, 1, 5);
     renderStepContent();
+
+    // Load availability when entering step 5
+    if (state.step === 5) {
+      var aptId = getAppointmentTypeID();
+      if (aptId && state.availableDates.length === 0 && !state.isLoadingDates) {
+        fetchAvailableDates(aptId, state.calendarMonth);
+      }
+    }
   }
 
   function renderWaiver() {
@@ -891,49 +1097,7 @@
     return Boolean(selectedDuration && selectedDuration.supportsEvents);
   }
 
-  function buildAcuityUrl(baseUrl) {
-    var params = [];
-    if (state.contact.firstName) {
-      params.push("firstName=" + encodeURIComponent(state.contact.firstName));
-    }
-    if (state.contact.lastName) {
-      params.push("lastName=" + encodeURIComponent(state.contact.lastName));
-    }
-    if (state.contact.email) {
-      params.push("email=" + encodeURIComponent(state.contact.email));
-    }
-    if (state.contact.phone) {
-      params.push("phone=" + encodeURIComponent(state.contact.phone));
-    }
-    if (!params.length) {
-      return baseUrl;
-    }
-    var separator = baseUrl.indexOf("?") !== -1 ? "&" : "?";
-    return baseUrl + separator + params.join("&");
-  }
-
-  function getAcuityState() {
-    const acuity = config.integrations.acuity || {};
-    const selectedDuration = getSelectedDuration() || { id: "", label: "", acuityTypeKey: "" };
-    const locationConfig = acuity.locations && acuity.locations[location.slug] ? acuity.locations[location.slug] : {};
-    const durationConfig =
-      locationConfig.durations && selectedDuration.id && locationConfig.durations[selectedDuration.id]
-        ? locationConfig.durations[selectedDuration.id]
-        : {};
-    const schedulerUrl = durationConfig.schedulerUrl || locationConfig.fallbackSchedulerUrl || acuity.accountUrl || "";
-    const mode = acuity.mode || "placeholder";
-    const isIframeReady = acuity.enabled && mode === "iframe" && Boolean(durationConfig.iframeSrc);
-    const isSchedulerReady = acuity.enabled && mode === "scheduler" && Boolean(schedulerUrl);
-
-    return {
-      accountUrl: acuity.accountUrl || "",
-      mode,
-      selectedDuration,
-      durationConfig,
-      schedulerUrl,
-      isReady: isIframeReady || isSchedulerReady
-    };
-  }
+  // buildAcuityUrl and getAcuityState removed — replaced by API-based scheduling
 
   function getInitialAddonState(addon) {
     if (addon.type === "toggle") {

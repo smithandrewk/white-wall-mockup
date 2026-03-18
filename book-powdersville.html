@@ -85,10 +85,8 @@
               <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 1</p>
               <h2 class="font-display text-4xl mt-3">Choose timing</h2>
             </div>
-            <div data-acuity-status class="flex flex-wrap gap-3"></div>
           </div>
           <div class="choice-grid is-two-up mt-8" data-duration-options></div>
-          <div class="mt-8" data-acuity-embed></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="2">Continue to session details</button>
           </div>
@@ -195,16 +193,11 @@
 
         <div class="mt-8 booking-step" data-step-panel="5">
           <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 5</p>
-          <h2 class="font-display text-4xl mt-3">Schedule your session</h2>
-          <div class="mt-8">
-            <div class="booking-panel-soft p-5">
-              <p class="text-xs tracking-[0.2em] uppercase text-black/45">Ready to book</p>
-              <div class="mt-5" data-integration-readiness></div>
-            </div>
-          </div>
+          <h2 class="font-display text-4xl mt-3">Schedule &amp; Pay</h2>
+          <p class="text-sm text-black/50 mt-4">Pick a date and time, review your total, then pay securely through Square.</p>
+          <div class="mt-8" data-schedule-step></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="4">Back</button>
-            <span data-complete-slot></span>
           </div>
         </div>
       </section>
@@ -237,11 +230,18 @@
           <div class="summary-divider my-6"></div>
 
           <div>
-            <p class="text-xs tracking-[0.2em] uppercase text-black/40">Add-on subtotal</p>
+            <div class="summary-list">
+              <div class="summary-line">
+                <span>Session</span>
+                <span data-summary-session-price>—</span>
+              </div>
+            </div>
+            <div class="summary-divider my-6"></div>
+            <p class="text-xs tracking-[0.2em] uppercase text-black/40">Add-ons</p>
             <div class="mt-4 summary-list" data-summary-addons></div>
             <div class="summary-divider my-6"></div>
             <div class="summary-line text-lg">
-              <span>Total add-ons</span>
+              <span>Estimated total</span>
               <strong data-summary-total></strong>
             </div>
           </div>

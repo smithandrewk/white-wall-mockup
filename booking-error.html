@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Issue - WhiteWall Studios</title>
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "wws-black": "#000000",
+            "wws-dark": "#383838",
+            "wws-light": "#F4F4F2",
+            "wws-gray": "#E0E0E0",
+            "wws-accent": "#FCD518",
+            "tm-warm": "#C4A882",
+            "pv-cool": "#8BA7B8"
+          },
+          fontFamily: {
+            display: ['"Cormorant Garamond"', "serif"],
+            body: ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10 rounded-full">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/powdersville" class="hover:text-black transition">Powdersville</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-20">
+    <div class="max-w-2xl mx-auto text-center">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-50 border border-red-200 mb-8">
+        <svg class="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h1 class="font-display text-5xl md:text-6xl leading-none">Something went wrong</h1>
+      <p class="text-lg text-black/55 mt-6 max-w-lg mx-auto" id="error-message">
+        There was an issue completing your booking. If your payment was processed, our team will reach out to you directly to resolve this.
+      </p>
+
+      <div class="booking-panel p-6 md:p-8 mt-10 text-left">
+        <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">What to do</p>
+        <ul class="helper-list">
+          <li class="helper-item">
+            <span class="helper-dot" style="background:#c62828"></span>
+            <span>If you were charged, don't worry — Drew will process a refund or manually complete your booking.</span>
+          </li>
+          <li class="helper-item">
+            <span class="helper-dot" style="background:#c62828"></span>
+            <span>You can reach us at <a href="mailto:drew@whitewallstudios.co" class="underline">drew@whitewallstudios.co</a> or DM on Instagram.</span>
+          </li>
+          <li class="helper-item">
+            <span class="helper-dot" style="background:#c62828"></span>
+            <span>Feel free to try booking again — the issue may have been a temporary scheduling conflict.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="/book-powdersville" class="booking-button booking-button-primary">Book Powdersville</a>
+        <a href="/book-taylors-mill" class="booking-button booking-button-secondary">Book Taylor's Mill</a>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

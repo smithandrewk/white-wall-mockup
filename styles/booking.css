@@ -571,6 +571,123 @@ body.booking-page {
   padding: 0.5rem 0;
 }
 
+/* Calendar (Step 5) */
+.booking-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 1rem;
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--wws-text-muted);
+  padding: 0.4rem 0;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  border: 1px solid transparent;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.calendar-day.is-empty {
+  visibility: hidden;
+}
+
+.calendar-day.is-unavailable {
+  color: rgba(0, 0, 0, 0.2);
+  cursor: default;
+}
+
+.calendar-day.is-available {
+  color: var(--wws-text);
+  cursor: pointer;
+  border-color: var(--wws-border);
+  background: #ffffff;
+}
+
+.calendar-day.is-available:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.calendar-day.is-selected {
+  background: var(--wws-text);
+  color: #ffffff;
+  border-color: var(--wws-text);
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Time slots */
+.time-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.5rem;
+}
+
+.time-slot {
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--wws-border);
+  background: #ffffff;
+  font-size: 0.82rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.time-slot:hover {
+  border-color: rgba(0, 0, 0, 0.24);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.time-slot.is-selected {
+  background: var(--wws-text);
+  color: #ffffff;
+  border-color: var(--wws-text);
+}
+
+/* Order total */
+.order-total {
+  font-size: 1.15rem;
+}
+
+/* Loading spinner */
+.booking-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.booking-spinner::after {
+  content: "";
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--wws-border);
+  border-top-color: var(--wws-text);
+  border-radius: 50%;
+  animation: booking-spin 0.6s linear infinite;
+}
+
+@keyframes booking-spin {
+  to { transform: rotate(360deg); }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
