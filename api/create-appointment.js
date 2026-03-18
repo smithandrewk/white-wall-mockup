@@ -69,7 +69,8 @@ module.exports = async function handler(req, res) {
       addons
     });
 
-    const appointment = await acuityPost("/appointments", {
+    // admin=true allows setting notes field (docs: "Settable when booking as an admin")
+    const appointment = await acuityPost("/appointments?admin=true", {
       appointmentTypeID,
       datetime,
       firstName: contact.firstName,
