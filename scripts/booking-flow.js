@@ -113,6 +113,8 @@
       if (action === "go-step") {
         if (actionTarget.disabled) return;
         const step = Number(actionTarget.dataset.step);
+        const maxStep = getMaxAccessibleStep();
+        if (step > maxStep) return; // can't skip ahead past incomplete steps
         setStep(step);
         return;
       }
@@ -384,12 +386,14 @@
       { index: 5, label: "Schedule & Pay" }
     ];
 
+    const maxStep = getMaxAccessibleStep();
     progress.innerHTML = steps
       .map((step) => {
         const isActive = step.index === state.step;
         const isComplete = step.index < state.step;
+        const isLocked = step.index > maxStep;
         return `
-          <button class="progress-step ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""}" type="button" data-action="go-step" data-step="${step.index}">
+          <button class="progress-step ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""} ${isLocked ? "is-locked" : ""}" type="button" data-action="go-step" data-step="${step.index}" ${isLocked ? "disabled" : ""}>
             <span class="progress-step-index">${step.index}</span>
             <span class="progress-step-label">${step.label}</span>
           </button>
@@ -609,6 +613,18 @@
 
   async function handlePayAndBook() {
     if (state.isSubmitting) return;
+
+    // Client-side validation safety net — prevents checkout if steps were skipped
+    var errors = getValidationErrors();
+    if (errors.length > 0) {
+      alert(errors[0]); // Show first error
+      // Navigate to the earliest incomplete step
+      if (!state.durationId) { setStep(1); return; }
+      if (!state.contact.firstName || !state.contact.email || !state.termsAccepted) { setStep(2); return; }
+      if (!state.waiverSigned) { setStep(3); return; }
+      return;
+    }
+
     state.isSubmitting = true;
     renderScheduleStep();
 
@@ -1095,6 +1111,39 @@
   function currentDurationSupportsEvents() {
     const selectedDuration = getSelectedDuration();
     return Boolean(selectedDuration && selectedDuration.supportsEvents);
+  }
+
+  // Step completion validation — determines how far the user can navigate.
+  // Step 1 (Timing): always accessible
+  // Step 2 (Details): requires duration selected
+  // Step 3 (Waiver): requires contact info + terms accepted
+  // Step 4 (Add-ons): requires waiver signed
+  // Step 5 (Schedule & Pay): requires waiver signed (add-ons are optional)
+  function isStepComplete(step) {
+    if (step === 1) return Boolean(state.durationId);
+    if (step === 2) return Boolean(state.contact.firstName && state.contact.email && state.termsAccepted);
+    if (step === 3) return Boolean(state.waiverSigned);
+    if (step === 4) return true; // add-ons are always optional
+    return false;
+  }
+
+  function getMaxAccessibleStep() {
+    if (!isStepComplete(1)) return 1;
+    if (!isStepComplete(2)) return 2;
+    if (!isStepComplete(3)) return 3;
+    // Step 4 is always complete (optional), so if waiver is signed, can go to 5
+    return 5;
+  }
+
+  function getValidationErrors() {
+    var errors = [];
+    if (!state.durationId) errors.push("Please select a duration.");
+    if (!state.contact.firstName) errors.push("Please enter your first name.");
+    if (!state.contact.email) errors.push("Please enter your email address.");
+    if (!state.termsAccepted) errors.push("Please accept the terms & conditions.");
+    if (!state.waiverSigned) errors.push("Please sign the liability waiver.");
+    if (!state.selectedTime) errors.push("Please select a date and time.");
+    return errors;
   }
 
   // buildAcuityUrl and getAcuityState removed — replaced by API-based scheduling

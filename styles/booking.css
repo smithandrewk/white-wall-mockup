@@ -164,6 +164,12 @@ body.booking-page {
   background: rgba(0, 0, 0, 0.05);
 }
 
+.progress-step.is-locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .progress-step-index {
   display: inline-flex;
   width: 1.85rem;
