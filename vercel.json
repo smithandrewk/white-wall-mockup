@@ -1,6 +1,9 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "crons": [
+    { "path": "/api/cleanup-blocks", "schedule": "*/15 * * * *" }
+  ],
   "headers": [
     {
       "source": "/images/(.*)",

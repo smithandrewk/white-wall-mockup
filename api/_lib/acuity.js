@@ -275,13 +275,183 @@ function buildAppointmentNotes(bookingState) {
   return lines.join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Acuity DELETE helper (for blocks)
+// ---------------------------------------------------------------------------
+async function acuityDelete(path) {
+  const res = await fetch(`${ACUITY_BASE}${path}`, {
+    method: "DELETE",
+    headers: { Authorization: getAuthHeader() }
+  });
+  if (!res.ok && res.status !== 204) {
+    const text = await res.text();
+    throw new Error(`Acuity DELETE ${res.status}: ${text}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Calendar IDs — needed for POST /blocks
+// Source: GET /appointment-types (verified 2026-03-17)
+// ---------------------------------------------------------------------------
+const CALENDAR_IDS = {
+  powdersville: 6255578,
+  "taylors-mill": 6252295
+};
+
+// Map appointment type ID to its calendar ID
+const TYPE_TO_CALENDAR = {};
+["89113040","89113116","89114444","89114517","89114539","89114581"].forEach(function(id) {
+  TYPE_TO_CALENDAR[id] = CALENDAR_IDS.powdersville;
+});
+["38342199","28312352","28312534","28312549","36030598","28312569"].forEach(function(id) {
+  TYPE_TO_CALENDAR[id] = CALENDAR_IDS["taylors-mill"];
+});
+
+// Map appointment type ID to duration in minutes (for block end time)
+const TYPE_TO_DURATION = {
+  "89113040": 60, "89113116": 120, "89114444": 180,
+  "89114517": 240, "89114539": 360, "89114581": 1080,
+  "38342199": 60, "28312352": 120, "28312534": 180,
+  "28312549": 240, "36030598": 360, "28312569": 720
+};
+
+// ---------------------------------------------------------------------------
+// Session prices in cents — server-side source of truth for Square line items
+// Must match Acuity appointment type prices
+// ---------------------------------------------------------------------------
+const SESSION_PRICES = {
+  "89113040": { label: "1 Hour Session", cents: 13000 },
+  "89113116": { label: "2 Hour Session", cents: 20000 },
+  "89114444": { label: "3 Hour Session", cents: 27000 },
+  "89114517": { label: "4 Hour Session", cents: 35000 },
+  "89114539": { label: "6 Hour Session", cents: 50000 },
+  "89114581": { label: "Full Day Session", cents: 98000 },
+  "38342199": { label: "1 Hour Session", cents: 11000 },
+  "28312352": { label: "2 Hour Session", cents: 17000 },
+  "28312534": { label: "3 Hour Session", cents: 23000 },
+  "28312549": { label: "Half Day Session", cents: 28000 },
+  "36030598": { label: "6 Hour Session", cents: 42000 },
+  "28312569": { label: "Full Day Session", cents: 55000 }
+};
+
+// Add-on prices in cents — for building Square line items
+const ADDON_PRICES = {
+  "lighting-powdersville": { label: "Lighting Rental", cents: 10000 },
+  "lighting-taylors-mill": { label: "Lighting Rental", cents: 5000 },
+  "backdrops-all": { label: "All Backdrops", cents: 5000 },
+  "backdrops-single": { label: "Single Backdrop", cents: 1500 },
+  "walls-all": { label: "All Rolling Walls", cents: 7000 },
+  "walls-single": { label: "Single Rolling Wall", cents: 3000 },
+  "chairs-25": { label: "25 Chairs", cents: 10000 },
+  "chairs-50": { label: "50 Chairs", cents: 19000 },
+  "chairs-75": { label: "75 Chairs", cents: 28000 },
+  "chairs-100": { label: "100 Chairs", cents: 37000 },
+  "table": { label: "8ft Folding Table", cents: 1500 },
+  "tv": { label: "86in Rolling TV", cents: 5000 },
+  "pa-system": { label: "PA System", cents: 4000 }
+};
+
+// Build Square line items array from booking state
+// Returns [{ name, amount (cents), quantity }]
+function buildSquareLineItems(appointmentTypeID, addons, location) {
+  const items = [];
+  const session = SESSION_PRICES[String(appointmentTypeID)];
+  if (!session) throw new Error("Unknown appointment type: " + appointmentTypeID);
+
+  items.push({ name: session.label, amount: session.cents, quantity: 1 });
+
+  if (!addons) return items;
+
+  // Lighting
+  if (addons.lighting && addons.lighting.selected) {
+    var lk = location === "powdersville" ? "lighting-powdersville" : "lighting-taylors-mill";
+    items.push({ name: ADDON_PRICES[lk].label, amount: ADDON_PRICES[lk].cents, quantity: 1 });
+  }
+
+  // Backdrops
+  if (addons.backdrops) {
+    if (addons.backdrops.mode === "all") {
+      items.push({ name: ADDON_PRICES["backdrops-all"].label, amount: ADDON_PRICES["backdrops-all"].cents, quantity: 1 });
+    } else if (addons.backdrops.colors && addons.backdrops.colors.length > 0) {
+      items.push({ name: ADDON_PRICES["backdrops-single"].label, amount: ADDON_PRICES["backdrops-single"].cents, quantity: addons.backdrops.colors.length });
+    }
+  }
+
+  // Rolling walls
+  if (addons["rolling-walls"]) {
+    if (addons["rolling-walls"].mode === "all") {
+      items.push({ name: ADDON_PRICES["walls-all"].label, amount: ADDON_PRICES["walls-all"].cents, quantity: 1 });
+    } else if (addons["rolling-walls"].walls && addons["rolling-walls"].walls.length > 0) {
+      items.push({ name: ADDON_PRICES["walls-single"].label, amount: ADDON_PRICES["walls-single"].cents, quantity: addons["rolling-walls"].walls.length });
+    }
+  }
+
+  // Chairs
+  if (addons.chairs && addons.chairs.selection) {
+    var ck = "chairs-" + addons.chairs.selection;
+    if (ADDON_PRICES[ck]) {
+      items.push({ name: ADDON_PRICES[ck].label, amount: ADDON_PRICES[ck].cents, quantity: 1 });
+    }
+  }
+
+  // Tables
+  if (addons.tables && addons.tables.quantity > 0) {
+    var tq = Math.min(addons.tables.quantity, 10);
+    items.push({ name: ADDON_PRICES["table"].label, amount: ADDON_PRICES["table"].cents, quantity: tq });
+  }
+
+  // TV
+  if (addons.tv && addons.tv.selected) {
+    items.push({ name: ADDON_PRICES["tv"].label, amount: ADDON_PRICES["tv"].cents, quantity: 1 });
+  }
+
+  // PA
+  if (addons["pa-system"] && addons["pa-system"].selected) {
+    items.push({ name: ADDON_PRICES["pa-system"].label, amount: ADDON_PRICES["pa-system"].cents, quantity: 1 });
+  }
+
+  return items;
+}
+
+// ---------------------------------------------------------------------------
+// HMAC signing — pass booking state safely through Square's redirect URL
+// ---------------------------------------------------------------------------
+const crypto = require("crypto");
+
+function signState(stateObj) {
+  const secret = process.env.BOOKING_SECRET;
+  if (!secret) throw new Error("Missing BOOKING_SECRET");
+  const payload = JSON.stringify(stateObj);
+  const sig = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  const encoded = Buffer.from(payload).toString("base64url");
+  return { encoded, sig };
+}
+
+function verifyAndDecodeState(encoded, sig) {
+  const secret = process.env.BOOKING_SECRET;
+  if (!secret) throw new Error("Missing BOOKING_SECRET");
+  const payload = Buffer.from(encoded, "base64url").toString("utf8");
+  const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+    throw new Error("Invalid signature");
+  }
+  return JSON.parse(payload);
+}
+
 module.exports = {
   acuityGet,
   acuityPost,
+  acuityDelete,
   isValidAppointmentTypeID,
+  CALENDAR_IDS,
+  TYPE_TO_CALENDAR,
+  TYPE_TO_DURATION,
   ACUITY_ADDON_IDS,
   ACUITY_FIELD_IDS,
   buildAcuityAddonIDs,
   buildAcuityFields,
-  buildAppointmentNotes
+  buildAppointmentNotes,
+  buildSquareLineItems,
+  signState,
+  verifyAndDecodeState
 };

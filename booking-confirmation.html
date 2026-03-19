@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Confirmed - WhiteWall Studios</title>
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518", "tm-warm": "#C4A882", "pv-cool": "#8BA7B8" },
+          fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10 rounded-full">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/powdersville" class="hover:text-black transition">Powdersville</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-20">
+    <div class="max-w-2xl mx-auto text-center">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-50 border border-green-200 mb-8">
+        <svg class="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h1 class="font-display text-5xl md:text-6xl leading-none">Booking confirmed</h1>
+      <p class="text-lg text-black/55 mt-6 max-w-lg mx-auto">
+        Your session has been booked and payment received. You'll receive a confirmation email shortly with everything you need — passcodes, prep videos, and studio details.
+      </p>
+
+      <div class="booking-panel p-6 md:p-8 mt-10 text-left">
+        <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">What happens next</p>
+        <ul class="helper-list">
+          <li class="helper-item">
+            <span class="helper-dot" style="background:#2e7d32"></span>
+            <span>Check your email for the confirmation from WhiteWall Studios.</span>
+          </li>
+          <li class="helper-item">
+            <span class="helper-dot" style="background:#2e7d32"></span>
+            <span>Watch the prep videos linked in the email — they cover studio access, equipment, and cleanup.</span>
+          </li>
+          <li class="helper-item">
+            <span class="helper-dot" style="background:#2e7d32"></span>
+            <span>Arrive on time and follow the entry instructions in your confirmation.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="/" class="booking-button booking-button-secondary">Back to home</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

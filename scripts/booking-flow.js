@@ -649,8 +649,8 @@
         return;
       }
 
-      // Create appointment (unpaid) and get Acuity payment link
-      var apptRes = await fetch("/api/create-appointment", {
+      // Create block (holds slot) + Square Payment Link
+      var checkoutRes = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -666,13 +666,13 @@
           waiverSigned: state.waiverSigned
         })
       });
-      var apptData = await apptRes.json();
-      if (!apptData.paymentUrl) {
-        throw new Error(apptData.error || "No payment URL returned");
+      var checkoutData = await checkoutRes.json();
+      if (!checkoutData.checkoutUrl) {
+        throw new Error(checkoutData.error || "No checkout URL returned");
       }
 
-      // Redirect to Acuity's Square payment page
-      window.location.href = apptData.paymentUrl;
+      // Redirect to Square's hosted checkout page
+      window.location.href = checkoutData.checkoutUrl;
     } catch (err) {
       console.error("Checkout error:", err);
       alert("Something went wrong creating your checkout. Please try again.");
