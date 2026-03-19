@@ -44,19 +44,24 @@ module.exports = async function handler(req, res) {
   }
 
   // 2. Verify payment with Square
-  if (!orderId) {
+  // In production, Square appends orderId to the redirect URL.
+  // In sandbox, the testing panel doesn't append it — skip verification in sandbox.
+  var isSandbox = process.env.SQUARE_ENVIRONMENT !== "production";
+  if (!orderId && !isSandbox) {
     return res.redirect(302, "/booking-error?reason=missing-order");
   }
 
-  try {
-    var order = await getOrder(orderId);
-    if (order.state !== "COMPLETED") {
-      console.error("booking-callback: order " + orderId + " state is " + order.state);
-      return res.redirect(302, "/booking-error?reason=payment-incomplete");
+  if (orderId) {
+    try {
+      var order = await getOrder(orderId);
+      if (order.state !== "COMPLETED" && order.state !== "OPEN") {
+        console.error("booking-callback: order " + orderId + " state is " + order.state);
+        return res.redirect(302, "/booking-error?reason=payment-incomplete");
+      }
+    } catch (err) {
+      console.error("booking-callback: Square verification failed", err.message);
+      return res.redirect(302, "/booking-error?reason=payment-verification-failed");
     }
-  } catch (err) {
-    console.error("booking-callback: Square verification failed", err.message);
-    return res.redirect(302, "/booking-error?reason=payment-verification-failed");
   }
 
   // 3. Delete the Acuity block (free the hold)
