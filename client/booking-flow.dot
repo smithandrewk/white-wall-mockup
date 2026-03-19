@@ -1,0 +1,179 @@
+digraph BookingFlow {
+    // Global settings
+    graph [
+        rankdir=TB
+        bgcolor="#fafafa"
+        fontname="Helvetica Neue"
+        label=<<BR/><FONT POINT-SIZE="22" FACE="Georgia"><B>WhiteWall Studios</B></FONT><BR/><FONT POINT-SIZE="13">Booking Flow State Machine</FONT><BR/><FONT POINT-SIZE="9" COLOR="#999999"><I>Block → Pay → Book Architecture</I></FONT><BR/><BR/>>
+        labelloc=t
+        pad="0.5"
+        nodesep=0.6
+        ranksep=0.7
+        dpi=300
+        size="8,10.5"
+        margin=0
+    ]
+
+    node [
+        fontname="Helvetica Neue"
+        fontsize=10
+        shape=box
+        style="rounded,filled"
+        penwidth=0
+        margin="0.2,0.12"
+    ]
+
+    edge [
+        fontname="Helvetica Neue"
+        fontsize=8
+        fontcolor="#666666"
+        color="#444444"
+        penwidth=1.2
+        arrowsize=0.7
+    ]
+
+    // Legend (invisible edges to force layout)
+    subgraph cluster_legend {
+        graph [label="" style=invis margin="12"]
+        node [shape=box width=0.6 height=0.25 fontsize=7]
+
+        leg_client [label="Client" fillcolor="#8ba7b8" fontcolor=white]
+        leg_server [label="Server" fillcolor="#2a2a2a" fontcolor=white]
+        leg_acuity [label="Acuity" fillcolor="#c4a882" fontcolor=white]
+        leg_square [label="Square" fillcolor="#4a90d9" fontcolor=white]
+        leg_error [label="Error" fillcolor="#c62828" fontcolor=white]
+        leg_cron [label="Cron" fillcolor="#6a6a6a" fontcolor=white]
+
+        leg_client -> leg_server -> leg_acuity -> leg_square -> leg_error -> leg_cron [style=invis]
+        {rank=same; leg_client; leg_server; leg_acuity; leg_square; leg_error; leg_cron}
+    }
+
+    // ==================== HAPPY PATH ====================
+
+    ui [
+        label=<<B>Steps 1–4: Custom UI</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Duration → Details → Waiver → Add-ons</I></FONT>>
+        fillcolor="#8ba7b8"
+        fontcolor=white
+    ]
+
+    schedule [
+        label=<<B>Step 5: Schedule &amp; Pay</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Calendar → Time → Order Summary</I></FONT>>
+        fillcolor="#8ba7b8"
+        fontcolor=white
+    ]
+
+    verify [
+        label=<<B>POST /api/verify-availability</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Confirm slot is still open</I></FONT>>
+        fillcolor="#2a2a2a"
+        fontcolor=white
+    ]
+
+    checkout [
+        label=<<B>POST /api/create-checkout</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Create calendar block + Square Payment Link</I></FONT>>
+        fillcolor="#2a2a2a"
+        fontcolor=white
+    ]
+
+    square [
+        label=<<B>Square Checkout Page</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Customer enters card and pays</I></FONT>>
+        fillcolor="#4a90d9"
+        fontcolor=white
+    ]
+
+    callback [
+        label=<<B>GET /api/booking-callback</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Verify payment → DELETE block</I></FONT>>
+        fillcolor="#2a2a2a"
+        fontcolor=white
+    ]
+
+    create_appt [
+        label=<<B>POST /appointments (admin=true)</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Create appointment after payment confirmed</I></FONT>>
+        fillcolor="#c4a882"
+        fontcolor=white
+    ]
+
+    done [
+        label=<<B>Booking Complete</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb"><I>Acuity sends confirmation email</I></FONT>>
+        fillcolor="#8ba7b8"
+        fontcolor=white
+    ]
+
+    // Happy path edges
+    ui -> schedule [label="  \"Pay & Book\" clicked  "]
+    schedule -> verify
+    verify -> checkout [label="  Slot available  "]
+    checkout -> square [label="  Redirect to Square  "]
+    square -> callback [label="  Payment complete  "]
+    callback -> create_appt [label="  Block removed  "]
+    create_appt -> done [label="  Appointment created  "]
+
+    // ==================== ERROR STATES ====================
+
+    slot_taken [
+        label=<<B>Slot Taken</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffcc"><I>Alert → pick new time</I></FONT>>
+        fillcolor="#c62828"
+        fontcolor=white
+    ]
+
+    abandoned [
+        label=<<B>Payment Abandoned</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffcc"><I>Block still held on calendar</I></FONT>>
+        fillcolor="#c62828"
+        fontcolor=white
+    ]
+
+    released [
+        label=<<B>Slot Released</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffcc"><I>Cron frees within 30 min</I></FONT>>
+        fillcolor="#6a6a6a"
+        fontcolor=white
+    ]
+
+    conflict [
+        label=<<B>Conflict After Payment</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffcc"><I>Error page → Drew refunds via Square</I></FONT>>
+        fillcolor="#c62828"
+        fontcolor=white
+    ]
+
+    // Error edges
+    verify -> slot_taken [label="  Not available  " color="#c62828" fontcolor="#c62828"]
+    square -> abandoned [label="  Closes tab  " color="#c62828" fontcolor="#c62828"]
+    abandoned -> released [color="#c62828"]
+    create_appt -> conflict [label="  Acuity rejects  " color="#c62828" fontcolor="#c62828"]
+
+    // Keep error states to the right
+    {rank=same; verify; slot_taken}
+    {rank=same; square; abandoned}
+    {rank=same; create_appt; conflict}
+
+    // ==================== CRON ====================
+
+    cron [
+        label=<<B>Cron Job</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffcc"><I>Every 15 min: delete blocks &gt; 30 min old</I></FONT>>
+        fillcolor="#6a6a6a"
+        fontcolor=white
+    ]
+
+    cron -> square [label="  Frees abandoned slots  " color="#6a6a6a" fontcolor="#6a6a6a" style=dashed]
+    {rank=same; cron; square; abandoned}
+
+    // ==================== KEY DECISIONS ====================
+
+    decisions [
+        shape=plaintext
+        fillcolor="#fafafa"
+        label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="6" CELLPADDING="4">
+            <TR><TD COLSPAN="2" ALIGN="CENTER"><FONT POINT-SIZE="13"><B>Key Design Decisions</B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>No premature emails</B> — Appointment created AFTER payment. Blocks don't trigger Acuity notifications.</TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>No unpaid appointments</B> — Only calendar blocks exist pre-payment. Cron auto-cleans abandoned blocks.</TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>No race conditions</B> — Block holds the slot while customer is on Square checkout.</TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>Server-side pricing</B> — Square Payment Link total calculated server-side. Client total is display only.</TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>HMAC-signed state</B> — Booking data signed + encoded in Square redirect URL. Tamper-proof.</TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>Acuity sends confirmation</B> — Appointment created with admin=true. Acuity handles the email.</TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>Block cleanup is safe</B> — Cron only deletes blocks tagged with our identifier.</TD></TR>
+            <TR><TD ALIGN="LEFT" VALIGN="TOP"><FONT COLOR="#8ba7b8" POINT-SIZE="12">•</FONT></TD><TD ALIGN="LEFT"><B>Slot conflict = refund</B> — If Acuity rejects after payment (extremely rare), Drew refunds via Square.</TD></TR>
+        </TABLE>
+        >
+    ]
+
+    done -> decisions [style=invis]
+}
