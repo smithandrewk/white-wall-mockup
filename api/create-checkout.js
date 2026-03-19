@@ -91,9 +91,8 @@ module.exports = async function handler(req, res) {
     const { encoded, sig } = signState(bookingState);
 
     // 4. Build redirect URL — Square appends orderId + transactionId
-    const baseUrl = process.env.VERCEL_URL
-      ? "https://" + process.env.VERCEL_URL
-      : "https://whitewallstudios.co";
+    // Use the production alias, not VERCEL_URL (which points to preview deployments)
+    const baseUrl = "https://white-wall-mockup.vercel.app";
     const redirectUrl = baseUrl + "/api/booking-callback?state=" + encoded + "&sig=" + sig;
 
     // 5. Create Square Payment Link
