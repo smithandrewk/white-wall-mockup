@@ -55,36 +55,36 @@ When editing booking links or adding new booking UI:
 
 ## Booking Integration
 
-### Architecture: Block → Pay → Book
+### Architecture: Pay → Book
 
-Custom 5-step UI → Acuity block (holds slot) → Square Payment Link (collects payment) → Acuity appointment (after payment confirmed).
+Custom 5-step UI → Square Payment Link (collects payment) → Acuity appointment (created after payment confirmed).
+
+No appointment exists until the customer pays. This matches the behavior of Drew's current Squarespace + Acuity setup where "Book & Pay" creates the appointment only after payment.
 
 Two separate integrations on the same Square merchant account:
-- **Acuity's Square connection** — handles payments through Acuity's own scheduler (unchanged, still works)
-- **Our Square Developer App** — handles payments through our custom booking flow
+- **Acuity's Square connection** — handles payments through Acuity's own scheduler (unchanged, still works for direct bookings)
+- **Our Square Developer App** — handles payments through our custom booking flow on whitewallstudios.co
 
 Both deposit to the same bank account. They don't conflict.
 
 ### Why This Architecture (Decision History)
 
-We evaluated three approaches before landing on Block → Pay → Book:
+We evaluated several approaches:
 
-1. **Acuity appointment first, pay on Acuity's page** — Creating an appointment with
-   `noPayment: true` sends invoice/confirmation emails immediately, before the customer
-   pays. Also, Acuity's `confirmationPagePaymentLink` CANNOT be invalidated — even after
-   cancelling the appointment, the payment page still works. No way to prevent late
-   payments on cancelled appointments.
+1. **Acuity's built-in payment page (`confirmationPagePaymentLink`)** — Requires creating
+   an appointment first, which triggers confirmation emails + QuickBooks invoices before
+   the customer pays. `noEmail` param doesn't suppress emails (tested). Payment links
+   can't be invalidated after appointment cancellation. Also, can't mark appointments as
+   paid via API (`POST /appointments/{id}/payments` returns 500 for all inputs).
 
-2. **Acuity appointment first, pay via Square** — Same email problem. Creating the
-   appointment triggers Acuity notifications regardless of `noEmail` param (tested,
-   doesn't suppress emails).
+2. **Block → Pay → Book** — Calendar blocks hold slots without emails. Works but adds
+   complexity (cron cleanup, Vercel Pro plan for frequent crons). Removed blocks after
+   determining the race condition risk is negligible at current volume.
 
-3. **Block → Pay → Book (current)** — Acuity calendar blocks hold the slot without
-   creating an appointment (no emails). Square Payment Link collects payment on a hosted
-   page we control. After payment confirmation, we create the Acuity appointment (which
-   then sends the confirmation email at the right time). Abandoned blocks + payment links
-   are cleaned up by a cron job, and unlike Acuity's payment links, Square payment links
-   CAN be programmatically deleted/invalidated.
+3. **Pay → Book (current)** — Simplest. Square collects payment first, callback creates
+   Acuity appointment after. No unpaid appointments, no premature emails, no cleanup needed.
+   The ~30 second window where two people could pay for the same slot is negligible at
+   ~50 bookings/month. If a slot conflict happens, Drew refunds via Square Dashboard.
 
 ### Files
 
@@ -95,16 +95,16 @@ Client-side:
 - `styles/booking.css` — calendar, time slots, spinner styles
 
 Server-side (Vercel serverless functions):
-- `api/_lib/acuity.js` — Acuity auth, add-on/field ID mappings, notes builder
-- `api/_lib/square.js` — Square API helpers (create payment link, verify order, refund)
+- `api/_lib/acuity.js` — Acuity auth, add-on/field ID mappings, pricing, HMAC signing
+- `api/_lib/square.js` — Square API helpers (payment links, order verification, refunds)
 - `api/availability-dates.js` — GET proxy for Acuity available dates
 - `api/availability-times.js` — GET proxy for Acuity available times
 - `api/verify-availability.js` — POST pre-checkout slot verification
-- `api/create-checkout.js` — POST creates Acuity block + Square Payment Link
-- `api/booking-callback.js` — GET callback after payment: verify → delete block → create appointment
-- `api/cleanup-blocks.js` — Cron: delete abandoned blocks + payment links older than 30 min
+- `api/create-checkout.js` — POST builds Square Payment Link with server-side pricing
+- `api/booking-callback.js` — GET callback after payment: verify order → create Acuity appointment
 
 Static:
+- `booking-confirmation.html` — success page after booking
 - `booking-error.html` — error/fallback page (slot conflict after payment, etc.)
 
 ### User Flow
@@ -115,28 +115,25 @@ Static:
 4. **Step 4 — Add-ons:** backdrops, lighting, walls, chairs, tables, TV, PA
 5. **Step 5 — Schedule & Pay:** calendar → time slots → order summary → "Pay & Book"
 6. `POST /api/verify-availability` — confirm slot is still open
-7. `POST /api/create-checkout` — creates Acuity block (holds slot) + Square Payment Link
-8. **Redirect to Square checkout page** — customer enters card, pays
+7. `POST /api/create-checkout` — server-side pricing, HMAC-sign state, create Square Payment Link
+8. **Redirect to Square checkout page** — customer sees itemized total, enters card, pays
 9. **Square redirects to `GET /api/booking-callback`** with `orderId` + `transactionId`
-10. Callback verifies order is COMPLETED → deletes block → creates Acuity appointment
-11. Redirect to confirmation page. Acuity sends confirmation email.
+10. Callback verifies order is paid → creates Acuity appointment with add-ons + notes
+11. Redirect to `/booking-confirmation`. Acuity sends confirmation email.
 
-**If customer abandons payment:** Block holds the slot for up to 30 min. Cron deletes
-the block + the Square payment link (invalidating it). Slot is freed.
+**If customer abandons Square page:** Nothing happens. No appointment, no block, no email.
+**If slot taken after payment (extremely rare):** Error page, Drew refunds via Square Dashboard.
 
-**If Acuity rejects after payment (extremely rare slot conflict):** Customer sees error
-page. Auto-refund via Square API, or Drew refunds manually.
-
-### Env vars (Vercel)
+### Env vars (Vercel — all set)
 
 | Variable | Source | Notes |
 |---|---|---|
-| `ACUITY_USER_ID` | Acuity > Integrations > API | `36967128` (already set) |
-| `ACUITY_API_KEY` | Acuity > Integrations > API | (already set) |
-| `SQUARE_ACCESS_TOKEN` | Square Developer Dashboard | Sandbox for testing, production for live |
-| `SQUARE_LOCATION_ID` | Square Dashboard > Locations | Same for sandbox and production |
-| `SQUARE_ENVIRONMENT` | — | `sandbox` or `production` |
-| `BOOKING_SECRET` | Generate: `openssl rand -hex 32` | HMAC signing key for state token |
+| `ACUITY_USER_ID` | Acuity > Integrations > API | `36967128` |
+| `ACUITY_API_KEY` | Acuity > Integrations > API | Set |
+| `SQUARE_ACCESS_TOKEN` | Square Developer Dashboard | Currently sandbox token |
+| `SQUARE_LOCATION_ID` | Square Dashboard > Locations | `LTPQKY2V3N0AH` (sandbox) |
+| `SQUARE_ENVIRONMENT` | — | `sandbox` (change to `production` for go-live) |
+| `BOOKING_SECRET` | `openssl rand -hex 32` | HMAC signing key |
 
 ### Acuity API Details
 
@@ -155,35 +152,33 @@ page. Auto-refund via Square API, or Drew refunds manually.
 - **Sandbox URL:** `https://connect.squareupsandbox.com`
 - **Production URL:** `https://connect.squareup.com`
 - **API version:** `2026-01-22` (set via `Square-Version` header)
-- **Processing fee:** 2.9% + $0.30 per transaction (Square standard)
-- **No SDK** — we use raw `fetch()` to avoid BigInt serialization issues on Vercel serverless
+- **Processing fee:** 2.9% + $0.30 per transaction
+- **No SDK** — raw `fetch()` to avoid BigInt serialization issues on Vercel serverless
 
-**Key Square endpoints we use:**
+**Key Square endpoints:**
 
 | Endpoint | Purpose |
 |---|---|
 | `POST /v2/online-checkout/payment-links` | Create Payment Link with line items + redirect URL |
-| `GET /v2/orders/{id}` | Verify order state is COMPLETED after payment |
-| `DELETE /v2/online-checkout/payment-links/{id}` | Invalidate abandoned payment links (cron) |
-| `POST /v2/refunds` | Auto-refund if Acuity appointment creation fails |
+| `GET /v2/orders/{id}` | Verify order is COMPLETED after payment |
+| `POST /v2/refunds` | Refund if Acuity appointment creation fails |
 
 **Square redirect behavior:** After payment, Square appends `checkoutId`, `orderId`,
 `transactionId`, and `referenceId` as query params to our redirect URL.
 
-**Payment link lifecycle:** Links don't expire automatically. We can delete them via API,
-which also cancels the associated order. This is a major advantage over Acuity's payment
-links which cannot be invalidated.
-
 ### Undocumented Acuity Behavior We Rely On
 
 1. **`noPayment: true`** on POST /appointments — creates appointment without payment. Tested 2026-03-17.
-2. **`noEmail` does NOT work** — tested, emails are still sent. This is WHY we use Block → Pay → Book.
-3. **`admin=true` query param** on POST /appointments — required for `notes` field to be saved. Without it, notes are silently dropped.
-4. **Duplicate addonIDs for quantity** — same ID × N charges N × price. Tested: 3× $20 = $60.
-5. **`fields` accepts `{id, value}`** — docs mention `label` but ID-based works and is more reliable.
-6. **POST/DELETE /blocks** — creates/removes calendar blocks that prevent slot availability without creating appointments or sending emails. Tested 2026-03-19.
+2. **`admin=true` query param** — required for `notes` field to be saved. Tested 2026-03-19.
+3. **Duplicate addonIDs for quantity** — same ID × N charges N × price. Tested: 3× $20 = $60.
+4. **`fields` accepts `{id, value}`** — docs mention `label` but ID-based works and is more reliable.
 
-See `api/_lib/acuity.js` header for full documentation of each.
+**Things that DON'T work:**
+- `noEmail` param — emails are still sent (tested 2026-03-17)
+- `POST /appointments/{id}/payments` — returns 500 for all source values (tested 2026-03-19)
+- `PUT /appointments/{id}` with `paid` or `price` — silently ignored, read-only fields
+
+See `api/_lib/acuity.js` header for full documentation.
 
 ### Add-On Strategy
 
@@ -194,63 +189,43 @@ Acuity's add-on system is flat (no quantities, no variants). Our approach:
 - **Chairs:** Separate add-on per tier (25/$100, 50/$190, 75/$280, 100/$370).
 - **Toggle add-ons:** Lighting, TV, PA — one add-on each.
 
-All add-on IDs are mapped in `api/_lib/acuity.js` → `ACUITY_ADDON_IDS`.
+All add-on IDs mapped in `api/_lib/acuity.js` → `ACUITY_ADDON_IDS`.
+Square shows the same breakdown as individual line items on the checkout page.
 
-Square Payment Link shows the same add-ons as individual line items, so Drew sees the
-full breakdown in his Square Dashboard and the customer sees itemized pricing on checkout.
+### QuickBooks Integration
 
-### Acuity API Limitations
+Acuity auto-syncs appointments to QuickBooks. Current behavior on Drew's Squarespace
+site: QuickBooks receives a $0 draft invoice per booking. This is existing behavior
+Drew lives with — not introduced by our changes.
 
-- **Cannot create add-ons via API** — GET only. Drew creates them in Acuity dashboard.
-- **Cannot override appointment price** — `price` param on POST/PUT is ignored.
-- **Cannot update addonIDs after creation** — PUT only allows: name, email, phone, fields, notes, labels.
-- **Cannot suppress emails** — `noEmail` param doesn't work (tested).
-- **Cannot invalidate payment links** — `confirmationPagePaymentLink` stays active after cancellation.
-- **No CORS** — all API calls must go through server-side proxy.
+**Setting in Acuity > Integrations > QuickBooks:**
+- "Create a draft invoice" — no email sent to customer
+- Or "Don't create an invoice, just add them as a client" — cleanest option
 
-### Abandoned Checkout Cleanup (Cron)
-
-**`api/cleanup-blocks.js`** — runs every 15 minutes via Vercel cron.
-
-For each abandoned checkout (block older than 30 minutes):
-1. `DELETE /v2/online-checkout/payment-links/{id}` — invalidates Square payment link
-2. `DELETE /blocks/{id}` — frees the slot on Acuity's calendar
-
-**Why this is safe:**
-- Only touches blocks tagged "Payment hold — whitewallstudios.co"
-- Drew's manual blocks are untouched
-- Square payment link is deleted FIRST, so customer can't pay after slot is freed
-- No edge case where customer pays on a cancelled/freed slot
-
-**Vercel cron config in `vercel.json`:**
-```json
-{ "crons": [{ "path": "/api/cleanup-blocks", "schedule": "*/15 * * * *" }] }
-```
+Drew should confirm which setting he prefers. Either way, payment is recorded in
+Square, and QuickBooks can pull transaction data from Square directly.
 
 ### Testing Strategy
 
-**Sandbox-first:** Square provides a full sandbox environment with test cards.
-- Sandbox base URL: `connect.squareupsandbox.com`
+**Currently in sandbox mode.** Square sandbox provides full end-to-end testing:
 - Test Visa: `4111 1111 1111 1111`, CVV `111`, any future expiry
 - Test decline: `4000 0000 0000 0002`
-- Full redirect flow works in sandbox (real checkout pages, test cards, real redirects)
+- Sandbox testing panel simulates checkout + redirect
 
-Set `SQUARE_ENVIRONMENT=sandbox` and use sandbox access token. Switch to production
-token + `SQUARE_ENVIRONMENT=production` for go-live.
+**Note:** In sandbox, the testing panel doesn't auto-redirect to our callback.
+You need to click the redirect URL manually from the panel. In production,
+Square's checkout page redirects the browser automatically.
 
-### Future: Webhooks
+**To go live:** Replace `SQUARE_ACCESS_TOKEN` and `SQUARE_LOCATION_ID` with production
+values from Square Developer Dashboard. Set `SQUARE_ENVIRONMENT=production`.
 
-**Acuity** supports: `scheduled`, `rescheduled`, `canceled`, `changed`, `order.completed`.
-Payload: `application/x-www-form-urlencoded`. Signed with HMAC-SHA256 via `x-acuity-signature`.
+### Future Enhancements
 
-**Square** supports: `payment.created`, `payment.updated`, `order.created`, `order.updated`, `refund.created`.
-Payload: JSON via POST. Retries with exponential backoff over 24 hours.
-
-Not currently used but could enable:
-- Real-time Slack/email notifications on bookings
-- Backup payment verification (complement to redirect callback)
-- Admin dashboard live feed
-- Google Calendar sync
+- **QuickBooks API integration** — auto-mark invoices as paid (OAuth2, requires token storage)
+- **Acuity/Square webhooks** — real-time notifications, backup payment verification
+- **Funnel data collection** — PostHog events or DB for abandoned booking follow-up
+- **Admin dashboard** — live booking feed combining Acuity + Square data
+- **A/B testing** — PostHog feature flags + Claude optimization
 
 ### Notes
 
@@ -261,4 +236,4 @@ Not currently used but could enable:
 - PV lighting: $100 in Acuity, $125 on our site — Drew needs to update Acuity
 - Local dev: `python -m http.server` requires `.html` extensions; Vercel `cleanUrls` handles clean routes
 - Full appointment backup: `client/acuity-full-backup.csv` (2,574 rows, Nov 2021–present)
-- State machine diagram: `client/booking-flow-state-machine.png`
+- System design diagrams: `client/system-design-old.pdf`, `client/system-design-new.pdf`
