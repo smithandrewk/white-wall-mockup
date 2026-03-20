@@ -67,24 +67,100 @@ Two separate integrations on the same Square merchant account:
 
 Both deposit to the same bank account. They don't conflict.
 
-### Why This Architecture (Decision History)
+### Why Square Payment Links Instead of Acuity's Payment Page
 
-We evaluated several approaches:
+This was the central architectural decision. We explored every possible approach over
+several days of research and testing (2026-03-17 through 2026-03-20). Here is every
+option we evaluated, why it failed, and the evidence.
 
-1. **Acuity's built-in payment page (`confirmationPagePaymentLink`)** — Requires creating
-   an appointment first, which triggers confirmation emails + QuickBooks invoices before
-   the customer pays. `noEmail` param doesn't suppress emails (tested). Payment links
-   can't be invalidated after appointment cancellation. Also, can't mark appointments as
-   paid via API (`POST /appointments/{id}/payments` returns 500 for all inputs).
+#### Option 1: Acuity's Built-In Scheduler (iframe/link)
+**Why not:** Drew wanted a fully custom booking experience — visual add-on carousels
+with photos, multi-step flow with event detection, waiver signing, custom pricing display.
+Acuity's scheduler is a generic form. Steps 1-4 of our custom UI are non-negotiable.
 
-2. **Block → Pay → Book** — Calendar blocks hold slots without emails. Works but adds
-   complexity (cron cleanup, Vercel Pro plan for frequent crons). Removed blocks after
-   determining the race condition risk is negligible at current volume.
+#### Option 2: Custom UI → Acuity's Payment Page (`confirmationPagePaymentLink`)
+**Why not (three separate blockers):**
 
-3. **Pay → Book (current)** — Simplest. Square collects payment first, callback creates
-   Acuity appointment after. No unpaid appointments, no premature emails, no cleanup needed.
-   The ~30 second window where two people could pay for the same slot is negligible at
-   ~50 bookings/month. If a slot conflict happens, Drew refunds via Square Dashboard.
+1. **Premature emails.** Creating an appointment with `noPayment: true` immediately
+   triggers Acuity's confirmation email + QuickBooks invoice — BEFORE the customer pays.
+   `noEmail` param doesn't suppress emails (tested 2026-03-17). On Drew's current
+   Squarespace site, Acuity creates the appointment atomically with payment, so emails
+   only go out after payment. Our API approach breaks this atomicity.
+
+2. **Can't pass add-ons via scheduler URL.** We tested `addonIDs[]`, `addon[]`, and
+   `addons[]` as URL parameters on Acuity's scheduler — none work (tested 2026-03-20).
+   Private add-ons (which ours are) don't appear on the public scheduler at all. This
+   means the scheduler URL can pre-fill contact info and datetime, but the price shown
+   would be ONLY the base session — no add-ons included. The total would be wrong.
+
+3. **Can't mark appointments as paid via API.** `POST /appointments/{id}/payments`
+   exists in Acuity's router (returns 400 if `source` is missing) but returns 500
+   Internal Server Error for EVERY source value. Tested 50+ values including `cash`,
+   `square`, `check`, `external`, `manual`, `credit_card`, integers, etc. (2026-03-19).
+   This endpoint is NOT in Acuity's official API docs (reference page returns 404).
+   `PUT /appointments/{id}` with `paid: "yes"` or `price: "0"` is silently ignored
+   — both are read-only fields. No third-party integration (Zapier, Make, Pipedream)
+   has solved this either. Cash payments are UI-only ("Record Cash Payment" button
+   in the admin dashboard). Confirmed by exhaustive web search (2026-03-20).
+
+**Net result:** If we use Acuity's payment page, the price would be wrong (missing
+add-ons) and we couldn't fix it. If we create the appointment first and redirect to
+the payment page, the customer gets emails before paying.
+
+#### Option 3: Custom UI → Acuity Appointment → Acuity Payment Page (with draft invoices)
+**Almost worked.** We changed QuickBooks setting to "Create a draft invoice" (not
+emailed). The Acuity payment page (`confirmationPagePaymentLink`) shows the correct
+total when add-ons are passed via API at appointment creation. The payment page UI
+looked great (tested 2026-03-19). BUT: the confirmation email from Acuity still goes
+out immediately when the appointment is created, before the customer pays. And we
+can't pass add-ons via the scheduler URL (see Option 2, point 2), so we can't use
+the atomic scheduler flow.
+
+#### Option 4: Block → Pay → Book (with Square Payment Links)
+**Worked but was complex.** Calendar blocks hold slots without creating appointments
+(no emails). Square Payment Link collects payment. Callback creates appointment after
+payment. But: blocks needed cleanup (abandoned checkouts), Vercel Hobby plan only
+supports daily crons (not 15-minute), and blocks added architectural complexity.
+Removed blocks after determining race condition risk is negligible at current volume.
+
+#### Option 5: Pay → Book (current — Square Payment Links, no blocks)
+**Simplest approach that solves all problems:**
+- Custom UI collects everything (steps 1-4) — Drew's vision preserved
+- Square Payment Link charges the exact correct total with itemized add-ons
+- No appointment exists until payment confirmed — no premature emails
+- Callback creates Acuity appointment after payment — Acuity sends confirmation email
+  at the right time
+- QuickBooks gets a draft invoice (not emailed) — Drew prefers this
+- Race condition window (~30 sec) is negligible at ~50 bookings/month
+- If slot conflict after payment (extremely rare), Drew refunds via Square Dashboard
+
+#### Why We Can't Use Acuity's Payment System At All (Summary)
+The fundamental issue: Acuity's scheduler handles booking + payment atomically on
+their own page. Through the API, we're forced to separate them. We can't:
+- Get a payment page without first creating an appointment (triggers emails)
+- Pass add-ons via scheduler URL parameters (private add-ons hidden, URL params ignored)
+- Mark an appointment as paid after collecting payment externally (API endpoint broken)
+- Suppress Acuity's confirmation email at appointment creation time (noEmail doesn't work)
+
+Square Payment Links give us full control over pricing, line items, and timing.
+
+### QuickBooks Invoice Status
+
+Acuity auto-syncs appointments to QuickBooks. Setting changed to **"Create a draft
+invoice"** (2026-03-20) so no invoice email is sent to the customer.
+
+**Current state:** Draft invoices appear in QuickBooks as unpaid. Drew confirmed he
+doesn't care about invoicing customers — he prefers they don't get invoiced.
+
+**Future fix:** Complete the Intuit Developer compliance questionnaire (~30 min) to
+get production QuickBooks API credentials. Then our callback can find the draft
+invoice and mark it as paid automatically. Tested successfully in sandbox (2026-03-20):
+query invoice by customer + date → record payment → invoice marked paid.
+
+**QuickBooks connections:**
+- Acuity → QuickBooks: creates draft invoices (keep connected — also auto-voids on cancel)
+- Square → QuickBooks: already connected, syncs payment transactions
+- Our app → QuickBooks: pending compliance questionnaire for production access
 
 ### Files
 
@@ -173,10 +249,12 @@ Static:
 3. **Duplicate addonIDs for quantity** — same ID × N charges N × price. Tested: 3× $20 = $60.
 4. **`fields` accepts `{id, value}`** — docs mention `label` but ID-based works and is more reliable.
 
-**Things that DON'T work:**
-- `noEmail` param — emails are still sent (tested 2026-03-17)
-- `POST /appointments/{id}/payments` — returns 500 for all source values (tested 2026-03-19)
-- `PUT /appointments/{id}` with `paid` or `price` — silently ignored, read-only fields
+**Things that DON'T work (tested and confirmed):**
+- `noEmail` param on POST /appointments — emails are still sent (tested 2026-03-17)
+- `POST /appointments/{id}/payments` — returns 500 for all source values. Tested 50+ values. Endpoint exists in router but is not in official docs. Likely broken or internal-only. (tested 2026-03-19, re-confirmed 2026-03-20)
+- `PUT /appointments/{id}` with `paid` or `price` — silently ignored, read-only fields (tested 2026-03-19)
+- Scheduler URL add-on params — `addonIDs[]`, `addon[]`, `addons[]` all ignored. Private add-ons don't appear on public scheduler. (tested 2026-03-20)
+- `confirmationPagePaymentLink` invalidation — cancelling an appointment does NOT disable its payment link. Page still accepts card input after cancellation. (tested 2026-03-17)
 
 See `api/_lib/acuity.js` header for full documentation.
 
@@ -192,18 +270,6 @@ Acuity's add-on system is flat (no quantities, no variants). Our approach:
 All add-on IDs mapped in `api/_lib/acuity.js` → `ACUITY_ADDON_IDS`.
 Square shows the same breakdown as individual line items on the checkout page.
 
-### QuickBooks Integration
-
-Acuity auto-syncs appointments to QuickBooks. Current behavior on Drew's Squarespace
-site: QuickBooks receives a $0 draft invoice per booking. This is existing behavior
-Drew lives with — not introduced by our changes.
-
-**Setting in Acuity > Integrations > QuickBooks:**
-- "Create a draft invoice" — no email sent to customer
-- Or "Don't create an invoice, just add them as a client" — cleanest option
-
-Drew should confirm which setting he prefers. Either way, payment is recorded in
-Square, and QuickBooks can pull transaction data from Square directly.
 
 ### Testing Strategy
 
@@ -219,9 +285,59 @@ Square's checkout page redirects the browser automatically.
 **To go live:** Replace `SQUARE_ACCESS_TOKEN` and `SQUARE_LOCATION_ID` with production
 values from Square Developer Dashboard. Set `SQUARE_ENVIRONMENT=production`.
 
+### Unpaid Appointment Handling (deferred — not yet implemented)
+
+**The problem:** When we create an appointment with `noPayment: true`, it holds the
+time slot on Drew's calendar. If the customer doesn't pay, that slot is blocked.
+
+**Why we're deferring:** At ~50 bookings/month, the odds of two customers wanting the
+exact same slot within a 30-minute window are near zero. Building auto-cancel adds
+complexity for a problem that may never occur. Revisit if it becomes an issue.
+
+**Research findings (2026-03-17):**
+- Acuity's `confirmationPagePaymentLink` has NO expiry and CANNOT be invalidated
+- Cancelling an appointment does NOT disable its payment link — tested and confirmed
+- The payment page still shows the full balance and accepts card input after cancellation
+- There is no API parameter or dashboard setting for payment link TTL
+
+**If we need to solve this later, evaluated approaches:**
+
+1. **Vercel cron + tagged cleanup (simplest, no new deps)**
+   - Our appointments have "Booked via whitewallstudios.co" in notes
+   - Cron runs every 15 min, fetches recent appointments with our tag
+   - Cancels any that are `paid === "no"` and created > 30 min ago
+   - Safe: only touches our appointments, checks paid status before cancelling
+   - Risk: customer could still pay on cancelled appointment's link (edge case)
+
+2. **QStash delayed trigger (cleanest, adds dependency)**
+   - `create-appointment` fires a delayed HTTP call: "check appointment {id} in 30 min"
+   - Exactly one check per appointment, no scanning
+   - Same cancelled-link risk applies
+
+3. **Webhook monitoring (complementary, not standalone)**
+   - Register `changed` webhook to detect payment on cancelled appointments
+   - Doesn't solve the cleanup, but catches the edge case from options 1/2
+   - If payment detected on cancelled appointment, alert Drew to rebook
+
+**The fundamental limitation:** We don't control Acuity's payment page. We cannot
+invalidate a payment link. Any auto-cancel approach has a theoretical edge case where
+the customer pays after cancellation. At current volume this is a non-issue.
+
+### Future: Webhooks
+
+Acuity supports webhooks for `scheduled`, `rescheduled`, `canceled`, `changed`, and `order.completed`. Not currently used but could enable:
+- Real-time Slack/email notifications when bookings are paid
+- Detecting payment on auto-cancelled appointments (see above)
+- Auto-updating a dashboard or CRM
+- Syncing to Google Calendar automatically
+
+Webhook payload: `application/x-www-form-urlencoded` POST with `action`, `id`, `calendarID`, `appointmentTypeID`. Signed with HMAC-SHA256 using API key (verify via `x-acuity-signature` header). Retries with exponential backoff over 24 hours (9 attempts). Auto-disables after 5 days of consecutive failures.
+
+Register at: Acuity dashboard > Integrations > Webhooks, or via API.
+
 ### Future Enhancements
 
-- **QuickBooks API integration** — auto-mark invoices as paid (OAuth2, requires token storage)
+- **QuickBooks API: auto-mark invoices as paid** — Intuit compliance questionnaire needed for production credentials (~30 min). OAuth2 + token refresh + find invoice by customer/date + record payment. Tested successfully in sandbox 2026-03-20.
 - **Acuity/Square webhooks** — real-time notifications, backup payment verification
 - **Funnel data collection** — PostHog events or DB for abandoned booking follow-up
 - **Admin dashboard** — live booking feed combining Acuity + Square data
