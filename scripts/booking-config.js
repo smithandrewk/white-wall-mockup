@@ -62,10 +62,11 @@ window.WWS_BOOKING_CONFIG = {
           description: "Modular rolling walls for custom studio setups.",
           allImage: "images/gear-rentals/whitewall-powdersville_v1-8.jpg",
           walls: [
-            { id: "wall-1", label: "Wall 1", image: "images/gear-rentals/whitewall-powdersville_v1-9.jpg" },
-            { id: "wall-2", label: "Wall 2", image: "images/gear-rentals/whitewall-powdersville_v1-11.jpg" },
-            { id: "wall-3", label: "Wall 3", image: "images/gear-rentals/whitewall-powdersville_v1-12.jpg" },
-            { id: "wall-4", label: "Wall 4", image: "images/gear-rentals/whitewall-powdersville_v1-14.jpg" }
+            { id: "wall-1", label: "Wall 1 — Layered, Hallowed, Squared Arch", image: "images/gear-rentals/whitewall-powdersville_v1-9.jpg" },
+            { id: "wall-2", label: "Wall 2 — Small Shelves", image: "images/gear-rentals/whitewall-powdersville_v1-11.jpg" },
+            { id: "wall-3", label: "Wall 3 — Layered, Curved Arch", image: "images/gear-rentals/whitewall-powdersville_v1-12.jpg" },
+            { id: "wall-4", label: "Wall 4 — Picture Frame", image: "images/gear-rentals/whitewall-powdersville_v1-14.jpg" },
+            { id: "wall-5", label: "Wall 5 — Three Simple Walls, Increasing Plain Arch Pack", image: "images/gear-rentals/whitewall-powdersville_v1-14.jpg" }
           ]
         },
         {
@@ -84,9 +85,9 @@ window.WWS_BOOKING_CONFIG = {
         {
           id: "tables",
           type: "quantity",
-          name: "8ft folding tables",
+          name: "8ft fold out tables",
           image: "images/gear-rentals/tables-and-chairs-render.jpg",
-          description: "Up to 10 tables available.",
+          description: "Tables are one solid structure with no crease in the middle. The legs simply fold out. Up to 10 tables available.",
           price: 15,
           max: 10,
           unitLabel: "table"
@@ -97,7 +98,7 @@ window.WWS_BOOKING_CONFIG = {
           name: "86in rolling TV",
           image: "images/gear-rentals/whitewall-powdersville_v2-38.jpg",
           price: 50,
-          description: "4K smart TV with HDMI access and laptop tray."
+          description: "4K smart TV with every HDMI connecting cable imaginable."
         },
         {
           id: "pa-system",
@@ -105,7 +106,7 @@ window.WWS_BOOKING_CONFIG = {
           name: "PA system",
           image: "images/gear-rentals/whitewall-powdersville_v2-31.jpg",
           price: 40,
-          description: "Wired microphone and speaker package."
+          description: "Large speaker with aux cable to connect to any phone, with wired microphone and stand."
         }
       ]
     },
