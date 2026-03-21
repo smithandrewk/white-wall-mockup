@@ -90,7 +90,7 @@ window.WWS_BOOKING_CONFIG = {
           description: "Tables are one solid structure with no crease in the middle. The legs simply fold out. Up to 10 tables available.",
           price: 15,
           max: 10,
-          unitLabel: "table"
+          unitLabel: "tables"
         },
         {
           id: "tv",
