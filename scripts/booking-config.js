@@ -128,9 +128,9 @@ window.WWS_BOOKING_CONFIG = {
         { id: "tm-1", label: "1 hour", hours: 1, price: 110, description: "Quick portraits, headshots, and pickups.", acuityTypeKey: "taylors_mill_1hr" },
         { id: "tm-2", label: "2 hours", hours: 2, price: 170, description: "The standard Taylor's Mill session.", acuityTypeKey: "taylors_mill_2hr" },
         { id: "tm-3", label: "3 hours", hours: 3, price: 230, description: "Longer natural light sessions and branded shoots.", acuityTypeKey: "taylors_mill_3hr" },
-        { id: "tm-4", label: "Half day", hours: 4, price: 280, description: "Extended sessions and small productions.", acuityTypeKey: "taylors_mill_4hr" },
-        { id: "tm-6", label: "6 hours", hours: 6, price: 420, description: "Large productions and brand activations.", acuityTypeKey: "taylors_mill_6hr" },
-        { id: "tm-full", label: "Full day", hours: 12, price: 550, description: "All-day studio access.", acuityTypeKey: "taylors_mill_full_day" }
+        { id: "tm-4", label: "4 hours", hours: 4, price: 280, description: "Extended sessions and small productions.", acuityTypeKey: "taylors_mill_4hr" },
+        { id: "tm-6", label: "6 hours", hours: 6, price: 420, description: "Large productions.", acuityTypeKey: "taylors_mill_6hr" },
+        { id: "tm-full", label: "12 hours", hours: 12, price: 550, description: "All-day studio access.", acuityTypeKey: "taylors_mill_full_day" }
       ],
       addons: [
         {
