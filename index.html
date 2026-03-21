@@ -69,39 +69,37 @@
 <body class="bg-white text-wws-black">
 
   <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+  <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background:transparent">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
       <a href="/" class="flex items-center gap-3">
-        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10">
+        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10 brightness-0 invert transition-all duration-300" id="nav-logo">
       </a>
-      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
-        <a href="/" class="hover:text-wws-dark transition">Home</a>
-        <a href="/powdersville" class="hover:text-wws-dark transition">Powdersville</a>
-        <a href="/taylors-mill" class="hover:text-wws-dark transition">Taylor's Mill</a>
-        <a href="/gallery" class="hover:text-wws-dark transition">Gallery</a>
-        <a href="#contact" class="hover:text-wws-dark transition">Contact</a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-white/80" id="nav-links">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <a href="/powdersville" class="hover:text-white transition">Powdersville</a>
+        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-white transition">Gallery</a>
+        <a href="#contact" class="hover:text-white transition">Contact</a>
       </div>
-      <!-- Mobile menu button -->
-      <button id="menu-toggle" class="md:hidden p-2">
+      <button id="menu-toggle" class="md:hidden p-2 text-white">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
     </div>
-    <!-- Mobile menu -->
-    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
-      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
-        <a href="/" class="hover:text-wws-dark transition">Home</a>
-        <a href="/powdersville" class="hover:text-wws-dark transition">Powdersville</a>
-        <a href="/taylors-mill" class="hover:text-wws-dark transition">Taylor's Mill</a>
-        <a href="/gallery" class="hover:text-wws-dark transition">Gallery</a>
-        <a href="#contact" class="hover:text-wws-dark transition">Contact</a>
+    <div id="mobile-menu" class="hidden md:hidden bg-black/90 backdrop-blur">
+      <div class="px-6 py-4 flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-white/80">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <a href="/powdersville" class="hover:text-white transition">Powdersville</a>
+        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-white transition">Gallery</a>
+        <a href="#contact" class="hover:text-white transition">Contact</a>
       </div>
     </div>
   </nav>
 
   <!-- Video Hero -->
-  <section class="relative h-screen pt-[72px] overflow-hidden">
+  <section class="relative h-screen overflow-hidden">
     <video class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline>
       <source src="videos/hero.mp4" type="video/mp4">
     </video>
@@ -422,6 +420,30 @@
     document.getElementById('menu-toggle').addEventListener('click', () => {
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
+
+    // Navbar: transparent over hero, solid white on scroll
+    (function () {
+      var nav = document.getElementById('main-nav');
+      var logo = document.getElementById('nav-logo');
+      var links = document.getElementById('nav-links');
+      var toggle = document.getElementById('menu-toggle');
+      var heroHeight = window.innerHeight * 0.85;
+      window.addEventListener('scroll', function () {
+        if (window.scrollY > heroHeight) {
+          nav.style.background = 'rgba(255,255,255,0.97)';
+          nav.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
+          logo.style.filter = 'none';
+          if (links) { links.className = links.className.replace('text-white/80', 'text-black/50'); links.querySelectorAll('a').forEach(function(a){ a.style.color = ''; }); }
+          toggle.style.color = '#000';
+        } else {
+          nav.style.background = 'transparent';
+          nav.style.borderBottom = 'none';
+          logo.style.filter = 'brightness(0) invert(1)';
+          if (links) { links.className = links.className.replace('text-black/50', 'text-white/80'); }
+          toggle.style.color = '#fff';
+        }
+      });
+    })();
 
     // Fisher-Yates shuffle for homepage gallery
     (function () {
