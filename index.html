@@ -117,10 +117,15 @@
           <h2 class="font-display text-5xl md:text-6xl font-light mb-3 tracking-wide">Powdersville</h2>
           <p class="text-sm tracking-widest uppercase opacity-80 mb-6">The Flagship Studio & Event Space</p>
           <span class="inline-block border border-white/60 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
-            Explore Studio
+            Powdersville Location
           </span>
         </div>
       </a>
+
+      <!-- Mobile divider -->
+      <div class="md:hidden bg-wws-black flex items-center justify-center py-4">
+        <p class="text-white/60 text-xs tracking-[0.2em] uppercase">Choose Your Location</p>
+      </div>
 
       <!-- Taylor's Mill -->
       <a href="/taylors-mill" class="relative group overflow-hidden cursor-pointer block">
@@ -135,7 +140,7 @@
           <h2 class="font-display text-5xl md:text-6xl font-light mb-3 tracking-wide">Taylor's Mill</h2>
           <p class="text-sm tracking-widest uppercase opacity-80 mb-6">The Original Natural Light Studio</p>
           <span class="inline-block border border-white/60 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
-            Explore Studio
+            Taylors Mill Location
           </span>
         </div>
       </a>
@@ -239,30 +244,86 @@
         <h3 class="font-display text-4xl font-light mb-3">From Our Studios</h3>
         <p class="text-sm text-wws-dark tracking-wide">A glimpse of what creators make at WhiteWall</p>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div class="aspect-[3/4] overflow-hidden">
+      <div id="homepage-gallery" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <a href="/powdersville" class="aspect-[3/4] overflow-hidden relative block">
           <img src="images/powdersville/whitewall-powdersville_v2-1.jpg" alt="Powdersville studio natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
-        </div>
-        <div class="aspect-[3/4] overflow-hidden">
+          <span class="absolute top-3 left-3 text-[10px] tracking-[0.15em] uppercase text-white/60 bg-black/30 px-2 py-1 rounded">Powdersville</span>
+        </a>
+        <a href="/taylors-mill" class="aspect-[3/4] overflow-hidden relative block">
           <img src="images/gallery/mary-162.jpg" alt="Portrait session at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
-        </div>
-        <div class="aspect-[3/4] overflow-hidden">
+          <span class="absolute top-3 left-3 text-[10px] tracking-[0.15em] uppercase text-white/60 bg-black/30 px-2 py-1 rounded">Taylor's Mill</span>
+        </a>
+        <a href="/powdersville" class="aspect-[3/4] overflow-hidden relative block">
           <img src="images/powdersville/whitewall-powdersville_v2-7.jpg" alt="Powdersville studio interior" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
-        </div>
-        <div class="aspect-[3/4] overflow-hidden md:block hidden">
+          <span class="absolute top-3 left-3 text-[10px] tracking-[0.15em] uppercase text-white/60 bg-black/30 px-2 py-1 rounded">Powdersville</span>
+        </a>
+        <a href="/taylors-mill" class="aspect-[3/4] overflow-hidden relative block md:block hidden">
           <img src="images/gallery/kayla-still.jpg" alt="Creative portrait at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
-        </div>
-        <div class="aspect-[3/4] overflow-hidden md:block hidden">
+          <span class="absolute top-3 left-3 text-[10px] tracking-[0.15em] uppercase text-white/60 bg-black/30 px-2 py-1 rounded">Taylor's Mill</span>
+        </a>
+        <a href="/powdersville" class="aspect-[3/4] overflow-hidden relative block md:block hidden">
           <img src="images/powdersville/whitewall-powdersville_v2-14.jpg" alt="Powdersville studio wide angle" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
-        </div>
-        <div class="aspect-[3/4] overflow-hidden md:block hidden">
+          <span class="absolute top-3 left-3 text-[10px] tracking-[0.15em] uppercase text-white/60 bg-black/30 px-2 py-1 rounded">Powdersville</span>
+        </a>
+        <a href="/taylors-mill" class="aspect-[3/4] overflow-hidden relative block md:block hidden">
           <img src="images/gallery/modern-romantics-214.jpg" alt="Styled shoot at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
-        </div>
+          <span class="absolute top-3 left-3 text-[10px] tracking-[0.15em] uppercase text-white/60 bg-black/30 px-2 py-1 rounded">Taylor's Mill</span>
+        </a>
       </div>
       <div class="text-center mt-10">
         <a href="/gallery" class="inline-block border border-wws-black px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
           View Full Gallery
         </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Google Reviews Carousel -->
+  <section class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12">
+        <h3 class="font-display text-4xl font-light mb-3">What Our Clients Say</h3>
+        <div class="flex items-center justify-center gap-1 mb-2">
+          <span class="text-yellow-400 text-lg">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        </div>
+        <p class="text-sm text-wws-dark tracking-wide">5-star reviews from both locations</p>
+      </div>
+      <div class="overflow-hidden relative" id="reviews-carousel">
+        <div class="flex gap-6 transition-transform duration-500" id="reviews-track" style="will-change:transform">
+          <!-- Reviews will be populated by Puppeteer scrape. Placeholder reviews below. -->
+          <div class="flex-shrink-0 w-80 bg-white border border-wws-gray/30 rounded-sm p-6">
+            <div class="flex items-center gap-1 mb-3"><span class="text-yellow-400 text-sm">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+            <p class="text-sm text-wws-dark leading-relaxed mb-4">"Amazing studio space! Everything was clean, well-organized, and the natural light was incredible. Will definitely be back."</p>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium">— Happy Client</span>
+              <span class="text-[10px] tracking-[0.1em] uppercase text-pv-cool">Powdersville</span>
+            </div>
+          </div>
+          <div class="flex-shrink-0 w-80 bg-white border border-wws-gray/30 rounded-sm p-6">
+            <div class="flex items-center gap-1 mb-3"><span class="text-yellow-400 text-sm">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+            <p class="text-sm text-wws-dark leading-relaxed mb-4">"Such a beautiful space with so many backdrops and props. The self-service model is perfect for photographers who want full creative control."</p>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium">— Satisfied Photographer</span>
+              <span class="text-[10px] tracking-[0.1em] uppercase text-tm-warm">Taylor's Mill</span>
+            </div>
+          </div>
+          <div class="flex-shrink-0 w-80 bg-white border border-wws-gray/30 rounded-sm p-6">
+            <div class="flex items-center gap-1 mb-3"><span class="text-yellow-400 text-sm">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+            <p class="text-sm text-wws-dark leading-relaxed mb-4">"We hosted a small event here and it was perfect. The space is gorgeous, pricing is fair, and the booking process was seamless."</p>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium">— Event Host</span>
+              <span class="text-[10px] tracking-[0.1em] uppercase text-pv-cool">Powdersville</span>
+            </div>
+          </div>
+          <div class="flex-shrink-0 w-80 bg-white border border-wws-gray/30 rounded-sm p-6">
+            <div class="flex items-center gap-1 mb-3"><span class="text-yellow-400 text-sm">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+            <p class="text-sm text-wws-dark leading-relaxed mb-4">"Love the vintage mill character at this location. Great for portraits and the backdrops are a nice bonus."</p>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium">— Portrait Client</span>
+              <span class="text-[10px] tracking-[0.1em] uppercase text-tm-warm">Taylor's Mill</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -314,6 +375,36 @@
     document.getElementById('menu-toggle').addEventListener('click', () => {
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
+
+    // Fisher-Yates shuffle for homepage gallery
+    (function () {
+      var grid = document.getElementById('homepage-gallery');
+      if (!grid) return;
+      var items = Array.from(grid.children);
+      for (var i = items.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        grid.appendChild(items[j]);
+        items.splice(j, 1, items[i]);
+      }
+    })();
+
+    // Auto-scrolling reviews carousel
+    (function () {
+      var track = document.getElementById('reviews-track');
+      if (!track) return;
+      var offset = 0;
+      var speed = 0.5; // px per frame
+      function step() {
+        offset += speed;
+        if (offset >= track.scrollWidth / 2) offset = 0;
+        track.style.transform = 'translateX(-' + offset + 'px)';
+        requestAnimationFrame(step);
+      }
+      // Duplicate cards for seamless loop
+      var cards = track.innerHTML;
+      track.innerHTML = cards + cards;
+      requestAnimationFrame(step);
+    })();
   </script>
 
   <!-- Cookie Consent Banner -->
