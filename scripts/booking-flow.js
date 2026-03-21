@@ -342,6 +342,7 @@
     renderEventStep();
     renderAddons();
     renderScheduleStep();
+    renderCheckoutPanel();
     renderWaiver();
     renderSummary();
     renderStepVisibility();
@@ -380,10 +381,10 @@
 
     const steps = [
       { index: 1, label: "Timing" },
-      { index: 2, label: "Details" },
-      { index: 3, label: "Waiver" },
-      { index: 4, label: "Add-ons" },
-      { index: 5, label: "Schedule & Pay" }
+      { index: 2, label: "Schedule" },
+      { index: 3, label: "Details" },
+      { index: 4, label: "Waiver" },
+      { index: 5, label: "Add-ons" }
     ];
 
     const maxStep = getMaxAccessibleStep();
@@ -485,8 +486,7 @@
 
     container.innerHTML =
       renderCalendar() +
-      renderTimeSlots() +
-      renderOrderSummary();
+      renderTimeSlots();
   }
 
   function renderCalendar() {
@@ -611,6 +611,18 @@
     '</div>';
   }
 
+  function renderCheckoutPanel() {
+    var container = document.querySelector("[data-checkout-summary]");
+    if (!container) return;
+
+    if (!state.selectedTime) {
+      container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a date and time in Step 2 to see your order summary.</p></div>';
+      return;
+    }
+
+    container.innerHTML = renderOrderSummary();
+  }
+
   async function handlePayAndBook() {
     if (state.isSubmitting) return;
 
@@ -620,8 +632,9 @@
       alert(errors[0]); // Show first error
       // Navigate to the earliest incomplete step
       if (!state.durationId) { setStep(1); return; }
-      if (!state.contact.firstName || !state.contact.email || !state.termsAccepted) { setStep(2); return; }
-      if (!state.waiverSigned) { setStep(3); return; }
+      if (!state.selectedTime) { setStep(2); return; }
+      if (!state.contact.firstName || !state.contact.email || !state.termsAccepted) { setStep(3); return; }
+      if (!state.waiverSigned) { setStep(4); return; }
       return;
     }
 
@@ -994,8 +1007,8 @@
     state.step = clamp(step, 1, 5);
     renderStepContent();
 
-    // Load availability when entering step 5
-    if (state.step === 5) {
+    // Load availability when entering step 2 (Schedule)
+    if (state.step === 2) {
       var aptId = getAppointmentTypeID();
       if (aptId && state.availableDates.length === 0 && !state.isLoadingDates) {
         fetchAvailableDates(aptId, state.calendarMonth);
@@ -1114,16 +1127,17 @@
   }
 
   // Step completion validation — determines how far the user can navigate.
-  // Step 1 (Timing): always accessible
-  // Step 2 (Details): requires duration selected
-  // Step 3 (Waiver): requires contact info + terms accepted
-  // Step 4 (Add-ons): requires waiver signed
-  // Step 5 (Schedule & Pay): requires waiver signed (add-ons are optional)
+  // Step 1 (Timing): requires duration selected
+  // Step 2 (Schedule): requires date + time selected
+  // Step 3 (Details): requires contact info + terms accepted
+  // Step 4 (Waiver): requires waiver signed
+  // Step 5 (Add-ons & Pay): add-ons are optional, Pay & Book button here
   function isStepComplete(step) {
     if (step === 1) return Boolean(state.durationId);
-    if (step === 2) return Boolean(state.contact.firstName && state.contact.email && state.termsAccepted);
-    if (step === 3) return Boolean(state.waiverSigned);
-    if (step === 4) return true; // add-ons are always optional
+    if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
+    if (step === 3) return Boolean(state.contact.firstName && state.contact.email && state.termsAccepted);
+    if (step === 4) return Boolean(state.waiverSigned);
+    if (step === 5) return true; // add-ons are always optional
     return false;
   }
 
@@ -1131,7 +1145,7 @@
     if (!isStepComplete(1)) return 1;
     if (!isStepComplete(2)) return 2;
     if (!isStepComplete(3)) return 3;
-    // Step 4 is always complete (optional), so if waiver is signed, can go to 5
+    if (!isStepComplete(4)) return 4;
     return 5;
   }
 

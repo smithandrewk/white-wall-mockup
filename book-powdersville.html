@@ -88,12 +88,23 @@
           </div>
           <div class="choice-grid is-two-up mt-8" data-duration-options></div>
           <div class="mt-8 flex flex-wrap gap-3">
-            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="2">Continue to session details</button>
+            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="2">Continue to schedule</button>
           </div>
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="2">
           <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 2</p>
+          <h2 class="font-display text-4xl mt-3">Pick a date &amp; time</h2>
+          <p class="text-sm text-black/50 mt-4">Select an available date and time for your session.</p>
+          <div class="mt-8" data-schedule-step></div>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="1">Back</button>
+            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="3">Continue to session details</button>
+          </div>
+        </div>
+
+        <div class="mt-8 booking-step" data-step-panel="3">
+          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 3</p>
           <h2 class="font-display text-4xl mt-3">Session details</h2>
 
           <div class="mt-8" data-event-step></div>
@@ -164,38 +175,28 @@
           </div>
 
           <div class="mt-8 flex flex-wrap gap-3">
-            <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="1">Back</button>
-            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="3" data-requires-terms>Continue to sign waiver</button>
-          </div>
-        </div>
-
-        <div class="mt-8 booking-step" data-step-panel="3">
-          <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 3</p>
-          <h2 class="font-display text-4xl mt-3">Liability waiver</h2>
-          <p class="text-sm text-black/50 mt-4">Please review and sign the waiver below to continue.</p>
-          <div class="mt-8" data-waiver-content></div>
-          <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="2">Back</button>
-            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="4" data-requires-waiver disabled>Continue to add-ons</button>
+            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="4" data-requires-terms>Continue to sign waiver</button>
           </div>
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="4">
           <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 4</p>
-          <h2 class="font-display text-4xl mt-3">Optional add-ons</h2>
-          <p class="text-sm text-black/50 mt-4">Enhance your session with backdrops, lighting, rolling walls, and more.</p>
-          <div class="choice-grid is-two-up mt-8" data-addon-list></div>
+          <h2 class="font-display text-4xl mt-3">Liability waiver</h2>
+          <p class="text-sm text-black/50 mt-4">Please review and sign the waiver below to continue.</p>
+          <div class="mt-8" data-waiver-content></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="3">Back</button>
-            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="5">Continue to schedule</button>
+            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="5" data-requires-waiver disabled>Continue to add-ons</button>
           </div>
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="5">
           <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 5</p>
-          <h2 class="font-display text-4xl mt-3">Schedule &amp; Pay</h2>
-          <p class="text-sm text-black/50 mt-4">Pick a date and time, review your total, then pay securely through Square.</p>
-          <div class="mt-8" data-schedule-step></div>
+          <h2 class="font-display text-4xl mt-3">Optional add-ons</h2>
+          <p class="text-sm text-black/50 mt-4">Enhance your session with backdrops, lighting, rolling walls, and more.</p>
+          <div class="choice-grid is-two-up mt-8" data-addon-list></div>
+          <div class="mt-8" data-checkout-summary></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="4">Back</button>
           </div>
