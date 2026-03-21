@@ -1113,31 +1113,29 @@
         <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Liability waiver &amp; release of claims</p>
         <div class="text-sm text-black/60 leading-relaxed space-y-3 max-h-80 overflow-y-auto pr-2" style="scrollbar-width:thin">
           <p><strong>ASSUMPTION OF RISK AND WAIVER OF LIABILITY</strong></p>
-          <p>I, <strong>${escapeHtml(displayName)}</strong>, hereby acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located at <strong>${escapeHtml(location.name)}</strong> ("the Studio"):</p>
+          <p>I, <strong>${escapeHtml(displayName)}</strong>, hereby acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located in <strong>${location.slug === "powdersville" ? "Powdersville, South Carolina" : "Taylors, South Carolina"}</strong> ("the Studio"):</p>
 
-          <p><strong>1. Assumption of Risk.</strong> I understand that the Studio is a self-service facility and that no WhiteWall Studios staff will be present on-site during my booking. I voluntarily assume all risks associated with my use of the Studio, including but not limited to risks arising from the use of studio equipment, props, lighting, and the physical space itself.</p>
+          ${location.slug === "taylors-mill" ? '<p><strong>Events are not allowed at this location.</strong></p>' : ""}
 
-          <p><strong>2. Liability Waiver.</strong> I, on behalf of myself and all members of my party, hereby release, waive, and discharge WhiteWall Studios, LLC, its owners, officers, employees, and agents from any and all claims, damages, losses, or liabilities arising out of or related to my use of the Studio, except to the extent caused by the gross negligence or willful misconduct of WhiteWall Studios, LLC.</p>
+          <p><strong>1. Assumption of Risk.</strong> I understand that the Studio is a fully self-service facility and that no WhiteWall Studios staff will be present on-site during my booking. I voluntarily assume all risks associated with my use of the Studio, including but not limited to risks arising from the use of studio equipment, props, lighting, and the physical space itself.</p>
 
-          <p><strong>3. Property Responsibility.</strong> I accept full financial responsibility for any damage to the Studio space, equipment, props, or furnishings caused by myself or any member of my party. I agree to pay the replacement value of any damaged items.</p>
+          <p><strong>2. Release of Liability.</strong> I, on behalf of myself and all members of my party, hereby release, waive, and discharge WhiteWall Studios, LLC, its owners, officers, employees, and agents from any and all claims, damages, losses, or liabilities arising out of or related to my use of the Studio, except to the extent caused by the gross negligence or willful misconduct of WhiteWall Studios, LLC.</p>
 
-          <p><strong>4. Condition of Space.</strong> I agree to return all props, furniture, and equipment to their original positions before departing. I understand that failure to leave the space in its original condition will result in a cleaning fee of $100.</p>
+          <p><strong>3. Indemnification.</strong> I agree to indemnify, defend, and hold harmless WhiteWall Studios, LLC from and against any and all claims, demands, actions, damages, losses, costs, and expenses arising from my use of the Studio, including but not limited to claims arising from the actions of my party, injuries, property damage, or violations of studio policies.</p>
 
-          <p><strong>5. Security Cameras.</strong> I acknowledge that security cameras are in operation within the Studio and that recordings are accessible to WhiteWall Studios, LLC.</p>
+          <p><strong>4. Responsibility for Guests.</strong> I assume full legal and financial responsibility for all individuals I allow into the Studio space during my booking, including clients, talent, crew, and guests.</p>
 
-          <p><strong>6. Prohibited Activities.</strong> I understand that smoking, open flames, and firearms are strictly prohibited inside the Studio. The use of haze machines is only permitted with bookings of four (4) hours or longer.</p>
+          <p><strong>5. Damage Responsibility.</strong> I accept full financial responsibility for any damage to the Studio space, equipment, props, or furnishings caused by myself or any member of my party. I authorize WhiteWall Studios, LLC to charge my payment method on file for the cost of repair or replacement of any damaged items.</p>
 
-          <p><strong>7. Noise Acknowledgment.</strong> I understand that the Studio is not sound-proof and agree to be respectful of neighboring tenants and businesses.</p>
+          <p><strong>6. Studio Rules &amp; Condition.</strong> I agree to return all props, furniture, and equipment to their original positions before departing. I understand that failure to leave the space in its original condition will result in a minimum cleaning/reset fee of $100. The following are strictly prohibited inside the Studio: smoking or vaping, open flames or candles, firearms or weapons, illegal drugs. The use of haze machines is only permitted with bookings of four (4) hours or longer.</p>
 
-          <p><strong>8. Liability for Party.</strong> I assume full legal responsibility for all individuals I bring into the Studio space, including clients, talent, crew, and guests. I will ensure that every person involved in the shoot signs a liability waiver upon entry. Failure to do so may result in a permanent ban.</p>
+          <p><strong>7. Personal Property.</strong> WhiteWall Studios, LLC is not responsible for any lost, stolen, or damaged personal property brought into the Studio.</p>
 
-          <p><strong>9. Cancellation Policy.</strong> I understand that cancellations made fewer than 48 hours prior to my booking will result in a full charge.</p>
+          <p><strong>8. Security Cameras.</strong> I acknowledge that security cameras operate within and around the Studio and that recordings are accessible to WhiteWall Studios, LLC.</p>
 
-          <p><strong>10. Booking Compliance.</strong> I will vacate the Studio by the end of my booked time. I have confirmed that my booking time (AM vs. PM) is correct.</p>
+          <p><strong>9. Booking Compliance &amp; Cancellation.</strong> I will vacate the Studio by the end of my booked time. I have confirmed that my booking time (AM vs. PM) is correct. I understand that cancellations made within 48 hours of my booking will result in a full charge. WhiteWall Studios, LLC reserves the right to terminate any booking without refund if studio rules are violated.</p>
 
-          <p><strong>11. Binding Agreement.</strong> I agree that this waiver, together with the Terms &amp; Conditions accepted in the previous step, constitutes a binding contract between myself and WhiteWall Studios, LLC. This waiver shall be governed by the laws of the State of South Carolina.</p>
-
-          <p><strong>12. Electronic Signature.</strong> I agree that my electronic signature below has the same legal force and effect as a handwritten signature.</p>
+          <p><strong>10. Governing Law &amp; Electronic Signature.</strong> This waiver shall be governed by the laws of the State of South Carolina. I agree that my electronic signature below has the same legal force and effect as a handwritten signature.</p>
         </div>
       </div>
 
