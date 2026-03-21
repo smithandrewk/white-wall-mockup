@@ -799,10 +799,7 @@
         state.eventIntent === "yes"
           ? `
             <div class="choice-grid" style="margin-top:1.5rem">
-              <div>
-                <label class="ui-field-label" for="event-description">Tell us about the event</label>
-                <textarea class="booking-textarea" id="event-description" data-input="event-description" placeholder="What are you hosting?">${escapeHtml(state.eventDescription)}</textarea>
-              </div>
+              ${Number(state.participants) < 25 ? '<div><label class="ui-field-label" for="event-description">Tell us about the event</label><textarea class="booking-textarea" id="event-description" data-input="event-description" placeholder="What are you hosting?">' + escapeHtml(state.eventDescription) + '</textarea></div>' : ''}
               <div class="booking-panel-soft panel-pad">
                 <p class="ui-kicker">Required acknowledgements</p>
                 <label class="helper-item" style="margin-top:1rem">
