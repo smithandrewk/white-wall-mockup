@@ -46,7 +46,7 @@
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
     /* Let hero video bleed behind the notch/Dynamic Island */
-    .hero-video-section { padding-top: 0; }
+    .hero-video-section { padding-top: 0; height: calc(100vh + env(safe-area-inset-top)); margin-top: calc(-1 * env(safe-area-inset-top)); }
     .hero-video-section video { top: 0; }
     /* Push nav content below the safe area */
     #main-nav > div:first-child { padding-top: max(1.25rem, env(safe-area-inset-top)); }
