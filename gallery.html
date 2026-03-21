@@ -57,6 +57,20 @@
     .gallery-img.hidden-filter {
       display: none;
     }
+    /* Persistent location label */
+    .gallery-label {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.3);
+      padding: 2px 8px;
+      border-radius: 3px;
+      z-index: 5;
+    }
   </style>
 </head>
 <body class="bg-white text-wws-black">
@@ -541,6 +555,40 @@
 
     // Initialize GLightbox
     const lightbox = GLightbox({ selector: '.glightbox' });
+
+    // Add persistent location labels and make photos click to location page
+    document.querySelectorAll('.gallery-img').forEach(function (item) {
+      var loc = item.dataset.location;
+      var wrapper = item.querySelector('.relative');
+      if (wrapper) {
+        var label = document.createElement('span');
+        label.className = 'gallery-label';
+        label.textContent = loc === 'powdersville' ? 'Powdersville' : "Taylor's Mill";
+        wrapper.appendChild(label);
+      }
+      // Wrap the existing link to navigate to location page on click
+      var link = item.querySelector('a.glightbox');
+      if (link) {
+        link.classList.remove('glightbox');
+        link.removeAttribute('data-gallery');
+        link.href = loc === 'powdersville' ? '/powdersville' : '/taylors-mill';
+      }
+    });
+
+    // Reinitialize lightbox after link changes (disabled — photos now link to location pages)
+    // If you want lightbox back, restore .glightbox class and re-init
+
+    // Fisher-Yates shuffle for random display order
+    (function () {
+      var grid = document.getElementById('gallery-grid');
+      if (!grid) return;
+      var items = Array.from(grid.children);
+      for (var i = items.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        grid.appendChild(items[j]);
+        items.splice(j, 1, items[i]);
+      }
+    })();
 
     // Gallery filtering
     const filterBtns = document.querySelectorAll('.filter-btn');
