@@ -51,7 +51,7 @@ async function notifyOwner(bookingState, appointmentId) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        from: "WhiteWall Notifications <notifications@whitewallstudios.co>",
+        from: "WhiteWall Studios <contact@whitewallstudios.co>",
         to: [toEmail],
         subject: subject,
         text: body
