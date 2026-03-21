@@ -20,6 +20,7 @@ const {
   buildAppointmentNotes
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
+const { notifyOwner } = require("./notify-owner");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -68,6 +69,17 @@ module.exports = async function handler(req, res) {
     var fields = buildAcuityFields(bookingState.intake || {}, bookingState.location);
     var notes = buildAppointmentNotes(bookingState);
 
+    // Append high-traffic / capacity alerts to notes
+    var participantCount = Number(bookingState.participants) || 0;
+    if (participantCount >= 50) {
+      notes += "\n\n[CAPACITY ALERT: " + participantCount + " participants — follow-up required]";
+    } else if (participantCount >= 25) {
+      notes += "\n\n[HIGH TRAFFIC: " + participantCount + " participants]";
+    }
+    if (bookingState.highTrafficNote) {
+      notes += "\nCustomer note: " + bookingState.highTrafficNote;
+    }
+
     var appointment = await acuityPost("/appointments?admin=true", {
       appointmentTypeID: bookingState.appointmentTypeID,
       datetime: bookingState.datetime,
@@ -79,6 +91,11 @@ module.exports = async function handler(req, res) {
       fields: fields,
       notes: notes,
       noPayment: true  // Payment already collected via Square
+    });
+
+    // Send owner notification for high-traffic bookings (fire-and-forget)
+    notifyOwner(bookingState, appointment.id).catch(function (err) {
+      console.error("booking-callback: notifyOwner error (non-blocking)", err.message);
     });
 
     var locationSlug = bookingState.location;

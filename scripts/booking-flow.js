@@ -705,6 +705,7 @@
           eventIntent: state.eventIntent,
           participants: state.participants,
           eventDescription: state.eventDescription,
+          highTrafficNote: state.highTrafficNote,
           waiverSigned: state.waiverSigned
         })
       });
