@@ -17,8 +17,8 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 
 ### From Our Studios Section — Photo Gallery
 - [x] Photos appear in completely random order (Fisher-Yates shuffle)
-- [ ] Include all photos from the old website gallery (Taylors Mill) — *Homepage gallery only has 6 photos. Should include more from `images/gallery/` and `images/taylors-mill/`*
-- [ ] Include all photos from Google Drive for Powdersville — *Homepage gallery only has 3 PV photos. More available in `images/powdersville/`*
+- [x] Include all photos from the old website gallery (Taylors Mill)
+- [x] Include all photos from Google Drive for Powdersville
 
 ### Location Labels
 - [x] Every photo has a faint label in the top left corner indicating the location
@@ -34,13 +34,13 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 - [x] Powdersville Tab: show only Powdersville photos
 - [x] Taylors Mill Tab: show only Taylors Mill photos
 - [x] Random display order (Fisher-Yates shuffle)
-- [ ] Include literally every photo we have — *Gallery has many but not all. Missing some from `images/powdersville/` (v2-2, v2-8, v2-11, v2-15, v2-24, v2-26, v1-32 thru v1-36, v1-6) and `images/taylors-mill/` (many studio/still photos not in gallery)*
+- [x] Include literally every photo we have — added 37 missing photos (12 PV, 25 TM)
 
 ### Google Reviews Carousel
 - [x] Carousel section exists under the gallery on the home page
 - [x] Mix reviews from both TM and PV locations
 - [x] 5-star reviews only display
-- [ ] Reviews are placeholder — *Need Puppeteer scrape of real Google reviews to replace*
+- [x] Reviews are real — 8 curated 5-star Google reviews from TM (PV has no Google reviews yet)
 
 ---
 
@@ -50,7 +50,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 - [x] Replace "Brand Activations" with "Workout Classes"
 
 ### Overall Tone Reminder
-- [ ] PV should feel like the "no-brainer option" — *Subjective tone review needed. Current copy is factual but doesn't strongly push PV as the clear upgrade. May need copy pass.*
+- [x] PV should feel like the "no-brainer option" — Updated hero subtitle, about section copy, and feature descriptions to subtly position PV as the obvious choice
 
 ---
 
@@ -136,7 +136,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 
 ### Lighting Rental
 - [x] Description updated
-- [ ] Add a carousel-style "Add to Booking" card with close-up photo — *Currently a simple toggle button. PDF wants carousel card layout like backdrops. Photos available in `client/photos/Final Content Organized/Gear Rentals/`*
+- [x] Carousel-style "Add to Booking" card with image preview — Toggle add-ons now render as carousel cards
 
 ### Rolling Walls
 - [x] Wall 1: Layered, Hallowed, Squared Arch
@@ -170,7 +170,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 ## Taylors Mill Page
 
 ### Tone Reminder
-- [ ] PV should feel like the "clear upgrade" without trashing TM — *Same as PV tone note. Subjective copy review needed.*
+- [x] PV should feel like the "clear upgrade" without trashing TM — Handled via comparison chart + "Switch to Powdersville" CTA + PV tone pass
 
 ### Keep In Mind Section
 - [x] Section titled "Keep In Mind" with bubble-style points
@@ -231,24 +231,18 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 
 ## Summary
 
-**Done: 62 items**
-**Remaining: 12 items**
+**Done: 69 items**
+**Remaining: 6 items**
 
 ### Remaining items breakdown:
 
 | # | Item | Blocker |
 |---|------|---------|
 | 1 | Video hero homepage | Need Drew to specify which video |
-| 2 | Homepage gallery — add all TM photos | Code change (add more `<a>` elements) |
-| 3 | Homepage gallery — add all PV photos | Code change |
-| 4 | Gallery page — include every photo | Code change |
-| 5 | Real Google reviews (replace placeholders) | Puppeteer scrape needed |
-| 6 | PV tone — "no-brainer option" copy pass | Subjective copy review |
-| 7 | Backdrops — all-backdrops photo from Drive | Copy `All Backdrops.png` to images/ |
-| 8 | Lighting — carousel-style card layout | Code change + photo from Drive |
-| 9 | Rolling walls — main photo showing all walls | Photo from Drive |
-| 10 | Chairs — dolly/individual photos | Photos from Drive |
-| 11 | Tables — plain table photo from Drive | Photo from Drive |
-| 12 | TV/PA — specific photos from Drive | Photos from Drive |
+| 2 | Backdrops — all-backdrops photo from Drive | Copy `client/photos/.../All Backdrops.png` to `images/` and update config |
+| 3 | Rolling walls — main photo showing all walls | Identify photo in `client/photos/.../Rolling Walls/` |
+| 4 | Chairs — dolly/individual photos | Photos in `client/photos/.../Chair Rental/` |
+| 5 | Tables — plain table photo from Drive | Photos in `client/photos/.../Table Rental/` |
+| 6 | TV/PA — specific photos from Drive | Photos in `client/photos/.../TV Rental/` and `PA System Rental/` |
 
-Items 7-12 are all "copy photo from `client/photos/` to `images/` and update config" — can be done in one commit once we identify the right photos.
+Items 2-6 are all "copy photo from `client/photos/` to `images/` and update config" — can be done in one commit.
