@@ -856,3 +856,38 @@ body.booking-page {
     font-size: 2.4rem;
   }
 }
+
+/* Shake animation for invalid event selection */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%, 45%, 75% { transform: translateX(-6px); }
+  30%, 60%, 90% { transform: translateX(6px); }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Toast notification */
+.toast-popup {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 0.85rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-family: "Inter", sans-serif;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.toast-popup.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

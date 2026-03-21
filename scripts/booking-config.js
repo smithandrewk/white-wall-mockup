@@ -10,16 +10,16 @@ window.WWS_BOOKING_CONFIG = {
       description:
         "Our Powdersville location is a fully, 100% self-service photo studio. Select the time you'd like, fill in some details, and include any optional add-ons. You will receive a confirmation email with important information, YouTube videos to watch, passcodes, etc. Thank you for booking with us!",
       policies: [
-        "2-hour through full-day bookings can be used for events.",
-        "1-hour sessions cannot be used for events.",
+        "Events are allowed for 2-hour sessions and longer.",
+        "1-hour sessions are not eligible for events.",
         "Events with 50+ attendees require confirmation from our team."
       ],
       durations: [
         { id: "pv-1", label: "1 hour", hours: 1, price: 130, description: "Quick portraits, pickups, and tight creative blocks.", acuityTypeKey: "powdersville_1hr" },
-        { id: "pv-2", label: "2 hours", hours: 2, price: 200, description: "Most portrait and branding sessions.", acuityTypeKey: "powdersville_2hr" },
-        { id: "pv-3", label: "3 hours", hours: 3, price: 270, description: "Larger set builds and multi-look shoots.", acuityTypeKey: "powdersville_3hr" },
+        { id: "pv-2", label: "2 hours", hours: 2, price: 200, description: "Most portrait and branding sessions.", supportsEvents: true, acuityTypeKey: "powdersville_2hr" },
+        { id: "pv-3", label: "3 hours", hours: 3, price: 270, description: "Larger set builds and multi-look shoots.", supportsEvents: true, acuityTypeKey: "powdersville_3hr" },
         { id: "pv-4", label: "4 hours", hours: 4, price: 350, description: "Small events start here.", supportsEvents: true, acuityTypeKey: "powdersville_4hr" },
-        { id: "pv-6", label: "6 hours", hours: 6, price: 500, description: "Expanded events and brand activations.", supportsEvents: true, acuityTypeKey: "powdersville_6hr" },
+        { id: "pv-6", label: "6 hours", hours: 6, price: 500, description: "Expanded events and productions.", supportsEvents: true, acuityTypeKey: "powdersville_6hr" },
         { id: "pv-full", label: "Full day", hours: 18, price: 980, description: "6 AM–11 PM — all-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
       ],
       addons: [

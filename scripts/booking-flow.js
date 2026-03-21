@@ -241,7 +241,18 @@
       }
 
       if (action === "set-event-intent") {
-        state.eventIntent = actionTarget.dataset.value;
+        var intentValue = actionTarget.dataset.value;
+        var selDur = getSelectedDuration();
+        if (intentValue === "yes" && selDur && selDur.hours === 1) {
+          // Shake animation + toast for 1hr event attempt
+          actionTarget.classList.add("shake");
+          setTimeout(function () { actionTarget.classList.remove("shake"); }, 600);
+          showToast("Event bookings are only for 2+ hour sessions. Select a longer duration of time.");
+          state.eventIntent = "no";
+          renderStepContent();
+          return;
+        }
+        state.eventIntent = intentValue;
         if (state.eventIntent !== "yes") {
           state.eventDescription = "";
           state.acknowledgements.cleanup = false;
@@ -413,11 +424,13 @@
       .map((duration) => {
         const isActive = duration.id === state.durationId;
         const eventEligible = location.slug === "powdersville" && duration.hours >= 2;
+        const isOneHr = location.slug === "powdersville" && duration.hours === 1;
         const priceTag = duration.price ? currency.format(duration.price) : "";
         return `
           <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}">
             <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.4);font-weight:400">' + priceTag + '</span>' : ''}</span>
             ${eventEligible ? '<span class="duration-pill-badge">Event eligible</span>' : ""}
+            ${isOneHr ? '<span style="font-size:0.75rem;color:rgba(0,0,0,0.35)">(Not eligible for events)</span>' : ""}
           </button>
         `;
       })
@@ -710,15 +723,7 @@
     }
 
     const selectedDuration = getSelectedDuration();
-    if (!selectedDuration || !selectedDuration.supportsEvents) {
-      container.innerHTML = `
-        <div class="note-card">
-          <p class="ui-copy-strong">Events are available for 4-hour, 6-hour, and full-day bookings.</p>
-          <p class="ui-copy" style="margin-top:0.75rem">Select a longer duration on the previous step to add event details.</p>
-        </div>
-      `;
-      return;
-    }
+    const isOneHour = selectedDuration && selectedDuration.hours === 1;
 
     const warning =
       state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
@@ -739,6 +744,7 @@
         : "";
 
     container.innerHTML = `
+      <p class="ui-copy" style="margin-bottom:1.5rem;color:rgba(0,0,0,0.55)">Events are allowed for 2-hour sessions and longer.</p>
       <div class="choice-grid is-two-up">
         <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no">
           <p class="ui-kicker">Use this for</p>
@@ -749,6 +755,7 @@
           <p class="ui-kicker">Use this for</p>
           <h3 class="ui-display-sm" style="margin-top:0.75rem">Event booking</h3>
           <p class="ui-copy" style="margin-top:1rem">Parties, receptions, workshops, and gatherings.</p>
+          ${isOneHour ? '<p class="ui-copy" style="margin-top:0.5rem;color:rgba(0,0,0,0.35);font-size:0.8rem">(Not eligible for events)</p>' : ""}
         </button>
       </div>
 
@@ -1299,6 +1306,20 @@
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
+  }
+
+  function showToast(message) {
+    var existing = document.querySelector(".toast-popup");
+    if (existing) existing.remove();
+    var toast = document.createElement("div");
+    toast.className = "toast-popup";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.classList.add("is-visible"); }, 10);
+    setTimeout(function () {
+      toast.classList.remove("is-visible");
+      setTimeout(function () { toast.remove(); }, 300);
+    }, 5000);
   }
 
   function escapeAttribute(value) {
