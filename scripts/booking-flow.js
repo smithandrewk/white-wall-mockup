@@ -908,9 +908,16 @@
   function renderAddonControls(addon, addonState) {
     if (addon.type === "toggle") {
       return `
-        <button type="button" class="booking-button ${addonState.selected ? "booking-button-primary" : "booking-button-secondary"}" data-action="toggle-addon" data-addon-id="${addon.id}">
-          ${addonState.selected ? "Added" : "Add to booking"}
-        </button>
+        <div class="backdrop-carousel">
+          <button type="button" class="backdrop-card ${addonState.selected ? "is-selected" : ""}" data-action="toggle-addon" data-addon-id="${addon.id}">
+            <img src="${addon.image}" alt="${escapeHtml(addon.name)}">
+            <div class="backdrop-card-body">
+              <span class="backdrop-card-label">${addonState.selected ? "Added" : "Add to Booking"}</span>
+              <span class="backdrop-card-price">${currency.format(addon.price)}</span>
+            </div>
+            <span class="backdrop-check ${addonState.selected ? "is-visible" : ""}">&#10003;</span>
+          </button>
+        </div>
       `;
     }
 
