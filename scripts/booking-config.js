@@ -32,7 +32,7 @@ window.WWS_BOOKING_CONFIG = {
             "Shared between sessions. Only roll down what you need so each paper roll lasts as long as possible.",
           allPrice: 50,
           singlePrice: 15,
-          allImage: "images/taylors-mill/whitewall-studios-backdrop.jpg",
+          allImage: "images/gear-rentals/all-backdrops.png",
           colors: [
             { id: "black", label: "Black", image: "images/powdersville/black.jpg" },
             { id: "charcoal-gray", label: "Charcoal Gray", image: "images/powdersville/charcoal-gray.jpg" },
@@ -47,7 +47,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "lighting",
           type: "toggle",
           name: "Lighting rental",
-          image: "images/gear-rentals/img_6341.jpg",
+          image: "images/gear-rentals/img_6344.jpg",
           price: 125,
           description:
             "660W RGB Amaran Ray, 360W RGB Amaran Ray, 60in and 47in softboxes, wall-mounted extensions, rolling C-stands, sandbags, and clamps."
@@ -56,7 +56,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "rolling-walls",
           type: "walls",
           name: "Rolling walls",
-          image: "images/gear-rentals/whitewall-powdersville_v1-10.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v1-8.jpg",
           allPrice: 70,
           singlePrice: 30,
           description: "Modular rolling walls for custom studio setups.",
@@ -86,7 +86,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "tables",
           type: "quantity",
           name: "8ft fold out tables",
-          image: "images/gear-rentals/tables-and-chairs-render.jpg",
+          image: "images/gear-rentals/cb48b32e-23f2-4297-840b-2ecab35daf24.jpg",
           description: "Tables are one solid structure with no crease in the middle. The legs simply fold out. Up to 10 tables available.",
           price: 15,
           max: 10,
@@ -96,7 +96,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "tv",
           type: "toggle",
           name: "86in rolling TV",
-          image: "images/gear-rentals/whitewall-powdersville_v2-38.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v2-34.jpg",
           price: 50,
           description: "4K smart TV with every HDMI connecting cable imaginable."
         },
@@ -104,7 +104,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "pa-system",
           type: "toggle",
           name: "PA system",
-          image: "images/gear-rentals/whitewall-powdersville_v2-31.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v2-28.jpg",
           price: 40,
           description: "Large speaker with aux cable to connect to any phone, with wired microphone and stand."
         }
@@ -142,7 +142,7 @@ window.WWS_BOOKING_CONFIG = {
             "Shared between sessions. Only roll down what you need so each paper roll lasts as long as possible.",
           allPrice: 50,
           singlePrice: 15,
-          allImage: "images/taylors-mill/whitewall-studios-backdrop.jpg",
+          allImage: "images/gear-rentals/all-backdrops.png",
           colors: [
             { id: "black", label: "Black", image: "images/powdersville/black.jpg" },
             { id: "charcoal-gray", label: "Charcoal Gray", image: "images/powdersville/charcoal-gray.jpg" },
