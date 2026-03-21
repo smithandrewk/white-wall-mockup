@@ -25,6 +25,7 @@
     eventIntent: "no",
     participants: "",
     eventDescription: "",
+    highTrafficNote: "",
     acknowledgements: {
       cleanup: false,
       capacity: false,
@@ -268,12 +269,18 @@
 
       if (target.matches("[data-input='participants']")) {
         state.participants = target.value;
-        renderStepContent();
+        // Update warnings/notices without full re-render to preserve input focus
+        updateParticipantNotices();
         return;
       }
 
       if (target.matches("[data-input='event-description']")) {
         state.eventDescription = target.value;
+        return;
+      }
+
+      if (target.matches("[data-input='high-traffic-note']")) {
+        state.highTrafficNote = target.value;
         return;
       }
 
@@ -315,6 +322,7 @@
 
       if (target.matches("[data-input='intake-instagram']")) {
         state.intake.instagram = target.value;
+        renderStepContent();
       }
     });
 
@@ -760,12 +768,15 @@
       </div>
 
       <div style="margin-top:1.5rem">
-        <label class="ui-field-label" for="participants">Participant count</label>
+        <label class="ui-field-label" for="participants">Event? How many people will you have? If not an event, leave blank.</label>
         <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
       </div>
 
-      ${warning}
-      ${capacityNotice}
+      <div data-participant-notices>
+        ${warning}
+        ${capacityNotice}
+        ${getHighTrafficHtml()}
+      </div>
 
       ${
         state.eventIntent === "yes"
@@ -795,6 +806,35 @@
           : ""
       }
     `;
+  }
+
+  function getHighTrafficHtml() {
+    var count = Number(state.participants);
+    if (!count || count < 25) return "";
+    return `
+      <div class="booking-panel-soft p-5 mt-4">
+        <p class="ui-copy-strong" style="margin-bottom:0.75rem">Tell us more about your shoot</p>
+        <p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.55)">A cleaning fee may be added due to the high traffic count. If we need to discuss anything further we will reach out. If you don&rsquo;t hear from us, you&rsquo;re good.</p>
+        <textarea class="booking-textarea" data-input="high-traffic-note" placeholder="Describe your shoot or event…">${escapeHtml(state.highTrafficNote)}</textarea>
+      </div>
+    `;
+  }
+
+  function updateParticipantNotices() {
+    var container = document.querySelector("[data-participant-notices]");
+    if (!container) return;
+
+    var count = Number(state.participants);
+    var warning =
+      state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
+        ? '<div class="warning-card" style="margin-top:1rem">Looks like you have attendees — did you mean to select "Event booking" above?</div>'
+        : "";
+    var capacityNotice =
+      /^\d+$/.test(state.participants.trim()) && count >= 50
+        ? '<div class="warning-card" style="margin-top:1rem">For events with 50+ attendees, our team will follow up to confirm details.</div>'
+        : "";
+
+    container.innerHTML = warning + capacityNotice + getHighTrafficHtml();
   }
 
   function renderAddons() {
@@ -1142,7 +1182,13 @@
   function isStepComplete(step) {
     if (step === 1) return Boolean(state.durationId);
     if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
-    if (step === 3) return Boolean(state.contact.firstName && state.contact.email && state.termsAccepted);
+    if (step === 3) {
+      var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.instagram && state.termsAccepted);
+      // If 25+ participants, require high-traffic note
+      var count = Number(state.participants);
+      if (count >= 25 && !state.highTrafficNote.trim()) return false;
+      return baseComplete;
+    }
     if (step === 4) return Boolean(state.waiverSigned);
     if (step === 5) return true; // add-ons are always optional
     return false;
@@ -1159,11 +1205,14 @@
   function getValidationErrors() {
     var errors = [];
     if (!state.durationId) errors.push("Please select a duration.");
+    if (!state.selectedTime) errors.push("Please select a date and time.");
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");
+    if (!state.intake.instagram) errors.push("Please enter your Instagram handle.");
     if (!state.termsAccepted) errors.push("Please accept the terms & conditions.");
     if (!state.waiverSigned) errors.push("Please sign the liability waiver.");
-    if (!state.selectedTime) errors.push("Please select a date and time.");
+    var count = Number(state.participants);
+    if (count >= 25 && !state.highTrafficNote.trim()) errors.push("Please describe your shoot (required for 25+ participants).");
     return errors;
   }
 
