@@ -45,7 +45,7 @@
       readEmail: false
     },
     emailAcknowledgment: "",
-    termsAccepted: false,
+    termsSignature: "",
     waiverSigned: false,
     addons: {},
     selectedDate: "",
@@ -330,6 +330,11 @@
         state.emailAcknowledgment = target.value;
         renderStepContent();
       }
+
+      if (target.matches("[data-input='terms-signature']")) {
+        state.termsSignature = target.value;
+        updateTermsGate();
+      }
     });
 
     document.addEventListener("change", (event) => {
@@ -354,10 +359,7 @@
         updateTermsGate();
       }
 
-      if (target.matches("[data-check='terms']")) {
-        state.termsAccepted = target.checked;
-        updateTermsGate();
-      }
+      // terms signature handled via input event on [data-input='terms-signature']
     });
   }
 
@@ -660,7 +662,7 @@
       // Navigate to the earliest incomplete step
       if (!state.durationId) { setStep(1); return; }
       if (!state.selectedTime) { setStep(2); return; }
-      if (!state.contact.firstName || !state.contact.email || !state.termsAccepted) { setStep(3); return; }
+      if (!state.contact.firstName || !state.contact.email || !isTermsAccepted()) { setStep(3); return; }
       if (!state.waiverSigned) { setStep(4); return; }
       return;
     }
@@ -1151,10 +1153,15 @@
     btn.disabled = !state.waiverSigned;
   }
 
+  function isTermsAccepted() {
+    var expected = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
+    return Boolean(expected && state.termsSignature.trim().toLowerCase() === expected);
+  }
+
   function updateTermsGate() {
     var btn = document.querySelector("[data-requires-terms]");
     if (!btn) return;
-    btn.disabled = !state.termsAccepted;
+    btn.disabled = !isTermsAccepted();
   }
 
   function resetEventState() {
@@ -1189,7 +1196,7 @@
     if (step === 1) return Boolean(state.durationId);
     if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
     if (step === 3) {
-      var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.instagram && state.termsAccepted);
+      var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.instagram && isTermsAccepted());
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
@@ -1220,7 +1227,7 @@
     if (!state.intake.instagram) errors.push("Please enter your Instagram handle.");
     var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
     if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) errors.push("Please sign the email acknowledgment with your full name.");
-    if (!state.termsAccepted) errors.push("Please accept the terms & conditions.");
+    if (!isTermsAccepted()) errors.push("Please sign the terms & conditions with your full name.");
     if (!state.waiverSigned) errors.push("Please sign the liability waiver.");
     var count = Number(state.participants);
     if (count >= 25 && !state.highTrafficNote.trim()) errors.push("Please describe your shoot (required for 25+ participants).");
