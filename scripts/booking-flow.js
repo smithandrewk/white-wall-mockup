@@ -44,6 +44,7 @@
       instagram: "",
       readEmail: false
     },
+    emailAcknowledgment: "",
     termsAccepted: false,
     waiverSigned: false,
     addons: {},
@@ -322,6 +323,11 @@
 
       if (target.matches("[data-input='intake-instagram']")) {
         state.intake.instagram = target.value;
+        renderStepContent();
+      }
+
+      if (target.matches("[data-input='email-acknowledgment']")) {
+        state.emailAcknowledgment = target.value;
         renderStepContent();
       }
     });
@@ -1184,6 +1190,9 @@
     if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
     if (step === 3) {
       var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.instagram && state.termsAccepted);
+      // Email acknowledgment signature must match first+last name
+      var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
+      if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
       // If 25+ participants, require high-traffic note
       var count = Number(state.participants);
       if (count >= 25 && !state.highTrafficNote.trim()) return false;
@@ -1209,6 +1218,8 @@
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");
     if (!state.intake.instagram) errors.push("Please enter your Instagram handle.");
+    var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
+    if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) errors.push("Please sign the email acknowledgment with your full name.");
     if (!state.termsAccepted) errors.push("Please accept the terms & conditions.");
     if (!state.waiverSigned) errors.push("Please sign the liability waiver.");
     var count = Number(state.participants);
