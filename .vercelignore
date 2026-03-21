@@ -3,6 +3,7 @@ client/
 *.MOV
 *.mov
 *.mp4
+!videos/*.mp4
 *.tex
 *.aux
 *.log
