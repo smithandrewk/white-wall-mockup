@@ -22,7 +22,7 @@ async function notifyOwner(bookingState, appointmentId) {
 
   var contact = bookingState.contact || {};
   var locationName = bookingState.location === "powdersville" ? "Powdersville" : "Taylor's Mill";
-  var highTrafficNote = bookingState.highTrafficNote || "(none provided)";
+  var highTrafficNote = bookingState.highTrafficNote || bookingState.tmHighTrafficNote || "(none provided)";
 
   var body = [
     isCapacityAlert ? "CAPACITY ALERT — FOLLOW-UP REQUIRED" : "High Traffic Booking",

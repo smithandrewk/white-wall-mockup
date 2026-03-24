@@ -79,6 +79,9 @@ module.exports = async function handler(req, res) {
     if (bookingState.highTrafficNote) {
       notes += "\nCustomer note: " + bookingState.highTrafficNote;
     }
+    if (bookingState.tmHighTrafficNote) {
+      notes += "\nTM high-traffic note: " + bookingState.tmHighTrafficNote;
+    }
 
     var appointment = await acuityPost("/appointments?admin=true", {
       appointmentTypeID: bookingState.appointmentTypeID,

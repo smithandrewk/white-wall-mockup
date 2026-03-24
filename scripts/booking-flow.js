@@ -47,6 +47,8 @@
     emailAcknowledgment: "",
     termsSignature: "",
     waiverSigned: false,
+    tmHighTrafficAcknowledged: false,
+    tmHighTrafficNote: "",
     addons: {},
     selectedDate: "",
     selectedTime: "",
@@ -280,6 +282,13 @@
         state.participants = target.value;
         // Update warnings/notices without full re-render to preserve input focus
         updateParticipantNotices();
+        // Re-render event form if event intent is active (wording changes by participant count)
+        if (state.eventIntent === "yes") {
+          var eventFormContainer = document.querySelector(".choice-grid");
+          if (eventFormContainer && eventFormContainer.closest("[data-event-step]")) {
+            renderStepContent();
+          }
+        }
         return;
       }
 
@@ -327,6 +336,13 @@
 
       if (target.matches("[data-input='intake-participants']")) {
         state.intake.participants = target.value;
+        // TM: show modal when participant count exceeds 25
+        if (location.slug === "taylors-mill") {
+          var tmCount = Number(target.value);
+          if (tmCount > 25 && !state.tmHighTrafficAcknowledged) {
+            showTmHighTrafficModal();
+          }
+        }
       }
 
       if (target.matches("[data-input='intake-instagram']")) {
@@ -714,6 +730,7 @@
           participants: state.participants,
           eventDescription: state.eventDescription,
           highTrafficNote: state.highTrafficNote,
+          tmHighTrafficNote: state.tmHighTrafficNote,
           waiverSigned: state.waiverSigned
         })
       });
@@ -797,32 +814,69 @@
 
       ${
         state.eventIntent === "yes"
-          ? `
-            <div class="choice-grid" style="margin-top:1.5rem">
-              ${Number(state.participants) < 25 ? '<div><label class="ui-field-label" for="event-description">Tell us about the event</label><textarea class="booking-textarea" id="event-description" data-input="event-description" placeholder="What are you hosting?">' + escapeHtml(state.eventDescription) + '</textarea></div>' : ''}
-              <div class="booking-panel-soft panel-pad">
-                <p class="ui-kicker">Required acknowledgements</p>
-                <label class="helper-item" style="margin-top:1rem">
-                  <input type="checkbox" data-check="cleanup" ${state.acknowledgements.cleanup ? "checked" : ""}>
-                  <span>Please leave the studio exactly how you found it.</span>
-                </label>
-                <label class="helper-item" style="margin-top:1rem">
-                  <input type="checkbox" data-check="capacity" ${state.acknowledgements.capacity ? "checked" : ""}>
-                  <span>I understand 50+ guest events may trigger manual follow-up.</span>
-                </label>
-                <label class="helper-item" style="margin-top:1rem">
-                  <input type="checkbox" data-check="self-service" ${state.acknowledgements.selfService ? "checked" : ""}>
-                  <span>I understand this is a fully self-service event space with no team on site.</span>
-                </label>
-              </div>
-            </div>
-          `
+          ? getEventFormHtml()
           : ""
       }
     `;
   }
 
+  function getEventFormHtml() {
+    var count = Number(state.participants);
+
+    // 150+ people: block booking entirely
+    if (count > 150) {
+      return `
+        <div class="warning-card" style="margin-top:1.5rem;border-color:#dc2626;background:#fef2f2">
+          <p class="ui-copy-strong" style="margin-bottom:0.75rem">Unable to book online</p>
+          <p class="ui-copy">We traditionally do not allow more than 150 people at our studio. If you have a specific request, please <a href="mailto:info@whitewallstudios.co" style="text-decoration:underline">email us directly</a>.</p>
+        </div>
+      `;
+    }
+
+    // Determine textarea label and style based on participant count
+    var textareaLabel = "Tell us about the event";
+    var textareaPrompt = "";
+    var borderClass = "";
+
+    if (count >= 50) {
+      borderClass = "event-textarea-warning";
+      textareaLabel = "Tell us about your event.";
+      textareaPrompt = "Please include as much detail as possible so we can understand what you\u2019re planning. Be sure your booking includes enough time for full setup and for returning the studio to its original, squeaky clean condition when your event is finished. Our calendar is often booked back-to-back, and it\u2019s common for a photo shoot to be scheduled immediately after your event, so please reserve your time accordingly. A team member will be in touch to confirm you are all set. If you don\u2019t hear from us, assume you are good to go. However, it is very likely we will have to add on a cleaning fee due to the amount of people at your event.";
+    } else if (count >= 25) {
+      borderClass = "event-textarea-warning";
+      textareaLabel = "Tell us about your event.";
+      textareaPrompt = "Please include as much detail as possible so we can understand what you\u2019re planning. Be sure your booking includes enough time for full setup and for returning the studio to its original, squeaky clean condition when your event is finished. Our calendar is often booked back-to-back, and it\u2019s common for a photo shoot to be scheduled immediately after your event, so please reserve your time accordingly. There is a chance after our team reviews your booking that we may have to add on a cleaning fee. We\u2019ll be in touch if so. If you don\u2019t hear from us, you\u2019re all good.";
+    }
+
+    return `
+      <div class="choice-grid" style="margin-top:1.5rem">
+        <div>
+          <label class="ui-field-label" for="event-description">${textareaLabel}</label>
+          ${textareaPrompt ? '<p class="ui-copy" style="margin-bottom:0.75rem;color:rgba(0,0,0,0.55);font-size:0.85rem">' + textareaPrompt + '</p>' : ''}
+          <textarea class="booking-textarea ${borderClass}" id="event-description" data-input="event-description" placeholder="What are you hosting?">${escapeHtml(state.eventDescription)}</textarea>
+        </div>
+        <div class="booking-panel-soft panel-pad">
+          <p class="ui-kicker">Required acknowledgements</p>
+          <label class="helper-item" style="margin-top:1rem">
+            <input type="checkbox" data-check="cleanup" ${state.acknowledgements.cleanup ? "checked" : ""}>
+            <span>Please leave the studio exactly how you found it.</span>
+          </label>
+          <label class="helper-item" style="margin-top:1rem">
+            <input type="checkbox" data-check="capacity" ${state.acknowledgements.capacity ? "checked" : ""}>
+            <span>I understand 50+ guest events may trigger manual follow-up.</span>
+          </label>
+          <label class="helper-item" style="margin-top:1rem">
+            <input type="checkbox" data-check="self-service" ${state.acknowledgements.selfService ? "checked" : ""}>
+            <span>I understand this is a fully self-service event space with no team on site.</span>
+          </label>
+        </div>
+      </div>
+    `;
+  }
+
   function getHighTrafficHtml() {
+    // Only show high-traffic note for non-event bookings with 25+ participants
+    if (state.eventIntent === "yes") return "";
     var count = Number(state.participants);
     if (!count || count < 25) return "";
     return `
@@ -904,10 +958,11 @@
 
   function renderAddonControls(addon, addonState) {
     if (addon.type === "toggle") {
+      var toggleImg = addon.buttonImage || addon.image;
       return `
         <div class="backdrop-carousel">
           <button type="button" class="backdrop-card ${addonState.selected ? "is-selected" : ""}" data-action="toggle-addon" data-addon-id="${addon.id}">
-            <img src="${addon.image}" alt="${escapeHtml(addon.name)}">
+            <img src="${toggleImg}" alt="${escapeHtml(addon.name)}">
             <div class="backdrop-card-body">
               <span class="backdrop-card-label">${addonState.selected ? "Added" : "Add to Booking"}</span>
               <span class="backdrop-card-price">${currency.format(addon.price)}</span>
@@ -934,6 +989,27 @@
     }
 
     if (addon.type === "tier") {
+      var hasImages = addon.options.some(function(o) { return o.image; });
+      if (hasImages) {
+        return `
+          <div class="backdrop-carousel">
+            ${addon.options
+              .map(
+                (option) => `
+                  <button type="button" class="backdrop-card ${addonState.selection === option.id ? "is-selected" : ""}" data-action="set-tier" data-addon-id="${addon.id}" data-tier-id="${option.id}">
+                    <img src="${option.image}" alt="${escapeHtml(option.label)}">
+                    <div class="backdrop-card-body">
+                      <span class="backdrop-card-label">${option.label}</span>
+                      <span class="backdrop-card-price">${currency.format(option.price)}</span>
+                    </div>
+                    <span class="backdrop-check ${addonState.selection === option.id ? "is-visible" : ""}">&#10003;</span>
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+        `;
+      }
       return `
         <div class="addon-chip-row">
           ${addon.options
@@ -1157,7 +1233,7 @@
             <li>Return all furniture, props, and equipment to their original positions</li>
             <li>Leave the Studio in the condition it was found</li>
           </ul>
-          <p>Failure to do so may result in a <strong>minimum $100 cleaning or reset fee</strong>.</p>
+          <p>Failure to do so may result in a <strong>minimum $250 cleaning or reset fee</strong>.</p>
           <p>The following are strictly prohibited:</p>
           <ul style="margin-left:1.5rem;list-style:disc">
             <li>Smoking or vaping</li>
@@ -1203,6 +1279,45 @@
     btn.disabled = !isTermsAccepted();
   }
 
+  function showTmHighTrafficModal() {
+    // Remove existing modal if any
+    var existing = document.querySelector(".booking-modal-overlay");
+    if (existing) existing.remove();
+
+    var overlay = document.createElement("div");
+    overlay.className = "booking-modal-overlay";
+    overlay.innerHTML = `
+      <div class="booking-modal">
+        <h3 class="ui-display-sm" style="margin-bottom:1rem">Heads Up</h3>
+        <p class="ui-copy" style="margin-bottom:1.25rem">Our Taylor\u2019s Mill location is significantly smaller than our Powdersville studio and is not well suited for larger shoots or high-traffic sessions. You may proceed with your booking as normal. However, if your session involves a larger group, a team member may contact you to add a cleaning fee after your session.</p>
+        <div style="margin-bottom:1rem">
+          <label class="ui-field-label" for="tm-high-traffic-note">Tell us about your session</label>
+          <textarea class="booking-textarea" id="tm-high-traffic-note" placeholder="Briefly describe your shoot and provide details\u2026" style="margin-top:0.5rem"></textarea>
+        </div>
+        <label class="helper-item" style="margin-bottom:1.25rem">
+          <input type="checkbox" id="tm-high-traffic-ack">
+          <span>I understand and would like to proceed.</span>
+        </label>
+        <button type="button" class="booking-button booking-button-primary" id="tm-modal-confirm" disabled>Continue</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    var ackCheckbox = document.getElementById("tm-high-traffic-ack");
+    var confirmBtn = document.getElementById("tm-modal-confirm");
+    var noteField = document.getElementById("tm-high-traffic-note");
+
+    ackCheckbox.addEventListener("change", function() {
+      confirmBtn.disabled = !ackCheckbox.checked;
+    });
+
+    confirmBtn.addEventListener("click", function() {
+      state.tmHighTrafficAcknowledged = true;
+      state.tmHighTrafficNote = noteField.value;
+      overlay.remove();
+    });
+  }
+
   function resetEventState() {
     state.eventIntent = "no";
     state.participants = "";
@@ -1239,9 +1354,16 @@
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
-      // If 25+ participants, require high-traffic note
       var count = Number(state.participants);
-      if (count >= 25 && !state.highTrafficNote.trim()) return false;
+      // Block PV events with 150+ people
+      if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) return false;
+      // For PV events with 25+ people, require event description
+      if (location.slug === "powdersville" && state.eventIntent === "yes" && count >= 25 && !state.eventDescription.trim()) return false;
+      // For non-events with 25+ participants, require high-traffic note
+      if (state.eventIntent !== "yes" && count >= 25 && !state.highTrafficNote.trim()) return false;
+      // TM: if intake participants > 25, require acknowledgment
+      var tmCount = Number(state.intake.participants);
+      if (location.slug === "taylors-mill" && tmCount > 25 && !state.tmHighTrafficAcknowledged) return false;
       return baseComplete;
     }
     if (step === 4) return Boolean(state.waiverSigned);
@@ -1269,7 +1391,11 @@
     if (!isTermsAccepted()) errors.push("Please sign the terms & conditions with your full name.");
     if (!state.waiverSigned) errors.push("Please sign the liability waiver.");
     var count = Number(state.participants);
-    if (count >= 25 && !state.highTrafficNote.trim()) errors.push("Please describe your shoot (required for 25+ participants).");
+    if (state.eventIntent !== "yes" && count >= 25 && !state.highTrafficNote.trim()) errors.push("Please describe your shoot (required for 25+ participants).");
+    if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) errors.push("Events with more than 150 people cannot be booked online. Please email us directly.");
+    if (location.slug === "powdersville" && state.eventIntent === "yes" && count >= 25 && !state.eventDescription.trim()) errors.push("Please tell us about your event (required for 25+ participants).");
+    var tmCount = Number(state.intake.participants);
+    if (location.slug === "taylors-mill" && tmCount > 25 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 25+ participants.");
     return errors;
   }
 

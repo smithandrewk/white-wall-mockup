@@ -33,6 +33,7 @@ module.exports = async function handler(req, res) {
     participants,
     eventDescription,
     highTrafficNote,
+    tmHighTrafficNote,
     waiverSigned
   } = body;
 
@@ -69,6 +70,7 @@ module.exports = async function handler(req, res) {
       participants: participants || "",
       eventDescription: eventDescription || "",
       highTrafficNote: highTrafficNote || "",
+      tmHighTrafficNote: tmHighTrafficNote || "",
       waiverSigned: true
     };
 

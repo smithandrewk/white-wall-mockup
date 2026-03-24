@@ -891,3 +891,31 @@ body.booking-page {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* Event textarea warning (yellow border for 25+ participants) */
+.event-textarea-warning {
+  border-color: #d97706 !important;
+  box-shadow: 0 0 0 1px #d97706;
+}
+
+/* TM high-traffic modal overlay */
+.booking-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.booking-modal {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  max-width: 32rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}

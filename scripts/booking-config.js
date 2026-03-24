@@ -37,8 +37,6 @@ window.WWS_BOOKING_CONFIG = {
             { id: "black", label: "Black", image: "images/powdersville/black.jpg" },
             { id: "charcoal-gray", label: "Charcoal Gray", image: "images/powdersville/charcoal-gray.jpg" },
             { id: "olive-green", label: "Olive Green", image: "images/powdersville/olive-green.jpg" },
-            { id: "pink", label: "Pink", image: "images/powdersville/pink.jpg" },
-            { id: "red", label: "Red", image: "images/powdersville/red.jpg" },
             { id: "tan-beige", label: "Tan / Beige", image: "images/powdersville/tan_beige.jpg" },
             { id: "white", label: "White", image: "images/powdersville/white.jpg" }
           ]
@@ -47,7 +45,8 @@ window.WWS_BOOKING_CONFIG = {
           id: "lighting",
           type: "toggle",
           name: "Lighting rental",
-          image: "images/gear-rentals/img_6344.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v1-5.jpg",
+          buttonImage: "images/gear-rentals/img_6346.jpg",
           price: 125,
           description:
             "660W RGB Amaran Ray, 360W RGB Amaran Ray, 60in and 47in softboxes, wall-mounted extensions, rolling C-stands, sandbags, and clamps."
@@ -62,11 +61,11 @@ window.WWS_BOOKING_CONFIG = {
           description: "Modular rolling walls for custom studio setups.",
           allImage: "images/gear-rentals/whitewall-powdersville_v1-8.jpg",
           walls: [
-            { id: "wall-1", label: "Wall 1 — Layered, Hallowed, Squared Arch", image: "images/gear-rentals/whitewall-powdersville_v1-9.jpg" },
+            { id: "wall-1", label: "Wall 1 — Layered, Hallowed, Squared Arch", image: "images/gear-rentals/whitewall-powdersville_v1-3-2.jpg" },
             { id: "wall-2", label: "Wall 2 — Small Shelves", image: "images/gear-rentals/whitewall-powdersville_v1-11.jpg" },
             { id: "wall-3", label: "Wall 3 — Layered, Curved Arch", image: "images/gear-rentals/whitewall-powdersville_v1-12.jpg" },
             { id: "wall-4", label: "Wall 4 — Picture Frame", image: "images/gear-rentals/whitewall-powdersville_v1-14.jpg" },
-            { id: "wall-5", label: "Wall 5 — Three Simple Walls, Increasing Plain Arch Pack", image: "images/gear-rentals/whitewall-powdersville_v1-14.jpg" }
+            { id: "wall-5", label: "Wall 5 — Three Simple Walls, Increasing Plain Arch Pack", image: "images/gear-rentals/whitewall-powdersville_v1-13.jpg" }
           ]
         },
         {
@@ -76,10 +75,10 @@ window.WWS_BOOKING_CONFIG = {
           image: "images/gear-rentals/e82ff93f-492c-41e6-99da-2178acee3d17.jpg",
           description: "Padded white banquet chairs, up to 100 total.",
           options: [
-            { id: "25", label: "25 chairs", price: 100 },
-            { id: "50", label: "50 chairs", price: 190 },
-            { id: "75", label: "75 chairs", price: 280 },
-            { id: "100", label: "100 chairs", price: 370 }
+            { id: "25", label: "25 chairs", price: 100, image: "images/gear-rentals/a00a93aa-10bb-4850-9e5f-1cbaf7d9fca6.jpg" },
+            { id: "50", label: "50 chairs", price: 190, image: "images/gear-rentals/827f1586-24ad-47fb-b72a-b843c240651e.jpg" },
+            { id: "75", label: "75 chairs", price: 280, image: "images/gear-rentals/a00a93aa-10bb-4850-9e5f-1cbaf7d9fca6.jpg" },
+            { id: "100", label: "100 chairs", price: 370, image: "images/gear-rentals/827f1586-24ad-47fb-b72a-b843c240651e.jpg" }
           ]
         },
         {
@@ -96,7 +95,7 @@ window.WWS_BOOKING_CONFIG = {
           id: "tv",
           type: "toggle",
           name: "86in rolling TV",
-          image: "images/gear-rentals/whitewall-powdersville_v2-34.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v2-38.jpg",
           price: 50,
           description: "4K smart TV with every HDMI connecting cable imaginable."
         },
@@ -104,7 +103,8 @@ window.WWS_BOOKING_CONFIG = {
           id: "pa-system",
           type: "toggle",
           name: "PA system",
-          image: "images/gear-rentals/whitewall-powdersville_v2-28.jpg",
+          image: "images/gear-rentals/whitewall-powdersville_v2-29.jpg",
+          buttonImage: "images/gear-rentals/whitewall-powdersville_v2-33.jpg",
           price: 40,
           description: "Large speaker with aux cable to connect to any phone, with wired microphone and stand."
         }
@@ -147,8 +147,6 @@ window.WWS_BOOKING_CONFIG = {
             { id: "black", label: "Black", image: "images/powdersville/black.jpg" },
             { id: "charcoal-gray", label: "Charcoal Gray", image: "images/powdersville/charcoal-gray.jpg" },
             { id: "olive-green", label: "Olive Green", image: "images/powdersville/olive-green.jpg" },
-            { id: "pink", label: "Pink", image: "images/powdersville/pink.jpg" },
-            { id: "red", label: "Red", image: "images/powdersville/red.jpg" },
             { id: "tan-beige", label: "Tan / Beige", image: "images/powdersville/tan_beige.jpg" },
             { id: "white", label: "White", image: "images/powdersville/white.jpg" }
           ]
@@ -157,7 +155,8 @@ window.WWS_BOOKING_CONFIG = {
           id: "lighting",
           type: "toggle",
           name: "Lighting rental",
-          image: "images/gear-rentals/img_6341.jpg",
+          image: "images/taylors-mill/tm-studio-v2-47.jpg",
+          buttonImage: "images/taylors-mill/whitewall-studios-still-v2_-46.jpg",
           price: 50,
           description:
             "2x 100W Amaran bi-color lights, 1x 200W daylight light, 42in softbox, and 25ft extension cords."
