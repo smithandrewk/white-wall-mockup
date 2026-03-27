@@ -6,7 +6,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 
 ## Home Page — NEW
 
-- [ ] **Video hero homepage** — One single video silently on replay, with text "WhiteWall Studios and Events" and a "Book Now" button. *Needs: Drew to specify which video. We have 9 `.mov` files in `client/photos/Final Content Organized/Video Drafts/` but none is clearly "the" homepage video. Need to ask Drew.*
+- [x] **Video hero homepage** — Full-screen silent looping video with "WhiteWall Studios and Events" + "Book Now" button. Uses Powdersville Tour Video converted to MP4.
 
 ## Home Page — CURRENT
 
@@ -229,20 +229,56 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 
 ---
 
+---
+
+## Feedback Round 4 (2026-03-25) — Drew's "Whitewall feedback 3.25.pdf"
+
+### Content Updates
+- [x] Phone number changed to (803) 873-8153 across all 7 files (8 occurrences)
+- [x] Homepage tagline: added "Greenville," to "...Event Space in Greenville, South Carolina"
+- [x] Homepage intro paragraph: replaced with Drew's new two-location copy
+- [x] PV card thumbnail description: simplified to "2,000sf, brand new, flooded with natural light..."
+- [x] TM card thumbnail description: simplified to "1,000sf, raw historic mill character..."
+- [x] Powdersville about section: full rewrite with Drew's 9-paragraph "The Studio You've Been Looking For" copy
+- [x] Taylors Mill about section: full rewrite with Drew's "The Studio That Started It All" copy
+- [x] Booking pages: added "informational" to "important YouTube videos"
+- [x] TM booking/waiver/T&C: "This location is only approved for photo and video shoots, no events/parties allowed."
+- [x] booking-config.js: "Events with 35+ attendees require confirmation"
+
+### Booking Flow Logic
+- [x] Session type selector: selected = white + blue bold border, unselected = dark grey (inversed)
+- [x] Attendee threshold changed from 25 → 35 (event description, high-traffic note, TM modal)
+- [x] Cleaning fee logic: 50+ auto-adds $150 line item; 35-49 events add $0 line item with "we will be in touch" note
+- [x] TM hard cap at 50 people (popup + clamp)
+- [x] PV 150-person cap message updated: "cannot host more than 150 people total, including vendors and contractors"
+- [x] Intake form cross-validation: event attendee count must match intake participant count
+- [x] Photo/video session 50+ people: cleaning fee popup + auto-add
+- [x] Textarea validation bug fix: capture textarea value before DOM rebuild
+- [x] Textarea warning border softened (orange → blue accent, less alarming)
+- [x] "Tell Us About Your Event" prompt: Drew's new copy (setup/cleanup, back-to-back, 35+/50+ fees)
+- [x] Acknowledgment checkbox: "I understand that bookings with 35+ guests require internal approval..."
+- [x] Participant notices updated with 35+/50+ cleaning fee language
+- [x] Cleaning fee passed to checkout payload for future API integration
+
+### Gallery
+- [x] Lightbox fix: filter-aware — reinitializes with only visible photos per active tab
+- [x] Swiping in filtered tab now only shows photos from that tab
+
+### Remaining / Escalation Items
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| 1 | PV homepage thumbnail photo from Drive | Andrew | Blocked — manual download |
+| 2 | PV hero video placeholder (replace guy-on-boxes photo) | Andrew | Blocked — manual download |
+| 3 | PV event carousel (4 photos next to event paragraph) | Andrew | Blocked — manual download |
+| 4 | TM page video from Drive | Andrew | Blocked — manual download |
+| 5 | All new PV gallery photos from Drive (every folder) | Andrew | Blocked — manual download |
+| 6 | SMS booking confirmation to customers | Andrew | Acuity config or Twilio integration |
+| 7 | Cleaning fee as Square checkout line item | Andrew | Server-side: `api/create-checkout.js` |
+| 8 | Cleaning fee in Acuity appointment notes | Andrew | Server-side: `api/booking-callback.js` |
+| 9 | Add-on photo swaps from prior round (5 items) | Andrew | Photos in `client/photos/Final Content Organized/` |
+
 ## Summary
 
-**Done: 69 items**
-**Remaining: 6 items**
-
-### Remaining items breakdown:
-
-| # | Item | Blocker |
-|---|------|---------|
-| 1 | Video hero homepage | Need Drew to specify which video |
-| 2 | Backdrops — all-backdrops photo from Drive | Copy `client/photos/.../All Backdrops.png` to `images/` and update config |
-| 3 | Rolling walls — main photo showing all walls | Identify photo in `client/photos/.../Rolling Walls/` |
-| 4 | Chairs — dolly/individual photos | Photos in `client/photos/.../Chair Rental/` |
-| 5 | Tables — plain table photo from Drive | Photos in `client/photos/.../Table Rental/` |
-| 6 | TV/PA — specific photos from Drive | Photos in `client/photos/.../TV Rental/` and `PA System Rental/` |
-
-Items 2-6 are all "copy photo from `client/photos/` to `images/` and update config" — can be done in one commit.
+**Done: 96 items** (70 prior + 26 from feedback round 4)
+**Remaining: 9 items** (5 Google Drive downloads, 1 SMS config, 2 server-side API changes, 5 prior photo swaps — some overlap)

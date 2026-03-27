@@ -336,11 +336,32 @@
 
       if (target.matches("[data-input='intake-participants']")) {
         state.intake.participants = target.value;
-        // TM: show modal when participant count exceeds 25
+        // TM: hard cap at 50 people
         if (location.slug === "taylors-mill") {
           var tmCount = Number(target.value);
-          if (tmCount > 25 && !state.tmHighTrafficAcknowledged) {
+          if (tmCount > 50) {
+            showCapacityModal("Taylor\u2019s Mill has a maximum capacity of 50 people, including vendors and contractors. Please reduce your count or consider our Powdersville location for larger groups.");
+            target.value = "50";
+            state.intake.participants = "50";
+            return;
+          }
+          if (tmCount > 35 && !state.tmHighTrafficAcknowledged) {
             showTmHighTrafficModal();
+          }
+        }
+        // PV: cross-validate intake participants with top-level attendee count for events
+        if (location.slug === "powdersville" && state.eventIntent === "yes" && state.participants) {
+          var topCount = Number(state.participants);
+          var intakeCount = Number(target.value);
+          if (intakeCount && topCount && intakeCount !== topCount) {
+            showToast("Your attendee count (" + topCount + ") doesn\u2019t match the participant count you just entered (" + intakeCount + "). Please make sure these match.");
+          }
+        }
+        // PV photo/video: cleaning fee popup for 50+
+        if (location.slug === "powdersville" && state.eventIntent !== "yes") {
+          var pvCount = Number(target.value);
+          if (pvCount >= 50) {
+            showCleaningFeePopup();
           }
         }
       }
@@ -618,6 +639,20 @@
     '</div>';
   }
 
+  function getCleaningFee() {
+    var count = Number(state.participants);
+    // Also check intake participants for photo/video sessions
+    var intakeCount = Number(state.intake.participants);
+    var effectiveCount = Math.max(count || 0, intakeCount || 0);
+    if (effectiveCount >= 50) {
+      return { label: "Cleaning fee", amount: 150, note: "" };
+    }
+    if (effectiveCount >= 35 && state.eventIntent === "yes") {
+      return { label: "Cleaning fee", amount: 0, note: "We will be in touch if there are any changes." };
+    }
+    return null;
+  }
+
   function renderOrderSummary() {
     if (!state.selectedTime) return '';
 
@@ -634,7 +669,9 @@
       }
     });
 
-    var grandTotal = sessionPrice + addonTotal;
+    var cleaningFee = getCleaningFee();
+    var cleaningFeeAmount = cleaningFee ? cleaningFee.amount : 0;
+    var grandTotal = sessionPrice + addonTotal + cleaningFeeAmount;
     var timeLabel = new Date(state.selectedTime).toLocaleString("en-US", {
       weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
     });
@@ -645,6 +682,14 @@
         }).join("")
       : '';
 
+    var cleaningFeeHtml = '';
+    if (cleaningFee) {
+      cleaningFeeHtml = '<div class="summary-line summary-line-muted"><span>' + cleaningFee.label + '</span><span>' + currency.format(cleaningFee.amount) + '</span></div>';
+      if (cleaningFee.note) {
+        cleaningFeeHtml += '<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.45);font-style:italic">' + cleaningFee.note + '</span></div>';
+      }
+    }
+
     var btnDisabled = state.isSubmitting ? ' disabled' : '';
     var btnLabel = state.isSubmitting ? 'Processing…' : 'Pay & Book — ' + currency.format(grandTotal);
 
@@ -653,6 +698,7 @@
       '<div class="summary-list">' +
         '<div class="summary-line"><span>' + escapeHtml(selectedDuration.label) + ' session</span><span>' + currency.format(sessionPrice) + '</span></div>' +
         addonHtml +
+        cleaningFeeHtml +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
         '<div class="summary-line" style="font-size:1.1rem"><span><strong>Total</strong></span><span class="order-total"><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
       '</div>' +
@@ -731,7 +777,8 @@
           eventDescription: state.eventDescription,
           highTrafficNote: state.highTrafficNote,
           tmHighTrafficNote: state.tmHighTrafficNote,
-          waiverSigned: state.waiverSigned
+          waiverSigned: state.waiverSigned,
+          cleaningFee: getCleaningFee()
         })
       });
       var checkoutData = await checkoutRes.json();
@@ -758,7 +805,7 @@
     if (location.slug !== "powdersville") {
       container.innerHTML = `
         <div class="note-card">
-          <p class="ui-copy-strong">Events are not available at Taylor's Mill. This location is for photo and video sessions only.</p>
+          <p class="ui-copy-strong">This location is only approved for photo and video shoots, no events/parties allowed.</p>
         </div>
       `;
       return;
@@ -777,10 +824,10 @@
         : "";
 
     const capacityNotice =
-      /^\d+$/.test(state.participants.trim()) && Number(state.participants) >= 50
+      /^\d+$/.test(state.participants.trim()) && Number(state.participants) >= 35
         ? `
           <div class="warning-card" style="margin-top:1rem">
-            For events with 50+ attendees, our team will follow up to confirm details.
+            For events with 35+ attendees, our team will follow up to confirm details, including a potential $150 cleaning fee. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.
           </div>
         `
         : "";
@@ -821,6 +868,11 @@
   }
 
   function getEventFormHtml() {
+    // Safety: capture textarea value before DOM is rebuilt (fixes validation bug)
+    var existingTextarea = document.getElementById('event-description');
+    if (existingTextarea) {
+      state.eventDescription = existingTextarea.value;
+    }
     var count = Number(state.participants);
 
     // 150+ people: block booking entirely
@@ -828,7 +880,7 @@
       return `
         <div class="warning-card" style="margin-top:1.5rem;border-color:#dc2626;background:#fef2f2">
           <p class="ui-copy-strong" style="margin-bottom:0.75rem">Unable to book online</p>
-          <p class="ui-copy">We traditionally do not allow more than 150 people at our studio. If you have a specific request, please <a href="mailto:info@whitewallstudios.co" style="text-decoration:underline">email us directly</a>.</p>
+          <p class="ui-copy">The event cannot host more than 150 people total, including vendors and contractors. If you have a specific request, please <a href="mailto:info@whitewallstudios.co" style="text-decoration:underline">email us directly</a>.</p>
         </div>
       `;
     }
@@ -840,12 +892,12 @@
 
     if (count >= 50) {
       borderClass = "event-textarea-warning";
-      textareaLabel = "Tell us about your event.";
-      textareaPrompt = "Please include as much detail as possible so we can understand what you\u2019re planning. Be sure your booking includes enough time for full setup and for returning the studio to its original, squeaky clean condition when your event is finished. Our calendar is often booked back-to-back, and it\u2019s common for a photo shoot to be scheduled immediately after your event, so please reserve your time accordingly. A team member will be in touch to confirm you are all set. If you don\u2019t hear from us, assume you are good to go. However, it is very likely we will have to add on a cleaning fee due to the amount of people at your event.";
-    } else if (count >= 25) {
+      textareaLabel = "Tell Us About Your Event";
+      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. A team member will follow up if any additional details or approvals are needed. If you don\u2019t hear from us, you\u2019re all set. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.";
+    } else if (count >= 35) {
       borderClass = "event-textarea-warning";
-      textareaLabel = "Tell us about your event.";
-      textareaPrompt = "Please include as much detail as possible so we can understand what you\u2019re planning. Be sure your booking includes enough time for full setup and for returning the studio to its original, squeaky clean condition when your event is finished. Our calendar is often booked back-to-back, and it\u2019s common for a photo shoot to be scheduled immediately after your event, so please reserve your time accordingly. There is a chance after our team reviews your booking that we may have to add on a cleaning fee. We\u2019ll be in touch if so. If you don\u2019t hear from us, you\u2019re all good.";
+      textareaLabel = "Tell Us About Your Event";
+      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. A team member will follow up if any additional details or approvals are needed. If you don\u2019t hear from us, you\u2019re all set. For events with 35+ attendees, we may follow up regarding a potential $150 cleaning fee. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.";
     }
 
     return `
@@ -863,7 +915,7 @@
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="capacity" ${state.acknowledgements.capacity ? "checked" : ""}>
-            <span>I understand 50+ guest events may trigger manual follow-up.</span>
+            <span>I understand that bookings with 35+ guests require internal approval. The WhiteWall team will review my request and follow up with confirmation, along with any additional details, including a cleaning fee for larger gatherings.</span>
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="self-service" ${state.acknowledgements.selfService ? "checked" : ""}>
@@ -875,10 +927,10 @@
   }
 
   function getHighTrafficHtml() {
-    // Only show high-traffic note for non-event bookings with 25+ participants
+    // Only show high-traffic note for non-event bookings with 35+ participants
     if (state.eventIntent === "yes") return "";
     var count = Number(state.participants);
-    if (!count || count < 25) return "";
+    if (!count || count < 35) return "";
     return `
       <div class="booking-panel-soft p-5 mt-4">
         <p class="ui-copy-strong" style="margin-bottom:0.75rem">Tell us more about your shoot</p>
@@ -898,8 +950,8 @@
         ? '<div class="warning-card" style="margin-top:1rem">Looks like you have attendees — did you mean to select "Event booking" above?</div>'
         : "";
     var capacityNotice =
-      /^\d+$/.test(state.participants.trim()) && count >= 50
-        ? '<div class="warning-card" style="margin-top:1rem">For events with 50+ attendees, our team will follow up to confirm details.</div>'
+      /^\d+$/.test(state.participants.trim()) && count >= 35
+        ? '<div class="warning-card" style="margin-top:1rem">For events with 35+ attendees, our team will follow up to confirm details, including a potential $150 cleaning fee. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.</div>'
         : "";
 
     container.innerHTML = warning + capacityNotice + getHighTrafficHtml();
@@ -1124,7 +1176,16 @@
       .map((addon) => getAddonSummary(addon))
       .filter(Boolean);
 
-    addons.innerHTML = summaryItems.length
+    var cleaningFee = getCleaningFee();
+    var cleaningFeeHtml = '';
+    if (cleaningFee) {
+      cleaningFeeHtml = `<div class="summary-line summary-line-muted"><span>${cleaningFee.label}</span><span>${currency.format(cleaningFee.amount)}</span></div>`;
+      if (cleaningFee.note) {
+        cleaningFeeHtml += `<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.45);font-style:italic">${cleaningFee.note}</span></div>`;
+      }
+    }
+
+    var addonAndFeeHtml = summaryItems.length || cleaningFee
       ? summaryItems
           .map(
             (item) => `
@@ -1134,12 +1195,15 @@
               </div>
             `
           )
-          .join("")
+          .join("") + cleaningFeeHtml
       : '<p class="ui-empty">No add-ons selected yet.</p>';
 
+    addons.innerHTML = addonAndFeeHtml;
+
     const addonTotal = summaryItems.reduce((sum, item) => sum + item.amount, 0);
+    const cleaningFeeAmount = cleaningFee ? cleaningFee.amount : 0;
     const sessionPrice = selectedDuration && selectedDuration.price ? selectedDuration.price : 0;
-    const grandTotal = sessionPrice + addonTotal;
+    const grandTotal = sessionPrice + addonTotal + cleaningFeeAmount;
     total.textContent = currency.format(grandTotal);
   }
 
@@ -1207,7 +1271,7 @@
           <p>I, the individual booking this session (&ldquo;Renter&rdquo;), acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located in <strong>${location.slug === "powdersville" ? "Powdersville, South Carolina" : "Taylors, South Carolina"}</strong> (&ldquo;the Studio&rdquo;).</p>
           <p>By signing this agreement, I confirm that I am entering into this agreement <strong>on behalf of myself and every person I allow into the Studio during my booking</strong>, including but not limited to clients, guests, models, assistants, photographers, videographers, and other invitees (collectively referred to as &ldquo;My Party&rdquo;). I accept full responsibility for the conduct, safety, and actions of My Party.</p>
 
-          ${location.slug === "taylors-mill" ? '<p><strong>Events are not allowed at this location.</strong></p>' : ""}
+          ${location.slug === "taylors-mill" ? '<p><strong>This location is only approved for photo and video shoots, no events/parties allowed.</strong></p>' : ""}
 
           <p><strong>1. Assumption of Risk.</strong> The Studio is a <strong>self-service facility</strong>, and no WhiteWall Studios staff will be present during my booking. I voluntarily assume all risks associated with the use of the Studio by myself and My Party, including but not limited to risks involving lighting equipment, props, furniture, electrical equipment, trip or fall hazards, and the physical condition of the space.</p>
 
@@ -1318,6 +1382,44 @@
     });
   }
 
+  function showCapacityModal(message) {
+    var existing = document.querySelector(".booking-modal-overlay");
+    if (existing) existing.remove();
+
+    var overlay = document.createElement("div");
+    overlay.className = "booking-modal-overlay";
+    overlay.innerHTML = `
+      <div class="booking-modal">
+        <h3 class="ui-display-sm" style="margin-bottom:1rem">Capacity Limit</h3>
+        <p class="ui-copy" style="margin-bottom:1.25rem">${message}</p>
+        <button type="button" class="booking-button booking-button-primary" id="capacity-modal-ok">Got it</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById("capacity-modal-ok").addEventListener("click", function() {
+      overlay.remove();
+    });
+  }
+
+  function showCleaningFeePopup() {
+    var existing = document.querySelector(".booking-modal-overlay");
+    if (existing) existing.remove();
+
+    var overlay = document.createElement("div");
+    overlay.className = "booking-modal-overlay";
+    overlay.innerHTML = `
+      <div class="booking-modal">
+        <h3 class="ui-display-sm" style="margin-bottom:1rem">Cleaning Fee Notice</h3>
+        <p class="ui-copy" style="margin-bottom:1.25rem">For bookings with 50 or more people, a <strong>$150 cleaning fee</strong> will be automatically applied to your order. This helps ensure the studio is reset and ready for the next booking.</p>
+        <button type="button" class="booking-button booking-button-primary" id="cleaning-fee-ok">I understand</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById("cleaning-fee-ok").addEventListener("click", function() {
+      overlay.remove();
+    });
+  }
+
   function resetEventState() {
     state.eventIntent = "no";
     state.participants = "";
@@ -1357,13 +1459,14 @@
       var count = Number(state.participants);
       // Block PV events with 150+ people
       if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) return false;
-      // For PV events with 25+ people, require event description
-      if (location.slug === "powdersville" && state.eventIntent === "yes" && count >= 25 && !state.eventDescription.trim()) return false;
-      // For non-events with 25+ participants, require high-traffic note
-      if (state.eventIntent !== "yes" && count >= 25 && !state.highTrafficNote.trim()) return false;
-      // TM: if intake participants > 25, require acknowledgment
+      // For PV events with 35+ people, require event description
+      if (location.slug === "powdersville" && state.eventIntent === "yes" && count >= 35 && !state.eventDescription.trim()) return false;
+      // For non-events with 35+ participants, require high-traffic note
+      if (state.eventIntent !== "yes" && count >= 35 && !state.highTrafficNote.trim()) return false;
+      // TM: hard cap at 50, and if intake participants > 35, require acknowledgment
       var tmCount = Number(state.intake.participants);
-      if (location.slug === "taylors-mill" && tmCount > 25 && !state.tmHighTrafficAcknowledged) return false;
+      if (location.slug === "taylors-mill" && tmCount > 50) return false;
+      if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) return false;
       return baseComplete;
     }
     if (step === 4) return Boolean(state.waiverSigned);
@@ -1391,11 +1494,12 @@
     if (!isTermsAccepted()) errors.push("Please sign the terms & conditions with your full name.");
     if (!state.waiverSigned) errors.push("Please sign the liability waiver.");
     var count = Number(state.participants);
-    if (state.eventIntent !== "yes" && count >= 25 && !state.highTrafficNote.trim()) errors.push("Please describe your shoot (required for 25+ participants).");
-    if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) errors.push("Events with more than 150 people cannot be booked online. Please email us directly.");
-    if (location.slug === "powdersville" && state.eventIntent === "yes" && count >= 25 && !state.eventDescription.trim()) errors.push("Please tell us about your event (required for 25+ participants).");
+    if (state.eventIntent !== "yes" && count >= 35 && !state.highTrafficNote.trim()) errors.push("Please describe your shoot (required for 35+ participants).");
+    if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) errors.push("The event cannot host more than 150 people total, including vendors and contractors.");
+    if (location.slug === "powdersville" && state.eventIntent === "yes" && count >= 35 && !state.eventDescription.trim()) errors.push("Please tell us about your event (required for 35+ participants).");
     var tmCount = Number(state.intake.participants);
-    if (location.slug === "taylors-mill" && tmCount > 25 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 25+ participants.");
+    if (location.slug === "taylors-mill" && tmCount > 50) errors.push("Taylor\u2019s Mill has a maximum capacity of 50 people.");
+    if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 35+ participants.");
     return errors;
   }
 

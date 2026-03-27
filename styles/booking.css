@@ -263,6 +263,18 @@ body.booking-page {
   background: rgba(0, 0, 0, 0.04);
 }
 
+/* Session type selector (Photo/Video vs Event) — inversed styling */
+.choice-grid.is-two-up > .booking-choice {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.choice-grid.is-two-up > .booking-choice.is-active {
+  background: #ffffff;
+  border: 2px solid #8ba7b8;
+  font-weight: 600;
+}
+
 .booking-step {
   display: none;
 }
@@ -892,10 +904,10 @@ body.booking-page {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Event textarea warning (yellow border for 25+ participants) */
+/* Event textarea notice (subtle border for 35+ participants) */
 .event-textarea-warning {
-  border-color: #d97706 !important;
-  box-shadow: 0 0 0 1px #d97706;
+  border-color: #8ba7b8 !important;
+  box-shadow: 0 0 0 1px rgba(139, 167, 184, 0.4);
 }
 
 /* TM high-traffic modal overlay */

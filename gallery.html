@@ -971,10 +971,7 @@
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
 
-    // Initialize GLightbox
-    const lightbox = GLightbox({ selector: '.glightbox' });
-
-    // Add persistent location labels and make photos click to location page
+    // Add persistent location labels
     document.querySelectorAll('.gallery-img').forEach(function (item) {
       var loc = item.dataset.location;
       var wrapper = item.querySelector('.relative');
@@ -984,17 +981,44 @@
         label.textContent = loc === 'powdersville' ? 'Powdersville' : "Taylor's Mill";
         wrapper.appendChild(label);
       }
-      // Wrap the existing link to navigate to location page on click
-      var link = item.querySelector('a.glightbox');
-      if (link) {
-        link.classList.remove('glightbox');
-        link.removeAttribute('data-gallery');
-        link.href = loc === 'powdersville' ? '/powdersville' : '/taylors-mill';
-      }
     });
 
-    // Reinitialize lightbox after link changes (disabled — photos now link to location pages)
-    // If you want lightbox back, restore .glightbox class and re-init
+    // Filter-aware lightbox: only shows visible photos when swiping
+    var currentLightbox = null;
+
+    function initLightbox() {
+      if (currentLightbox) {
+        currentLightbox.destroy();
+        currentLightbox = null;
+      }
+
+      var visibleItems = document.querySelectorAll('.gallery-img:not(.hidden-filter)');
+      var elements = [];
+      visibleItems.forEach(function (item) {
+        var link = item.querySelector('a.glightbox');
+        if (link) {
+          elements.push({
+            href: link.getAttribute('href'),
+            type: 'image'
+          });
+        }
+      });
+
+      if (elements.length === 0) return;
+
+      currentLightbox = GLightbox({ elements: elements });
+
+      // Bind click handlers to visible links
+      visibleItems.forEach(function (item, index) {
+        var link = item.querySelector('a.glightbox');
+        if (link) {
+          link.onclick = function (e) {
+            e.preventDefault();
+            currentLightbox.openAt(index);
+          };
+        }
+      });
+    }
 
     // Fisher-Yates shuffle for random display order
     (function () {
@@ -1007,6 +1031,9 @@
         items.splice(j, 1, items[i]);
       }
     })();
+
+    // Initialize lightbox after shuffle
+    initLightbox();
 
     // Gallery filtering
     const filterBtns = document.querySelectorAll('.filter-btn');
@@ -1027,6 +1054,7 @@
           item.classList.add('hidden-filter');
         }
       });
+      initLightbox();
     }
 
     filterBtns.forEach(btn => {
@@ -1045,6 +1073,9 @@
             item.classList.add('hidden-filter');
           }
         });
+
+        // Rebuild lightbox with only visible photos
+        initLightbox();
       });
     });
   </script>

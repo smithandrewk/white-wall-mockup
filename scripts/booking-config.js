@@ -12,7 +12,7 @@ window.WWS_BOOKING_CONFIG = {
       policies: [
         "Events are allowed for 2-hour sessions and longer.",
         "1-hour sessions are not eligible for events.",
-        "Events with 50+ attendees require confirmation from our team."
+        "Events with 35+ attendees require confirmation from our team."
       ],
       durations: [
         { id: "pv-1", label: "1 hour", hours: 1, price: 130, description: "Quick portraits, pickups, and tight creative blocks.", acuityTypeKey: "powdersville_1hr" },
