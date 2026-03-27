@@ -21,6 +21,7 @@ const {
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
 const { notifyOwner } = require("./notify-owner");
+const { markInvoicePaid } = require("./_lib/quickbooks");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -99,6 +100,11 @@ module.exports = async function handler(req, res) {
     // Send owner notification for high-traffic bookings (fire-and-forget)
     notifyOwner(bookingState, appointment.id).catch(function (err) {
       console.error("booking-callback: notifyOwner error (non-blocking)", err.message);
+    });
+
+    // Mark QuickBooks invoice as paid (fire-and-forget)
+    markInvoicePaid(bookingState).catch(function (err) {
+      console.error("booking-callback: markInvoicePaid error (non-blocking)", err.message);
     });
 
     var locationSlug = bookingState.location;
