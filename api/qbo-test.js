@@ -10,6 +10,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // Force a token refresh first to ensure we have a valid token
+    await refreshAccessToken();
+
     // Test the connection by querying recent invoices
     var invoice = await findInvoice("", "");
 
