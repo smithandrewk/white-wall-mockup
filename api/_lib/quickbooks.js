@@ -17,10 +17,9 @@ const QBO_BASE_SANDBOX = "https://sandbox-quickbooks.api.intuit.com";
 const QBO_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
 
 function getBaseUrl() {
-  // Use sandbox if Square is in sandbox mode (same env toggle)
-  return process.env.SQUARE_ENVIRONMENT === "production"
-    ? QBO_BASE_PROD
-    : QBO_BASE_SANDBOX;
+  return process.env.QBO_ENVIRONMENT === "sandbox"
+    ? QBO_BASE_SANDBOX
+    : QBO_BASE_PROD;
 }
 
 function getRealmId() {
