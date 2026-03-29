@@ -13,7 +13,7 @@ async function notifyOwner(bookingState, appointmentId) {
   }
 
   var participants = Number(bookingState.participants) || 0;
-  if (participants < 25) return; // Only notify for high-traffic bookings
+  if (participants < 35) return; // Only notify for high-traffic bookings
 
   var isCapacityAlert = participants >= 50;
   var subject = isCapacityAlert
@@ -40,7 +40,7 @@ async function notifyOwner(bookingState, appointmentId) {
     "",
     isCapacityAlert
       ? "This booking has 50+ participants and requires follow-up."
-      : "This booking has 25+ participants. A cleaning fee may apply."
+      : "This booking has 35+ participants. A cleaning fee may apply."
   ].join("\n");
 
   try {
