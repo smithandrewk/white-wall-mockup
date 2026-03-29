@@ -146,8 +146,10 @@
               <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Intake form</p>
               <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3" for="intake-business">Business / legal name</label>
               <input id="intake-business" class="booking-input" data-input="intake-business" placeholder="Business or legal name">
-              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="intake-participants">Total number of participants</label>
-              <input id="intake-participants" class="booking-input" data-input="intake-participants" placeholder="How many people total?" type="number" min="1">
+              <div data-intake-participants-row>
+                <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="intake-participants">Total number of participants</label>
+                <input id="intake-participants" class="booking-input" data-input="intake-participants" placeholder="How many people total?" type="number" min="1">
+              </div>
               <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="intake-instagram">Instagram handle</label>
               <input id="intake-instagram" class="booking-input" data-input="intake-instagram" placeholder="@yourstudio">
               <label class="flex items-start gap-3 mt-5 cursor-pointer">

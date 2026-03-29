@@ -270,7 +270,12 @@
           return;
         }
         state.eventIntent = intentValue;
-        if (state.eventIntent !== "yes") {
+        if (state.eventIntent === "yes") {
+          // Sync intake participants with top-level count (intake field is hidden for events)
+          if (state.participants) {
+            state.intake.participants = state.participants;
+          }
+        } else {
           state.eventDescription = "";
           state.acknowledgements.cleanup = false;
           state.acknowledgements.capacity = false;
@@ -285,6 +290,10 @@
 
       if (target.matches("[data-input='participants']")) {
         state.participants = target.value;
+        // Keep intake participants in sync when event intent is active (intake field hidden)
+        if (state.eventIntent === "yes") {
+          state.intake.participants = target.value;
+        }
         // Update warnings/notices without full re-render to preserve input focus
         updateParticipantNotices();
         // Surgically update event form without rebuilding the input (preserves focus)
@@ -855,7 +864,7 @@
       </div>
 
       <div style="margin-top:1.5rem">
-        <label class="ui-field-label" for="participants">Event? How many people will you have? If not an event, leave blank.</label>
+        <label class="ui-field-label" for="participants">Event? How many people will you have? <strong>If this is a photo/video session, leave this blank.</strong></label>
         <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
       </div>
 
@@ -873,6 +882,12 @@
       }
       </div>
     `;
+
+    // Hide intake participants field for PV events (already captured at top of step)
+    var intakeRow = document.querySelector("[data-intake-participants-row]");
+    if (intakeRow) {
+      intakeRow.style.display = state.eventIntent === "yes" ? "none" : "";
+    }
   }
 
   function getEventFormHtml() {
