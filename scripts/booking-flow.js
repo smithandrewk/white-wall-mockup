@@ -1307,7 +1307,7 @@
         <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Liability waiver &amp; use agreement</p>
         <div class="text-sm text-black/60 leading-relaxed space-y-3 max-h-80 overflow-y-auto pr-2" style="scrollbar-width:thin">
           <p><strong>WhiteWall Studios Liability Waiver &amp; Use Agreement</strong></p>
-          <p>I, the individual booking this session (&ldquo;Renter&rdquo;), acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located in <strong>${location.slug === "powdersville" ? "Powdersville, South Carolina" : "Taylors, South Carolina"}</strong> (&ldquo;the Studio&rdquo;).</p>
+          <p>I, <strong>${escapeHtml(fullName || "the individual")}</strong>, booking this session (&ldquo;Renter&rdquo;), acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located in <strong>${location.slug === "powdersville" ? "Powdersville, South Carolina" : "Taylors, South Carolina"}</strong> (&ldquo;the Studio&rdquo;).</p>
           <p>By signing this agreement, I confirm that I am entering into this agreement <strong>on behalf of myself and every person I allow into the Studio during my booking</strong>, including but not limited to clients, guests, models, assistants, photographers, videographers, and other invitees (collectively referred to as &ldquo;My Party&rdquo;). I accept full responsibility for the conduct, safety, and actions of My Party.</p>
 
           ${location.slug === "taylors-mill" ? '<p><strong>This location is only approved for photo and video shoots, no events/parties allowed.</strong></p>' : ""}
