@@ -1340,7 +1340,35 @@
   function updateTermsGate() {
     var btn = document.querySelector("[data-requires-terms]");
     if (!btn) return;
-    btn.disabled = !isTermsAccepted();
+    btn.disabled = !isStepComplete(3);
+    updateSignatureHints();
+  }
+
+  function updateSignatureHints() {
+    var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
+    var fields = [
+      { key: "email-acknowledgment", value: state.emailAcknowledgment },
+      { key: "terms-signature", value: state.termsSignature }
+    ];
+    fields.forEach(function (field) {
+      var hint = document.querySelector("[data-hint='" + field.key + "']");
+      if (!hint) return;
+      var typed = field.value.trim().toLowerCase();
+      if (!typed) {
+        hint.textContent = "";
+        hint.className = "signature-hint";
+      } else if (!expectedName) {
+        hint.textContent = "Please enter your first and last name above first.";
+        hint.className = "signature-hint hint-mismatch";
+      } else if (typed === expectedName) {
+        hint.textContent = "Name matches.";
+        hint.className = "signature-hint hint-match";
+      } else {
+        hint.textContent = "Name doesn\u2019t match. Please type your full name exactly as entered above: " +
+          state.contact.firstName + (state.contact.lastName ? " " + state.contact.lastName : "");
+        hint.className = "signature-hint hint-mismatch";
+      }
+    });
   }
 
   function showTmHighTrafficModal() {

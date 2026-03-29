@@ -869,6 +869,24 @@ body.booking-page {
   }
 }
 
+/* Signature hint (name mismatch / match feedback) */
+.signature-hint {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  min-height: 1.15em;
+  transition: opacity 0.2s ease;
+}
+.signature-hint:empty {
+  display: none;
+}
+.signature-hint.hint-mismatch {
+  color: #b91c1c;
+}
+.signature-hint.hint-match {
+  color: #15803d;
+}
+
 /* Shake animation for invalid event selection */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
