@@ -221,6 +221,11 @@
         state.selectedTime = "";
         var aptId = getAppointmentTypeID();
         if (aptId) fetchAvailableTimes(aptId, date);
+        // Show Powdersville upsell on TM after first date selection
+        if (locationSlug === "taylors-mill" && !state._pvUpsellShown) {
+          state._pvUpsellShown = true;
+          showPowdersvilleUpsell();
+        }
         return;
       }
 
@@ -1444,6 +1449,36 @@
     `;
     document.body.appendChild(overlay);
     document.getElementById("cleaning-fee-ok").addEventListener("click", function() {
+      overlay.remove();
+    });
+  }
+
+  function showPowdersvilleUpsell() {
+    var existing = document.querySelector(".booking-modal-overlay");
+    if (existing) existing.remove();
+
+    var overlay = document.createElement("div");
+    overlay.className = "booking-modal-overlay";
+    overlay.innerHTML = `
+      <div class="booking-modal" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">✨</div>
+        <h3 class="ui-display-sm" style="margin-bottom:0.75rem">Have You Seen Our Powdersville Studio?</h3>
+        <p class="ui-copy" style="margin-bottom:1.25rem;line-height:1.7">
+          Our <strong>Powdersville location</strong> is our flagship studio — bigger, brighter, and loaded with more backdrops, lighting options, and equipment. It's closer to downtown Greenville with easy access and plenty of parking.
+        </p>
+        <div style="background:var(--wws-soft);border-radius:0.5rem;padding:1rem 1.25rem;margin-bottom:1.5rem">
+          <p style="font-size:0.95rem;font-weight:600;margin-bottom:0.25rem">Get 10% Off at Powdersville</p>
+          <p style="font-size:0.85rem;color:var(--wws-text-muted);margin-bottom:0.5rem">Use code at checkout</p>
+          <span style="display:inline-block;background:#000;color:#FCD518;font-weight:700;letter-spacing:0.15em;padding:0.4rem 1.25rem;border-radius:0.25rem;font-size:1.1rem">WW10</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.625rem">
+          <a href="/book-powdersville" class="booking-button booking-button-primary" style="text-decoration:none;text-align:center">Book Powdersville Instead</a>
+          <button type="button" class="booking-button" id="pv-upsell-dismiss" style="background:transparent;border:1px solid var(--wws-border)">Continue with Taylor's Mill</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById("pv-upsell-dismiss").addEventListener("click", function() {
       overlay.remove();
     });
   }
