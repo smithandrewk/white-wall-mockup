@@ -144,10 +144,15 @@
           Book This Studio
         </a>
       </div>
-      <div class="aspect-[4/5] overflow-hidden rounded-sm">
-        <img src="images/powdersville/ww-powdersville_v3-8.jpg"
-             alt="Powdersville Interior"
+      <div class="aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/MvcRA0mSOfM?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+        <img src="https://img.youtube.com/vi/MvcRA0mSOfM/maxresdefault.jpg"
+             alt="WhiteWall Powdersville Tour"
              class="w-full h-full object-cover">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-16 h-16 bg-black/70 rounded-full flex items-center justify-center group-hover:bg-black/90 transition-all duration-300">
+            <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -283,10 +288,13 @@
   <!-- Events Section -->
   <section id="events" class="py-24 px-6">
     <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-      <div class="aspect-[4/3] overflow-hidden rounded-sm order-2 md:order-1">
-        <img src="images/gallery/modern-romantics-224.jpg"
-             alt="Bridal session with brown backdrop at Powdersville studio"
-             class="w-full h-full object-cover">
+      <div class="order-2 md:order-1">
+        <p class="text-sm text-wws-dark tracking-wide uppercase text-center mb-3">See more photos below</p>
+        <div class="aspect-[4/3] overflow-hidden rounded-sm">
+          <img src="images/powdersville/whitewall-powdersville_v2-1.jpg"
+               alt="Powdersville studio event space"
+               class="w-full h-full object-cover">
+        </div>
       </div>
       <div class="order-1 md:order-2">
         <div class="inline-block bg-pv-cool/10 text-pv-cool text-xs tracking-widest uppercase px-4 py-2 rounded-full mb-6">Event Space</div>
