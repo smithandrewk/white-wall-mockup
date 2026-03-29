@@ -287,13 +287,8 @@
         state.participants = target.value;
         // Update warnings/notices without full re-render to preserve input focus
         updateParticipantNotices();
-        // Re-render event form if event intent is active (wording changes by participant count)
-        if (state.eventIntent === "yes") {
-          var eventFormContainer = document.querySelector(".choice-grid");
-          if (eventFormContainer && eventFormContainer.closest("[data-event-step]")) {
-            renderStepContent();
-          }
-        }
+        // Surgically update event form without rebuilding the input (preserves focus)
+        updateEventForm();
         // Always update order summary + sidebar so cleaning fee shows live
         renderCheckoutPanel();
         renderSummary();
@@ -870,11 +865,13 @@
         ${getHighTrafficHtml()}
       </div>
 
+      <div data-event-form>
       ${
         state.eventIntent === "yes"
           ? getEventFormHtml()
           : ""
       }
+      </div>
     `;
   }
 
@@ -909,6 +906,9 @@
       borderClass = "event-textarea-warning";
       textareaLabel = "Tell Us About Your Event";
       textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. A team member will follow up if any additional details or approvals are needed. If you don\u2019t hear from us, you\u2019re all set. For events with 35+ attendees, we may follow up regarding a potential $150 cleaning fee. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.";
+    } else {
+      textareaLabel = "Tell Us About Your Event";
+      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly.";
     }
 
     return `
@@ -949,6 +949,19 @@
         <textarea class="booking-textarea" data-input="high-traffic-note" placeholder="Describe your shoot or event…">${escapeHtml(state.highTrafficNote)}</textarea>
       </div>
     `;
+  }
+
+  function updateEventForm() {
+    var container = document.querySelector("[data-event-form]");
+    if (!container) return;
+    if (state.eventIntent === "yes") {
+      container.innerHTML = getEventFormHtml();
+    } else {
+      container.innerHTML = "";
+    }
+    // Update step navigation (Next button enable/disable)
+    renderStepVisibility();
+    updateTermsGate();
   }
 
   function updateParticipantNotices() {
