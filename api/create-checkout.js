@@ -34,7 +34,8 @@ module.exports = async function handler(req, res) {
     eventDescription,
     highTrafficNote,
     tmHighTrafficNote,
-    waiverSigned
+    waiverSigned,
+    cleaningFee
   } = body;
 
   // Validate
@@ -58,6 +59,11 @@ module.exports = async function handler(req, res) {
     // 1. Build Square line items (server-side pricing is authoritative)
     const lineItems = buildSquareLineItems(appointmentTypeID, addons, location);
 
+    // Add cleaning fee line item if applicable (50+ participants = $150)
+    if (cleaningFee && cleaningFee.amount > 0) {
+      lineItems.push({ name: "Cleaning Fee", amount: cleaningFee.amount * 100, quantity: 1 });
+    }
+
     // 2. Sign the full booking state for the callback
     const bookingState = {
       appointmentTypeID,
@@ -71,7 +77,8 @@ module.exports = async function handler(req, res) {
       eventDescription: eventDescription || "",
       highTrafficNote: highTrafficNote || "",
       tmHighTrafficNote: tmHighTrafficNote || "",
-      waiverSigned: true
+      waiverSigned: true,
+      cleaningFee: cleaningFee || null
     };
 
     const { encoded, sig } = signState(bookingState);

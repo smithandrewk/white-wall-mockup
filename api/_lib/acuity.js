@@ -271,6 +271,14 @@ function buildAppointmentNotes(bookingState) {
     lines.push("", "Add-ons:", ...addonLines);
   }
 
+  if (bookingState.cleaningFee) {
+    if (bookingState.cleaningFee.amount > 0) {
+      lines.push("", "Cleaning fee: $" + bookingState.cleaningFee.amount + " (auto-applied, 50+ participants)");
+    } else {
+      lines.push("", "Cleaning fee: pending review (35-49 event participants)");
+    }
+  }
+
   lines.push("", "Booked via whitewallstudios.co");
   return lines.join("\n");
 }
@@ -336,7 +344,7 @@ const SESSION_PRICES = {
 
 // Add-on prices in cents — for building Square line items
 const ADDON_PRICES = {
-  "lighting-powdersville": { label: "Lighting Rental", cents: 10000 },
+  "lighting-powdersville": { label: "Lighting Rental", cents: 12500 },
   "lighting-taylors-mill": { label: "Lighting Rental", cents: 5000 },
   "backdrops-all": { label: "All Backdrops", cents: 5000 },
   "backdrops-single": { label: "Single Backdrop", cents: 1500 },
