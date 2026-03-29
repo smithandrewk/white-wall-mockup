@@ -294,6 +294,9 @@
             renderStepContent();
           }
         }
+        // Always update order summary + sidebar so cleaning fee shows live
+        renderCheckoutPanel();
+        renderSummary();
         return;
       }
 
@@ -369,6 +372,9 @@
             showCleaningFeePopup();
           }
         }
+        // Update order summary so cleaning fee shows live
+        renderCheckoutPanel();
+        renderSummary();
       }
 
       if (target.matches("[data-input='intake-instagram']")) {
