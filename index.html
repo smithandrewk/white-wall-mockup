@@ -78,8 +78,7 @@
   <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background:transparent">
     <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
       <a href="/" class="flex items-center gap-3">
-        <img src="images/logo/wws-logo-black.jpg" alt="WhiteWall Studios" class="h-10 transition-all duration-300 hidden" id="nav-logo">
-        <span class="font-display text-xl text-white tracking-wide transition-all duration-300" id="nav-wordmark">WhiteWall</span>
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10 transition-all duration-300" id="nav-logo">
       </a>
       <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-white/80" id="nav-links">
         <a href="/" class="hover:text-white transition">Home</a>
@@ -434,7 +433,6 @@
     (function () {
       var nav = document.getElementById('main-nav');
       var logo = document.getElementById('nav-logo');
-      var wordmark = document.getElementById('nav-wordmark');
       var links = document.getElementById('nav-links');
       var toggle = document.getElementById('menu-toggle');
       var themeColor = document.getElementById('theme-color');
@@ -447,16 +445,14 @@
         if (isScrolled) {
           nav.style.background = 'rgba(255,255,255,0.97)';
           nav.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
-          logo.classList.remove('hidden');
-          wordmark.classList.add('hidden');
+          logo.style.filter = 'brightness(0)';
           if (links) { links.className = links.className.replace('text-white/80', 'text-black/50'); }
           toggle.style.color = '#000';
           themeColor.content = '#ffffff';
         } else {
           nav.style.background = 'transparent';
           nav.style.borderBottom = 'none';
-          logo.classList.add('hidden');
-          wordmark.classList.remove('hidden');
+          logo.style.filter = 'none';
           if (links) { links.className = links.className.replace('text-black/50', 'text-white/80'); }
           toggle.style.color = '#fff';
           themeColor.content = '#000000';
