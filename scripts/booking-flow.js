@@ -833,7 +833,7 @@
       state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
         ? `
           <div class="warning-card" style="margin-top:1rem">
-            Looks like you have attendees — did you mean to select "Event booking" above?
+            Looks like you have attendees — did you mean to select "Event booking" above? If this is a photo/video session, leave this blank.
           </div>
         `
         : "";
@@ -846,6 +846,10 @@
           </div>
         `
         : "";
+
+    const participantLabel = state.eventIntent === "yes"
+      ? "How many people will be attending your event?"
+      : 'Event? How many people will you have? <strong>If this is a photo/video session, leave this blank.</strong>';
 
     container.innerHTML = `
       <p class="ui-copy" style="margin-bottom:1.5rem;color:rgba(0,0,0,0.55)">Events are allowed for 2-hour sessions and longer.</p>
@@ -864,7 +868,7 @@
       </div>
 
       <div style="margin-top:1.5rem">
-        <label class="ui-field-label" for="participants">Event? How many people will you have? <strong>If this is a photo/video session, leave this blank.</strong></label>
+        <label class="ui-field-label" for="participants">${participantLabel}</label>
         <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
       </div>
 
@@ -986,7 +990,7 @@
     var count = Number(state.participants);
     var warning =
       state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
-        ? '<div class="warning-card" style="margin-top:1rem">Looks like you have attendees — did you mean to select "Event booking" above?</div>'
+        ? '<div class="warning-card" style="margin-top:1rem">Looks like you have attendees — did you mean to select "Event booking" above? If this is a photo/video session, leave this blank.</div>'
         : "";
     var capacityNotice =
       /^\d+$/.test(state.participants.trim()) && count >= 35
