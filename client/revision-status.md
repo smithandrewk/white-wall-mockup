@@ -290,23 +290,20 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 - [x] PV cleaning fee: auto-block 2.5 hours after session on Acuity calendar for cleaners (when $150 fee applies)
 - [x] PV full day: show "(5am–11pm access)" in duration label
 - [x] PV full day: only allow 5 AM start time in time slot picker
-- [ ] SMS confirmation to customers in addition to Acuity email — needs Twilio integration (see notes below)
+- [ ] SMS confirmation to customers in addition to Acuity email — verify Acuity's built-in SMS settings (see notes below)
 
 ### SMS Confirmation — Research Notes
 
-Drew wants customers to receive a text message confirmation in addition to the email Acuity sends. Current state: no SMS capability in the project. Options:
+Drew wants customers to receive a text message confirmation in addition to the email Acuity sends. Our Pay → Book architecture already solves the timing problem: the Acuity appointment is only created *after* Square payment is confirmed, so Acuity's built-in notifications (email + SMS) fire at the right time. The confirmation email already works this way.
 
-1. **Twilio (recommended)** — ~$0.0079/SMS in the US. Add a `sendConfirmationSMS` call in `booking-callback.js` after appointment creation, similar to `notifyOwner`. Needs: Twilio account, phone number ($1/mo), API credentials as Vercel env vars. Implementation: ~1 hour.
+**Next step:** Check Drew's Acuity dashboard (Notifications / Text/SMS Reminders) to verify:
+1. Is SMS enabled for **appointment confirmations** (not just pre-appointment reminders)?
+2. Does the customer need to opt in, or does it send automatically when a phone number is on the appointment?
+3. We already pass `phone` to the Acuity API when creating appointments, so the number is there.
 
-2. **Acuity's built-in SMS reminders** — Acuity Business plan includes SMS reminders, but these are pre-appointment reminders, not instant booking confirmations. Limited customization.
-
-3. **Resend doesn't support SMS** — email only.
-
-**Recommendation:** Twilio. It integrates cleanly with the existing serverless architecture. Andrew needs to create a Twilio account and provision a phone number, then the code integration is straightforward.
-
-**Note on PV full day 5 AM start:** The time filter code is in place, but it will only show 5 AM if Acuity's availability settings for the PV Full Day appointment type include 5 AM. Drew may need to adjust the "Regular Hours" in Acuity for this appointment type to start at 5 AM instead of 6 AM.
+Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a toggle, this may just need to be turned on — no code changes required. If Acuity only supports SMS as pre-appointment *reminders* (not instant confirmations), then Twilio (~$0.008/text) is the fallback, added to `booking-callback.js` similar to `notifyOwner`.
 
 ## Summary
 
 **Done: 105 items** (102 prior + 3 from feedback round 7)
-**Remaining: 8 items** (5 Google Drive downloads, 1 SMS config → now Twilio, 5 prior photo swaps — some overlap, 1 Acuity 5 AM availability check)
+**Remaining: 7 items** (5 Google Drive downloads, 1 SMS config → check Acuity settings, 5 prior photo swaps — some overlap)
