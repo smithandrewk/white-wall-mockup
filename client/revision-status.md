@@ -281,8 +281,11 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 ## Feedback Round 6 (2026-03-30) — Drew's text 2026-03-30
 
 - [x] Add "Will there be food or drinks?" yes/no checkbox to event booking form (Powdersville only, event intent = yes)
+- [x] Location cards: move text and button to overlay at bottom of photo
+- [x] Location cards: black background on buttons with short text
+- [x] Location cards: semi-transparent dark background on description text
 
 ## Summary
 
-**Done: 99 items** (70 prior + 26 from feedback round 4 + 2 server-side cleaning fee changes + 1 event food/drinks checkbox)
+**Done: 102 items** (70 prior + 26 from feedback round 4 + 2 server-side cleaning fee changes + 1 event food/drinks checkbox + 3 location card styling)
 **Remaining: 7 items** (5 Google Drive downloads, 1 SMS config, 5 prior photo swaps — some overlap)
