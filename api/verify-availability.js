@@ -27,6 +27,21 @@ module.exports = async function handler(req, res) {
   try {
     // Extract date from ISO datetime (e.g. "2026-03-17T09:00:00-0400" → "2026-03-17")
     const date = datetime.slice(0, 10);
+
+    // PV full day: we hardcode 5 AM on the client, which may not match any
+    // Acuity time slot. Check date-level availability instead (any slot open
+    // for this 18-hour type means the day is free).
+    const PV_FULL_DAY_TYPE = "89114581";
+    if (String(appointmentTypeID) === PV_FULL_DAY_TYPE) {
+      const dates = await acuityGet("/availability/dates", {
+        appointmentTypeID,
+        month: date.slice(0, 7),
+        timezone: "America/New_York"
+      });
+      const available = (dates || []).some((d) => d.date === date);
+      return res.status(200).json({ available });
+    }
+
     const data = await acuityGet("/availability/times", {
       appointmentTypeID,
       date,
