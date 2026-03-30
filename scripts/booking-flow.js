@@ -566,19 +566,26 @@
     state.availableTimes = [];
     state.selectedTime = "";
     renderScheduleStep();
+
+    // PV full day: only valid start is 5 AM Eastern — skip Acuity time fetch
+    if (selectedDuration && selectedDuration.id === "pv-full") {
+      // Compute Eastern offset (EDT -0400 or EST -0500) for the selected date
+      var probe = new Date(date + "T12:00:00");
+      var eastern = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "shortOffset" }).format(probe);
+      var offsetMatch = eastern.match(/GMT([+-]\d+)/);
+      var offsetHours = offsetMatch ? parseInt(offsetMatch[1], 10) : -5;
+      var offsetStr = (offsetHours <= 0 ? "-" : "+") + String(Math.abs(offsetHours)).padStart(2, "0") + "00";
+      state.availableTimes = [date + "T05:00:00" + offsetStr];
+      state.isLoadingTimes = false;
+      renderScheduleStep();
+      return;
+    }
+
     try {
       const res = await fetch(`/api/availability-times?appointmentTypeID=${appointmentTypeID}&date=${date}`);
       if (!res.ok) throw new Error("Failed to load times");
       const data = await res.json();
-      var times = (data.times || []).map(function (t) { return t.time; });
-      // PV full day: only allow 5 AM start time
-      if (selectedDuration && selectedDuration.id === "pv-full") {
-        times = times.filter(function (t) {
-          var h = new Date(t).getHours();
-          return h === 5;
-        });
-      }
-      state.availableTimes = times;
+      state.availableTimes = (data.times || []).map(function (t) { return t.time; });
     } catch (err) {
       console.error(err);
       state.availableTimes = [];
