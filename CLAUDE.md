@@ -10,13 +10,21 @@ This project involves multiple large HTML files. Follow these rules to avoid blo
 - **Prefer Edit over Write** for changes to existing files. Edit sends only the diff, not the full file.
 - **Avoid bulk re-reads.** If you need to check consistency across pages, read one at a time, compact between if needed.
 
+## QMD (Local Knowledge Base)
+
+The `vault/` directory is indexed as QMD collection `"wws"` (12 docs). It contains ops documentation: booking flow, credentials, pricing, launch checklist, locations, system architecture, and more.
+
+- **Search before asking Andrew** — if a question is about how the system works, pricing, credentials, or launch status, search `wws` first.
+- Use `collection: "wws"` to scope searches to this project.
+- After searching, use `mcp__qmd__get` to read the full doc when a snippet looks relevant.
+
 ## Project Structure
 
 - `index.html` - Main landing page
 - `taylors-mill.html` - Taylors Mill venue page
 - `powdersville.html` - Powdersville venue page
 - `gallery.html` - Photo gallery
-- `design-sheet.tex` / `design-sheet.pdf` - LaTeX design sheet
+- `design/` - LaTeX design sheets and reports
 - `fonts/` - Web fonts
 - `wws-logo.png` - Logo asset
 
