@@ -25,6 +25,7 @@
     eventIntent: "no",
     participants: "",
     eventDescription: "",
+    foodDrinks: null,
     highTrafficNote: "",
     acknowledgements: {
       cleanup: false,
@@ -277,6 +278,7 @@
           }
         } else {
           state.eventDescription = "";
+          state.foodDrinks = null;
           state.acknowledgements.cleanup = false;
           state.acknowledgements.capacity = false;
           state.acknowledgements.selfService = false;
@@ -412,6 +414,20 @@
 
       if (target.matches("[data-check='self-service']")) {
         state.acknowledgements.selfService = target.checked;
+      }
+
+      if (target.matches("[data-check='food-drinks-yes']")) {
+        state.foodDrinks = target.checked ? true : null;
+        var noBox = document.querySelector("[data-check='food-drinks-no']");
+        if (noBox && target.checked) noBox.checked = false;
+        return;
+      }
+
+      if (target.matches("[data-check='food-drinks-no']")) {
+        state.foodDrinks = target.checked ? false : null;
+        var yesBox = document.querySelector("[data-check='food-drinks-yes']");
+        if (yesBox && target.checked) yesBox.checked = false;
+        return;
       }
 
       if (target.matches("[data-check='read-email']")) {
@@ -790,6 +806,7 @@
           eventIntent: state.eventIntent,
           participants: state.participants,
           eventDescription: state.eventDescription,
+          foodDrinks: state.foodDrinks,
           highTrafficNote: state.highTrafficNote,
           tmHighTrafficNote: state.tmHighTrafficNote,
           waiverSigned: state.waiverSigned,
@@ -936,6 +953,19 @@
           <label class="ui-field-label" for="event-description">${textareaLabel}</label>
           ${textareaPrompt ? '<p class="ui-copy" style="margin-bottom:0.75rem;color:rgba(0,0,0,0.55);font-size:0.85rem">' + textareaPrompt + '</p>' : ''}
           <textarea class="booking-textarea ${borderClass}" id="event-description" data-input="event-description" placeholder="What are you hosting?">${escapeHtml(state.eventDescription)}</textarea>
+        </div>
+        <div class="booking-panel-soft panel-pad">
+          <p class="ui-kicker" style="margin-bottom:1rem">Will there be food or drinks at your event?</p>
+          <div style="display:flex;gap:1rem">
+            <label class="helper-item">
+              <input type="checkbox" data-check="food-drinks-yes" ${state.foodDrinks === true ? "checked" : ""}>
+              <span>Yes</span>
+            </label>
+            <label class="helper-item">
+              <input type="checkbox" data-check="food-drinks-no" ${state.foodDrinks === false ? "checked" : ""}>
+              <span>No</span>
+            </label>
+          </div>
         </div>
         <div class="booking-panel-soft panel-pad">
           <p class="ui-kicker">Required acknowledgements</p>

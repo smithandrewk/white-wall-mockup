@@ -274,11 +274,15 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 | 4 | TM page video from Drive | Andrew | Blocked — manual download |
 | 5 | All new PV gallery photos from Drive (every folder) | Andrew | Blocked — manual download |
 | 6 | SMS booking confirmation to customers | Andrew | Acuity config or Twilio integration |
-| 7 | Cleaning fee as Square checkout line item | Andrew | Server-side: `api/create-checkout.js` |
-| 8 | Cleaning fee in Acuity appointment notes | Andrew | Server-side: `api/booking-callback.js` |
+| 7 | ~~Cleaning fee as Square checkout line item~~ | Andrew | Done (2026-03-29) |
+| 8 | ~~Cleaning fee in Acuity appointment notes~~ | Andrew | Done (2026-03-29) |
 | 9 | Add-on photo swaps from prior round (5 items) | Andrew | Photos in `client/photos/Final Content Organized/` |
+
+## Feedback Round 6 (2026-03-30) — Drew's text 2026-03-30
+
+- [x] Add "Will there be food or drinks?" yes/no checkbox to event booking form (Powdersville only, event intent = yes)
 
 ## Summary
 
-**Done: 96 items** (70 prior + 26 from feedback round 4)
-**Remaining: 9 items** (5 Google Drive downloads, 1 SMS config, 2 server-side API changes, 5 prior photo swaps — some overlap)
+**Done: 99 items** (70 prior + 26 from feedback round 4 + 2 server-side cleaning fee changes + 1 event food/drinks checkbox)
+**Remaining: 7 items** (5 Google Drive downloads, 1 SMS config, 5 prior photo swaps — some overlap)

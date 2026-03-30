@@ -247,6 +247,7 @@ function buildAppointmentNotes(bookingState) {
   if (bookingState.eventIntent === "yes") {
     lines.push("Event booking: Yes");
     if (bookingState.participants) lines.push("Event guests: " + bookingState.participants);
+    lines.push("Food or drinks: " + (bookingState.foodDrinks ? "Yes" : "No"));
     if (bookingState.eventDescription) lines.push("Event description: " + bookingState.eventDescription);
   }
 
