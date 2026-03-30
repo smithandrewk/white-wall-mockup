@@ -570,7 +570,15 @@
       const res = await fetch(`/api/availability-times?appointmentTypeID=${appointmentTypeID}&date=${date}`);
       if (!res.ok) throw new Error("Failed to load times");
       const data = await res.json();
-      state.availableTimes = (data.times || []).map(function (t) { return t.time; });
+      var times = (data.times || []).map(function (t) { return t.time; });
+      // PV full day: only allow 5 AM start time
+      if (selectedDuration && selectedDuration.id === "pv-full") {
+        times = times.filter(function (t) {
+          var h = new Date(t).getHours();
+          return h === 5;
+        });
+      }
+      state.availableTimes = times;
     } catch (err) {
       console.error(err);
       state.availableTimes = [];

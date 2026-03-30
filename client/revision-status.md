@@ -285,7 +285,28 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 - [x] Location cards: black background on buttons with short text
 - [x] Location cards: semi-transparent dark background on description text
 
+## Feedback Round 7 (2026-03-30) — Drew's text 2026-03-30 (booking changes)
+
+- [x] PV cleaning fee: auto-block 2.5 hours after session on Acuity calendar for cleaners (when $150 fee applies)
+- [x] PV full day: show "(5am–11pm access)" in duration label
+- [x] PV full day: only allow 5 AM start time in time slot picker
+- [ ] SMS confirmation to customers in addition to Acuity email — needs Twilio integration (see notes below)
+
+### SMS Confirmation — Research Notes
+
+Drew wants customers to receive a text message confirmation in addition to the email Acuity sends. Current state: no SMS capability in the project. Options:
+
+1. **Twilio (recommended)** — ~$0.0079/SMS in the US. Add a `sendConfirmationSMS` call in `booking-callback.js` after appointment creation, similar to `notifyOwner`. Needs: Twilio account, phone number ($1/mo), API credentials as Vercel env vars. Implementation: ~1 hour.
+
+2. **Acuity's built-in SMS reminders** — Acuity Business plan includes SMS reminders, but these are pre-appointment reminders, not instant booking confirmations. Limited customization.
+
+3. **Resend doesn't support SMS** — email only.
+
+**Recommendation:** Twilio. It integrates cleanly with the existing serverless architecture. Andrew needs to create a Twilio account and provision a phone number, then the code integration is straightforward.
+
+**Note on PV full day 5 AM start:** The time filter code is in place, but it will only show 5 AM if Acuity's availability settings for the PV Full Day appointment type include 5 AM. Drew may need to adjust the "Regular Hours" in Acuity for this appointment type to start at 5 AM instead of 6 AM.
+
 ## Summary
 
-**Done: 102 items** (70 prior + 26 from feedback round 4 + 2 server-side cleaning fee changes + 1 event food/drinks checkbox + 3 location card styling)
-**Remaining: 7 items** (5 Google Drive downloads, 1 SMS config, 5 prior photo swaps — some overlap)
+**Done: 105 items** (102 prior + 3 from feedback round 7)
+**Remaining: 8 items** (5 Google Drive downloads, 1 SMS config → now Twilio, 5 prior photo swaps — some overlap, 1 Acuity 5 AM availability check)

@@ -20,7 +20,7 @@ window.WWS_BOOKING_CONFIG = {
         { id: "pv-3", label: "3 hours", hours: 3, price: 270, description: "Larger set builds and multi-look shoots.", supportsEvents: true, acuityTypeKey: "powdersville_3hr" },
         { id: "pv-4", label: "4 hours", hours: 4, price: 350, description: "Small events start here.", supportsEvents: true, acuityTypeKey: "powdersville_4hr" },
         { id: "pv-6", label: "6 hours", hours: 6, price: 500, description: "Expanded events and productions.", supportsEvents: true, acuityTypeKey: "powdersville_6hr" },
-        { id: "pv-full", label: "Full day", hours: 18, price: 980, description: "6 AM–11 PM — all-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
+        { id: "pv-full", label: "Full day (5am–11pm access)", hours: 18, price: 980, description: "All-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
       ],
       addons: [
         {

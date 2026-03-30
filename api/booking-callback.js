@@ -17,7 +17,9 @@ const {
   acuityPost,
   buildAcuityAddonIDs,
   buildAcuityFields,
-  buildAppointmentNotes
+  buildAppointmentNotes,
+  TYPE_TO_DURATION,
+  CALENDAR_IDS
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
 const { notifyOwner } = require("./notify-owner");
@@ -96,6 +98,21 @@ module.exports = async function handler(req, res) {
       notes: notes,
       noPayment: true  // Payment already collected via Square
     });
+
+    // PV cleaning fee: block 2.5 hours after session for cleaners (fire-and-forget)
+    if (bookingState.location === "powdersville" && bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
+      var durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 60;
+      var sessionEnd = new Date(new Date(bookingState.datetime).getTime() + durationMin * 60000);
+      var bufferEnd = new Date(sessionEnd.getTime() + 150 * 60000); // 2.5 hours
+      acuityPost("/blocks", {
+        start: sessionEnd.toISOString(),
+        end: bufferEnd.toISOString(),
+        calendarID: CALENDAR_IDS.powdersville,
+        notes: "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
+      }).catch(function (err) {
+        console.error("booking-callback: cleaning buffer block failed (non-blocking)", err.message);
+      });
+    }
 
     // Send owner notification for high-traffic bookings (fire-and-forget)
     notifyOwner(bookingState, appointment.id).catch(function (err) {
