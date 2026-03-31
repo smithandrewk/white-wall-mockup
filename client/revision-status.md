@@ -270,7 +270,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 |---|------|-------|--------|
 | 1 | ~~PV homepage thumbnail photo from Drive~~ | Andrew | Done (2026-03-31) |
 | 2 | ~~PV hero video placeholder (replace guy-on-boxes photo)~~ | Andrew | Done (2026-03-31) |
-| 3 | PV event carousel (4 photos next to event paragraph) | Andrew | Blocked — manual download |
+| 3 | ~~PV event carousel (4 photos next to event paragraph)~~ | Andrew | Accepted by Drew in person (2026-03-31) |
 | 4 | ~~TM page video from Drive~~ | Andrew | Done (2026-03-31) |
 | 5 | All new PV gallery photos from Drive (every folder) | Andrew | Blocked — manual download |
 | 6 | SMS booking confirmation to customers | Andrew | Acuity config or Twilio integration |
@@ -305,5 +305,5 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 
 ## Summary
 
-**Done: 108 items** (102 prior + 3 from feedback round 7 + 3 photo/video swaps)
-**Remaining: 4 items** (2 Google Drive downloads, 1 SMS config → check Acuity settings, 5 prior photo swaps — some overlap)
+**Done: 109 items** (102 prior + 3 from feedback round 7 + 4 photo/video swaps/accepts)
+**Remaining: 3 items** (1 Google Drive download, 1 SMS config → check Acuity settings, 5 prior photo swaps — some overlap)
