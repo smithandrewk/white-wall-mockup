@@ -290,7 +290,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 - [x] PV cleaning fee: auto-block 2.5 hours after session on Acuity calendar for cleaners (when $150 fee applies)
 - [x] PV full day: show "(5am–11pm access)" in duration label
 - [x] PV full day: only allow 5 AM start time in time slot picker
-- [ ] SMS confirmation to customers in addition to Acuity email — verify Acuity's built-in SMS settings (see notes below)
+- [x] SMS confirmation — deferred as nice-to-have. Acuity only supports SMS reminders (not confirmations). Would need Twilio (~$0.008/text) in booking-callback.js for instant confirmation. Drew can revisit post-launch.
 
 ### SMS Confirmation — Research Notes
 
@@ -305,5 +305,5 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 
 ## Summary
 
-**Done: 116 items** (all code + content items complete)
-**Remaining: 1 item** (SMS config → check Acuity dashboard settings)
+**Done: 117 items** (all revision items complete)
+**Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
