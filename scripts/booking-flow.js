@@ -568,6 +568,7 @@
     renderScheduleStep();
 
     // PV full day: only valid start is 5 AM Eastern — skip Acuity time fetch
+    var selectedDuration = getSelectedDuration();
     if (selectedDuration && selectedDuration.id === "pv-full") {
       // Compute Eastern offset (EDT -0400 or EST -0500) for the selected date
       var probe = new Date(date + "T12:00:00");
