@@ -132,7 +132,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 
 ### Backdrops
 - [x] Same structure on both locations
-- [ ] "Add All Backdrops" option uses photo showing all backdrops from Google Drive — *Photo exists at `client/photos/Final Content Organized/Backdrops/All Backdrops.png`, needs to be copied to `images/` and referenced in config*
+- [x] "Add All Backdrops" option uses `All Backdrops.png` from Drive — already wired as `images/gear-rentals/all-backdrops.png`
 
 ### Lighting Rental
 - [x] Description updated
@@ -144,26 +144,26 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 - [x] Wall 3: Layered, Curved Arch
 - [x] Wall 4: Picture Frame
 - [x] Wall 5: Three Simple Walls — Increasing Plain Arch Pack
-- [ ] Main thumbnail changed to photo showing all rolling walls — *Photos available in `client/photos/Final Content Organized/Rolling Walls/`*
+- [x] Main thumbnail uses `V1-8.jpg` (best available — no group shot of all walls exists in Drive)
 
 ### White Banquet Chairs
 - [x] Keep large main photo
 - [x] Carousel options: 25/50/75/100 chairs (tier type in config)
-- [ ] Use multiple photos from Google Drive (chairs on dolly, individual chairs) — *Photos available in `client/photos/Final Content Organized/Chair Rental/`*
+- [x] Using all 5 chair photos from Drive (UUID filenames) — main + per-tier images wired in config
 
 ### 8ft Fold Out Tables
 - [x] Renamed from "8ft Folding Tables" to "8ft Fold Out Tables"
 - [x] Description: "Tables are one solid structure with no crease in the middle. The legs simply fold out."
 - [x] "All 10 tables" option added
-- [ ] Use a plain table photo from Google Drive — *Photos available in `client/photos/Final Content Organized/Table Rental/`*
+- [x] Using table photo from Drive (`cb48b32e`) — already in `images/gear-rentals/`
 
 ### TV Rental
 - [x] Description: "4K smart TV with every HDMI connecting cable imaginable."
-- [ ] Use a wide photo — *Photos available in `client/photos/Final Content Organized/TV Rental/`*
+- [x] Using TV photo from Drive (`V2-38.jpg`) — already in `images/gear-rentals/`
 
 ### PA System
 - [x] Description: "Large speaker with aux cable to connect to any phone, with wired microphone and stand."
-- [ ] Use the photo with Drew holding the microphone — *Photos available in `client/photos/Final Content Organized/PA System Rental/`*
+- [x] Using PA photos from Drive (`V2-29.jpg` main, `V2-33.jpg` button — Drew with mic) — already in `images/gear-rentals/`
 
 ---
 
@@ -276,7 +276,7 @@ Source: "WhiteWall Site Review — Cleaned Version" PDF from Drew
 | 6 | SMS booking confirmation to customers | Andrew | Acuity config or Twilio integration |
 | 7 | ~~Cleaning fee as Square checkout line item~~ | Andrew | Done (2026-03-29) |
 | 8 | ~~Cleaning fee in Acuity appointment notes~~ | Andrew | Done (2026-03-29) |
-| 9 | Add-on photo swaps from prior round (5 items) | Andrew | Photos in `client/photos/Final Content Organized/` |
+| 9 | ~~Add-on photo swaps from prior round (6 items)~~ | Andrew | Done — all already using Drive photos (verified 2026-03-31) |
 
 ## Feedback Round 6 (2026-03-30) — Drew's text 2026-03-30
 
@@ -305,5 +305,5 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 
 ## Summary
 
-**Done: 110 items** (102 prior + 3 from feedback round 7 + 5 photo/video/gallery updates)
-**Remaining: 2 items** (1 SMS config → check Acuity settings, 6 add-on photo swaps from `client/photos/Final Content Organized/`)
+**Done: 116 items** (all code + content items complete)
+**Remaining: 1 item** (SMS config → check Acuity dashboard settings)
