@@ -23,7 +23,6 @@ const {
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
 const { notifyOwner } = require("./notify-owner");
-const { markInvoicePaid } = require("./_lib/quickbooks");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -147,25 +146,17 @@ module.exports = async function handler(req, res) {
       log("notify", "owner notification FAILED: " + err.message);
     }
 
-    // Mark QuickBooks invoice as paid
-    try {
-      log("qbo", "starting markInvoicePaid");
-      var payment = await markInvoicePaid(bookingState);
-      if (payment) {
-        log("qbo", "invoice marked paid", { paymentId: payment.Id });
-      } else {
-        log("qbo", "no invoice found or skipped");
-      }
-    } catch (err) {
-      log("qbo", "markInvoicePaid FAILED: " + err.message);
-    }
+    // QBO invoice marking happens from the confirmation page via /api/qbo-mark-paid
+    // (separate function invocation so Vercel doesn't kill it after redirect)
 
     log("done", "all steps complete — redirecting");
 
     if (debug) return res.status(200).json({ success: true, appointmentId: appointment.id, logs: logs });
 
     var locationSlug = bookingState.location;
-    return res.redirect(302, "/booking-confirmation?id=" + appointment.id + "&location=" + locationSlug);
+    var firstName = encodeURIComponent(bookingState.contact.firstName);
+    var lastName = encodeURIComponent(bookingState.contact.lastName || "");
+    return res.redirect(302, "/booking-confirmation?id=" + appointment.id + "&location=" + locationSlug + "&fn=" + firstName + "&ln=" + lastName);
   } catch (err) {
     log("acuity", "appointment creation FAILED: " + err.message);
     if (debug) return res.status(500).json({ error: "appointment-creation-failed", logs: logs });

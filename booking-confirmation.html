@@ -71,5 +71,20 @@
       </div>
     </div>
   </main>
+  <script>
+    // Mark QuickBooks invoice as paid in the background
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var fn = params.get("fn");
+      var ln = params.get("ln");
+      if (fn) {
+        fetch("/api/qbo-mark-paid", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName: fn, lastName: ln || "" })
+        }).catch(function() {});
+      }
+    })();
+  </script>
 </body>
 </html>
