@@ -123,17 +123,16 @@ module.exports = async function handler(req, res) {
       console.error("booking-callback: notifyOwner error", err.message);
     }
 
-    // Redirect now — customer sees confirmation page while QBO processes
-    var locationSlug = bookingState.location;
-    res.redirect(302, "/booking-confirmation?id=" + appointment.id + "&location=" + locationSlug);
-
-    // Mark QuickBooks invoice as paid (runs after redirect sent but before function exits)
-    // This takes up to 30s due to Acuity→QBO sync delay, so we do it last
+    // Mark QuickBooks invoice as paid (must complete before redirect)
+    // Takes up to 30s due to Acuity→QBO sync delay — customer waits but invoice is correct
     try {
       await markInvoicePaid(bookingState);
     } catch (err) {
       console.error("booking-callback: markInvoicePaid error", err.message);
     }
+
+    var locationSlug = bookingState.location;
+    return res.redirect(302, "/booking-confirmation?id=" + appointment.id + "&location=" + locationSlug);
   } catch (err) {
     console.error("booking-callback: Acuity appointment creation failed", err.message);
     return res.redirect(302, "/booking-error?reason=slot-conflict&orderId=" + (orderId || ""));
