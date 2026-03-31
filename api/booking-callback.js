@@ -99,30 +99,48 @@ module.exports = async function handler(req, res) {
       noPayment: true  // Payment already collected via Square
     });
 
-    // PV cleaning fee: block 2.5 hours after session for cleaners (fire-and-forget)
+    // Background tasks that should continue after the response is sent.
+    // Vercel's waitUntil keeps the function alive for these promises.
+    var backgroundTasks = [];
+
+    // PV cleaning fee: block 2.5 hours after session for cleaners
     if (bookingState.location === "powdersville" && bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
       var durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 60;
       var sessionEnd = new Date(new Date(bookingState.datetime).getTime() + durationMin * 60000);
       var bufferEnd = new Date(sessionEnd.getTime() + 150 * 60000); // 2.5 hours
-      acuityPost("/blocks", {
-        start: sessionEnd.toISOString(),
-        end: bufferEnd.toISOString(),
-        calendarID: CALENDAR_IDS.powdersville,
-        notes: "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
-      }).catch(function (err) {
-        console.error("booking-callback: cleaning buffer block failed (non-blocking)", err.message);
-      });
+      backgroundTasks.push(
+        acuityPost("/blocks", {
+          start: sessionEnd.toISOString(),
+          end: bufferEnd.toISOString(),
+          calendarID: CALENDAR_IDS.powdersville,
+          notes: "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
+        }).catch(function (err) {
+          console.error("booking-callback: cleaning buffer block failed", err.message);
+        })
+      );
     }
 
-    // Send owner notification for high-traffic bookings (fire-and-forget)
-    notifyOwner(bookingState, appointment.id).catch(function (err) {
-      console.error("booking-callback: notifyOwner error (non-blocking)", err.message);
-    });
+    // Send owner notification for high-traffic bookings
+    backgroundTasks.push(
+      notifyOwner(bookingState, appointment.id).catch(function (err) {
+        console.error("booking-callback: notifyOwner error", err.message);
+      })
+    );
 
-    // Mark QuickBooks invoice as paid (fire-and-forget)
-    markInvoicePaid(bookingState).catch(function (err) {
-      console.error("booking-callback: markInvoicePaid error (non-blocking)", err.message);
-    });
+    // Mark QuickBooks invoice as paid
+    backgroundTasks.push(
+      markInvoicePaid(bookingState).catch(function (err) {
+        console.error("booking-callback: markInvoicePaid error", err.message);
+      })
+    );
+
+    // waitUntil keeps the function alive after res.redirect so background tasks complete
+    if (typeof globalThis[Symbol.for("vercel-request-context")]?.get === "function") {
+      var ctx = globalThis[Symbol.for("vercel-request-context")].get();
+      if (ctx && ctx.waitUntil) {
+        ctx.waitUntil(Promise.all(backgroundTasks));
+      }
+    }
 
     var locationSlug = bookingState.location;
     return res.redirect(302, "/booking-confirmation?id=" + appointment.id + "&location=" + locationSlug);
