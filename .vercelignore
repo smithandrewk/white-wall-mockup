@@ -5,6 +5,7 @@ design/
 *.mov
 *.mp4
 !videos/*.mp4
+!images/**/*.mp4
 *.tex
 *.aux
 *.log
