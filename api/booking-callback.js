@@ -39,7 +39,8 @@ module.exports = async function handler(req, res) {
     console.log("booking-callback [" + step + "]: " + msg + (data ? " " + JSON.stringify(data) : ""));
   }
 
-  const { state, sig, orderId, debug } = req.query;
+  var debug = req.query.debug === "1" || process.env.BOOKING_DEBUG === "1";
+  const { state, sig, orderId } = req.query;
 
   // 1. Verify signature
   if (!state || !sig) {
