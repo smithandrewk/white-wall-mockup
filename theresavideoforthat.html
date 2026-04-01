@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>There's a Video for That — WhiteWall Studios</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518", "tm-warm": "#C4A882", "pv-cool": "#8BA7B8" },
+          fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; }
+    .video-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .video-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .video-card.is-hidden { display: none; }
+    .featured-video { display: none; }
+    .featured-video.is-active { display: block; }
+  </style>
+</head>
+<body class="bg-white text-wws-black min-h-screen">
+
+  <!-- Header -->
+  <div class="bg-wws-black text-white py-8 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <a href="/" class="inline-block mb-6">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10 mx-auto">
+      </a>
+      <h1 class="font-display text-4xl md:text-5xl font-light mb-3">There's a Video for That</h1>
+      <p class="text-white/60 text-sm tracking-wide">Everything you need to know about your studio session</p>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="sticky top-0 z-20 bg-white border-b border-black/10 py-4 px-6">
+    <div class="max-w-4xl mx-auto">
+      <input type="text" id="video-search" placeholder="Search videos..." class="w-full px-5 py-3 border border-black/15 rounded-sm text-sm focus:outline-none focus:border-black/40 transition">
+    </div>
+  </div>
+
+  <!-- Featured Video (shows when search matches) -->
+  <div class="max-w-4xl mx-auto px-6 pt-8">
+    <div id="featured-video" class="featured-video">
+      <div class="aspect-video rounded-sm overflow-hidden bg-black">
+        <iframe id="featured-iframe" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <h2 id="featured-title" class="font-display text-2xl font-light mt-4 mb-2"></h2>
+      <button onclick="closeFeatured()" class="text-xs tracking-[0.15em] uppercase text-black/40 hover:text-black transition mb-6">Close video</button>
+    </div>
+  </div>
+
+  <!-- Video Grid -->
+  <div class="max-w-4xl mx-auto px-6 py-8">
+    <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    </div>
+    <p id="no-results" class="text-center text-black/40 text-sm py-12" style="display:none">No videos match your search.</p>
+  </div>
+
+  <!-- Footer -->
+  <div class="bg-wws-light py-8 px-6 text-center">
+    <p class="text-xs text-black/40">WhiteWall Studios &middot; <a href="/" class="hover:text-black transition">Back to site</a></p>
+  </div>
+
+  <script>
+    var videos = [
+      { id: "HzLZXboVjR4", title: "WhiteWall Flagship Location ALL INFO Video", tags: "flagship info overview tour guide all" },
+      { id: "_kBL-ppGXJc", title: "Door Operations & Backup Key", tags: "door lock key backup entry access open close" },
+      { id: "zv0HookADfk", title: "Shade Remote — How To Use It", tags: "shade remote blinds window shades blackout" },
+      { id: "XWeSEOjZDfE", title: "Retractable Extension Cable — How To Use It", tags: "extension cable cord power outlet plug retractable" },
+      { id: "PSGCPRk64f4", title: "Bluetooth Speaker — How To Use/Connect To It", tags: "bluetooth speaker music connect pair audio sound" },
+      { id: "HJ7C1aAHMgI", title: "Trash Rules and Use Info", tags: "trash garbage waste cleanup rules bins" },
+      { id: "urgK84SVAWo", title: "How To Set Up a Backdrop", tags: "backdrop setup roll paper background set up" },
+      { id: "CjImGta-iKs", title: "How To Take Down a Backdrop", tags: "backdrop teardown take down roll up paper background" },
+      { id: "tmEKyLCDBI4", title: "TV Rental Info", tags: "tv television rental screen monitor hdmi" },
+      { id: "_Vb43CXxN0U", title: "Table Rental Info", tags: "table tables rental fold folding setup" },
+      { id: "iN3kEYhg_yU", title: "PA System — How To Use It", tags: "pa system speaker microphone mic audio sound" },
+      { id: "MPvl6Kn06So", title: "Taylors Mill Location — Info Video", tags: "taylors mill info overview tour guide location" },
+      { id: "PjWWYtqhc1M", title: "Taylors Mill Bathroom Instructions", tags: "taylors mill bathroom restroom" },
+      { id: "_-v52aTXpVQ", title: "Taylors Mill Garage Door Access", tags: "taylors mill garage door access entry" },
+      { id: "Jg6YspKRuGA", title: "Taylors Mill HVAC Temperature Control", tags: "taylors mill hvac temperature heat ac thermostat" }
+    ];
+
+    var grid = document.getElementById("video-grid");
+    var searchInput = document.getElementById("video-search");
+    var featuredEl = document.getElementById("featured-video");
+    var featuredIframe = document.getElementById("featured-iframe");
+    var featuredTitle = document.getElementById("featured-title");
+    var noResults = document.getElementById("no-results");
+
+    // Render video cards
+    videos.forEach(function(v) {
+      var card = document.createElement("div");
+      card.className = "video-card cursor-pointer rounded-sm overflow-hidden border border-black/10";
+      card.dataset.id = v.id;
+      card.dataset.title = v.title.toLowerCase();
+      card.dataset.tags = v.tags;
+      card.innerHTML =
+        '<div class="aspect-video relative bg-black">' +
+          '<img src="https://img.youtube.com/vi/' + v.id + '/mqdefault.jpg" alt="' + v.title + '" class="w-full h-full object-cover">' +
+          '<div class="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors">' +
+            '<div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">' +
+              '<svg class="w-5 h-5 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="p-4">' +
+          '<h3 class="text-sm font-medium leading-snug">' + v.title + '</h3>' +
+        '</div>';
+      card.addEventListener("click", function() {
+        openFeatured(v.id, v.title);
+      });
+      grid.appendChild(card);
+    });
+
+    function openFeatured(videoId, title) {
+      featuredIframe.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1";
+      featuredTitle.textContent = title;
+      featuredEl.classList.add("is-active");
+      featuredEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    window.closeFeatured = function() {
+      featuredEl.classList.remove("is-active");
+      featuredIframe.src = "";
+    };
+
+    // Search
+    searchInput.addEventListener("input", function() {
+      var q = this.value.toLowerCase().trim();
+      var cards = grid.querySelectorAll(".video-card");
+      var visible = 0;
+      var bestMatch = null;
+      var bestScore = 0;
+
+      cards.forEach(function(card) {
+        var title = card.dataset.title;
+        var tags = card.dataset.tags;
+        var match = !q || title.indexOf(q) !== -1 || tags.indexOf(q) !== -1;
+
+        // Also check individual words
+        if (!match && q) {
+          var words = q.split(/\s+/);
+          match = words.every(function(w) {
+            return title.indexOf(w) !== -1 || tags.indexOf(w) !== -1;
+          });
+        }
+
+        if (match) {
+          card.classList.remove("is-hidden");
+          visible++;
+          // Score: prefer title matches over tag matches
+          if (q) {
+            var score = 0;
+            if (title.indexOf(q) !== -1) score += 10;
+            if (tags.indexOf(q) !== -1) score += 5;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = card;
+            }
+          }
+        } else {
+          card.classList.add("is-hidden");
+        }
+      });
+
+      noResults.style.display = visible === 0 ? "block" : "none";
+
+      // Pop best match to featured if search is specific enough
+      if (q.length >= 3 && bestMatch && visible <= 3) {
+        openFeatured(bestMatch.dataset.id, bestMatch.querySelector("h3").textContent);
+      } else if (!q) {
+        closeFeatured();
+      }
+    });
+  </script>
+</body>
+</html>
