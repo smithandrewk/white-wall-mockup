@@ -67,27 +67,38 @@ module.exports = async function handler(req, res) {
       var sessionEnd = new Date(sessionStart.getTime() + durationMin * 60000);
       var bufferEnd = new Date(sessionEnd.getTime() + 150 * 60000); // 2.5 hours
 
-      // Query Acuity for appointments on PV calendar in the buffer window
+      // Query Acuity for appointments AND blocks in the buffer window
       var bufferAppts = await acuityGet("/appointments", {
         calendarID: CALENDAR_IDS.powdersville,
         minDate: sessionEnd.toISOString(),
         maxDate: bufferEnd.toISOString()
       });
+      var bufferBlocks = await acuityGet("/blocks", {
+        calendarID: CALENDAR_IDS.powdersville,
+        minDate: sessionEnd.toISOString(),
+        maxDate: bufferEnd.toISOString()
+      });
 
-      // Filter out cancelled appointments and appointments starting exactly at buffer end
-      // (an appointment starting at bufferEnd is fine — cleaners finish right as it begins)
+      // Combine and filter — anything that occupies time in the buffer window
       var activeInBuffer = (bufferAppts || []).filter(function (a) {
         if (a.canceled) return false;
         var apptStart = new Date(a.datetime).getTime();
         if (apptStart >= bufferEnd.getTime()) return false;
         return true;
+      }).map(function (a) { return { datetime: a.datetime, endTime: a.endTime, type: "appointment" }; });
+
+      (bufferBlocks || []).forEach(function (b) {
+        var blockStart = new Date(b.start).getTime();
+        if (blockStart < bufferEnd.getTime()) {
+          activeInBuffer.push({ datetime: b.start, endTime: b.end, type: "block" });
+        }
       });
 
       if (activeInBuffer.length > 0) {
         var nextAppt = activeInBuffer[0];
         var nextStart = new Date(nextAppt.datetime);
 
-        // Fetch all appointments + blocks for this day to validate suggested slots
+        // Fetch all appointments AND blocks for this day to validate suggested slots
         var date = datetime.slice(0, 10);
         var dayStart = date + "T00:00:00";
         var dayEnd = date + "T23:59:59";
@@ -96,7 +107,17 @@ module.exports = async function handler(req, res) {
           minDate: dayStart,
           maxDate: dayEnd
         });
-        var allDayActive = (allDayAppts || []).filter(function (a) { return !a.canceled; });
+        var allDayBlocks = await acuityGet("/blocks", {
+          calendarID: CALENDAR_IDS.powdersville,
+          minDate: dayStart,
+          maxDate: dayEnd
+        });
+        // Combine appointments and blocks into one list of occupied time ranges
+        var allDayActive = (allDayAppts || []).filter(function (a) { return !a.canceled; })
+          .map(function (a) { return { start: a.datetime, end: a.endTime }; });
+        (allDayBlocks || []).forEach(function (b) {
+          allDayActive.push({ start: b.start, end: b.end });
+        });
 
         // Fetch actual available time slots
         var availTimes = await acuityGet("/availability/times", {
@@ -112,8 +133,11 @@ module.exports = async function handler(req, res) {
           var cEnd = new Date(cStart.getTime() + durationMin * 60000);
           var cBufferEnd = new Date(cEnd.getTime() + 150 * 60000);
           for (var j = 0; j < allDayActive.length; j++) {
-            var aStart = new Date(allDayActive[j].datetime).getTime();
-            if (aStart >= cEnd.getTime() && aStart < cBufferEnd.getTime()) {
+            var aStart = new Date(allDayActive[j].start).getTime();
+            var aEnd = new Date(allDayActive[j].end).getTime();
+            // Conflict if the occupied range overlaps the buffer window at all
+            // (occupied starts before buffer ends AND occupied ends after buffer starts)
+            if (aStart < cBufferEnd.getTime() && aEnd > cEnd.getTime()) {
               return false;
             }
           }
