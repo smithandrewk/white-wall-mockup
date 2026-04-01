@@ -436,14 +436,14 @@ Last updated: 2026-03-31
 | T1 | PV basic booking | PASS | Critical |
 | T2 | TM basic booking | PASS | Critical |
 | T3 | PV booking + add-ons | PASS | Critical |
-| T4 | PV event < 35 ppl | NOT TESTED | Nice-to-have |
-| T5 | PV event 35-49 ppl | NOT TESTED | Nice-to-have |
+| T4 | PV event < 35 ppl | PASS (UI) | Nice-to-have |
+| T5 | PV event 35-49 ppl | PASS (UI) | Nice-to-have |
 | T6 | PV event 50+ ppl | NOT TESTED | Nice-to-have |
-| T7 | PV event 150+ blocked | NOT TESTED | Nice-to-have |
-| T8 | PV 1hr event blocked | NOT TESTED | Nice-to-have |
-| T9 | TM 50+ hard cap | NOT TESTED | Nice-to-have |
-| T10 | PV full day 5 AM lock | NOT TESTED | Nice-to-have |
-| T11 | PV photo/video 50+ ppl | NOT TESTED | Nice-to-have |
+| T7 | PV event 150+ blocked | PASS | Nice-to-have |
+| T8 | PV 1hr event blocked | PASS | Nice-to-have |
+| T9 | TM 50+ hard cap | PASS | Nice-to-have |
+| T10 | PV full day 5 AM lock | PASS | Nice-to-have |
+| T11 | PV photo/video 50+ ppl | PASS | Nice-to-have |
 | T12 | Add-on "all" options | NOT TESTED | Nice-to-have |
 | T13 | Square decline card | NOT TESTED | Nice-to-have |
 | T14 | Booking abandonment | NOT TESTED | Nice-to-have |
