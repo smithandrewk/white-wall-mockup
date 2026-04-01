@@ -820,7 +820,7 @@
           intake: state.intake,
           addons: state.addons,
           eventIntent: state.eventIntent,
-          participants: state.participants,
+          participants: state.participants || state.intake.participants || "",
           eventDescription: state.eventDescription,
           foodDrinks: state.foodDrinks,
           highTrafficNote: state.highTrafficNote,
