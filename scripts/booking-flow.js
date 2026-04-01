@@ -1513,47 +1513,66 @@
     var existing = document.querySelector(".booking-modal-overlay");
     if (existing) existing.remove();
 
-    // Store on window so onclick handlers can access
-    window._bufferConflictSuggested = suggestedStart;
-
-    var buttons = "";
+    var displayTime = "";
     if (suggestedStart) {
-      var suggestedDate = new Date(suggestedStart);
-      var displayTime = suggestedDate.toLocaleTimeString("en-US", {
+      displayTime = new Date(suggestedStart).toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
         timeZone: "America/New_York"
       });
-      buttons =
-        '<button type="button" class="booking-button booking-button-primary" onclick="document.querySelector(\'.booking-modal-overlay\').remove(); window._bufferConflictAccept();">Move to ' + displayTime + '</button>' +
-        '<button type="button" class="booking-button booking-button-secondary" onclick="document.querySelector(\'.booking-modal-overlay\').remove(); window._bufferConflictDecline();">Pick a different time</button>';
-    } else {
-      buttons =
-        '<button type="button" class="booking-button booking-button-primary" onclick="document.querySelector(\'.booking-modal-overlay\').remove(); window._bufferConflictDecline();">Pick a different time</button>';
     }
 
     var overlay = document.createElement("div");
     overlay.className = "booking-modal-overlay";
-    overlay.innerHTML =
-      '<div class="booking-modal">' +
-        '<h3 class="ui-display-sm" style="margin-bottom:1rem">Cleaning Buffer Needed</h3>' +
-        '<p class="ui-copy" style="margin-bottom:1.25rem">' + message + '</p>' +
-        '<div style="display:flex;flex-direction:column;gap:0.75rem">' + buttons + '</div>' +
-      '</div>';
+
+    var modal = document.createElement("div");
+    modal.className = "booking-modal";
+
+    var title = document.createElement("h3");
+    title.className = "ui-display-sm";
+    title.style.marginBottom = "1rem";
+    title.textContent = "Cleaning Buffer Needed";
+    modal.appendChild(title);
+
+    var msg = document.createElement("p");
+    msg.className = "ui-copy";
+    msg.style.marginBottom = "1.25rem";
+    msg.textContent = message;
+    modal.appendChild(msg);
+
+    var btnWrap = document.createElement("div");
+    btnWrap.style.display = "flex";
+    btnWrap.style.flexDirection = "column";
+    btnWrap.style.gap = "0.75rem";
+
+    if (suggestedStart) {
+      var moveBtn = document.createElement("button");
+      moveBtn.type = "button";
+      moveBtn.className = "booking-button booking-button-primary";
+      moveBtn.textContent = "Move to " + displayTime;
+      moveBtn.addEventListener("click", function() {
+        overlay.remove();
+        state.selectedTime = suggestedStart;
+        renderScheduleStep();
+      });
+      btnWrap.appendChild(moveBtn);
+    }
+
+    var pickBtn = document.createElement("button");
+    pickBtn.type = "button";
+    pickBtn.className = "booking-button booking-button-secondary";
+    pickBtn.textContent = "Pick a different time";
+    pickBtn.addEventListener("click", function() {
+      overlay.remove();
+      state.selectedTime = "";
+      renderScheduleStep();
+    });
+    btnWrap.appendChild(pickBtn);
+
+    modal.appendChild(btnWrap);
+    overlay.appendChild(modal);
     document.body.appendChild(overlay);
   }
-
-  window._bufferConflictAccept = function() {
-    state.selectedTime = window._bufferConflictSuggested;
-    renderScheduleStep();
-    var summary = document.querySelector(".order-summary");
-    if (summary) summary.scrollIntoView({ behavior: "smooth" });
-  };
-
-  window._bufferConflictDecline = function() {
-    state.selectedTime = "";
-    renderScheduleStep();
-  };
 
   function showCapacityModal(message) {
     var existing = document.querySelector(".booking-modal-overlay");
