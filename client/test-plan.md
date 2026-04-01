@@ -469,6 +469,22 @@ Last updated: 2026-03-31
 
 ---
 
+### T21: Acuity Manual Blocks Respected
+
+**Steps:**
+1. Go to Acuity dashboard → manually block off a time range on PV calendar (e.g., 8-10 AM)
+2. Go to `/book-powdersville`, pick that date
+3. Check available time slots
+
+**Acceptance Criteria:**
+- [ ] Blocked times do not appear in the time slot picker
+- [ ] Adjacent times (before/after block + padding) are also unavailable
+- [ ] Unblocked times still appear normally
+
+**Status:** PASS (2026-04-01) — manually blocked 8-10 AM on Acuity, confirmed those times don't appear on site
+
+---
+
 ## Summary
 
 | Test | Description | Status | Priority |
@@ -493,7 +509,8 @@ Last updated: 2026-03-31
 | T18 | Square production | PASS | Critical |
 | T19 | Buffer conflict — move time | PASS | Nice-to-have |
 | T20 | Buffer conflict — pick other | PASS | Nice-to-have |
+| T21 | Acuity manual blocks respected | PASS | Nice-to-have |
 
 **Critical: T1-T3, T16-T18 — all PASS**
 **Important: T15 (mobile Safari) — NOT TESTED**
-**Nice-to-have: T4-T14, T19-T20 — 13 PASS, 3 untested**
+**Nice-to-have: T4-T14, T19-T21 — 14 PASS, 3 untested**
