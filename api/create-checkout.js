@@ -80,28 +80,54 @@ module.exports = async function handler(req, res) {
       });
 
       if (activeInBuffer.length > 0) {
-        // There's a booking in the buffer window — suggest an earlier time
         var nextAppt = activeInBuffer[0];
         var nextStart = new Date(nextAppt.datetime);
-        // Suggest starting 2.5hr + session duration before the next appointment
-        var suggestedStart = new Date(nextStart.getTime() - (durationMin + 150) * 60000);
-        var suggestedTime = suggestedStart.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          timeZone: "America/New_York"
+        // Latest possible start: next appointment minus session duration minus 2.5hr buffer
+        var latestStart = new Date(nextStart.getTime() - (durationMin + 150) * 60000);
+
+        // Fetch actual available time slots for this day
+        var date = datetime.slice(0, 10);
+        var availTimes = await acuityGet("/availability/times", {
+          appointmentTypeID: appointmentTypeID,
+          date: date,
+          timezone: "America/New_York"
         });
+
+        // Find the latest available slot that starts at or before latestStart
+        var suggestedSlot = null;
+        for (var i = 0; i < (availTimes || []).length; i++) {
+          var slotTime = new Date(availTimes[i].time);
+          if (slotTime <= latestStart) {
+            suggestedSlot = availTimes[i].time;
+          }
+        }
+
         var nextTime = nextStart.toLocaleTimeString("en-US", {
           hour: "numeric",
           minute: "2-digit",
           timeZone: "America/New_York"
         });
 
-        return res.status(409).json({
-          error: "buffer-conflict",
-          message: "Your session requires a 2.5-hour cleaning buffer afterward, but there's a booking at " + nextTime + ". Try starting at " + suggestedTime + " or earlier, or pick a different day.",
-          suggestedStart: suggestedStart.toISOString(),
-          nextBookingStart: nextStart.toISOString()
-        });
+        if (suggestedSlot) {
+          var suggestedDisplay = new Date(suggestedSlot).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            timeZone: "America/New_York"
+          });
+          return res.status(409).json({
+            error: "buffer-conflict",
+            message: "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + ". We can move you to " + suggestedDisplay + " to fit the buffer.",
+            suggestedStart: suggestedSlot,
+            nextBookingStart: nextStart.toISOString()
+          });
+        } else {
+          return res.status(409).json({
+            error: "buffer-conflict",
+            message: "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + " and no earlier time slot fits. Please pick a different day.",
+            suggestedStart: null,
+            nextBookingStart: nextStart.toISOString()
+          });
+        }
       }
     }
 
