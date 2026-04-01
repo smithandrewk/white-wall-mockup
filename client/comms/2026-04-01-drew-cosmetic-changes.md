@@ -9,3 +9,4 @@
 1. Taylor's Mill page — hero video has Drew talking behind the title. Replace with a static photo of Taylor's Mill instead.
 2. Powdersville page — add YouTube video (https://youtu.be/BsyruYsoA-I) next to "Host your next event" section.
 3. **Major rebrand**: Powdersville is now "WhiteWall Flagship Location" everywhere. No more "Powdersville" anywhere except the physical address. Taylors Mill becomes "Taylor's Mill Location". Applies site-wide.
+4. Homepage: replace the "Choose Your Location" selector with the location photo cards (with overlay text/buttons) from lower on the page, then remove the duplicate cards section.
