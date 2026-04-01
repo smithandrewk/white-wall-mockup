@@ -425,7 +425,7 @@ Last updated: 2026-03-31
 - [ ] Confirmation email is sent (same as sandbox flow)
 - [ ] Processing fee (2.9% + $0.30) is deducted in Square, not charged to customer
 
-**Status:** BLOCKED — waiting on Drew for production credentials
+**Status:** PASS (2026-04-01) — real card charged $130, Square Dashboard shows transaction, Acuity appointment created, QBO invoice #6467 marked paid, confirmation email received. Refunded after verification.
 
 ---
 
@@ -435,7 +435,7 @@ Last updated: 2026-03-31
 |------|-------------|--------|----------|
 | T1 | PV basic booking | PASS | Critical |
 | T2 | TM basic booking | PASS | Critical |
-| T3 | PV booking + add-ons | PASS* | Critical |
+| T3 | PV booking + add-ons | PASS | Critical |
 | T4 | PV event < 35 ppl | NOT TESTED | Nice-to-have |
 | T5 | PV event 35-49 ppl | NOT TESTED | Nice-to-have |
 | T6 | PV event 50+ ppl | NOT TESTED | Nice-to-have |
@@ -450,7 +450,7 @@ Last updated: 2026-03-31
 | T15 | Mobile Safari | NOT TESTED | Important |
 | T16 | Confirmation email | PASS (PV) | Critical |
 | T17 | QBO auto-mark paid | PASS | Critical |
-| T18 | Square production | BLOCKED | Critical |
+| T18 | Square production | PASS | Critical |
 
 **Critical before go-live: T2, T3, T18**
 **Important before go-live: T15**
