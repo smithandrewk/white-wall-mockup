@@ -494,7 +494,7 @@ Last updated: 2026-03-31
 | T3 | PV booking + add-ons | PASS | Critical |
 | T4 | PV event < 35 ppl | PASS (UI) | Nice-to-have |
 | T5 | PV event 35-49 ppl | PASS (UI) | Nice-to-have |
-| T6 | PV event 50+ ppl | NOT TESTED | Nice-to-have |
+| T6 | PV event 50+ ppl | PASS | Nice-to-have |
 | T7 | PV event 150+ blocked | PASS | Nice-to-have |
 | T8 | PV 1hr event blocked | PASS | Nice-to-have |
 | T9 | TM 50+ hard cap | PASS | Nice-to-have |
@@ -510,7 +510,8 @@ Last updated: 2026-03-31
 | T19 | Buffer conflict — move time | PASS | Nice-to-have |
 | T20 | Buffer conflict — pick other | PASS | Nice-to-have |
 | T21 | Acuity manual blocks respected | PASS | Nice-to-have |
+| T22 | Buffer conflict — edge case (blocks + appts) | PASS | Nice-to-have |
 
 **Critical: T1-T3, T16-T18 — all PASS**
 **Important: T15 (mobile Safari) — NOT TESTED**
-**Nice-to-have: T4-T14, T19-T21 — 14 PASS, 3 untested**
+**Nice-to-have: T4-T14, T19-T22 — 15 PASS, 3 untested**
