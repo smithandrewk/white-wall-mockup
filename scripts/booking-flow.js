@@ -1581,6 +1581,9 @@
       renderScheduleStep();
       renderCheckoutPanel();
       renderSummary();
+      // Scroll to time slots so user can pick a new one
+      var timeGrid = document.querySelector(".time-slot-grid");
+      if (timeGrid) timeGrid.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     btnWrap.appendChild(pickBtn);
     console.log("pick button created and listener attached");

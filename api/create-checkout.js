@@ -74,9 +74,13 @@ module.exports = async function handler(req, res) {
         maxDate: bufferEnd.toISOString()
       });
 
-      // Filter out cancelled appointments
+      // Filter out cancelled appointments and appointments starting exactly at buffer end
+      // (an appointment starting at bufferEnd is fine — cleaners finish right as it begins)
       var activeInBuffer = (bufferAppts || []).filter(function (a) {
-        return !a.canceled;
+        if (a.canceled) return false;
+        var apptStart = new Date(a.datetime).getTime();
+        if (apptStart >= bufferEnd.getTime()) return false;
+        return true;
       });
 
       if (activeInBuffer.length > 0) {
