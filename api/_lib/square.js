@@ -15,12 +15,27 @@ function getBaseUrl() {
     : "https://connect.squareupsandbox.com";
 }
 
+function getAccessToken() {
+  var isProd = process.env.SQUARE_ENVIRONMENT === "production";
+  var token = isProd
+    ? (process.env.SQUARE_PROD_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN)
+    : (process.env.SQUARE_SANDBOX_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN);
+  if (!token) throw new Error("Missing Square access token for " + (isProd ? "production" : "sandbox"));
+  return token;
+}
+
+function getLocationId() {
+  var isProd = process.env.SQUARE_ENVIRONMENT === "production";
+  var id = isProd
+    ? (process.env.SQUARE_PROD_LOCATION_ID || process.env.SQUARE_LOCATION_ID)
+    : (process.env.SQUARE_SANDBOX_LOCATION_ID || process.env.SQUARE_LOCATION_ID);
+  if (!id) throw new Error("Missing Square location ID for " + (isProd ? "production" : "sandbox"));
+  return id;
+}
+
 function getHeaders() {
-  if (!process.env.SQUARE_ACCESS_TOKEN) {
-    throw new Error("Missing SQUARE_ACCESS_TOKEN");
-  }
   return {
-    "Authorization": "Bearer " + process.env.SQUARE_ACCESS_TOKEN,
+    "Authorization": "Bearer " + getAccessToken(),
     "Content-Type": "application/json",
     "Square-Version": SQUARE_VERSION
   };
@@ -31,8 +46,7 @@ function getHeaders() {
 // redirectUrl: where Square sends the customer after payment
 // buyerEmail: optional, pre-fills email on checkout page
 async function createPaymentLink(lineItems, redirectUrl, buyerEmail) {
-  const locationId = process.env.SQUARE_LOCATION_ID;
-  if (!locationId) throw new Error("Missing SQUARE_LOCATION_ID");
+  const locationId = getLocationId();
 
   const orderLineItems = lineItems.map(function (item) {
     return {
