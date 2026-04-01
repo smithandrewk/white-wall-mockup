@@ -830,6 +830,15 @@
         })
       });
       var checkoutData = await checkoutRes.json();
+
+      // Buffer conflict — cleaning fee booking but next session is too close
+      if (checkoutData.error === "buffer-conflict") {
+        state.isSubmitting = false;
+        renderScheduleStep();
+        alert(checkoutData.message);
+        return;
+      }
+
       if (!checkoutData.checkoutUrl) {
         throw new Error(checkoutData.error || "No checkout URL returned");
       }

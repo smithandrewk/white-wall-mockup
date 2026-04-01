@@ -12,7 +12,10 @@
 const {
   isValidAppointmentTypeID,
   buildSquareLineItems,
-  signState
+  signState,
+  acuityGet,
+  TYPE_TO_DURATION,
+  CALENDAR_IDS
 } = require("./_lib/acuity");
 const { createPaymentLink } = require("./_lib/square");
 
@@ -57,6 +60,51 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // 0. If cleaning fee applies, check that the 2.5hr buffer after session is clear
+    if (cleaningFee && cleaningFee.amount > 0 && location === "powdersville") {
+      var durationMin = TYPE_TO_DURATION[String(appointmentTypeID)] || 60;
+      var sessionStart = new Date(datetime);
+      var sessionEnd = new Date(sessionStart.getTime() + durationMin * 60000);
+      var bufferEnd = new Date(sessionEnd.getTime() + 150 * 60000); // 2.5 hours
+
+      // Query Acuity for appointments on PV calendar in the buffer window
+      var bufferAppts = await acuityGet("/appointments", {
+        calendarID: CALENDAR_IDS.powdersville,
+        minDate: sessionEnd.toISOString(),
+        maxDate: bufferEnd.toISOString()
+      });
+
+      // Filter out cancelled appointments
+      var activeInBuffer = (bufferAppts || []).filter(function (a) {
+        return !a.canceled;
+      });
+
+      if (activeInBuffer.length > 0) {
+        // There's a booking in the buffer window — suggest an earlier time
+        var nextAppt = activeInBuffer[0];
+        var nextStart = new Date(nextAppt.datetime);
+        // Suggest starting 2.5hr + session duration before the next appointment
+        var suggestedStart = new Date(nextStart.getTime() - (durationMin + 150) * 60000);
+        var suggestedTime = suggestedStart.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: "America/New_York"
+        });
+        var nextTime = nextStart.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: "America/New_York"
+        });
+
+        return res.status(409).json({
+          error: "buffer-conflict",
+          message: "Your session requires a 2.5-hour cleaning buffer afterward, but there's a booking at " + nextTime + ". Try starting at " + suggestedTime + " or earlier, or pick a different day.",
+          suggestedStart: suggestedStart.toISOString(),
+          nextBookingStart: nextStart.toISOString()
+        });
+      }
+    }
+
     // 1. Build Square line items (server-side pricing is authoritative)
     const lineItems = buildSquareLineItems(appointmentTypeID, addons, location);
 
