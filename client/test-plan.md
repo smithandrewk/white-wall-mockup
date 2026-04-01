@@ -500,7 +500,7 @@ Last updated: 2026-03-31
 | T9 | TM 50+ hard cap | PASS | Nice-to-have |
 | T10 | PV full day 5 AM lock | PASS | Nice-to-have |
 | T11 | PV photo/video 50+ ppl | PASS | Nice-to-have |
-| T12 | Add-on "all" options | NOT TESTED | Nice-to-have |
+| T12 | Add-on "all" options | PASS | Nice-to-have |
 | T13 | Square decline card | NOT TESTED | Nice-to-have |
 | T14 | Booking abandonment | NOT TESTED | Nice-to-have |
 | T15 | Mobile Safari | NOT TESTED | Important |
