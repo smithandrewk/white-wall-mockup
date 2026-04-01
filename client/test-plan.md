@@ -429,6 +429,46 @@ Last updated: 2026-03-31
 
 ---
 
+### T19: Buffer Conflict — Move to Suggested Time
+
+**Steps:**
+1. Ensure a PV appointment exists (e.g., August 1st at 2:00 PM)
+2. `/book-powdersville` → 1 hour → Photo/Video Session → 55 participants
+3. Fill contact, intake, T&C, waiver
+4. Pick a time that would cause a buffer conflict (e.g., 12:00 PM — session ends 1 PM, buffer 1-3:30 PM overlaps 2 PM appointment)
+5. Click "Pay & Book"
+6. Modal appears — click "Move to [suggested time]"
+7. Click "Pay & Book" again
+
+**Acceptance Criteria:**
+- [ ] Modal appears with title "Cleaning Buffer Needed"
+- [ ] Modal shows the conflicting appointment time and a suggested earlier time
+- [ ] Suggested time is a real Acuity time slot (not a calculated time that doesn't exist)
+- [ ] Clicking "Move to [time]" updates the selected time slot in the UI
+- [ ] Clicking "Pay & Book" after moving succeeds — no second conflict
+- [ ] Acuity appointment is created at the suggested time
+- [ ] Cleaning buffer block is created after session end
+
+**Status:** PASS (2026-04-01) — moved to 10:30 AM, booking completed successfully at that time
+
+---
+
+### T20: Buffer Conflict — Pick a Different Time
+
+**Steps:**
+1. Same setup as T19 — trigger a buffer conflict
+2. Modal appears — click "Pick a different time"
+
+**Acceptance Criteria:**
+- [ ] Modal closes
+- [ ] UI jumps back to step 2 (schedule) showing time slots
+- [ ] Selected time is cleared
+- [ ] Customer can pick a new time slot
+
+**Status:** PASS (2026-04-01) — returns to step 2, time slots visible, can select new time
+
+---
+
 ## Summary
 
 | Test | Description | Status | Priority |
@@ -451,7 +491,9 @@ Last updated: 2026-03-31
 | T16 | Confirmation email | PASS (PV) | Critical |
 | T17 | QBO auto-mark paid | PASS | Critical |
 | T18 | Square production | PASS | Critical |
+| T19 | Buffer conflict — move time | PASS | Nice-to-have |
+| T20 | Buffer conflict — pick other | PASS | Nice-to-have |
 
-**Critical before go-live: T2, T3, T18**
-**Important before go-live: T15**
-**Nice-to-have: T4–T14, T16 (TM)**
+**Critical: T1-T3, T16-T18 — all PASS**
+**Important: T15 (mobile Safari) — NOT TESTED**
+**Nice-to-have: T4-T14, T19-T20 — 13 PASS, 3 untested**
