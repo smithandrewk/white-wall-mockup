@@ -834,11 +834,8 @@
 
       // Buffer conflict — cleaning fee booking but next session is too close
       if (checkoutData.error === "buffer-conflict") {
-        console.log("BUFFER CONFLICT detected", checkoutData);
         state.isSubmitting = false;
-        console.log("calling showBufferConflictModal");
-        showBufferConflictModal(checkoutData.message, checkoutData.suggestedStart);
-        console.log("modal should be visible now");
+        showBufferConflictModal(checkoutData.message, checkoutData.options || []);
         return;
       }
 
@@ -1511,24 +1508,9 @@
     });
   }
 
-  function showBufferConflictModal(message, suggestedStart) {
-    console.log("showBufferConflictModal called", { message: message, suggestedStart: suggestedStart });
-
+  function showBufferConflictModal(message, options) {
     var existing = document.querySelector(".booking-modal-overlay");
-    if (existing) {
-      console.log("removing existing overlay");
-      existing.remove();
-    }
-
-    var displayTime = "";
-    if (suggestedStart) {
-      displayTime = new Date(suggestedStart).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        timeZone: "America/New_York"
-      });
-      console.log("suggested display time:", displayTime);
-    }
+    if (existing) existing.remove();
 
     var overlay = document.createElement("div");
     overlay.className = "booking-modal-overlay";
@@ -1553,21 +1535,21 @@
     btnWrap.style.flexDirection = "column";
     btnWrap.style.gap = "0.75rem";
 
-    if (suggestedStart) {
-      var moveBtn = document.createElement("button");
-      moveBtn.type = "button";
-      moveBtn.className = "booking-button booking-button-primary";
-      moveBtn.textContent = "Move to " + displayTime;
-      moveBtn.addEventListener("click", function() {
-        console.log("MOVE button clicked, setting time to", suggestedStart);
-        overlay.remove();
-        state.selectedTime = suggestedStart;
-        renderScheduleStep();
-        renderCheckoutPanel();
-        renderSummary();
-      });
-      btnWrap.appendChild(moveBtn);
-      console.log("move button created and listener attached");
+    for (var i = 0; i < options.length; i++) {
+      (function(opt) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "booking-button booking-button-primary";
+        btn.textContent = "Move to " + opt.label;
+        btn.addEventListener("click", function() {
+          overlay.remove();
+          state.selectedTime = opt.time;
+          renderScheduleStep();
+          renderCheckoutPanel();
+          renderSummary();
+        });
+        btnWrap.appendChild(btn);
+      })(options[i]);
     }
 
     var pickBtn = document.createElement("button");
@@ -1580,14 +1562,10 @@
       setStep(2);
     });
     btnWrap.appendChild(pickBtn);
-    console.log("pick button created and listener attached");
 
     modal.appendChild(btnWrap);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
-    console.log("overlay appended to body, should be visible now");
-    console.log("overlay element:", overlay);
-    console.log("overlay parent:", overlay.parentElement);
   }
 
   function showCapacityModal(message) {

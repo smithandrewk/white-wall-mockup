@@ -105,27 +105,34 @@ module.exports = async function handler(req, res) {
           timezone: "America/New_York"
         });
 
-        // Find the latest slot where the entire buffer window is clear
-        var suggestedSlot = null;
-        for (var i = (availTimes || []).length - 1; i >= 0; i--) {
-          var candidateStart = new Date(availTimes[i].time);
-          var candidateEnd = new Date(candidateStart.getTime() + durationMin * 60000);
-          var candidateBufferEnd = new Date(candidateEnd.getTime() + 150 * 60000);
-
-          // Check if any appointment/block overlaps this candidate's buffer
-          var bufferClear = true;
+        // Find valid slots where the entire buffer window is clear
+        // Check both earlier and later times relative to the requested slot
+        function isBufferClear(candidateTime) {
+          var cStart = new Date(candidateTime);
+          var cEnd = new Date(cStart.getTime() + durationMin * 60000);
+          var cBufferEnd = new Date(cEnd.getTime() + 150 * 60000);
           for (var j = 0; j < allDayActive.length; j++) {
-            var apptStart = new Date(allDayActive[j].datetime).getTime();
-            var apptEnd = new Date(allDayActive[j].endTime || allDayActive[j].datetime).getTime();
-            // Conflict if appointment starts during buffer (exclusive of buffer end)
-            if (apptStart >= candidateEnd.getTime() && apptStart < candidateBufferEnd.getTime()) {
-              bufferClear = false;
-              break;
+            var aStart = new Date(allDayActive[j].datetime).getTime();
+            if (aStart >= cEnd.getTime() && aStart < cBufferEnd.getTime()) {
+              return false;
             }
           }
+          return true;
+        }
 
-          if (bufferClear && candidateStart.getTime() < sessionStart.getTime()) {
-            suggestedSlot = availTimes[i].time;
+        var earlierSlot = null;
+        var laterSlot = null;
+        for (var i = (availTimes || []).length - 1; i >= 0; i--) {
+          var cTime = new Date(availTimes[i].time).getTime();
+          if (cTime < sessionStart.getTime() && isBufferClear(availTimes[i].time)) {
+            earlierSlot = availTimes[i].time;
+            break;
+          }
+        }
+        for (var k = 0; k < (availTimes || []).length; k++) {
+          var kTime = new Date(availTimes[k].time).getTime();
+          if (kTime > sessionStart.getTime() && isBufferClear(availTimes[k].time)) {
+            laterSlot = availTimes[k].time;
             break;
           }
         }
@@ -136,23 +143,23 @@ module.exports = async function handler(req, res) {
           timeZone: "America/New_York"
         });
 
-        if (suggestedSlot) {
-          var suggestedDisplay = new Date(suggestedSlot).toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            timeZone: "America/New_York"
-          });
+        if (earlierSlot || laterSlot) {
+          var options = [];
+          if (earlierSlot) options.push({ time: earlierSlot, label: new Date(earlierSlot).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) });
+          if (laterSlot) options.push({ time: laterSlot, label: new Date(laterSlot).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) });
+
+          var msg = "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + ".";
           return res.status(409).json({
             error: "buffer-conflict",
-            message: "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + ". We can move you to " + suggestedDisplay + " to fit the buffer.",
-            suggestedStart: suggestedSlot,
+            message: msg,
+            options: options,
             nextBookingStart: nextStart.toISOString()
           });
         } else {
           return res.status(409).json({
             error: "buffer-conflict",
-            message: "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + " and no earlier time fits the buffer. Please pick a different day.",
-            suggestedStart: null,
+            message: "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + " and no other time fits the buffer today. Please pick a different day.",
+            options: [],
             nextBookingStart: nextStart.toISOString()
           });
         }
