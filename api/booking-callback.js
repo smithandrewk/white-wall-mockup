@@ -19,7 +19,8 @@ const {
   buildAcuityFields,
   buildAppointmentNotes,
   TYPE_TO_DURATION,
-  CALENDAR_IDS
+  CALENDAR_IDS,
+  ACUITY_ADDON_IDS
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
 const { notifyOwner } = require("./notify-owner");
@@ -87,6 +88,13 @@ module.exports = async function handler(req, res) {
   // 3. Create the Acuity appointment
   try {
     var addonIDs = buildAcuityAddonIDs(bookingState.addons, bookingState.location);
+
+    // Add cleaning fee add-on to Acuity appointment (so it shows on QBO invoice)
+    if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
+      addonIDs.push(ACUITY_ADDON_IDS["cleaning-fee"]);
+      log("acuity", "cleaning fee add-on attached", { amount: bookingState.cleaningFee.amount });
+    }
+
     var fields = buildAcuityFields(bookingState.intake || {}, bookingState.location);
     var notes = buildAppointmentNotes(bookingState);
 
@@ -138,10 +146,15 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Send owner notification for high-traffic bookings
+    // Send owner notification for high-traffic bookings (35+ participants)
     try {
-      await notifyOwner(bookingState, appointment.id);
-      log("notify", "owner notification sent");
+      var participantsForNotify = Number(bookingState.participants) || 0;
+      if (participantsForNotify >= 35) {
+        await notifyOwner(bookingState, appointment.id);
+        log("notify", "owner notification sent", { participants: participantsForNotify });
+      } else {
+        log("notify", "skipped (participants: " + participantsForNotify + ", threshold: 35)");
+      }
     } catch (err) {
       log("notify", "owner notification FAILED: " + err.message);
     }

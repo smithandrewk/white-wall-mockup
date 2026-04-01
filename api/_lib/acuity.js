@@ -108,7 +108,7 @@ function isValidAppointmentTypeID(id) {
 // ---------------------------------------------------------------------------
 const ACUITY_ADDON_IDS = {
   // Lighting
-  "lighting-powdersville": 6723268, // "Lighting Package (2 Fixtures)" — $100 (confirm $125 with Drew)
+  "lighting-powdersville": 6723268, // "Lighting Package (2 Fixtures)" — $125 (updated 2026-04-01)
   "lighting-taylors-mill": 2387016, // "Lighting Rental" — $50
 
   // Backdrops (all 12 types)
@@ -130,7 +130,10 @@ const ACUITY_ADDON_IDS = {
 
   // Equipment (PV only)
   "tv": 6840276,                    // "86in Rolling TV" — $50
-  "pa-system": 6840278              // "PA System" — $40
+  "pa-system": 6840278,             // "PA System" — $40
+
+  // Cleaning fee (PV only, 50+ participants)
+  "cleaning-fee": 6881547           // "Cleaning Fee" — $150
 };
 
 // ---------------------------------------------------------------------------
