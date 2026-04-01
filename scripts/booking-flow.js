@@ -830,6 +830,7 @@
         })
       });
       var checkoutData = await checkoutRes.json();
+      console.log("create-checkout response:", checkoutRes.status, checkoutData);
 
       // Buffer conflict — cleaning fee booking but next session is too close
       if (checkoutData.error === "buffer-conflict") {
