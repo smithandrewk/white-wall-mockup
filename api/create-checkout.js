@@ -113,8 +113,13 @@ module.exports = async function handler(req, res) {
           maxDate: dayEnd
         });
         // Combine appointments and blocks into one list of occupied time ranges
+        // Note: Acuity endTime is a display string ("4:00pm"), not ISO — calculate from datetime + duration
         var allDayActive = (allDayAppts || []).filter(function (a) { return !a.canceled; })
-          .map(function (a) { return { start: a.datetime, end: a.endTime }; });
+          .map(function (a) {
+            var apptDur = Number(a.duration) || 60;
+            var endMs = new Date(a.datetime).getTime() + apptDur * 60000;
+            return { start: a.datetime, end: new Date(endMs).toISOString() };
+          });
         (allDayBlocks || []).forEach(function (b) {
           allDayActive.push({ start: b.start, end: b.end });
         });
