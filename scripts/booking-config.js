@@ -2,13 +2,13 @@ window.WWS_BOOKING_CONFIG = {
   locations: [
     {
       slug: "powdersville",
-      name: "Powdersville",
-      shortLabel: "Powdersville",
+      name: "Flagship Location",
+      shortLabel: "Flagship",
       accent: "#8ba7b8",
       address: "2699 Powdersville Rd, Easley, SC 29642",
       eyebrow: "Flagship studio + event space",
       description:
-        "Our Powdersville location is a fully, 100% self-service photo studio. Select the time you'd like, fill in some details, and include any optional add-ons. You will receive a confirmation email with important information, YouTube videos to watch, passcodes, etc. Thank you for booking with us!",
+        "Our Flagship Location is a fully, 100% self-service photo studio. Select the time you'd like, fill in some details, and include any optional add-ons. You will receive a confirmation email with important information, YouTube videos to watch, passcodes, etc. Thank you for booking with us!",
       policies: [
         "Events are allowed for 2-hour sessions and longer.",
         "1-hour sessions are not eligible for events.",

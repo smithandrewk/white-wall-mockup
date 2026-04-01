@@ -354,7 +354,7 @@
         if (location.slug === "taylors-mill") {
           var tmCount = Number(target.value);
           if (tmCount > 50) {
-            showCapacityModal("Taylor\u2019s Mill has a maximum capacity of 50 people, including vendors and contractors. Please reduce your count or consider our Powdersville location for larger groups.");
+            showCapacityModal("Taylor\u2019s Mill has a maximum capacity of 50 people, including vendors and contractors. Please reduce your count or consider our Flagship Location for larger groups.");
             target.value = "50";
             state.intake.participants = "50";
             return;
@@ -1479,7 +1479,7 @@
     overlay.innerHTML = `
       <div class="booking-modal">
         <h3 class="ui-display-sm" style="margin-bottom:1rem">Heads Up</h3>
-        <p class="ui-copy" style="margin-bottom:1.25rem">Our Taylor\u2019s Mill location is significantly smaller than our Powdersville studio and is not well suited for larger shoots or high-traffic sessions. You may proceed with your booking as normal. However, if your session involves a larger group, a team member may contact you to add a cleaning fee after your session.</p>
+        <p class="ui-copy" style="margin-bottom:1.25rem">Our Taylor\u2019s Mill location is significantly smaller than our Flagship Location studio and is not well suited for larger shoots or high-traffic sessions. You may proceed with your booking as normal. However, if your session involves a larger group, a team member may contact you to add a cleaning fee after your session.</p>
         <div style="margin-bottom:1rem">
           <label class="ui-field-label" for="tm-high-traffic-note">Tell us about your session</label>
           <textarea class="booking-textarea" id="tm-high-traffic-note" placeholder="Briefly describe your shoot and provide details\u2026" style="margin-top:0.5rem"></textarea>
@@ -1615,17 +1615,17 @@
     overlay.innerHTML = `
       <div class="booking-modal" style="text-align:center">
         <div style="font-size:2.5rem;margin-bottom:0.75rem">✨</div>
-        <h3 class="ui-display-sm" style="margin-bottom:0.75rem">Have You Seen Our Powdersville Studio?</h3>
+        <h3 class="ui-display-sm" style="margin-bottom:0.75rem">Have You Seen Our Flagship Location?</h3>
         <p class="ui-copy" style="margin-bottom:1.25rem;line-height:1.7">
-          Our <strong>Powdersville location</strong> is our flagship studio — bigger, brighter, and loaded with more backdrops, lighting options, and equipment. It's closer to downtown Greenville with easy access and plenty of parking.
+          Our <strong>Flagship Location</strong> is our premier studio — bigger, brighter, and loaded with more backdrops, lighting options, and equipment. It's closer to downtown Greenville with easy access and plenty of parking.
         </p>
         <div style="background:var(--wws-soft);border-radius:0.5rem;padding:1rem 1.25rem;margin-bottom:1.5rem">
-          <p style="font-size:0.95rem;font-weight:600;margin-bottom:0.25rem">Get 10% Off at Powdersville</p>
+          <p style="font-size:0.95rem;font-weight:600;margin-bottom:0.25rem">Get 10% Off at Flagship</p>
           <p style="font-size:0.85rem;color:var(--wws-text-muted);margin-bottom:0.5rem">Use code at checkout</p>
           <span style="display:inline-block;background:#000;color:#FCD518;font-weight:700;letter-spacing:0.15em;padding:0.4rem 1.25rem;border-radius:0.25rem;font-size:1.1rem">WW10</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:0.625rem">
-          <a href="/book-powdersville" class="booking-button booking-button-primary" style="text-decoration:none;text-align:center">Book Powdersville Instead</a>
+          <a href="/book-powdersville" class="booking-button booking-button-primary" style="text-decoration:none;text-align:center">Book Flagship Instead</a>
           <button type="button" class="booking-button" id="pv-upsell-dismiss" style="background:transparent;border:1px solid var(--wws-border)">Continue with Taylor's Mill</button>
         </div>
       </div>

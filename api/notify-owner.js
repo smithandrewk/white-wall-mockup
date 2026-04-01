@@ -21,7 +21,7 @@ async function notifyOwner(bookingState, appointmentId) {
     : "[White Wall] High Traffic Booking — " + participants + " participants";
 
   var contact = bookingState.contact || {};
-  var locationName = bookingState.location === "powdersville" ? "Powdersville" : "Taylor's Mill";
+  var locationName = bookingState.location === "powdersville" ? "Flagship Location" : "Taylor's Mill";
   var highTrafficNote = bookingState.highTrafficNote || bookingState.tmHighTrafficNote || "(none provided)";
 
   var body = [
