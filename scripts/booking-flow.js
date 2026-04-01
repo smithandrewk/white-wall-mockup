@@ -835,7 +835,7 @@
       if (checkoutData.error === "buffer-conflict") {
         state.isSubmitting = false;
         renderScheduleStep();
-        alert(checkoutData.message);
+        showBufferConflictModal(checkoutData.message, checkoutData.suggestedStart);
         return;
       }
 
@@ -1505,6 +1505,44 @@
       state.tmHighTrafficAcknowledged = true;
       state.tmHighTrafficNote = noteField.value;
       overlay.remove();
+    });
+  }
+
+  function showBufferConflictModal(message, suggestedStart) {
+    var existing = document.querySelector(".booking-modal-overlay");
+    if (existing) existing.remove();
+
+    // Format the suggested time for display
+    var suggestedDate = new Date(suggestedStart);
+    var displayTime = suggestedDate.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/New_York"
+    });
+
+    var overlay = document.createElement("div");
+    overlay.className = "booking-modal-overlay";
+    overlay.innerHTML = `
+      <div class="booking-modal">
+        <h3 class="ui-display-sm" style="margin-bottom:1rem">Cleaning Buffer Needed</h3>
+        <p class="ui-copy" style="margin-bottom:1.25rem">${message}</p>
+        <div style="display:flex;flex-direction:column;gap:0.75rem">
+          <button type="button" class="booking-button booking-button-primary" id="buffer-move-time">Move to ${displayTime}</button>
+          <button type="button" class="booking-button booking-button-secondary" id="buffer-pick-other">Pick a different time</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById("buffer-move-time").addEventListener("click", function() {
+      overlay.remove();
+      state.selectedTime = suggestedStart;
+      renderScheduleStep();
+    });
+    document.getElementById("buffer-pick-other").addEventListener("click", function() {
+      overlay.remove();
+      state.selectedTime = "";
+      renderScheduleStep();
     });
   }
 
