@@ -1563,6 +1563,8 @@
         overlay.remove();
         state.selectedTime = suggestedStart;
         renderScheduleStep();
+        renderCheckoutPanel();
+        renderSummary();
       });
       btnWrap.appendChild(moveBtn);
       console.log("move button created and listener attached");
@@ -1577,6 +1579,8 @@
       overlay.remove();
       state.selectedTime = "";
       renderScheduleStep();
+      renderCheckoutPanel();
+      renderSummary();
     });
     btnWrap.appendChild(pickBtn);
     console.log("pick button created and listener attached");
