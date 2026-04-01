@@ -1575,15 +1575,9 @@
     pickBtn.className = "booking-button booking-button-secondary";
     pickBtn.textContent = "Pick a different time";
     pickBtn.addEventListener("click", function() {
-      console.log("PICK OTHER button clicked");
       overlay.remove();
       state.selectedTime = "";
-      renderScheduleStep();
-      renderCheckoutPanel();
-      renderSummary();
-      // Scroll to time slots so user can pick a new one
-      var timeGrid = document.querySelector(".time-slot-grid");
-      if (timeGrid) timeGrid.scrollIntoView({ behavior: "smooth", block: "center" });
+      setStep(2);
     });
     btnWrap.appendChild(pickBtn);
     console.log("pick button created and listener attached");
