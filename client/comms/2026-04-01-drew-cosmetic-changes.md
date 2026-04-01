@@ -7,3 +7,4 @@
 ---
 
 1. Taylor's Mill page — hero video has Drew talking behind the title. Replace with a static photo of Taylor's Mill instead.
+2. Powdersville page — add YouTube video (https://youtu.be/BsyruYsoA-I) next to "Host your next event" section.

@@ -290,16 +290,26 @@
   <!-- Events Section -->
   <section id="events" class="py-24 px-6">
     <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-      <a href="#studio-photos" class="order-2 md:order-1 block relative group">
-        <div class="aspect-[4/3] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v2-1.jpg"
-               alt="Powdersville studio event space"
-               class="w-full h-full object-cover">
+      <div class="order-2 md:order-1 flex flex-col gap-4">
+        <a href="#studio-photos" class="block relative group">
+          <div class="aspect-[4/3] overflow-hidden rounded-sm">
+            <img src="images/powdersville/whitewall-powdersville_v2-1.jpg"
+                 alt="Powdersville studio event space"
+                 class="w-full h-full object-cover">
+          </div>
+          <div class="absolute inset-0 flex items-end justify-center pb-5">
+            <span class="text-sm text-white tracking-wide uppercase drop-shadow-lg group-hover:underline">See more photos below</span>
+          </div>
+        </a>
+        <div class="aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+          <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Event space tour" class="w-full h-full object-cover">
+          <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+            <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+              <svg class="w-6 h-6 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
         </div>
-        <div class="absolute inset-0 flex items-end justify-center pb-5">
-          <span class="text-sm text-white tracking-wide uppercase drop-shadow-lg group-hover:underline">See more photos below</span>
-        </div>
-      </a>
+      </div>
       <div class="order-1 md:order-2">
         <div class="inline-block bg-pv-cool/10 text-pv-cool text-xs tracking-widest uppercase px-4 py-2 rounded-full mb-6">Event Space</div>
         <h2 class="font-display text-4xl font-light mb-6">Host your next event</h2>
