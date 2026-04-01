@@ -1513,6 +1513,9 @@
     var existing = document.querySelector(".booking-modal-overlay");
     if (existing) existing.remove();
 
+    // Store on window so onclick handlers can access
+    window._bufferConflictSuggested = suggestedStart;
+
     var buttons = "";
     if (suggestedStart) {
       var suggestedDate = new Date(suggestedStart);
@@ -1521,46 +1524,36 @@
         minute: "2-digit",
         timeZone: "America/New_York"
       });
-      buttons = `
-        <button type="button" class="booking-button booking-button-primary" id="buffer-move-time">Move to ${displayTime}</button>
-        <button type="button" class="booking-button booking-button-secondary" id="buffer-pick-other">Pick a different time</button>
-      `;
+      buttons =
+        '<button type="button" class="booking-button booking-button-primary" onclick="document.querySelector(\'.booking-modal-overlay\').remove(); window._bufferConflictAccept();">Move to ' + displayTime + '</button>' +
+        '<button type="button" class="booking-button booking-button-secondary" onclick="document.querySelector(\'.booking-modal-overlay\').remove(); window._bufferConflictDecline();">Pick a different time</button>';
     } else {
-      buttons = `
-        <button type="button" class="booking-button booking-button-primary" id="buffer-pick-other">Pick a different time</button>
-      `;
+      buttons =
+        '<button type="button" class="booking-button booking-button-primary" onclick="document.querySelector(\'.booking-modal-overlay\').remove(); window._bufferConflictDecline();">Pick a different time</button>';
     }
 
     var overlay = document.createElement("div");
     overlay.className = "booking-modal-overlay";
-    overlay.innerHTML = `
-      <div class="booking-modal">
-        <h3 class="ui-display-sm" style="margin-bottom:1rem">Cleaning Buffer Needed</h3>
-        <p class="ui-copy" style="margin-bottom:1.25rem">${message}</p>
-        <div style="display:flex;flex-direction:column;gap:0.75rem">
-          ${buttons}
-        </div>
-      </div>
-    `;
+    overlay.innerHTML =
+      '<div class="booking-modal">' +
+        '<h3 class="ui-display-sm" style="margin-bottom:1rem">Cleaning Buffer Needed</h3>' +
+        '<p class="ui-copy" style="margin-bottom:1.25rem">' + message + '</p>' +
+        '<div style="display:flex;flex-direction:column;gap:0.75rem">' + buttons + '</div>' +
+      '</div>';
     document.body.appendChild(overlay);
-
-    if (suggestedStart) {
-      document.getElementById("buffer-move-time").addEventListener("click", function() {
-        overlay.remove();
-        state.selectedTime = suggestedStart;
-        // Re-render so the time slot UI highlights the new selection
-        renderScheduleStep();
-        // Scroll to the order summary so they can see the updated time and hit Pay & Book
-        var summary = document.querySelector(".order-summary");
-        if (summary) summary.scrollIntoView({ behavior: "smooth" });
-      });
-    }
-    document.getElementById("buffer-pick-other").addEventListener("click", function() {
-      overlay.remove();
-      state.selectedTime = "";
-      renderScheduleStep();
-    });
   }
+
+  window._bufferConflictAccept = function() {
+    state.selectedTime = window._bufferConflictSuggested;
+    renderScheduleStep();
+    var summary = document.querySelector(".order-summary");
+    if (summary) summary.scrollIntoView({ behavior: "smooth" });
+  };
+
+  window._bufferConflictDecline = function() {
+    state.selectedTime = "";
+    renderScheduleStep();
+  };
 
   function showCapacityModal(message) {
     var existing = document.querySelector(".booking-modal-overlay");
