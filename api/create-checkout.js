@@ -86,23 +86,47 @@ module.exports = async function handler(req, res) {
       if (activeInBuffer.length > 0) {
         var nextAppt = activeInBuffer[0];
         var nextStart = new Date(nextAppt.datetime);
-        // Latest possible start: next appointment minus session duration minus 2.5hr buffer
-        var latestStart = new Date(nextStart.getTime() - (durationMin + 150) * 60000);
 
-        // Fetch actual available time slots for this day
+        // Fetch all appointments + blocks for this day to validate suggested slots
         var date = datetime.slice(0, 10);
+        var dayStart = date + "T00:00:00";
+        var dayEnd = date + "T23:59:59";
+        var allDayAppts = await acuityGet("/appointments", {
+          calendarID: CALENDAR_IDS.powdersville,
+          minDate: dayStart,
+          maxDate: dayEnd
+        });
+        var allDayActive = (allDayAppts || []).filter(function (a) { return !a.canceled; });
+
+        // Fetch actual available time slots
         var availTimes = await acuityGet("/availability/times", {
           appointmentTypeID: appointmentTypeID,
           date: date,
           timezone: "America/New_York"
         });
 
-        // Find the latest available slot that starts at or before latestStart
+        // Find the latest slot where the entire buffer window is clear
         var suggestedSlot = null;
-        for (var i = 0; i < (availTimes || []).length; i++) {
-          var slotTime = new Date(availTimes[i].time);
-          if (slotTime <= latestStart) {
+        for (var i = (availTimes || []).length - 1; i >= 0; i--) {
+          var candidateStart = new Date(availTimes[i].time);
+          var candidateEnd = new Date(candidateStart.getTime() + durationMin * 60000);
+          var candidateBufferEnd = new Date(candidateEnd.getTime() + 150 * 60000);
+
+          // Check if any appointment/block overlaps this candidate's buffer
+          var bufferClear = true;
+          for (var j = 0; j < allDayActive.length; j++) {
+            var apptStart = new Date(allDayActive[j].datetime).getTime();
+            var apptEnd = new Date(allDayActive[j].endTime || allDayActive[j].datetime).getTime();
+            // Conflict if appointment starts during buffer (exclusive of buffer end)
+            if (apptStart >= candidateEnd.getTime() && apptStart < candidateBufferEnd.getTime()) {
+              bufferClear = false;
+              break;
+            }
+          }
+
+          if (bufferClear && candidateStart.getTime() < sessionStart.getTime()) {
             suggestedSlot = availTimes[i].time;
+            break;
           }
         }
 
@@ -127,7 +151,7 @@ module.exports = async function handler(req, res) {
         } else {
           return res.status(409).json({
             error: "buffer-conflict",
-            message: "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + " and no earlier time slot fits. Please pick a different day.",
+            message: "Your session requires a 2.5-hour cleaning buffer afterward, but there\u2019s a booking at " + nextTime + " and no earlier time fits the buffer. Please pick a different day.",
             suggestedStart: null,
             nextBookingStart: nextStart.toISOString()
           });
