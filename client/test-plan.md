@@ -87,7 +87,7 @@ Last updated: 2026-03-31
 - [ ] Add-ons step only shows backdrops and lighting — no walls, chairs, tables, TV, PA
 - [ ] No "Will there be food or drinks?" checkbox
 
-**Status:** NOT TESTED
+**Status:** PASS (2026-04-01) — redirect OK, TM confirmation email with correct codes/links, QBO invoice #6465 $110 marked paid
 
 ---
 
@@ -116,7 +116,7 @@ Last updated: 2026-03-31
 - [ ] QBO invoice balance is $0 (auto-marked paid)
 - [ ] Confirmation email arrives with correct appointment details
 
-**Status:** NOT TESTED
+**Status:** PASS* (2026-04-01) — Square showed $385 itemized, Acuity addons + notes correct, QBO invoice $360 (not $385 — Acuity lighting is $100 not $125, Drew must update add-on 6723268)
 
 ---
 
@@ -434,8 +434,8 @@ Last updated: 2026-03-31
 | Test | Description | Status | Priority |
 |------|-------------|--------|----------|
 | T1 | PV basic booking | PASS | Critical |
-| T2 | TM basic booking | NOT TESTED | Critical |
-| T3 | PV booking + add-ons | NOT TESTED | Critical |
+| T2 | TM basic booking | PASS | Critical |
+| T3 | PV booking + add-ons | PASS* | Critical |
 | T4 | PV event < 35 ppl | NOT TESTED | Nice-to-have |
 | T5 | PV event 35-49 ppl | NOT TESTED | Nice-to-have |
 | T6 | PV event 50+ ppl | NOT TESTED | Nice-to-have |
