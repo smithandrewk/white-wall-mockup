@@ -287,8 +287,11 @@
         </div>
       </div>
       <div id="features-toggle" class="text-center mt-8">
-        <button onclick="document.getElementById('features-grid').classList.add('expanded'); document.getElementById('features-toggle').style.display='none';" class="inline-block border border-wws-black/30 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+        <button id="features-more-btn" onclick="document.getElementById('features-grid').classList.add('expanded'); document.getElementById('features-more-btn').style.display='none'; document.getElementById('features-less-btn').style.display='inline-block';" class="inline-block border border-wws-black/30 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
           See More Key Features
+        </button>
+        <button id="features-less-btn" style="display:none" onclick="document.getElementById('features-grid').classList.remove('expanded'); document.getElementById('features-less-btn').style.display='none'; document.getElementById('features-more-btn').style.display='inline-block';" class="inline-block border border-wws-black/30 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+          See Less Key Features
         </button>
       </div>
       <div class="text-center mt-6">
