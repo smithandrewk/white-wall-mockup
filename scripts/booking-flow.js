@@ -71,6 +71,11 @@
   renderStepContent();
   bindEvents();
 
+  window.addEventListener("resize", function() {
+    var progress = document.querySelector("[data-progress]");
+    if (progress) alignProgressTrack(progress, 5);
+  });
+
   function bindStaticContent() {
     setText("[data-location-name]", location.name);
     setText("[data-location-eyebrow]", location.eyebrow);
@@ -493,7 +498,7 @@
     const maxStep = getMaxAccessibleStep();
     progress.innerHTML = `
       <div class="progress-bar-track">
-        <div class="progress-bar-fill" style="width:${((state.step - 1) / (steps.length - 1)) * 100}%"></div>
+        <div class="progress-bar-fill"></div>
       </div>
       <div class="progress-bar-steps">
         ${steps.map((step) => {
@@ -509,6 +514,30 @@
         }).join("")}
       </div>
     `;
+
+    // Position track line to connect dot centers exactly
+    alignProgressTrack(progress, steps.length);
+  }
+
+  function alignProgressTrack(progress, stepCount) {
+    var track = progress.querySelector(".progress-bar-track");
+    var fill = progress.querySelector(".progress-bar-fill");
+    var dots = progress.querySelectorAll(".progress-dot-num");
+    if (!track || !fill || dots.length < 2) return;
+
+    var containerRect = progress.getBoundingClientRect();
+    var firstDot = dots[0].getBoundingClientRect();
+    var lastDot = dots[dots.length - 1].getBoundingClientRect();
+
+    var left = (firstDot.left + firstDot.width / 2) - containerRect.left;
+    var right = containerRect.right - (lastDot.left + lastDot.width / 2);
+
+    track.style.left = left + "px";
+    track.style.right = right + "px";
+
+    var trackWidth = containerRect.width - left - right;
+    var fillPct = ((state.step - 1) / (stepCount - 1)) * 100;
+    fill.style.width = fillPct + "%";
   }
 
   function renderDurations() {
