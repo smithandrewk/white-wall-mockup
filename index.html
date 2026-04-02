@@ -207,14 +207,14 @@
     </section>
 
     <!-- Snap 4: Compare Locations -->
-    <section class="snap-section" id="compare-snap" style="background:#111">
+    <section class="snap-section" id="compare" style="background:#111">
       <style>
         .flip-cell {
           perspective: 600px;
           overflow: hidden;
         }
         .flip-cell .flip-inner {
-          transition: transform 0.5s ease;
+          transition: transform 0.3s ease;
           transform-style: preserve-3d;
           position: relative;
         }
@@ -227,7 +227,7 @@
         }
         .flip-cell .flip-inner.flipping-in.settle {
           transform: rotateX(0deg);
-          transition: transform 0.4s ease;
+          transition: transform 0.25s ease;
         }
         #compare-toggle {
           cursor: pointer;
@@ -244,7 +244,7 @@
       </style>
       <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-white text-center">
         <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-4">At a Glance</p>
-        <h2 class="font-display text-4xl md:text-5xl font-light mb-10">Two Studios, One Standard</h2>
+        <h2 class="font-display text-4xl md:text-5xl font-light mb-10">Two Locations, One Standard</h2>
 
         <div class="w-full max-w-xl">
           <table class="w-full text-sm" id="compare-table">
@@ -320,7 +320,7 @@
             var row = Math.floor(i / 3);
             setTimeout(function () {
               cell.classList.add('flipping-out');
-            }, row * 60);
+            }, row * 35);
           });
 
           // Phase 2: after flip-out, swap content and flip in
@@ -354,13 +354,13 @@
                 var row = Math.floor(i / 3);
                 setTimeout(function () {
                   cell.classList.add('settle');
-                }, row * 60);
+                }, row * 35);
               });
             });
 
             // Done
-            setTimeout(function () { animating = false; }, maxRows * 60 + 400);
-          }, maxRows * 60 + 500);
+            setTimeout(function () { animating = false; }, maxRows * 35 + 250);
+          }, maxRows * 35 + 300);
         });
       })();
       </script>
@@ -643,6 +643,18 @@
       // Initialize
       dots.style.transition = 'opacity 0.3s ease';
       updateNav(true);
+
+      // Handle #hash deep links inside snap container
+      function scrollToHash() {
+        var hash = window.location.hash;
+        if (!hash) return;
+        var target = document.querySelector(hash);
+        if (target && target.closest('#snap-container')) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      scrollToHash();
+      window.addEventListener('hashchange', scrollToHash);
     })();
 
     // Auto-scrolling reviews carousel
