@@ -418,17 +418,17 @@
     </section>
 
     <!-- Snap 5: From Our Studios Gallery -->
-    <section class="snap-section bg-wws-light" id="gallery-snap">
-      <div class="relative z-10 flex flex-col items-center justify-center h-full px-4 py-16">
+    <section class="snap-section bg-black" id="gallery-snap">
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-4 py-16 text-white">
         <h3 class="font-display text-4xl font-light mb-2">From Our Studios</h3>
-        <p class="text-sm text-wws-dark tracking-wide mb-6">A glimpse of what creators make at WhiteWall</p>
+        <p class="text-sm text-white/60 tracking-wide mb-6">A glimpse of what creators make at WhiteWall</p>
         <div class="grid grid-cols-2 gap-3 w-full max-w-lg flex-1 min-h-0">
           <a href="/powdersville" class="overflow-hidden relative block rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-1.jpg" alt="Flagship Location interior" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase font-medium bg-wws-accent text-black px-2 py-1 rounded-full">Flagship</span></a>
           <a href="/taylors-mill" class="overflow-hidden relative block rounded-sm"><img src="images/gallery/mary-162.jpg" alt="Portrait at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase text-white/80 bg-black/40 px-2 py-1 rounded-full">Taylor's Mill</span></a>
           <a href="/taylors-mill" class="overflow-hidden relative block rounded-sm"><img src="images/gallery/modern-romantics-214.jpg" alt="Styled shoot at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase text-white/80 bg-black/40 px-2 py-1 rounded-full">Taylor's Mill</span></a>
           <a href="/powdersville" class="overflow-hidden relative block rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-20.jpg" alt="Flagship Location interior" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase font-medium bg-wws-accent text-black px-2 py-1 rounded-full">Flagship</span></a>
         </div>
-        <a href="/gallery" class="inline-block mt-6 border border-wws-black px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+        <a href="/gallery" class="inline-block mt-6 border border-white/60 px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
           View Full Gallery
         </a>
       </div>
@@ -622,7 +622,7 @@
       var scrollIndicator = container.querySelector('.scroll-indicator');
 
       // Number of full-screen snap sections (hero + 3 location/event cards)
-      var snapCount = 5;
+      var snapCount = 6;
       var lastNavState = null;
 
       function updateNav(isInSnap) {
