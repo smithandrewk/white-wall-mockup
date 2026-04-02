@@ -256,7 +256,7 @@
         }
         #compare-scroll-btn {
           border-radius: 20px;
-          margin: 8px auto 0;
+          margin: 8px 0 0 auto;
           border: 1px solid #c4a882;
           background: transparent;
           color: #c4a882;
@@ -387,6 +387,7 @@
 
           var newData = showingPrices ? pricingData : featuresData;
           toggle.textContent = showingPrices ? 'Compare Features' : 'Compare Prices';
+          if (scrollBtn) scrollBtn.style.display = showingPrices ? 'none' : (window.innerWidth < 768 ? 'flex' : 'none');
 
           var cells = tbody.querySelectorAll('.flip-inner');
           var rowCount = Math.ceil(cells.length / 3);
