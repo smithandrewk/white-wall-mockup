@@ -104,6 +104,19 @@
 
     .content-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
+    [id^="container-"] { position: relative; }
+    .has-overflow::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: linear-gradient(to bottom, transparent, var(--fade-bg));
+      pointer-events: none;
+      z-index: 1;
+    }
+    .fade-dark { --fade-bg: #111; }
+    .fade-light { --fade-bg: #F5F2ED; }
+
     .location-bar { height: 2px; background: #C4A882; position: absolute; bottom: 0; left: 0; right: 0; opacity: 0; transition: opacity 0.3s; }
 
     /* Pill button */
@@ -215,7 +228,7 @@
         <div class="max-w-3xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <div class="w-3 h-3 rounded-full bg-tm-warm mb-3 shrink-0"></div>
           <h2 class="font-display text-3xl md:text-4xl font-light mb-3 shrink-0">The Location That Started It All</h2>
-          <div class="flex-1 min-h-0 overflow-hidden" id="container-about">
+          <div class="flex-1 min-h-0 overflow-hidden fade-dark" id="container-about">
             <div class="content-inner" id="inner-about">
               <div class="mb-4 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/cibusSN53y8?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
                 <img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg" alt="WhiteWall Taylor's Mill Location Tour" class="w-full h-full object-cover">
@@ -256,7 +269,7 @@
       <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 px-4 md:px-6">
         <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <h3 class="font-display text-3xl font-light text-center mb-4 shrink-0">What's Included</h3>
-          <div class="flex-1 min-h-0 overflow-hidden" id="container-features">
+          <div class="flex-1 min-h-0 overflow-hidden fade-light" id="container-features">
             <div class="content-inner" id="inner-features">
               <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div class="bg-white p-5 rounded-sm">
@@ -314,7 +327,7 @@
       <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 px-4 md:px-6 text-white">
         <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <h3 class="font-display text-3xl font-light text-center mb-4 shrink-0">What&rsquo;s NOT Included</h3>
-          <div class="flex-1 min-h-0 overflow-hidden" id="container-notincluded">
+          <div class="flex-1 min-h-0 overflow-hidden fade-dark" id="container-notincluded">
             <div class="content-inner" id="inner-notincluded">
               <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div class="bg-red-950/40 border border-red-900/30 p-5 rounded-sm">
@@ -369,7 +382,7 @@
         <div class="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <h3 class="font-display text-3xl font-light text-center mb-1 shrink-0">Inside the Location</h3>
           <p class="text-xs text-wws-dark text-center mb-3 shrink-0">1,000 sq ft of natural light, original mill windows, and authentic character</p>
-          <div class="flex-1 min-h-0 overflow-hidden" id="container-photos">
+          <div class="flex-1 min-h-0 overflow-hidden fade-light" id="container-photos">
             <div class="content-inner" id="inner-photos">
               <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-12.jpg" alt="Wide angle with furniture" class="w-full h-full object-cover" loading="lazy"></div>
@@ -697,6 +710,14 @@
       var downSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
       var upSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>';
 
+      function checkOverflow(container, inner) {
+        if (inner.scrollHeight > container.clientHeight + 5) {
+          container.classList.add('has-overflow');
+        } else {
+          container.classList.remove('has-overflow');
+        }
+      }
+
       document.querySelectorAll('.expand-pill[data-section]').forEach(function (btn) {
         var sectionName = btn.dataset.section;
         var moreLabel = btn.dataset.more || 'Show More';
@@ -724,6 +745,9 @@
             if (btn._exp.currentIdx >= totalGroups) {
               btn.innerHTML = lessLabel + ' ' + upSvg;
               btn.classList.remove('collapsed');
+              container.classList.remove('has-overflow');
+            } else {
+              checkOverflow(container, inner);
             }
           } else {
             groups.forEach(function (g) { g.classList.remove('expanded'); });
@@ -731,6 +755,7 @@
             inner.style.transform = 'translateY(0)';
             btn.innerHTML = moreLabel + ' ' + downSvg;
             btn.classList.add('collapsed');
+            checkOverflow(container, inner);
           }
         });
       });
@@ -762,6 +787,8 @@
 
           if (btn._exp.currentIdx >= groups.length) {
             btn.style.display = 'none';
+          } else {
+            checkOverflow(container, inner);
           }
         });
       });
