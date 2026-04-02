@@ -250,12 +250,38 @@
         }
         #compare-tbody-wrap {
           overflow-y: auto;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255,255,255,0.15) transparent;
+          scrollbar-width: none;
         }
-        #compare-tbody-wrap::-webkit-scrollbar { width: 4px; }
-        #compare-tbody-wrap::-webkit-scrollbar-track { background: transparent; }
-        #compare-tbody-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+        #compare-tbody-wrap::-webkit-scrollbar { display: none; }
+        @media (min-width: 768px) {
+          #compare-tbody-wrap { max-height: none !important; overflow: visible !important; }
+        }
+        #compare-scroll-btn {
+          position: absolute;
+          right: -36px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.05);
+          color: rgba(255,255,255,0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 14px;
+          line-height: 1;
+        }
+        #compare-scroll-btn:hover {
+          border-color: rgba(255,255,255,0.4);
+          color: rgba(255,255,255,0.8);
+        }
+        @media (min-width: 768px) {
+          #compare-scroll-btn { display: none !important; }
+        }
       </style>
       <div class="relative z-10 flex flex-col items-center justify-center h-full px-4 md:px-6 text-white text-center">
         <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-2 md:mb-4">At a Glance</p>
@@ -275,13 +301,16 @@
               </tr>
             </thead>
           </table>
-          <!-- Scrollable body -->
-          <div id="compare-tbody-wrap" style="max-height:min(50vh, 380px)">
-            <table class="w-full text-xs md:text-sm" id="compare-table" style="table-layout:fixed">
-              <colgroup><col style="width:38%"><col style="width:31%"><col style="width:31%"></colgroup>
-              <tbody id="compare-body" class="text-white/65">
-              </tbody>
-            </table>
+          <!-- Scrollable body (mobile only — desktop shows all rows) -->
+          <div style="position:relative">
+            <div id="compare-tbody-wrap" style="max-height:min(50vh, 380px)">
+              <table class="w-full text-xs md:text-sm" id="compare-table" style="table-layout:fixed">
+                <colgroup><col style="width:38%"><col style="width:31%"><col style="width:31%"></colgroup>
+                <tbody id="compare-body" class="text-white/65">
+                </tbody>
+              </table>
+            </div>
+            <button id="compare-scroll-btn" aria-label="Scroll table">&#x25BC;</button>
           </div>
         </div>
 
@@ -394,9 +423,38 @@
             });
 
             var newRowCount = newData.length;
-            setTimeout(function () { animating = false; }, newRowCount * 25 + 250);
+            setTimeout(function () {
+              animating = false;
+              updateScrollBtn();
+            }, newRowCount * 25 + 250);
           }, rowCount * 25 + 300);
         });
+
+        // Mobile scroll toggle button
+        var scrollBtn = document.getElementById('compare-scroll-btn');
+        var scrolledDown = false;
+
+        function updateScrollBtn() {
+          if (!scrollBtn) return;
+          var hasScroll = tbodyWrap.scrollHeight > tbodyWrap.clientHeight + 2;
+          scrollBtn.style.display = hasScroll && window.innerWidth < 768 ? 'flex' : 'none';
+          scrolledDown = false;
+          scrollBtn.innerHTML = '&#x25BC;';
+        }
+
+        scrollBtn.addEventListener('click', function () {
+          if (scrolledDown) {
+            tbodyWrap.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollBtn.innerHTML = '&#x25BC;';
+          } else {
+            tbodyWrap.scrollTo({ top: tbodyWrap.scrollHeight, behavior: 'smooth' });
+            scrollBtn.innerHTML = '&#x25B2;';
+          }
+          scrolledDown = !scrolledDown;
+        });
+
+        updateScrollBtn();
+        window.addEventListener('resize', updateScrollBtn);
       })();
       </script>
     </section>
