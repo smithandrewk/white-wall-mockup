@@ -303,7 +303,12 @@ Drew wants customers to receive a text message confirmation in addition to the e
 
 Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a toggle, this may just need to be turned on — no code changes required. If Acuity only supports SMS as pre-appointment *reminders* (not instant confirmations), then Twilio (~$0.008/text) is the fallback, added to `booking-callback.js` similar to `notifyOwner`.
 
+## Feedback Round 8 (2026-04-02) — Drew's text 2026-04-02
+
+- [x] Taylor's Mill page: change "Parking lot is about a 2 minute walk" to "Taylor's Mill is a 5 minute walk" (Keep In Mind pills + comparison table)
+- [x] Homepage: add full-screen comparison card between Taylor's Mill snap and Events snap — dark background, side-by-side feature table, subtext about props/backdrops included, CTA buttons for both locations
+
 ## Summary
 
-**Done: 117 items** (all revision items complete)
+**Done: 119 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.

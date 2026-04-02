@@ -208,7 +208,43 @@
       </div>
     </section>
 
-    <!-- Snap 4: Book an Event -->
+    <!-- Snap 4: Compare Locations -->
+    <section class="snap-section" id="compare-snap" style="background:#111">
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-white text-center">
+        <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-4">At a Glance</p>
+        <h2 class="font-display text-4xl md:text-5xl font-light mb-10">Two Studios, One Standard</h2>
+
+        <div class="w-full max-w-xl">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left px-4 py-3 text-[10px] tracking-[0.15em] uppercase text-white/35 font-medium"></th>
+                <th class="text-center px-4 py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#c4a882">Taylor's Mill</th>
+                <th class="text-center px-4 py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#4A90D9">Flagship</th>
+              </tr>
+            </thead>
+            <tbody class="text-white/65">
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Size</td><td class="text-center px-4 py-2.5">1,000 sq ft</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">2,000 sq ft</td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Parking</td><td class="text-center px-4 py-2.5">5 min walk</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">On-site</td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Bathroom</td><td class="text-center px-4 py-2.5">Shared, down hall</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Private, ensuite</td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Running water</td><td class="text-center px-4 py-2.5">No</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Yes</td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Load-in</td><td class="text-center px-4 py-2.5">No garage door</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">12ft garage door</td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Privacy</td><td class="text-center px-4 py-2.5">Shared building</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Private entrance</td></tr>
+              <tr><td class="px-4 py-2.5 text-white/40">Events</td><td class="text-center px-4 py-2.5">Not approved</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Up to 150 guests</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="text-xs text-white/35 mt-8 max-w-md">Both locations include props, backdrops, and self-service keypad entry with every booking.</p>
+
+        <div class="flex flex-col sm:flex-row gap-4 mt-8">
+          <a href="/powdersville" class="inline-block bg-white text-black px-8 py-3 text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">Flagship Location</a>
+          <a href="/taylors-mill" class="inline-block border border-white/30 text-white px-8 py-3 text-[11px] tracking-[0.15em] uppercase font-medium hover:border-white/60 transition-all duration-300">Taylor's Mill</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Snap 5: Book an Event -->
     <section class="snap-section" id="event-snap">
       <img src="images/powdersville/whitewall-powdersville-event-3.22_-2.jpeg"
            alt="Event space at Flagship Location"
@@ -400,6 +436,7 @@
     <div class="snap-dot" data-index="1"></div>
     <div class="snap-dot" data-index="2"></div>
     <div class="snap-dot" data-index="3"></div>
+    <div class="snap-dot" data-index="4"></div>
   </div>
 
   <script>
@@ -421,7 +458,7 @@
       var scrollIndicator = container.querySelector('.scroll-indicator');
 
       // Number of full-screen snap sections (hero + 3 location/event cards)
-      var snapCount = 4;
+      var snapCount = 5;
       var lastNavState = null;
 
       function updateNav(isInSnap) {
