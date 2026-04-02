@@ -246,7 +246,7 @@
         <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-4">At a Glance</p>
         <h2 class="font-display text-4xl md:text-5xl font-light mb-10">Two Locations, One Standard</h2>
 
-        <div class="w-full max-w-xl">
+        <div class="w-full max-w-xl" id="compare-wrap" style="transition:height 0.35s ease; overflow:hidden">
           <table class="w-full text-sm" id="compare-table" style="table-layout:fixed">
             <colgroup><col style="width:38%"><col style="width:31%"><col style="width:31%"></colgroup>
             <thead>
@@ -302,6 +302,10 @@
         var animating = false;
         var toggle = document.getElementById('compare-toggle');
         var tbody = document.getElementById('compare-body');
+        var wrap = document.getElementById('compare-wrap');
+
+        // Lock initial height so transitions work
+        wrap.style.height = wrap.offsetHeight + 'px';
 
         toggle.addEventListener('click', function () {
           if (animating) return;
@@ -311,6 +315,7 @@
           var newData = showingPrices ? pricingData : featuresData;
           toggle.textContent = showingPrices ? 'Compare Features' : 'Compare Prices';
 
+          wrap.dataset.prevHeight = wrap.offsetHeight + 'px';
           var rows = tbody.querySelectorAll('tr');
           var cells = tbody.querySelectorAll('.flip-inner');
           var totalCells = cells.length;
@@ -347,6 +352,12 @@
               });
               tbody.appendChild(tr);
             });
+
+            // Animate to new height
+            wrap.style.height = 'auto';
+            var newH = wrap.offsetHeight;
+            wrap.style.height = wrap.dataset.prevHeight || wrap.style.height;
+            requestAnimationFrame(function () { wrap.style.height = newH + 'px'; });
 
             // Trigger settle animation with stagger
             var newCells = tbody.querySelectorAll('.flip-inner');
