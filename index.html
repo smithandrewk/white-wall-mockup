@@ -249,10 +249,8 @@
           opacity: 0.6;
         }
         #compare-tbody-wrap {
-          overflow-y: auto;
-          scrollbar-width: none;
+          overflow: hidden;
         }
-        #compare-tbody-wrap::-webkit-scrollbar { display: none; }
         @media (min-width: 768px) {
           #compare-tbody-wrap { max-height: none !important; overflow: visible !important; }
         }
@@ -443,12 +441,27 @@
           scrollBtn.innerHTML = '&#x25BC;';
         }
 
+        function smoothScroll(target) {
+          var start = tbodyWrap.scrollTop;
+          var distance = target - start;
+          var duration = 300;
+          var startTime = null;
+          function step(ts) {
+            if (!startTime) startTime = ts;
+            var progress = Math.min((ts - startTime) / duration, 1);
+            var ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+            tbodyWrap.scrollTop = start + distance * ease;
+            if (progress < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        }
+
         scrollBtn.addEventListener('click', function () {
           if (scrolledDown) {
-            tbodyWrap.scrollTo({ top: 0, behavior: 'smooth' });
+            smoothScroll(0);
             scrollBtn.innerHTML = '&#x25BC;';
           } else {
-            tbodyWrap.scrollTo({ top: tbodyWrap.scrollHeight, behavior: 'smooth' });
+            smoothScroll(tbodyWrap.scrollHeight);
             scrollBtn.innerHTML = '&#x25B2;';
           }
           scrolledDown = !scrolledDown;
