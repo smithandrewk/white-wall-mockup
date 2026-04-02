@@ -734,9 +734,58 @@
         btn._exp = { currentIdx: 0 };
 
         btn.addEventListener('click', function () {
+          // Photo grid: row-based pagination
+          if (sectionName === 'photos') {
+            // Reset / collapse
+            if (btn._exp.photoDone) {
+              groups.forEach(function (g) { g.classList.remove('expanded'); });
+              btn._exp = { currentIdx: 0 };
+              inner.style.transform = 'translateY(0)';
+              btn.innerHTML = moreLabel + ' ' + downSvg;
+              btn.classList.add('collapsed');
+              checkOverflow(container, inner);
+              return;
+            }
+            // First click: expand all groups, measure grid
+            if (!btn._exp.photoInit) {
+              for (var i = btn._exp.currentIdx; i < totalGroups; i++) {
+                groups[i].style.transition = 'none';
+                groups[i].classList.add('expanded');
+              }
+              btn._exp.currentIdx = totalGroups;
+              void inner.offsetHeight;
+              var grid = inner.querySelector('.grid');
+              var allPhotos = grid.querySelectorAll('[class*="aspect-"]');
+              var cols = Math.round(grid.offsetWidth / allPhotos[0].offsetWidth);
+              var r0 = allPhotos[0].getBoundingClientRect().top;
+              var r1 = allPhotos[cols].getBoundingClientRect().top;
+              btn._exp.rowH = r1 - r0;
+              btn._exp.visRows = Math.floor(container.clientHeight / btn._exp.rowH);
+              btn._exp.offset = 0;
+              btn._exp.maxY = inner.scrollHeight - container.clientHeight;
+              btn._exp.photoInit = true;
+              requestAnimationFrame(function () {
+                for (var j = 0; j < totalGroups; j++) groups[j].style.transition = '';
+              });
+            }
+            btn._exp.offset += btn._exp.visRows;
+            var y = btn._exp.offset * btn._exp.rowH;
+            if (y >= btn._exp.maxY) {
+              inner.style.transform = 'translateY(-' + btn._exp.maxY + 'px)';
+              btn.innerHTML = lessLabel + ' ' + upSvg;
+              btn.classList.remove('collapsed');
+              container.classList.remove('has-overflow');
+              btn._exp.photoDone = true;
+            } else {
+              inner.style.transform = 'translateY(-' + y + 'px)';
+              checkOverflow(container, inner);
+            }
+            return;
+          }
+
+          // Generic expand/collapse for non-photo sections
           if (btn._exp.currentIdx < totalGroups) {
             var g = groups[btn._exp.currentIdx];
-            // Disable grid transition so scrollHeight reflects final size
             g.style.transition = 'none';
             g.classList.add('expanded');
             btn._exp.currentIdx++;
@@ -745,7 +794,6 @@
             if (overflow > 0) {
               inner.style.transform = 'translateY(-' + overflow + 'px)';
             }
-            // Restore transition for future collapse
             requestAnimationFrame(function () { g.style.transition = ''; });
             if (btn._exp.currentIdx >= totalGroups) {
               btn.innerHTML = lessLabel + ' ' + upSvg;
@@ -774,6 +822,12 @@
           var groups = sectionEl.querySelectorAll('.expand-group, .expand-group-flat');
           var container = document.getElementById('container-' + sectionName);
           var inner = document.getElementById('inner-' + sectionName);
+
+          // Photo grids: skip auto-expand, just check overflow for fade
+          if (sectionName === 'photos') {
+            checkOverflow(container, inner);
+            return;
+          }
 
           while (btn._exp.currentIdx < groups.length) {
             var g = groups[btn._exp.currentIdx];
