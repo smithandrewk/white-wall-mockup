@@ -336,7 +336,14 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Taylor's Mill page: move studio tour video above the about paragraph
 - [x] Both pages: changed from side-by-side grid to stacked layout (video on top, text below)
 
+## Feedback Round 14 (2026-04-02) — Drew's text 2026-04-02
+
+- [x] Both pages: video + text stretch wider on desktop (removed max-w-3xl constraint at lg breakpoint)
+- [x] Flagship: What's Included shows 4 features on mobile, 9 on desktop, "See More Key Features" button reveals rest
+- [x] Flagship: Events section restructured — title above video, paragraphs below, "See More Photos" link under text
+- [x] Taylor's Mill: What's Included left as-is per Drew's instructions
+
 ## Summary
 
-**Done: 132 items** (all revision items complete)
+**Done: 136 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.

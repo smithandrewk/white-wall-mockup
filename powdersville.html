@@ -45,6 +45,13 @@
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
     .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.45)); }
+    /* Features grid: show 4 on mobile, 9 on desktop, rest hidden until expanded */
+    #features-grid:not(.expanded) > :nth-child(n+5) { display: none; }
+    @media (min-width: 1024px) {
+      #features-grid:not(.expanded) > :nth-child(n+5) { display: block; }
+      #features-grid:not(.expanded) > :nth-child(n+10) { display: none; }
+    }
+    #features-grid.expanded > * { display: block !important; }
   </style>
 </head>
 <body class="bg-white text-wws-black">
@@ -110,7 +117,7 @@
   <!-- About -->
   <section id="about" class="py-24 px-6">
     <div class="max-w-5xl mx-auto">
-      <div class="max-w-3xl mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/MvcRA0mSOfM?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+      <div class="max-w-3xl lg:max-w-none mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/MvcRA0mSOfM?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
         <img src="images/powdersville/whitewall-powdersville_v2-20.jpg"
              alt="WhiteWall Flagship Location Tour"
              class="w-full h-full object-cover">
@@ -122,7 +129,7 @@
           <span class="text-white text-xs tracking-[0.2em] uppercase font-medium bg-black/60 px-4 py-1.5 rounded-full">Watch Studio Tour</span>
         </div>
       </div>
-      <div class="max-w-3xl mx-auto">
+      <div class="max-w-3xl lg:max-w-none mx-auto">
         <div class="w-3 h-3 rounded-full bg-pv-cool mb-6"></div>
         <h2 class="font-display text-4xl font-light mb-6">The Studio You've Been Looking For</h2>
         <p class="text-wws-dark leading-relaxed mb-4">
@@ -163,7 +170,7 @@
   <section id="features" class="bg-wws-light py-24 px-6">
     <div class="max-w-5xl mx-auto">
       <h3 class="font-display text-3xl font-light text-center mb-16">What's Included</h3>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div id="features-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- 1. 2,000+ SQ FT -->
         <div class="bg-white p-8 rounded-sm">
           <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -279,7 +286,12 @@
           <p class="text-xs text-wws-dark leading-relaxed">Up-to 100 white banquet chairs available to accommodate classes, productions, and gatherings.</p>
         </div>
       </div>
-      <div class="text-center mt-12">
+      <div id="features-toggle" class="text-center mt-8">
+        <button onclick="document.getElementById('features-grid').classList.add('expanded'); document.getElementById('features-toggle').style.display='none';" class="inline-block border border-wws-black/30 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+          See More Key Features
+        </button>
+      </div>
+      <div class="text-center mt-6">
         <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
           Book This Studio
         </a>
@@ -290,18 +302,19 @@
   <!-- Events Section -->
   <section id="events" class="py-24 px-6">
     <div class="max-w-5xl mx-auto">
-      <div class="max-w-3xl mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+      <div class="max-w-3xl lg:max-w-none mx-auto">
+        <div class="inline-block bg-pv-cool/10 text-pv-cool text-xs tracking-widest uppercase px-4 py-2 rounded-full mb-6">Event Space</div>
+        <h2 class="font-display text-4xl font-light mb-8">Host your next event</h2>
+      </div>
+      <div class="max-w-3xl lg:max-w-none mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
         <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover">
         <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
           <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
             <svg class="w-6 h-6 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
           </div>
-          <span class="absolute bottom-4 left-0 right-0 text-center text-white text-sm tracking-[0.15em] uppercase font-medium drop-shadow-lg">Host Your Event</span>
         </div>
       </div>
-      <div class="max-w-3xl mx-auto">
-        <div class="inline-block bg-pv-cool/10 text-pv-cool text-xs tracking-widest uppercase px-4 py-2 rounded-full mb-6">Event Space</div>
-        <h2 class="font-display text-4xl font-light mb-6">Host your next event</h2>
+      <div class="max-w-3xl lg:max-w-none mx-auto">
         <p class="text-wws-dark leading-relaxed mb-4">
           Our Flagship Location is designed to be a flexible, open-concept space that can easily adapt to whatever type of gathering you have in mind. From birthday parties, bridal showers and workshops, to fitness classes, pop-ups, and small weddings, the layout allows you to shape the space exactly how you want it.
         </p>
@@ -323,15 +336,8 @@
         <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
           Book Your Event
         </a>
-        <a href="#studio-photos" class="block relative group mt-8">
-          <div class="aspect-[4/3] overflow-hidden rounded-sm">
-            <img src="images/powdersville/whitewall-powdersville_v2-1.jpg"
-                 alt="Flagship Location studio event space"
-                 class="w-full h-full object-cover">
-          </div>
-          <div class="absolute inset-0 flex items-end justify-center pb-5">
-            <span class="text-sm text-white tracking-wide uppercase drop-shadow-lg group-hover:underline">See more photos below</span>
-          </div>
+        <a href="#studio-photos" class="inline-block mt-4 ml-4 text-sm text-pv-cool hover:text-pv-cool/70 tracking-wide uppercase transition">
+          See More Photos &darr;
         </a>
       </div>
     </div>
