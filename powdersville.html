@@ -7,7 +7,8 @@
     if(localStorage.getItem("wws_cookie_consent")==="accepted"){posthog.init("phc_QxOulRmelGJKszTf1CZd1DObWvqGIWdAPsMPDeL7IVm",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only"})}
   </script>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000" id="theme-color">
   <title>Flagship Location — WhiteWall Studios</title>
   <meta name="description" content="Flagship Location — our 2,000+ sq ft flagship location and event space in Easley, SC. 12ft garage door, blackout shades, on-site parking, private bathroom. Events approved.">
   <meta property="og:title" content="Flagship Location — WhiteWall Studios">
@@ -44,449 +45,675 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
-    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.45)); }
-    /* Features grid: show 4 on mobile, 9 on desktop, rest hidden until expanded */
-    #features-grid:not(.expanded) > :nth-child(n+5) { display: none; }
-    @media (min-width: 1024px) {
-      #features-grid:not(.expanded) > :nth-child(n+5) { display: block; }
-      #features-grid:not(.expanded) > :nth-child(n+10) { display: none; }
+
+    .snap-container {
+      height: 100vh;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    #features-grid.expanded > * { display: block !important; }
+    .snap-container::-webkit-scrollbar { display: none; }
+
+    .snap-section {
+      height: 100vh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Let hero video bleed behind the notch/Dynamic Island */
+    .hero-video-section { padding-top: 0; height: calc(100vh + env(safe-area-inset-top)); margin-top: calc(-1 * env(safe-area-inset-top)); }
+    .hero-video-section video { top: 0; }
+    #main-nav > div:first-child { padding-top: max(1.25rem, env(safe-area-inset-top)); }
+
+    .hero-overlay {
+      background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%);
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      animation: bounce 2s ease infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+      50% { transform: translateX(-50%) translateY(8px); opacity: 1; }
+    }
+
+    /* Snap dot indicators */
+    .snap-dots {
+      position: fixed;
+      right: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: opacity 0.3s ease;
+    }
+    .snap-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.5);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .snap-dot.active {
+      background: white;
+      transform: scale(1.3);
+    }
+    .snap-dot.light {
+      background: rgba(0,0,0,0.15);
+      border-color: rgba(0,0,0,0.25);
+    }
+    .snap-dot.light.active {
+      background: rgba(0,0,0,0.6);
+      border-color: rgba(0,0,0,0.6);
+    }
+
+    /* Scrollable areas within snaps */
+    .snap-scroll-area {
+      overflow-y: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .snap-scroll-area::-webkit-scrollbar { display: none; }
+
+    /* Floating scroll pill */
+    .scroll-pill {
+      position: absolute;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 20;
+      border-radius: 20px;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .scroll-pill svg {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+    }
+    .scroll-pill.on-dark {
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(255,255,255,0.75);
+    }
+    .scroll-pill.on-dark:active { background: rgba(0,0,0,0.65); }
+    .scroll-pill.on-light {
+      border: 1px solid rgba(0,0,0,0.12);
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(0,0,0,0.55);
+    }
+    .scroll-pill.on-light:active { background: rgba(255,255,255,0.95); }
+
+    /* Location color bar */
+    .location-bar { height: 2px; background: #4A90D9; position: absolute; bottom: 0; left: 0; right: 0; opacity: 0; transition: opacity 0.3s; }
   </style>
 </head>
 <body class="bg-white text-wws-black">
 
-  <!-- Navigation — Flagship Location context -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+  <!-- Navigation -->
+  <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background:transparent">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
       <a href="/" class="flex items-center gap-3">
-        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10 transition-all duration-300" id="nav-logo">
       </a>
-      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
-        <span class="flex items-center gap-2 text-pv-cool">
-          <span class="w-2 h-2 rounded-full bg-pv-cool"></span>
-          Flagship Location
-        </span>
-        <a href="#about" class="hover:text-wws-dark transition">About</a>
-        <a href="#features" class="hover:text-wws-dark transition">Features</a>
-        <a href="#events" class="hover:text-wws-dark transition">Events</a>
-        <a href="/gallery?location=powdersville" class="hover:text-wws-dark transition">Gallery</a>
-        <a href="/book-powdersville" class="hover:text-wws-dark transition">Book Now</a>
-        <a href="/taylors-mill" class="text-xs text-wws-dark/60 hover:text-tm-warm transition border-l border-wws-gray pl-6">&larr; Switch to Taylor's Mill</a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-white/80" id="nav-links">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <a href="/powdersville" class="text-pv-cool">Flagship Location</a>
+        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-white transition">Gallery</a>
+        <a href="#events" class="hover:text-white transition">Events</a>
+        <a href="/book-powdersville" class="hover:text-white transition">Book Now</a>
       </div>
-      <button id="menu-toggle" class="md:hidden p-2" style="color:#4A90D9">
+      <button id="menu-toggle" class="md:hidden p-2 text-white">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
     </div>
-    <!-- Location indicator bar -->
-    <div class="h-[2px] bg-pv-cool"></div>
-    <!-- Mobile menu -->
-    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
-      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
-        <a href="#about">About</a>
-        <a href="#features">Features</a>
-        <a href="#events">Events</a>
-        <a href="/gallery?location=powdersville">Gallery</a>
-        <a href="/book-powdersville">Book Now</a>
-        <a href="/taylors-mill" class="text-tm-warm">&larr; Switch to Taylor's Mill</a>
+    <div id="mobile-menu" class="hidden md:hidden bg-black/90 backdrop-blur">
+      <div class="px-6 py-4 flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-white/80">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <a href="/powdersville" class="text-pv-cool">Flagship Location</a>
+        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-white transition">Gallery</a>
+        <a href="#events" class="hover:text-white transition">Events</a>
+        <a href="/book-powdersville" class="hover:text-white transition">Book Now</a>
       </div>
     </div>
+    <div class="location-bar" id="location-bar"></div>
   </nav>
 
-  <!-- Hero -->
-  <section class="relative h-[80vh] min-h-[500px] pt-[72px]">
-    <div class="absolute inset-0">
-      <video class="w-full h-full object-cover" autoplay muted loop playsinline>
+  <!-- Snap Container -->
+  <div class="snap-container" id="snap-container">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 1: Hero                                                   -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section hero-video-section">
+      <video class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline>
         <source src="images/powdersville/powdersville-hero-video.mp4" type="video/mp4">
       </video>
-    </div>
-    <div class="hero-overlay absolute inset-0"></div>
-    <div class="relative z-10 flex flex-col items-center justify-end h-full pb-20 px-8 text-white text-center">
-      <div class="w-16 h-[1px] bg-pv-cool mb-6"></div>
-      <h1 class="font-display text-6xl md:text-7xl font-light mb-4 tracking-wide">Flagship Location</h1>
-      <p class="text-base tracking-widest uppercase opacity-80 mb-2">Greenville's Premier Location & Event Space</p>
-      <p class="text-sm opacity-60 mb-8">2699 Powdersville Rd, Easley, SC &middot; 2,000+ sq ft</p>
-      <a href="/book-powdersville" class="inline-block border border-white/60 px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
-        Book This Location
-      </a>
-    </div>
-  </section>
-
-  <!-- About -->
-  <section id="about" class="py-24 px-6">
-    <div class="max-w-5xl mx-auto">
-      <div class="max-w-3xl lg:max-w-none mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/MvcRA0mSOfM?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
-        <img src="images/powdersville/whitewall-powdersville_v2-20.jpg"
-             alt="WhiteWall Flagship Location Tour"
-             class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <div class="w-20 h-20 bg-white/95 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <svg class="w-8 h-8 text-wws-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
-          <span class="text-white text-xs tracking-[0.2em] uppercase font-medium bg-black/60 px-4 py-1.5 rounded-full">Watch Location Tour</span>
-        </div>
-      </div>
-      <div class="max-w-3xl lg:max-w-none mx-auto">
-        <div class="w-3 h-3 rounded-full bg-pv-cool mb-6"></div>
-        <h2 class="font-display text-4xl font-light mb-6">The Location You've Been Looking For</h2>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          The Flagship Location is our premier WhiteWall location&mdash;purpose-built from the ground up to deliver the most seamless, fully equipped creative and event experience in the Greenville area.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          With over <strong>2,000 sq ft of fully private space</strong>, this space was designed for photographers, creators, and event hosts who want room to work, complete privacy, and a clean, modern environment that simply works.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Arrive, pull directly up to the <strong>12-ft garage door</strong>, unload in seconds, and walk straight into your space. From the moment you step in, everything is designed to feel smooth, comfortable, and ready to go&mdash;so you can stay focused on creating.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Natural light fills the space through a massive <strong>40-ft wide by 12-ft tall window wall</strong>, creating a soft, high-end look throughout the day. Remote blackout shades and window diffusion give you full control when you need it.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          The space also includes a <strong>dedicated hair and makeup area</strong>, on-site parking just steps from the door, and a <strong>private en-suite bathroom</strong>&mdash;adding to the overall comfort and ease of the experience.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Inside, the space is built to support real productions with real clients. You&rsquo;ll have access to large modular set-building cubes, and an expansive collection of furniture and props&mdash;giving you the flexibility to shape the space however you need.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          We offer a range of add-ons to further customize your setup, including <strong>seamless paper backdrops</strong>, <strong>premium lighting kits</strong>, <strong>TV displays</strong>, a <strong>PA system</strong>, and our signature <strong>rolling accent walls with multiple textures</strong>&mdash;allowing you to quickly transform the space and create a wide range of looks, all within a single booking.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Planning an event? This location offers <strong>100 chairs</strong>, <strong>10 eight-foot tables</strong>, and a seamless indoor-outdoor setup.
-        </p>
-        <p class="text-wws-dark leading-relaxed">
-          Located just minutes from downtown Greenville, the Flagship Location was designed for those who want the full WhiteWall experience&mdash;a space that feels polished, comfortable, and incredibly easy to work in, whether you&rsquo;re shooting, producing, or hosting.
-        </p>
-        <div class="text-center mt-6">
-          <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-            Book This Location
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Features -->
-  <section id="features" class="bg-wws-light py-24 px-6">
-    <div class="max-w-5xl mx-auto">
-      <h3 class="font-display text-3xl font-light text-center mb-16">What's Included</h3>
-      <div id="features-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- 1. 2,000+ SQ FT -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">2,000+ Sq Ft</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">The largest self-service creative space in the area. Room for large productions, multiple setups, or intimate events.</p>
-        </div>
-        <!-- 2. Fully Private Experience -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Fully Private Experience</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">The entire space is yours during your booking. No shared spaces, no other tenants, no interruptions.</p>
-        </div>
-        <!-- 3. Event Approved -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.74 3.74L16.18 20 12 16.77 7.82 20l.92-6.97L4 9.27l5.91-1.01z"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Event Approved</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Approved for small events and gatherings. Perfect for launch parties, workshops, receptions, and classes.</p>
-        </div>
-        <!-- 4. 12ft Garage Door -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">12ft Garage Door</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Pull right up and unload gear in seconds. Perfect for equipment-heavy shoots and event setups.</p>
-        </div>
-        <!-- 5. On-Site Parking -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">On-Site Parking</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Dedicated parking directly outside the location. No walking through complexes or hauling gear across lots.</p>
-        </div>
-        <!-- 6. Private Bathroom -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Private Bathroom</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Your own private en-suite bathroom inside the space. No shared hallways or walking down the hall.</p>
-        </div>
-        <!-- 7. High Ceilings + Open Layout -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 21V3h18v18"/><path d="M7 21V11h10v10"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">High Ceilings + Open Layout</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Large open layout with high ceilings gives creators space for bigger lighting setups and productions.</p>
-        </div>
-        <!-- 8. Movable Accent Walls -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Movable Accent Walls</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Seven rolling accent walls with different textures allow you to easily change the look of your set.</p>
-        </div>
-        <!-- 9. Blackout Shades -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Blackout Shades</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Remote-controlled blackout shades give you full lighting control, from natural light to total darkness.</p>
-        </div>
-        <!-- 10. Hair + Makeup Area -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Hair + Makeup Area</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Dedicated makeup and hair station with mirrors and space for stylists to prep talent comfortably.</p>
-        </div>
-        <!-- 11. Furniture + Props -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Furniture + Props</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">A growing collection of furniture and props gives creators more options for styling and set design.</p>
-        </div>
-        <!-- 12. Pro Gear Rental -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Pro Gear Rental</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">660W RGB Amaran fixture, large 5ft softbox, 360W RGB fixture, and more.</p>
-        </div>
-        <!-- 13. Paper Backdrops -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Paper Backdrops</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Professional seamless paper backdrops available for clean portrait and product photography setups.</p>
-        </div>
-        <!-- 14. Set Building Cubes -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Set Building Cubes</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Large white studio cubes perfect for sitting poses, product photography, or custom set building.</p>
-        </div>
-        <!-- 15. Easy Load-In -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Easy Load-In</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Drive directly to the garage door and move equipment inside quickly and easily.</p>
-        </div>
-        <!-- 16. TV Display Rental -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">TV Display Rental</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Large 4k smart TV on wheels available for presentations, branding shoots, events, and video playback.</p>
-        </div>
-        <!-- 17. PA System Rental -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">PA System Rental</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">PA system available for workshops, fitness classes, presentations, and small events.</p>
-        </div>
-        <!-- 18. Table Rentals -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="3" rx="1"/><line x1="6" y1="10" x2="6" y2="20"/><line x1="18" y1="10" x2="18" y2="20"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Table Rentals</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Additional tables available for workshops, productions, and events.</p>
-        </div>
-        <!-- 19. Chair Rentals -->
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-pv-cool mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 11V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5"/><rect x="3" y="11" width="18" height="5" rx="1"/><line x1="6" y1="16" x2="6" y2="20"/><line x1="18" y1="16" x2="18" y2="20"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Chair Rentals</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Up-to 100 white banquet chairs available to accommodate classes, productions, and gatherings.</p>
-        </div>
-      </div>
-      <div id="features-toggle" class="text-center mt-8">
-        <button id="features-more-btn" onclick="document.getElementById('features-grid').classList.add('expanded'); document.getElementById('features-more-btn').style.display='none'; document.getElementById('features-less-btn').style.display='inline-block';" class="inline-block border border-wws-black/30 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-          See More Key Features
-        </button>
-        <button id="features-less-btn" style="display:none" onclick="document.getElementById('features-grid').classList.remove('expanded'); document.getElementById('features-less-btn').style.display='none'; document.getElementById('features-more-btn').style.display='inline-block';" class="inline-block border border-wws-black/30 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-          See Less Key Features
-        </button>
-      </div>
-      <div class="text-center mt-6">
-        <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="relative z-10 flex flex-col items-center justify-end h-full pb-24 px-8 text-white text-center">
+        <div class="w-16 h-[1px] bg-pv-cool mb-6"></div>
+        <h1 class="font-display text-5xl md:text-7xl font-light mb-4 tracking-wide">Flagship Location</h1>
+        <p class="text-sm md:text-base tracking-widest uppercase opacity-80 mb-2">Greenville's Premier Location & Event Space</p>
+        <p class="text-xs opacity-50 mb-8">2699 Powdersville Rd, Easley, SC &middot; 2,000+ sq ft</p>
+        <a href="/book-powdersville" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
           Book This Location
         </a>
       </div>
-    </div>
-  </section>
-
-  <!-- Events Section -->
-  <section id="events" class="py-24 px-6">
-    <div class="max-w-5xl mx-auto">
-      <div class="max-w-3xl lg:max-w-none mx-auto">
-        <div class="inline-block bg-pv-cool/10 text-pv-cool text-xs tracking-widest uppercase px-4 py-2 rounded-full mb-6">Event Space</div>
-        <h2 class="font-display text-4xl font-light mb-8">Host your next event</h2>
+      <div class="scroll-indicator">
+        <svg class="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
       </div>
-      <div class="max-w-3xl lg:max-w-none mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
-        <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover">
-        <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-          <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
-            <svg class="w-6 h-6 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 2: About + Video Tour                                     -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section" id="about" style="background:#111">
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6 text-white">
+        <div class="max-w-3xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <div class="w-3 h-3 rounded-full bg-pv-cool mb-4 shrink-0"></div>
+          <h2 class="font-display text-3xl md:text-4xl font-light mb-4 shrink-0">The Location You've Been Looking For</h2>
+          <div class="snap-scroll-area flex-1 min-h-0 pr-2" id="scroll-about">
+            <!-- YouTube Video Tour -->
+            <div class="mb-6 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" id="yt-tour" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/MvcRA0mSOfM?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+              <img src="images/powdersville/whitewall-powdersville_v2-20.jpg" alt="WhiteWall Flagship Location Tour" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300"></div>
+              <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-white/95 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg class="w-6 h-6 md:w-8 md:h-8 text-wws-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+                <span class="text-white text-[10px] md:text-xs tracking-[0.2em] uppercase font-medium bg-black/60 px-3 py-1 md:px-4 md:py-1.5 rounded-full">Watch Location Tour</span>
+              </div>
+            </div>
+            <div class="space-y-3 text-sm text-white/70 leading-relaxed">
+              <p>The Flagship Location is our premier WhiteWall location&mdash;purpose-built from the ground up to deliver the most seamless, fully equipped creative and event experience in the Greenville area.</p>
+              <p>With over <strong class="text-white/90">2,000 sq ft of fully private space</strong>, this space was designed for photographers, creators, and event hosts who want room to work, complete privacy, and a clean, modern environment that simply works.</p>
+              <p>Arrive, pull directly up to the <strong class="text-white/90">12-ft garage door</strong>, unload in seconds, and walk straight into your space. From the moment you step in, everything is designed to feel smooth, comfortable, and ready to go&mdash;so you can stay focused on creating.</p>
+              <p>Natural light fills the space through a massive <strong class="text-white/90">40-ft wide by 12-ft tall window wall</strong>, creating a soft, high-end look throughout the day. Remote blackout shades and window diffusion give you full control when you need it.</p>
+              <p>The space also includes a <strong class="text-white/90">dedicated hair and makeup area</strong>, on-site parking just steps from the door, and a <strong class="text-white/90">private en-suite bathroom</strong>&mdash;adding to the overall comfort and ease of the experience.</p>
+              <p>Inside, the space is built to support real productions with real clients. You&rsquo;ll have access to large modular set-building cubes, and an expansive collection of furniture and props&mdash;giving you the flexibility to shape the space however you need.</p>
+              <p>We offer a range of add-ons to further customize your setup, including <strong class="text-white/90">seamless paper backdrops</strong>, <strong class="text-white/90">premium lighting kits</strong>, <strong class="text-white/90">TV displays</strong>, a <strong class="text-white/90">PA system</strong>, and our signature <strong class="text-white/90">rolling accent walls with multiple textures</strong>&mdash;allowing you to quickly transform the space and create a wide range of looks, all within a single booking.</p>
+              <p>Planning an event? This location offers <strong class="text-white/90">100 chairs</strong>, <strong class="text-white/90">10 eight-foot tables</strong>, and a seamless indoor-outdoor setup.</p>
+              <p>Located just minutes from downtown Greenville, the Flagship Location was designed for those who want the full WhiteWall experience&mdash;a space that feels polished, comfortable, and incredibly easy to work in, whether you&rsquo;re shooting, producing, or hosting.</p>
+              <div class="text-center pt-4 pb-8">
+                <a href="/book-powdersville" class="inline-block border border-white/40 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
+                  Book This Location
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="max-w-3xl lg:max-w-none mx-auto">
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Our Flagship Location is designed to be a flexible, open-concept space that can easily adapt to whatever type of gathering you have in mind. From birthday parties, bridal showers and workshops, to fitness classes, pop-ups, and small weddings, the layout allows you to shape the space exactly how you want it.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          The space can be used as-is with the existing furniture and props, or you can clear the space entirely. Anything in the space can simply be moved into the storage building located directly in front of the garage door, giving you the option of a completely empty event space if needed.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          The <strong>12ft garage door</strong> makes load-in simple for caterers, vendors, and event setup, and it can also be opened to create an indoor-outdoor feel using the concrete area just outside the space. When you book the space for an event, the surrounding parking area and exterior space are also available for your use.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          We also have <strong>100 chairs and 10 eight-foot tables available to add to your booking</strong>, making it easy to accommodate larger gatherings.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          If you&rsquo;d like to host an event with us, simply <strong>complete the booking form and reserve the time slot that works best for you.</strong> Be sure to include enough time in your reservation for both setup and teardown. Most events can be booked and confirmed entirely through the self-service process, and you&rsquo;re typically all set once your reservation is complete.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-6">
-          For gatherings <strong>larger than 30 guests</strong>, we may reach out to confirm a few details. The space can accommodate <strong>up to 150 people depending on the setup.</strong>
-        </p>
-        <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-          Book Your Event
+      <button class="scroll-pill on-dark" data-target="scroll-about"></button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 3: Features                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section bg-wws-light" id="features">
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6">
+        <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <h3 class="font-display text-3xl font-light text-center mb-6 shrink-0">What's Included</h3>
+          <div class="snap-scroll-area flex-1 min-h-0" id="scroll-features">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">2,000+ Sq Ft</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">The largest self-service creative space in the area. Room for large productions, multiple setups, or intimate events.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Fully Private Experience</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">The entire space is yours during your booking. No shared spaces, no other tenants, no interruptions.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.74 3.74L16.18 20 12 16.77 7.82 20l.92-6.97L4 9.27l5.91-1.01z"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Event Approved</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Approved for small events and gatherings. Perfect for launch parties, workshops, receptions, and classes.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">12ft Garage Door</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Pull right up and unload gear in seconds. Perfect for equipment-heavy shoots and event setups.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">On-Site Parking</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Dedicated parking directly outside the location. No walking through complexes or hauling gear across lots.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Private Bathroom</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Your own private en-suite bathroom inside the space. No shared hallways or walking down the hall.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 21V3h18v18"/><path d="M7 21V11h10v10"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">High Ceilings + Open Layout</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Large open layout with high ceilings gives creators space for bigger lighting setups and productions.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Movable Accent Walls</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Seven rolling accent walls with different textures allow you to easily change the look of your set.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Blackout Shades</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Remote-controlled blackout shades give you full lighting control, from natural light to total darkness.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Hair + Makeup Area</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Dedicated makeup and hair station with mirrors and space for stylists to prep talent comfortably.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Furniture + Props</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">A growing collection of furniture and props gives creators more options for styling and set design.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Pro Gear Rental</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">660W RGB Amaran fixture, large 5ft softbox, 360W RGB fixture, and more.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Paper Backdrops</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Professional seamless paper backdrops available for clean portrait and product photography setups.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Set Building Cubes</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Large white studio cubes perfect for sitting poses, product photography, or custom set building.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Easy Load-In</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Drive directly to the garage door and move equipment inside quickly and easily.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">TV Display Rental</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Large 4k smart TV on wheels available for presentations, branding shoots, events, and video playback.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">PA System Rental</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">PA system available for workshops, fitness classes, presentations, and small events.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="3" rx="1"/><line x1="6" y1="10" x2="6" y2="20"/><line x1="18" y1="10" x2="18" y2="20"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Table Rentals</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Additional tables available for workshops, productions, and events.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-pv-cool mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 11V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5"/><rect x="3" y="11" width="18" height="5" rx="1"/><line x1="6" y1="16" x2="6" y2="20"/><line x1="18" y1="16" x2="18" y2="20"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Chair Rentals</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Up-to 100 white banquet chairs available to accommodate classes, productions, and gatherings.</p>
+              </div>
+            </div>
+            <div class="text-center py-6">
+              <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+                Book This Location
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="scroll-pill on-light" data-target="scroll-features"></button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 4: Events                                                 -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section" id="events">
+      <img src="images/powdersville/whitewall-powdersville-event-3.22_-2.jpeg" alt="Event space at Flagship Location" class="absolute inset-0 w-full h-full object-cover">
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6 text-white">
+        <div class="max-w-3xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <div class="inline-block bg-pv-cool/20 text-pv-cool text-[10px] tracking-widest uppercase px-3 py-1.5 rounded-full mb-3 self-start shrink-0">Event Space</div>
+          <h2 class="font-display text-3xl md:text-5xl font-light mb-4 shrink-0">Host Your Event</h2>
+          <div class="snap-scroll-area flex-1 min-h-0 pr-2" id="scroll-events">
+            <!-- YouTube Event Tour -->
+            <div class="mb-5 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+              <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover">
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                <div class="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3 text-sm text-white/75 leading-relaxed">
+              <p>Our Flagship Location is designed to be a flexible, open-concept space that can easily adapt to whatever type of gathering you have in mind. From birthday parties, bridal showers and workshops, to fitness classes, pop-ups, and small weddings, the layout allows you to shape the space exactly how you want it.</p>
+              <p>The space can be used as-is with the existing furniture and props, or you can clear the space entirely. Anything in the space can simply be moved into the storage building located directly in front of the garage door, giving you the option of a completely empty event space if needed.</p>
+              <p>The <strong class="text-white/90">12ft garage door</strong> makes load-in simple for caterers, vendors, and event setup, and it can also be opened to create an indoor-outdoor feel using the concrete area just outside the space. When you book the space for an event, the surrounding parking area and exterior space are also available for your use.</p>
+              <p>We also have <strong class="text-white/90">100 chairs and 10 eight-foot tables available to add to your booking</strong>, making it easy to accommodate larger gatherings.</p>
+              <p>If you&rsquo;d like to host an event with us, simply <strong class="text-white/90">complete the booking form and reserve the time slot that works best for you.</strong> Be sure to include enough time in your reservation for both setup and teardown. Most events can be booked and confirmed entirely through the self-service process, and you&rsquo;re typically all set once your reservation is complete.</p>
+              <p>For gatherings <strong class="text-white/90">larger than 30 guests</strong>, we may reach out to confirm a few details. The space can accommodate <strong class="text-white/90">up to 150 people depending on the setup.</strong></p>
+              <div class="flex flex-wrap gap-3 pt-3 pb-8">
+                <a href="/book-powdersville" class="inline-block border border-white/40 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">Book Your Event</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="scroll-pill on-dark" data-target="scroll-events"></button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 5: Studio Photos                                          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section bg-wws-light" id="studio-photos">
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6">
+        <div class="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <h3 class="font-display text-3xl font-light text-center mb-1 shrink-0">Inside the Location</h3>
+          <p class="text-xs text-wws-dark text-center mb-4 shrink-0">2,000+ sq ft of clean, modern space with polished concrete floors and natural light</p>
+          <div class="snap-scroll-area flex-1 min-h-0" id="scroll-photos">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-2.jpg" alt="Lounge area with leather furniture, plants, and wall of industrial windows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-26.jpg" alt="Full location wide shot — furniture, gear, vanity area, 2000+ sq ft" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-32.jpg" alt="Getting-ready vanity with arch mirror, backlit, on Persian rug" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-8.jpg" alt="Open floor with polished concrete, window shadows, and curtains" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-15.jpg" alt="Lounge seating area with leather chairs facing industrial windows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-34.jpg" alt="Dual vanity stations with arch mirrors, plants, and vintage rug" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-24.jpg" alt="Corner detail — bird of paradise plant with window light and shadows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-11.jpg" alt="Window curtain detail with natural light streaming through" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-6.jpg" alt="Full getting-ready area with vanity, mirror, clothing rack, and rug" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-35.jpg" alt="Vanity desk close-up with ceramic vases and arch mirror" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-33.jpg" alt="Getting-ready station — arch mirror, linen chair, plants" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-36.jpg" alt="Corner vanity detail with fiddle leaf fig tree" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+            </div>
+            <div class="text-center py-6">
+              <a href="/gallery?location=powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">View Full Gallery</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="scroll-pill on-light" data-target="scroll-photos"></button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 6: Best For + CTA                                         -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section" style="background:#0a0a0a">
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-white text-center">
+        <h3 class="font-display text-3xl md:text-4xl font-light mb-6">Best For</h3>
+        <div class="flex flex-wrap justify-center gap-2 mb-8 max-w-2xl">
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Event Venue</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Small Events</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Corporate Events</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Launch Parties</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Workshops &amp; Classes</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Birthday Parties</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Bridal Showers</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Content Creation</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Video Shoots</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Large Productions</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Product Photography</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Brand Campaigns</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Fashion Shoots</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Boudoir</span>
+          <span class="border border-pv-cool/30 text-xs px-4 py-1.5 rounded-full text-white/70">Podcast Recording</span>
+        </div>
+        <div class="w-3 h-3 rounded-full bg-pv-cool mb-4"></div>
+        <h3 class="font-display text-3xl md:text-4xl font-light mb-3">Book Flagship Location</h3>
+        <p class="text-white/50 text-sm mb-6 max-w-md">Self-service keypad entry, on-site parking, and total privacy.</p>
+        <a href="/book-powdersville" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent hover:text-black transition-all duration-300">
+          Book Now
         </a>
-        <a href="#studio-photos" class="inline-block mt-4 ml-4 text-sm text-pv-cool hover:text-pv-cool/70 tracking-wide uppercase transition">
-          See More Photos &darr;
-        </a>
+        <p class="text-white/25 text-xs mt-4">48-hour cancellation/reschedule policy</p>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Studio Preview -->
-  <section id="studio-photos" class="py-24 px-6">
-    <div class="max-w-6xl mx-auto">
-      <h3 class="font-display text-3xl font-light text-center mb-4">Inside the Location</h3>
-      <p class="text-sm text-wws-dark text-center mb-12 max-w-xl mx-auto">2,000+ sq ft of clean, modern space with polished concrete floors, black-frame industrial windows, and natural light that fills the room.</p>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v2-2.jpg" alt="Lounge area with leather furniture, plants, and wall of industrial windows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- NON-SNAP: Footer                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="snap-section" style="height:auto; scroll-snap-align:start; scroll-snap-stop:normal;">
+      <section class="py-12 px-6">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Flagship Location</h4>
+            <p class="text-xs text-wws-dark">2699 Powdersville Rd, Easley, SC 29642</p>
+            <p class="text-xs text-wws-dark mt-1">Text: (803) 873-8153 &middot; contact@whitewallstudios.co</p>
+          </div>
+          <a href="/taylors-mill" class="flex items-center gap-3 text-sm text-wws-dark hover:text-tm-warm transition group">
+            <span class="group-hover:-translate-x-1 transition-transform">&larr;</span>
+            <span>Explore our Taylor's Mill location</span>
+          </a>
         </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v2-26.jpg" alt="Full location wide shot — furniture, gear, vanity area, 2000+ sq ft" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
+      </section>
+      <footer class="bg-wws-black text-white py-12 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="text-center md:text-left">
+            <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+            <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+            <div class="flex gap-4 mt-2"><a href="/privacy" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="/terms" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
+          </div>
+          <div class="flex gap-6">
+            <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+            <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+          </div>
         </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v1-32.jpg" alt="Getting-ready vanity with arch mirror, backlit, on Persian rug" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v2-8.jpg" alt="Open floor with polished concrete, window shadows, and curtains" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v2-15.jpg" alt="Lounge seating area with leather chairs facing industrial windows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v1-34.jpg" alt="Dual vanity stations with arch mirrors, plants, and vintage rug" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v2-24.jpg" alt="Corner detail — bird of paradise plant with window light and shadows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v2-11.jpg" alt="Window curtain detail with natural light streaming through" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v1-6.jpg" alt="Full getting-ready area with vanity, mirror, clothing rack, and rug" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v1-35.jpg" alt="Vanity desk close-up with ceramic vases and arch mirror" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v1-33.jpg" alt="Getting-ready station — arch mirror, linen chair, plants" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/powdersville/whitewall-powdersville_v1-36.jpg" alt="Corner vanity detail with fiddle leaf fig tree" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-      </div>
-      <div class="text-center mt-10">
-        <a href="/gallery?location=powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-          View Full Gallery
-        </a>
-      </div>
+      </footer>
     </div>
-  </section>
 
-  <!-- Best For -->
-  <section class="bg-wws-light py-24 px-6">
-    <div class="max-w-3xl mx-auto text-center">
-      <h3 class="font-display text-3xl font-light mb-8">Best For</h3>
-      <div class="flex flex-wrap justify-center gap-3 mb-6">
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Event Venue</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Small Events &amp; Gatherings</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Corporate Events</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Launch Parties</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Networking Events</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Workshops &amp; Classes</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Birthday Parties</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Bridal Showers</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Baby Showers</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Content Creation</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Social Media Content</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">YouTube Production</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Podcast Recording</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Video Shoots</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Large Productions</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Product Photography</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Brand Campaigns</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Fashion Shoots</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Boudoir Shoots</span>
-        <span class="border border-pv-cool/40 text-sm px-5 py-2 rounded-full">Luxury Client-Facing Shoots</span>
-      </div>
-      <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-        Book This Location
-      </a>
-    </div>
-  </section>
+  </div><!-- end snap-container -->
 
-  <!-- Booking CTA -->
-  <section id="booking" class="bg-wws-black text-white py-24 px-6">
-    <div class="max-w-3xl mx-auto text-center">
-      <div class="w-3 h-3 rounded-full bg-pv-cool mx-auto mb-6"></div>
-      <h3 class="font-display text-4xl font-light mb-4">Book Flagship Location</h3>
-      <p class="text-white/60 text-sm mb-8 max-w-lg mx-auto">
-        Ready to create something big? Book our flagship location. Self-service keypad entry, on-site parking, and total privacy.
-      </p>
-      <a href="/book-powdersville" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent hover:text-black transition-all duration-300">
-        Book Now
-      </a>
-      <p class="text-white/30 text-xs mt-6">48-hour cancellation/reschedule policy</p>
-    </div>
-  </section>
-
-  <!-- Location Info -->
-  <section class="py-16 px-6">
-    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-      <div>
-        <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Flagship Location</h4>
-        <p class="text-xs text-wws-dark">2699 Powdersville Rd, Easley, SC 29642</p>
-        <p class="text-xs text-wws-dark mt-1">Text: (803) 873-8153 &middot; contact@whitewallstudios.co</p>
-      </div>
-      <a href="/taylors-mill" class="flex items-center gap-3 text-sm text-wws-dark hover:text-tm-warm transition group">
-        <span class="group-hover:-translate-x-1 transition-transform">&larr;</span>
-        <span>Explore our Taylor's Mill location</span>
-      </a>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="bg-wws-black text-white py-12 px-6">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="text-center md:text-left">
-        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
-        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
-        <div class="flex gap-4 mt-2"><a href="/privacy" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="/terms" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
-      </div>
-      <div class="flex gap-6">
-        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
-        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
-      </div>
-    </div>
-  </footer>
+  <!-- Snap dot indicators -->
+  <div class="snap-dots" id="snap-dots">
+    <div class="snap-dot active" data-index="0"></div>
+    <div class="snap-dot" data-index="1"></div>
+    <div class="snap-dot" data-index="2"></div>
+    <div class="snap-dot" data-index="3"></div>
+    <div class="snap-dot" data-index="4"></div>
+    <div class="snap-dot" data-index="5"></div>
+  </div>
 
   <script>
-    document.getElementById('menu-toggle').addEventListener('click', (e) => {
+    // Mobile menu
+    document.getElementById('menu-toggle').addEventListener('click', function (e) {
       e.stopPropagation();
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', function (e) {
       var menu = document.getElementById('mobile-menu');
       if (!menu.classList.contains('hidden') && !menu.contains(e.target)) {
         menu.classList.add('hidden');
       }
     });
+
+    // Snap container scroll handling (nav + dots)
+    (function () {
+      var container = document.getElementById('snap-container');
+      var nav = document.getElementById('main-nav');
+      var logo = document.getElementById('nav-logo');
+      var links = document.getElementById('nav-links');
+      var toggle = document.getElementById('menu-toggle');
+      var themeColor = document.getElementById('theme-color');
+      var locationBar = document.getElementById('location-bar');
+      var dots = document.getElementById('snap-dots');
+      var dotEls = dots.querySelectorAll('.snap-dot');
+      var scrollIndicator = container.querySelector('.scroll-indicator');
+
+      var snapCount = 6;
+      // Sections: 0=hero(dark), 1=about(dark), 2=features(light), 3=events(dark), 4=photos(light), 5=bestfor(dark)
+      var lightSnaps = [2, 4];
+      var lastNavState = null;
+
+      function isLightSnap(idx) { return lightSnaps.indexOf(idx) !== -1; }
+
+      function updateNav(state) {
+        if (state === 'dark-snap') {
+          nav.style.background = 'transparent';
+          nav.style.borderBottom = 'none';
+          logo.style.filter = 'none';
+          if (links) links.className = links.className.replace('text-black/50', 'text-white/80');
+          toggle.style.color = '#fff';
+          themeColor.content = '#000000';
+          locationBar.style.opacity = '0';
+        } else if (state === 'light-snap') {
+          nav.style.background = 'transparent';
+          nav.style.borderBottom = 'none';
+          logo.style.filter = 'brightness(0)';
+          if (links) links.className = links.className.replace('text-white/80', 'text-black/50');
+          toggle.style.color = '#000';
+          themeColor.content = '#F4F4F2';
+          locationBar.style.opacity = '0';
+        } else {
+          nav.style.background = 'rgba(255,255,255,0.97)';
+          nav.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
+          logo.style.filter = 'brightness(0)';
+          if (links) links.className = links.className.replace('text-white/80', 'text-black/50');
+          toggle.style.color = '#000';
+          themeColor.content = '#ffffff';
+          locationBar.style.opacity = '1';
+        }
+      }
+
+      container.addEventListener('scroll', function () {
+        var scrollTop = container.scrollTop;
+        var vh = window.innerHeight;
+        var currentSnap = Math.round(scrollTop / vh);
+        var inSnapZone = currentSnap < snapCount;
+
+        var navState = !inSnapZone ? 'content' : (isLightSnap(currentSnap) ? 'light-snap' : 'dark-snap');
+
+        if (lastNavState !== navState) {
+          lastNavState = navState;
+          updateNav(navState);
+        }
+
+        // Update dots
+        if (inSnapZone) {
+          dots.style.opacity = '1';
+          var isLight = isLightSnap(currentSnap);
+          dotEls.forEach(function (d, i) {
+            d.classList.toggle('active', i === currentSnap);
+            d.classList.toggle('light', isLight);
+          });
+        } else {
+          dots.style.opacity = '0';
+        }
+
+        // Hide scroll indicator
+        if (scrollIndicator && scrollTop > 50) {
+          scrollIndicator.style.opacity = '0';
+          scrollIndicator.style.transition = 'opacity 0.3s ease';
+        }
+      });
+
+      // Dot click
+      dotEls.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          container.scrollTo({ top: parseInt(this.dataset.index) * window.innerHeight, behavior: 'smooth' });
+        });
+      });
+
+      // Initialize
+      var initSnap = Math.round(container.scrollTop / window.innerHeight);
+      var initState = initSnap >= snapCount ? 'content' : (isLightSnap(initSnap) ? 'light-snap' : 'dark-snap');
+      lastNavState = initState;
+      updateNav(initState);
+
+      // Handle #hash deep links
+      function scrollToHash() {
+        var hash = window.location.hash;
+        if (!hash) return;
+        var target = document.querySelector(hash);
+        if (target && target.closest('#snap-container')) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      scrollToHash();
+      window.addEventListener('hashchange', scrollToHash);
+    })();
+
+    // Scroll pills
+    (function () {
+      var downArrow = '<span>More</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      var upArrow = '<span>Top</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>';
+
+      var pills = document.querySelectorAll('[data-target]');
+
+      pills.forEach(function (pill) {
+        var area = document.getElementById(pill.dataset.target);
+        if (!area) return;
+
+        var atBottom = false;
+
+        function checkOverflow() {
+          var hasOverflow = area.scrollHeight > area.clientHeight + 10;
+          pill.style.display = hasOverflow ? 'flex' : 'none';
+        }
+
+        function updateState() {
+          var scrollBottom = area.scrollTop + area.clientHeight;
+          var isAtBottom = scrollBottom >= area.scrollHeight - 10;
+          if (isAtBottom !== atBottom) {
+            atBottom = isAtBottom;
+            pill.innerHTML = atBottom ? upArrow : downArrow;
+          }
+        }
+
+        function smoothScroll(target) {
+          var start = area.scrollTop;
+          var distance = target - start;
+          var duration = 350;
+          var startTime = null;
+          function step(ts) {
+            if (!startTime) startTime = ts;
+            var progress = Math.min((ts - startTime) / duration, 1);
+            var ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+            area.scrollTop = start + distance * ease;
+            if (progress < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        }
+
+        pill.addEventListener('click', function () {
+          if (atBottom) {
+            smoothScroll(0);
+          } else {
+            smoothScroll(Math.min(area.scrollTop + area.clientHeight * 0.75, area.scrollHeight - area.clientHeight));
+          }
+        });
+
+        area.addEventListener('scroll', updateState);
+        pill.innerHTML = downArrow;
+
+        // Check after images load and on resize
+        checkOverflow();
+        window.addEventListener('resize', checkOverflow);
+        window.addEventListener('load', function () { checkOverflow(); updateState(); });
+      });
+    })();
   </script>
 
   <!-- Cookie Consent Banner -->

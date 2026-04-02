@@ -7,7 +7,8 @@
     if(localStorage.getItem("wws_cookie_consent")==="accepted"){posthog.init("phc_QxOulRmelGJKszTf1CZd1DObWvqGIWdAPsMPDeL7IVm",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only"})}
   </script>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000" id="theme-color">
   <title>Taylor's Mill — WhiteWall Studios</title>
   <meta name="description" content="Taylor's Mill — the original natural light photography location in Taylors, SC. 1,000 sq ft, self-service access, props included. Best for portraits, headshots, and boudoir.">
   <meta property="og:title" content="Taylor's Mill — WhiteWall Studios">
@@ -44,431 +45,830 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
-    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.45)); }
+
+    .snap-container {
+      height: 100vh;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .snap-container::-webkit-scrollbar { display: none; }
+
+    .snap-section {
+      height: 100vh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Let hero bleed behind the notch */
+    .hero-section { padding-top: 0; height: calc(100vh + env(safe-area-inset-top)); margin-top: calc(-1 * env(safe-area-inset-top)); }
+    #main-nav > div:first-child { padding-top: max(1.25rem, env(safe-area-inset-top)); }
+
+    .hero-overlay {
+      background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%);
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      animation: bounce 2s ease infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+      50% { transform: translateX(-50%) translateY(8px); opacity: 1; }
+    }
+
+    .snap-dots {
+      position: fixed;
+      right: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: opacity 0.3s ease;
+    }
+    .snap-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.5);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .snap-dot.active {
+      background: white;
+      transform: scale(1.3);
+    }
+    .snap-dot.light {
+      background: rgba(0,0,0,0.15);
+      border-color: rgba(0,0,0,0.25);
+    }
+    .snap-dot.light.active {
+      background: rgba(0,0,0,0.6);
+      border-color: rgba(0,0,0,0.6);
+    }
+
+    .snap-scroll-area {
+      overflow-y: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .snap-scroll-area::-webkit-scrollbar { display: none; }
+
+    .scroll-pill {
+      position: absolute;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 20;
+      border-radius: 20px;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .scroll-pill svg {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+    }
+    .scroll-pill.on-dark {
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(255,255,255,0.75);
+    }
+    .scroll-pill.on-dark:active { background: rgba(0,0,0,0.65); }
+    .scroll-pill.on-light {
+      border: 1px solid rgba(0,0,0,0.12);
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(0,0,0,0.55);
+    }
+    .scroll-pill.on-light:active { background: rgba(255,255,255,0.95); }
+
+    .location-bar { height: 2px; background: #C4A882; position: absolute; bottom: 0; left: 0; right: 0; opacity: 0; transition: opacity 0.3s; }
+
+    /* Flip animation for compare table */
+    .flip-cell { perspective: 600px; overflow: hidden; }
+    .flip-cell .flip-inner { transition: transform 0.3s ease; transform-style: preserve-3d; position: relative; }
+    .flip-cell .flip-inner.flipping-out { transform: rotateX(-90deg); }
+    .flip-cell .flip-inner.flipping-in { transform: rotateX(90deg); transition: none; }
+    .flip-cell .flip-inner.flipping-in.settle { transform: rotateX(0deg); transition: transform 0.25s ease; }
+    #compare-toggle {
+      cursor: pointer; transition: all 0.2s ease;
+      border: 1px solid rgba(255,255,255,0.3) !important; border-radius: 4px;
+      padding: 6px 12px !important; background: rgba(255,255,255,0.08) !important;
+      color: rgba(255,255,255,0.8);
+    }
+    #compare-toggle:hover { background: rgba(255,255,255,0.15) !important; border-color: rgba(255,255,255,0.5) !important; color: #fff; }
+    #compare-toggle::after { content: ' \21C5'; font-size: 11px; opacity: 0.6; }
+    #compare-tbody-wrap { overflow: hidden; }
+    @media (min-width: 768px) { #compare-tbody-wrap { max-height: none !important; overflow: visible !important; } }
+    #compare-scroll-btn {
+      border-radius: 20px; margin: 8px 0 0 auto;
+      border: 1px solid #c4a882; background: transparent; color: #c4a882;
+      display: flex; align-items: center; gap: 4px; padding: 5px 10px;
+      cursor: pointer; transition: all 0.2s; font-size: 9px;
+      letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; line-height: 1;
+    }
+    #compare-scroll-btn svg { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.2s; }
+    #compare-scroll-btn:active { background: rgba(196,168,130,0.15); }
+    @media (min-width: 768px) { #compare-scroll-btn { display: none !important; } }
   </style>
 </head>
 <body class="bg-white text-wws-black">
 
-  <!-- Navigation — Taylor's Mill context -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-wws-gray/30">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+  <!-- Navigation -->
+  <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background:transparent">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
       <a href="/" class="flex items-center gap-3">
-        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10 transition-all duration-300" id="nav-logo">
       </a>
-      <div class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide uppercase">
-        <span class="flex items-center gap-2 text-tm-warm">
-          <span class="w-2 h-2 rounded-full bg-tm-warm"></span>
-          Taylor's Mill
-        </span>
-        <a href="#about" class="hover:text-wws-dark transition">About</a>
-        <a href="#features" class="hover:text-wws-dark transition">Features</a>
-        <a href="/gallery?location=taylors-mill" class="hover:text-wws-dark transition">Gallery</a>
-        <a href="/book-taylors-mill" class="hover:text-wws-dark transition">Book Now</a>
-        <a href="/powdersville" class="text-xs text-wws-dark/60 hover:text-pv-cool transition border-l border-wws-gray pl-6">Switch to Flagship Location &rarr;</a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-white/80" id="nav-links">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <a href="/powdersville" class="hover:text-white transition">Flagship Location</a>
+        <a href="/taylors-mill" class="text-tm-warm">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-white transition">Gallery</a>
+        <a href="/book-taylors-mill" class="hover:text-white transition">Book Now</a>
       </div>
-      <button id="menu-toggle" class="md:hidden p-2" style="color:#4A90D9">
+      <button id="menu-toggle" class="md:hidden p-2 text-white">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
     </div>
-    <!-- Location indicator bar -->
-    <div class="h-[2px] bg-tm-warm"></div>
-    <!-- Mobile menu -->
-    <div id="mobile-menu" class="hidden md:hidden border-t border-wws-gray/30 bg-white">
-      <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium tracking-wide uppercase">
-        <a href="#about">About</a>
-        <a href="#features">Features</a>
-        <a href="/gallery?location=taylors-mill">Gallery</a>
-        <a href="/book-taylors-mill">Book Now</a>
-        <a href="/powdersville" class="text-pv-cool">Switch to Flagship Location &rarr;</a>
+    <div id="mobile-menu" class="hidden md:hidden bg-black/90 backdrop-blur">
+      <div class="px-6 py-4 flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-white/80">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <a href="/powdersville" class="hover:text-white transition">Flagship Location</a>
+        <a href="/taylors-mill" class="text-tm-warm">Taylor's Mill</a>
+        <a href="/gallery" class="hover:text-white transition">Gallery</a>
+        <a href="/book-taylors-mill" class="hover:text-white transition">Book Now</a>
       </div>
     </div>
+    <div class="location-bar" id="location-bar"></div>
   </nav>
 
-  <!-- Hero -->
-  <section class="relative h-[80vh] min-h-[500px] pt-[72px]">
-    <div class="absolute inset-0">
-      <img src="images/taylors-mill/taylors-mill-hero.jpg"
-           alt="Taylor's Mill Location Interior"
-           class="w-full h-full object-cover">
-    </div>
-    <div class="hero-overlay absolute inset-0"></div>
-    <div class="relative z-10 flex flex-col items-center justify-end h-full pb-20 px-8 text-white text-center">
-      <div class="w-16 h-[1px] bg-tm-warm mb-6"></div>
-      <h1 class="font-display text-6xl md:text-7xl font-light mb-4 tracking-wide">Taylor's Mill</h1>
-      <p class="text-base tracking-widest uppercase opacity-80 mb-2">The Original Natural Light Location</p>
-      <p class="text-sm opacity-60 mb-8">250 Mill St, Taylors, SC &middot; 1,000 sq ft</p>
-      <a href="/book-taylors-mill" class="inline-block border border-white/60 px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
-        Book This Location
-      </a>
-    </div>
-  </section>
+  <!-- Snap Container -->
+  <div class="snap-container" id="snap-container">
 
-  <!-- About -->
-  <section id="about" class="py-24 px-6">
-    <div class="max-w-5xl mx-auto">
-      <div class="max-w-3xl lg:max-w-none mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/cibusSN53y8?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
-        <img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg"
-             alt="WhiteWall Taylor's Mill Location Tour"
-             class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <div class="w-20 h-20 bg-white/95 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <svg class="w-8 h-8 text-wws-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
-          <span class="text-white text-xs tracking-[0.2em] uppercase font-medium bg-black/60 px-4 py-1.5 rounded-full">Watch Location Tour</span>
-        </div>
-      </div>
-      <div class="max-w-3xl lg:max-w-none mx-auto">
-        <div class="w-3 h-3 rounded-full bg-tm-warm mb-6"></div>
-        <h2 class="font-display text-4xl font-light mb-6">The Location That Started It All</h2>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Our original WhiteWall location, located inside the historic Taylors Mill complex.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          This <strong>1,000 sq ft space</strong> is known for its timeless mill aesthetic, original windows, and authentic character that many photographers are drawn to. It&rsquo;s a space that keeps things simple&mdash;letting the texture, light, and subject take center stage.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Tucked within Taylor&rsquo;s Mill, the location offers a unique, creative environment with a short walk through the complex from the main parking area. Shared restroom facilities are located just down the hall, maintaining the original character of the space.
-        </p>
-        <p class="text-wws-dark leading-relaxed mb-4">
-          Taylors Mill is a great fit for simple, intentional sessions&mdash;portraits, quick shoots, and creatives who prefer a more minimal, organic setting.
-        </p>
-        <p class="text-wws-dark leading-relaxed">
-          For those looking for a more spacious, fully private, and amenity-rich experience, our <strong>Flagship Location</strong> offers a purpose-built location designed for comfort, flexibility, and a more elevated production environment.
-        </p>
-        <div class="text-center mt-6">
-          <a href="/book-taylors-mill" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-            Book This Location
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Features -->
-  <section id="features" class="bg-wws-light py-24 px-6">
-    <div class="max-w-5xl mx-auto">
-      <h3 class="font-display text-3xl font-light text-center mb-16">What's Included</h3>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-tm-warm mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Natural Light</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Oversized mill windows fill the space with beautiful, diffused natural light throughout the day.</p>
-        </div>
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-tm-warm mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Props & Backdrops</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Curated collection of furniture, backdrops, and styling props included with every booking.</p>
-        </div>
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-tm-warm mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Gear Rental — $50</h4>
-          <ul class="text-xs text-wws-dark leading-relaxed space-y-1 list-disc list-inside">
-            <li>2x 100W Amaran Bi-Color Lights</li>
-            <li>1x 200W Amaran Daylight Light</li>
-            <li>1x Softbox</li>
-            <li>2x 25' Extension Cords</li>
-          </ul>
-        </div>
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-tm-warm mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Self-Service Access</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Keypad entry gives you the freedom to come and go on your schedule. No staff needed.</p>
-        </div>
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-tm-warm mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Mill Character</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">100-year-old mill-style concrete floors, original cinder block back wall, original mill-style windows — industrial charm that creates a timeless feel.</p>
-        </div>
-        <div class="bg-white p-8 rounded-sm">
-          <svg class="w-6 h-6 text-tm-warm mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Always Open</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Creativity doesn't run on a clock. Book any time that works for you, day or night.</p>
-        </div>
-      </div>
-      <div class="text-center mt-12">
-        <a href="/book-taylors-mill" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 1: Hero                                                   -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section hero-section">
+      <img src="images/taylors-mill/taylors-mill-hero.jpg" alt="Taylor's Mill Location Interior" class="absolute inset-0 w-full h-full object-cover">
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="relative z-10 flex flex-col items-center justify-end h-full pb-24 px-8 text-white text-center">
+        <div class="w-16 h-[1px] bg-tm-warm mb-6"></div>
+        <h1 class="font-display text-5xl md:text-7xl font-light mb-4 tracking-wide">Taylor's Mill</h1>
+        <p class="text-sm md:text-base tracking-widest uppercase opacity-80 mb-2">The Original Natural Light Location</p>
+        <p class="text-xs opacity-50 mb-8">250 Mill St, Taylors, SC &middot; 1,000 sq ft</p>
+        <a href="/book-taylors-mill" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
           Book This Location
         </a>
       </div>
-    </div>
-  </section>
+      <div class="scroll-indicator">
+        <svg class="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+    </section>
 
-  <!-- What's NOT Included -->
-  <section class="py-24 px-6">
-    <div class="max-w-5xl mx-auto">
-      <h3 class="font-display text-3xl font-light text-center mb-16">What&rsquo;s NOT Included</h3>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- 1. Private Bathroom -->
-        <div class="bg-red-50 p-8 rounded-sm">
-          <svg class="w-6 h-6 text-red-400 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Private Bathroom</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Restroom facilities are located <strong>down the hallway and shared within the mill building</strong>.</p>
-        </div>
-        <!-- 2. On-Site Parking -->
-        <div class="bg-red-50 p-8 rounded-sm">
-          <svg class="w-6 h-6 text-red-400 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">On-Site Parking</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Parking is located in the <strong>main mill parking lot</strong>, followed by a short walk through the complex to reach the location.</p>
-        </div>
-        <!-- 3. Garage Door Access -->
-        <div class="bg-red-50 p-8 rounded-sm">
-          <svg class="w-6 h-6 text-red-400 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="12"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Garage Door Access</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">This location does <strong>not have direct vehicle access</strong>, so equipment must be carried into the building.</p>
-        </div>
-        <!-- 4. Large Open Space -->
-        <div class="bg-red-50 p-8 rounded-sm">
-          <svg class="w-6 h-6 text-red-400 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Large Open Space</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">At <strong>1,000 sq ft</strong>, this location is best suited for smaller portrait sessions rather than larger productions or events.</p>
-        </div>
-        <!-- 5. Sound Proofing -->
-        <div class="bg-red-50 p-8 rounded-sm">
-          <svg class="w-6 h-6 text-red-400 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Sound Proofing</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">This location is <strong>not designed for sound sensitive shoots, as there is a loud train that goes by often</strong>.</p>
-        </div>
-        <!-- 6. Private Facility -->
-        <div class="bg-red-50 p-8 rounded-sm">
-          <svg class="w-6 h-6 text-red-400 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="18"/></svg>
-          <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Private Facility</h4>
-          <p class="text-xs text-wws-dark leading-relaxed">Because the space is located inside the mill complex, <strong>shared hallways and building traffic may be present, allowing people to see through the entry door as they walk by.</strong></p>
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 2: About + Video Tour                                     -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section" id="about" style="background:#111">
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6 text-white">
+        <div class="max-w-3xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <div class="w-3 h-3 rounded-full bg-tm-warm mb-4 shrink-0"></div>
+          <h2 class="font-display text-3xl md:text-4xl font-light mb-4 shrink-0">The Location That Started It All</h2>
+          <div class="snap-scroll-area flex-1 min-h-0 pr-2" id="scroll-about">
+            <!-- YouTube Video Tour -->
+            <div class="mb-6 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/cibusSN53y8?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+              <img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg" alt="WhiteWall Taylor's Mill Location Tour" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300"></div>
+              <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-white/95 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg class="w-6 h-6 md:w-8 md:h-8 text-wws-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+                <span class="text-white text-[10px] md:text-xs tracking-[0.2em] uppercase font-medium bg-black/60 px-3 py-1 md:px-4 md:py-1.5 rounded-full">Watch Location Tour</span>
+              </div>
+            </div>
+            <div class="space-y-3 text-sm text-white/70 leading-relaxed">
+              <p>Our original WhiteWall location, located inside the historic Taylors Mill complex.</p>
+              <p>This <strong class="text-white/90">1,000 sq ft space</strong> is known for its timeless mill aesthetic, original windows, and authentic character that many photographers are drawn to. It&rsquo;s a space that keeps things simple&mdash;letting the texture, light, and subject take center stage.</p>
+              <p>Tucked within Taylor&rsquo;s Mill, the location offers a unique, creative environment with a short walk through the complex from the main parking area. Shared restroom facilities are located just down the hall, maintaining the original character of the space.</p>
+              <p>Taylors Mill is a great fit for simple, intentional sessions&mdash;portraits, quick shoots, and creatives who prefer a more minimal, organic setting.</p>
+              <p>For those looking for a more spacious, fully private, and amenity-rich experience, our <strong class="text-white/90">Flagship Location</strong> offers a purpose-built location designed for comfort, flexibility, and a more elevated production environment.</p>
+              <div class="text-center pt-4 pb-8">
+                <a href="/book-taylors-mill" class="inline-block border border-white/40 px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
+                  Book This Location
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+      <button class="scroll-pill on-dark" data-target="scroll-about"></button>
+    </section>
 
-  <!-- Studio Preview -->
-  <section class="py-24 px-6">
-    <div class="max-w-6xl mx-auto">
-      <h3 class="font-display text-3xl font-light text-center mb-12">Inside the Location</h3>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-12.jpg" alt="Wide angle with furniture, backdrops, and plants" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-7.jpg" alt="Natural light and window shadow patterns on wall" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-5.jpg" alt="Leather sofa lounge setup with plants and mirror" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-backdrop.jpg" alt="Product shoot with backdrop and clothing rack" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-11.jpg" alt="Oversized mill windows flooding space with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-v2-42.jpg" alt="Rental lighting gear and softbox with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-beauty-room-2.jpg" alt="Beauty room with dual LED vanity mirrors" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still_-22.jpg" alt="Seamless backdrop rolls in multiple colors" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-25.jpg" alt="Full space view with furniture, backdrops, and styling props" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-3.jpg" alt="Mill window corner with natural light casting grid shadows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-48.jpg" alt="Lighting equipment with softbox and C-stand in natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-v2-47.jpg" alt="Lounge area with leather furniture and plants" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-beauty-room-3.jpg" alt="Beauty vanity station with LED mirror and stool" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-v2-35.jpg" alt="Amaran 200d lighting kit in pelican case" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_.jpg" alt="Open space with natural light and globe pendant lights" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-26.jpg" alt="Wide view with windows, column, and pendant lighting" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-5.jpg" alt="Clean white space with natural window light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-9.jpg" alt="Beauty room vanity with dual backlit mirrors and palm plant" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-8.jpg" alt="Corner detail with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-12.jpg" alt="Product photography backdrop setup in action" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still_-19.jpg" alt="Interior with styling details" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still_-23.jpg" alt="Natural light corner" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still_-24.jpg" alt="Taylor's Mill detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-10.jpg" alt="Single vanity mirror with LED backlight and wood shelf" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-51.jpg" alt="Window detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg" alt="Space with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/tm-studio-v2-39.jpg" alt="Setup detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
-        </div>
-        <div class="aspect-[4/5] overflow-hidden rounded-sm">
-          <img src="images/taylors-mill/whitewall-studios-backdrop-2.jpg" alt="Backdrop setup with clothing and plant styling" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy">
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 3: Features                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section bg-wws-light" id="features">
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6">
+        <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <h3 class="font-display text-3xl font-light text-center mb-6 shrink-0">What's Included</h3>
+          <div class="snap-scroll-area flex-1 min-h-0" id="scroll-features">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-tm-warm mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Natural Light</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Oversized mill windows fill the space with beautiful, diffused natural light throughout the day.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-tm-warm mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Props & Backdrops</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Curated collection of furniture, backdrops, and styling props included with every booking.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-tm-warm mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Gear Rental — $50</h4>
+                <ul class="text-[11px] text-wws-dark leading-relaxed space-y-0.5 list-disc list-inside">
+                  <li>2x 100W Amaran Bi-Color Lights</li>
+                  <li>1x 200W Amaran Daylight Light</li>
+                  <li>1x Softbox</li>
+                  <li>2x 25' Extension Cords</li>
+                </ul>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-tm-warm mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Self-Service Access</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Keypad entry gives you the freedom to come and go on your schedule. No staff needed.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-tm-warm mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Mill Character</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">100-year-old mill-style concrete floors, original cinder block back wall, original mill-style windows — industrial charm that creates a timeless feel.</p>
+              </div>
+              <div class="bg-white p-6 rounded-sm">
+                <svg class="w-5 h-5 text-tm-warm mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Always Open</h4>
+                <p class="text-[11px] text-wws-dark leading-relaxed">Creativity doesn't run on a clock. Book any time that works for you, day or night.</p>
+              </div>
+            </div>
+            <div class="text-center py-6">
+              <a href="/book-taylors-mill" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+                Book This Location
+              </a>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="text-center mt-10">
-        <a href="/gallery?location=taylors-mill" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-          View Session Gallery
+      <button class="scroll-pill on-light" data-target="scroll-features"></button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 4: What's NOT Included                                    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section" id="not-included" style="background:#111">
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6 text-white">
+        <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <h3 class="font-display text-3xl font-light text-center mb-6 shrink-0">What&rsquo;s NOT Included</h3>
+          <div class="snap-scroll-area flex-1 min-h-0" id="scroll-not-included">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div class="bg-red-950/40 border border-red-900/30 p-6 rounded-sm">
+                <svg class="w-5 h-5 text-red-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Private Bathroom</h4>
+                <p class="text-[11px] text-white/60 leading-relaxed">Restroom facilities are located <strong class="text-white/80">down the hallway and shared within the mill building</strong>.</p>
+              </div>
+              <div class="bg-red-950/40 border border-red-900/30 p-6 rounded-sm">
+                <svg class="w-5 h-5 text-red-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">On-Site Parking</h4>
+                <p class="text-[11px] text-white/60 leading-relaxed">Parking is located in the <strong class="text-white/80">main mill parking lot</strong>, followed by a short walk through the complex to reach the location.</p>
+              </div>
+              <div class="bg-red-950/40 border border-red-900/30 p-6 rounded-sm">
+                <svg class="w-5 h-5 text-red-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="12"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Garage Door Access</h4>
+                <p class="text-[11px] text-white/60 leading-relaxed">This location does <strong class="text-white/80">not have direct vehicle access</strong>, so equipment must be carried into the building.</p>
+              </div>
+              <div class="bg-red-950/40 border border-red-900/30 p-6 rounded-sm">
+                <svg class="w-5 h-5 text-red-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Large Open Space</h4>
+                <p class="text-[11px] text-white/60 leading-relaxed">At <strong class="text-white/80">1,000 sq ft</strong>, this location is best suited for smaller portrait sessions rather than larger productions or events.</p>
+              </div>
+              <div class="bg-red-950/40 border border-red-900/30 p-6 rounded-sm">
+                <svg class="w-5 h-5 text-red-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Sound Proofing</h4>
+                <p class="text-[11px] text-white/60 leading-relaxed">This location is <strong class="text-white/80">not designed for sound sensitive shoots, as there is a loud train that goes by often</strong>.</p>
+              </div>
+              <div class="bg-red-950/40 border border-red-900/30 p-6 rounded-sm">
+                <svg class="w-5 h-5 text-red-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="18"/></svg>
+                <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Private Facility</h4>
+                <p class="text-[11px] text-white/60 leading-relaxed">Because the space is located inside the mill complex, <strong class="text-white/80">shared hallways and building traffic may be present, allowing people to see through the entry door as they walk by.</strong></p>
+              </div>
+            </div>
+            <div class="text-center pt-6 pb-8">
+              <p class="text-sm text-white/40 mb-4">Looking for a more private, fully equipped space?</p>
+              <a href="/powdersville" class="inline-block border border-pv-cool text-pv-cool px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-pv-cool hover:text-white transition-all duration-300">
+                Explore the Flagship Location
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="scroll-pill on-dark" data-target="scroll-not-included"></button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 5: Studio Photos                                          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section bg-wws-light" id="studio-photos">
+      <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 pb-4 px-4 md:px-6">
+        <div class="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0">
+          <h3 class="font-display text-3xl font-light text-center mb-1 shrink-0">Inside the Location</h3>
+          <p class="text-xs text-wws-dark text-center mb-4 shrink-0">1,000 sq ft of natural light, original mill windows, and authentic character</p>
+          <div class="snap-scroll-area flex-1 min-h-0" id="scroll-photos">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-12.jpg" alt="Wide angle with furniture, backdrops, and plants" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-7.jpg" alt="Natural light and window shadow patterns on wall" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-5.jpg" alt="Leather sofa lounge setup with plants and mirror" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-backdrop.jpg" alt="Product shoot with backdrop and clothing rack" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-11.jpg" alt="Oversized mill windows flooding space with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-42.jpg" alt="Rental lighting gear and softbox with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-beauty-room-2.jpg" alt="Beauty room with dual LED vanity mirrors" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-22.jpg" alt="Seamless backdrop rolls in multiple colors" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-25.jpg" alt="Full space view with furniture, backdrops, and styling props" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-3.jpg" alt="Mill window corner with natural light casting grid shadows" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-48.jpg" alt="Lighting equipment with softbox and C-stand in natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-47.jpg" alt="Lounge area with leather furniture and plants" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-beauty-room-3.jpg" alt="Beauty vanity station with LED mirror and stool" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-35.jpg" alt="Amaran 200d lighting kit in pelican case" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_.jpg" alt="Open space with natural light and globe pendant lights" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-26.jpg" alt="Wide view with windows, column, and pendant lighting" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-5.jpg" alt="Clean white space with natural window light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-9.jpg" alt="Beauty room vanity with dual backlit mirrors and palm plant" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-8.jpg" alt="Corner detail with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-12.jpg" alt="Product photography backdrop setup in action" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-19.jpg" alt="Interior with styling details" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-23.jpg" alt="Natural light corner" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-24.jpg" alt="Taylor's Mill detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-10.jpg" alt="Single vanity mirror with LED backlight and wood shelf" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-51.jpg" alt="Window detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg" alt="Space with natural light" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-39.jpg" alt="Setup detail" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+              <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-backdrop-2.jpg" alt="Backdrop setup with clothing and plant styling" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></div>
+            </div>
+            <div class="text-center py-6">
+              <a href="/gallery?location=taylors-mill" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">View Session Gallery</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="scroll-pill on-light" data-target="scroll-photos"></button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 6: Compare + Keep In Mind                                 -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section" id="compare" style="background:#111">
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-4 md:px-6 text-white text-center">
+        <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-2">At a Glance</p>
+        <h2 class="font-display text-3xl md:text-4xl font-light mb-4">Keep In Mind</h2>
+
+        <div class="flex flex-wrap justify-center gap-2 mb-5 max-w-lg">
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">Located within an old mill</span>
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">5 minute walk from parking</span>
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">No ensuite bathroom</span>
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">No running water</span>
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">No garage door</span>
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">Shared building</span>
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">Glass front door</span>
+          <span class="bg-white/5 border border-tm-warm/20 text-[10px] px-3 py-1 rounded-full text-white/50">1,000 sq ft</span>
+        </div>
+
+        <div class="w-full max-w-xl">
+          <table class="w-full text-xs md:text-sm" style="table-layout:fixed">
+            <colgroup><col style="width:38%"><col style="width:31%"><col style="width:31%"></colgroup>
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left px-3 md:px-4 py-2 md:py-3">
+                  <button id="compare-toggle" class="text-[10px] tracking-[0.15em] uppercase font-medium">Compare Prices</button>
+                </th>
+                <th class="text-center px-3 md:px-4 py-2 md:py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#c4a882">Taylor's Mill</th>
+                <th class="text-center px-3 md:px-4 py-2 md:py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#4A90D9">Flagship</th>
+              </tr>
+            </thead>
+          </table>
+          <div style="position:relative">
+            <div id="compare-tbody-wrap" style="max-height:min(35vh, 280px)">
+              <table class="w-full text-xs md:text-sm" id="compare-table" style="table-layout:fixed">
+                <colgroup><col style="width:38%"><col style="width:31%"><col style="width:31%"></colgroup>
+                <tbody id="compare-body" class="text-white/65"></tbody>
+              </table>
+            </div>
+          </div>
+          <button id="compare-scroll-btn" aria-label="Scroll table"><span>Show More</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </div>
+
+        <div class="flex flex-row gap-3 mt-4">
+          <a href="/book-taylors-mill" class="inline-block px-5 md:px-8 py-2.5 md:py-3 text-[10px] md:text-[11px] tracking-[0.15em] uppercase font-medium transition-all duration-300 text-white hover:opacity-80" style="background:#c4a882">Book Taylor's Mill</a>
+          <a href="/powdersville" class="inline-block px-5 md:px-8 py-2.5 md:py-3 text-[10px] md:text-[11px] tracking-[0.15em] uppercase font-medium transition-all duration-300 text-white hover:opacity-80" style="background:#4A90D9">Flagship Location</a>
+        </div>
+      </div>
+
+      <script>
+      (function () {
+        var featuresData = [
+          ['Size', '1,000 sq ft', '2,000 sq ft'],
+          ['Parking', '5 min walk + stairs', 'On-site'],
+          ['Bathroom', 'Shared, down hall', 'Private, ensuite'],
+          ['Running water', 'No', 'Yes'],
+          ['Load-in', 'No garage door', '12ft garage door'],
+          ['Privacy', 'Shared hallway, glass front door', 'Fully private'],
+          ['Events', 'Not approved', 'Up to 150 guests'],
+          ['Hair & makeup area', 'No', 'Yes'],
+          ['Rolling wall system', 'No', 'Yes'],
+          ['TV rental', 'No', 'Yes'],
+          ['PA system', 'No', 'Yes'],
+          ['Tables & chairs', 'No', 'Yes'],
+          ['Soundproofing', 'No', 'Yes'],
+          ['Blackout control', 'Curtains', 'Remote shades'],
+          ['Props', 'Yes', 'Yes'],
+          ['Backdrops', 'Yes', 'Yes']
+        ];
+        var pricingData = [
+          ['1 hour', '$110', '$130'],
+          ['2 hours', '$170', '$200'],
+          ['3 hours', '$230', '$270'],
+          ['4 hours', '$280', '$350'],
+          ['6 hours', '$420', '$500'],
+          ['Full day', '$550 (12 hrs)', '$980 (18 hrs)']
+        ];
+
+        var showingPrices = false;
+        var animating = false;
+        var toggle = document.getElementById('compare-toggle');
+        var tbody = document.getElementById('compare-body');
+        var tbodyWrap = document.getElementById('compare-tbody-wrap');
+        var rc = 'px-3 md:px-4 py-[5px] md:py-[7px]';
+        var cellClass = [rc + ' text-white/40 flip-cell', rc + ' text-center flip-cell', rc + ' text-center text-white/90 font-medium flip-cell'];
+
+        function buildRows(data) {
+          tbody.innerHTML = '';
+          data.forEach(function (rowData, ri) {
+            var tr = document.createElement('tr');
+            if (ri < data.length - 1) tr.className = 'border-b border-white/5';
+            rowData.forEach(function (val, ci) {
+              var td = document.createElement('td');
+              td.className = cellClass[ci];
+              var inner = document.createElement('div');
+              inner.className = 'flip-inner';
+              inner.textContent = val;
+              td.appendChild(inner);
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+        }
+
+        buildRows(featuresData);
+
+        toggle.addEventListener('click', function () {
+          if (animating) return;
+          animating = true;
+          showingPrices = !showingPrices;
+          var newData = showingPrices ? pricingData : featuresData;
+          toggle.textContent = showingPrices ? 'Compare Features' : 'Compare Prices';
+          if (scrollBtn) scrollBtn.style.display = showingPrices ? 'none' : (window.innerWidth < 768 ? 'flex' : 'none');
+
+          var cells = tbody.querySelectorAll('.flip-inner');
+          var rowCount = Math.ceil(cells.length / 3);
+          cells.forEach(function (cell, i) {
+            var row = Math.floor(i / 3);
+            setTimeout(function () { cell.classList.add('flipping-out'); }, row * 25);
+          });
+          setTimeout(function () {
+            tbodyWrap.scrollTop = 0;
+            tbody.innerHTML = '';
+            newData.forEach(function (rowData, ri) {
+              var tr = document.createElement('tr');
+              if (ri < newData.length - 1) tr.className = 'border-b border-white/5';
+              rowData.forEach(function (val, ci) {
+                var td = document.createElement('td');
+                td.className = cellClass[ci];
+                var inner = document.createElement('div');
+                inner.className = 'flip-inner flipping-in';
+                inner.textContent = val;
+                td.appendChild(inner);
+                tr.appendChild(td);
+              });
+              tbody.appendChild(tr);
+            });
+            var newCells = tbody.querySelectorAll('.flip-inner');
+            requestAnimationFrame(function () {
+              newCells.forEach(function (cell, i) {
+                var row = Math.floor(i / 3);
+                setTimeout(function () { cell.classList.add('settle'); }, row * 25);
+              });
+            });
+            setTimeout(function () { animating = false; updateScrollBtn(); }, newData.length * 25 + 250);
+          }, rowCount * 25 + 300);
+        });
+
+        var scrollBtn = document.getElementById('compare-scroll-btn');
+        var scrolledDown = false;
+        function updateScrollBtn() {
+          if (!scrollBtn) return;
+          scrollBtn.style.display = (!showingPrices && window.innerWidth < 768) ? 'flex' : 'none';
+          scrolledDown = false;
+          scrollBtn.innerHTML = downArrowT;
+        }
+        function smoothScrollT(target) {
+          var start = tbodyWrap.scrollTop;
+          var distance = target - start;
+          var duration = 300;
+          var startTime = null;
+          function step(ts) {
+            if (!startTime) startTime = ts;
+            var progress = Math.min((ts - startTime) / duration, 1);
+            var ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+            tbodyWrap.scrollTop = start + distance * ease;
+            if (progress < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        }
+        var downArrowT = '<span>Show More</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        var upArrowT = '<span>Show Less</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>';
+        scrollBtn.addEventListener('click', function () {
+          if (scrolledDown) { smoothScrollT(0); scrollBtn.innerHTML = downArrowT; }
+          else { smoothScrollT(tbodyWrap.scrollHeight); scrollBtn.innerHTML = upArrowT; }
+          scrolledDown = !scrolledDown;
+        });
+        updateScrollBtn();
+        window.addEventListener('resize', updateScrollBtn);
+      })();
+      </script>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SNAP 7: Best For + CTA                                         -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="snap-section" style="background:#0a0a0a">
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-white text-center">
+        <h3 class="font-display text-3xl md:text-4xl font-light mb-6">Best For</h3>
+        <div class="flex flex-wrap justify-center gap-2 mb-4 max-w-lg">
+          <span class="border border-tm-warm/30 text-xs px-4 py-1.5 rounded-full text-white/70">Portrait Sessions</span>
+          <span class="border border-tm-warm/30 text-xs px-4 py-1.5 rounded-full text-white/70">Solo &amp; Individual Shoots</span>
+          <span class="border border-tm-warm/30 text-xs px-4 py-1.5 rounded-full text-white/70">Headshots</span>
+          <span class="border border-tm-warm/30 text-xs px-4 py-1.5 rounded-full text-white/70">Smaller Productions</span>
+          <span class="border border-tm-warm/30 text-xs px-4 py-1.5 rounded-full text-white/70">Natural Light Photography</span>
+        </div>
+        <div class="inline-block bg-red-950/60 border border-red-800/40 text-red-300 text-xs font-medium px-5 py-2.5 rounded-full mb-6">
+          Not Available for Events
+        </div>
+        <p class="text-xs text-white/30 mb-8">
+          Looking for event space? <a href="/powdersville" class="underline hover:text-pv-cool transition">Check out our Flagship Location &rarr;</a>
+        </p>
+        <div class="w-3 h-3 rounded-full bg-tm-warm mb-4"></div>
+        <h3 class="font-display text-3xl md:text-4xl font-light mb-3">Book Taylor's Mill</h3>
+        <p class="text-white/50 text-sm mb-6 max-w-md">Self-service keypad entry means you're in full control of your creative time.</p>
+        <a href="/book-taylors-mill" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent hover:text-black transition-all duration-300">
+          Book Now
         </a>
+        <p class="text-white/25 text-xs mt-4">48-hour cancellation/reschedule policy</p>
       </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- NON-SNAP: Footer                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="snap-section" style="height:auto; scroll-snap-align:start; scroll-snap-stop:normal;">
+      <section class="py-12 px-6">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Taylor's Mill</h4>
+            <p class="text-xs text-wws-dark">250 Mill St, Ste. BL1223, Taylors, SC 29687</p>
+            <p class="text-xs text-wws-dark mt-1">Text: (803) 873-8153 &middot; contact@whitewallstudios.co</p>
+          </div>
+          <a href="/powdersville" class="flex items-center gap-3 text-sm text-wws-dark hover:text-pv-cool transition group">
+            <span>Explore our Flagship Location</span>
+            <span class="group-hover:translate-x-1 transition-transform">&rarr;</span>
+          </a>
+        </div>
+      </section>
+      <footer class="bg-wws-black text-white py-12 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="text-center md:text-left">
+            <p class="font-display text-xl mb-1">WhiteWall Studios</p>
+            <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
+            <div class="flex gap-4 mt-2"><a href="/privacy" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="/terms" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
+          </div>
+          <div class="flex gap-6">
+            <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
+            <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
+          </div>
+        </div>
+      </footer>
     </div>
-  </section>
 
-  <!-- Best For -->
-  <section class="py-24 px-6">
-    <div class="max-w-3xl mx-auto text-center">
-      <h3 class="font-display text-3xl font-light mb-8">Best For</h3>
-      <div class="flex flex-wrap justify-center gap-3 mb-6">
-        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Portrait Sessions</span>
-        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Solo &amp; Individual Shoots</span>
-        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Headshots</span>
-        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Smaller Productions</span>
-        <span class="border border-tm-warm/40 text-sm px-5 py-2 rounded-full">Natural Light Photography</span>
+  </div><!-- end snap-container -->
 
-      </div>
-      <div class="inline-block bg-red-50 border border-red-300 text-red-700 text-sm font-medium px-6 py-3 rounded-full">
-        Not Available for Events
-      </div>
-      <p class="text-xs text-wws-dark/60 mt-4">
-        Looking for event space? <a href="/powdersville" class="underline hover:text-pv-cool">Check out our Flagship Location &rarr;</a>
-      </p>
-      <a href="/book-taylors-mill" class="inline-block mt-6 border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-        Book This Location
-      </a>
-    </div>
-  </section>
-
-  <!-- Keep In Mind -->
-  <section class="bg-wws-light py-24 px-6">
-    <div class="max-w-3xl mx-auto">
-      <h3 class="font-display text-3xl font-light text-center mb-12">Keep In Mind</h3>
-      <div class="flex flex-wrap justify-center gap-3 mb-12">
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">Located within an old mill</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">Taylor's Mill is a 5 minute walk</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">No ensuite bathroom</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">Shared bathroom down the hall</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">No running water</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">No garage door / pull-up access</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">Located inside a large shared building</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">Glass front door</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">Not ideal for private shoots</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">1,000 sq ft</span>
-        <span class="bg-white border border-tm-warm/30 text-sm px-5 py-2.5 rounded-full">20 minutes from downtown Greenville</span>
-      </div>
-
-      <!-- Comparison Chart -->
-      <div class="bg-white rounded-sm overflow-hidden">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b border-black/10">
-              <th class="text-left px-5 py-4 text-xs tracking-[0.15em] uppercase text-black/45 font-medium">Feature</th>
-              <th class="text-center px-5 py-4 text-xs tracking-[0.15em] uppercase font-medium" style="color:#c4a882">Taylor's Mill</th>
-              <th class="text-center px-5 py-4 text-xs tracking-[0.15em] uppercase font-medium" style="color:#8ba7b8">Flagship</th>
-            </tr>
-          </thead>
-          <tbody class="text-black/70">
-            <tr class="border-b border-black/5"><td class="px-5 py-3">Size</td><td class="text-center px-5 py-3">1,000 sq ft</td><td class="text-center px-5 py-3 font-medium">2,000 sq ft</td></tr>
-            <tr class="border-b border-black/5"><td class="px-5 py-3">Parking</td><td class="text-center px-5 py-3">5 min walk</td><td class="text-center px-5 py-3 font-medium">On-site</td></tr>
-            <tr class="border-b border-black/5"><td class="px-5 py-3">Bathroom</td><td class="text-center px-5 py-3">Shared, down hall</td><td class="text-center px-5 py-3 font-medium">Private, ensuite</td></tr>
-            <tr class="border-b border-black/5"><td class="px-5 py-3">Running water</td><td class="text-center px-5 py-3">No</td><td class="text-center px-5 py-3 font-medium">Yes</td></tr>
-            <tr class="border-b border-black/5"><td class="px-5 py-3">Load-in</td><td class="text-center px-5 py-3">No garage door</td><td class="text-center px-5 py-3 font-medium">12ft garage door</td></tr>
-            <tr class="border-b border-black/5"><td class="px-5 py-3">Privacy</td><td class="text-center px-5 py-3">Shared building, glass door</td><td class="text-center px-5 py-3 font-medium">Private entrance</td></tr>
-            <tr class="border-b border-black/5"><td class="px-5 py-3">Events</td><td class="text-center px-5 py-3">Not approved</td><td class="text-center px-5 py-3 font-medium">Approved (2+ hrs)</td></tr>
-            <tr><td class="px-5 py-3">Distance from Greenville</td><td class="text-center px-5 py-3">20 min</td><td class="text-center px-5 py-3 font-medium">15 min</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mt-10 text-center">
-        <p class="text-sm text-black/55 mb-5">Our Flagship Location was designed to solve these limitations — private entrance, on-site parking, ensuite bathroom, 2,000 sq ft, and more.</p>
-        <a href="/powdersville" class="inline-block border border-pv-cool text-pv-cool px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-pv-cool hover:text-white transition-all duration-300">
-          Switch to Flagship Location
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Booking CTA -->
-  <section id="booking" class="bg-wws-black text-white py-24 px-6">
-    <div class="max-w-3xl mx-auto text-center">
-      <div class="w-3 h-3 rounded-full bg-tm-warm mx-auto mb-6"></div>
-      <h3 class="font-display text-4xl font-light mb-4">Book Taylor's Mill</h3>
-      <p class="text-white/60 text-sm mb-8 max-w-lg mx-auto">
-        Ready to create? Book your session at Taylor's Mill. Self-service keypad entry means you're in full control of your creative time.
-      </p>
-      <a href="/book-taylors-mill" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent hover:text-black transition-all duration-300">
-        Book Now
-      </a>
-      <p class="text-white/30 text-xs mt-6">48-hour cancellation/reschedule policy</p>
-    </div>
-  </section>
-
-  <!-- Location Info -->
-  <section class="py-16 px-6">
-    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-      <div>
-        <h4 class="font-medium text-sm uppercase tracking-wide mb-2">Taylor's Mill</h4>
-        <p class="text-xs text-wws-dark">250 Mill St, Ste. BL1223, Taylors, SC 29687</p>
-        <p class="text-xs text-wws-dark mt-1">Text: (803) 873-8153 &middot; contact@whitewallstudios.co</p>
-      </div>
-      <a href="/powdersville" class="flex items-center gap-3 text-sm text-wws-dark hover:text-pv-cool transition group">
-        <span>Explore our Flagship Location</span>
-        <span class="group-hover:translate-x-1 transition-transform">&rarr;</span>
-      </a>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="bg-wws-black text-white py-12 px-6">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="text-center md:text-left">
-        <p class="font-display text-xl mb-1">WhiteWall Studios</p>
-        <p class="text-xs text-white/50">&copy; 2026 WhiteWall Studios. All rights reserved.</p>
-        <div class="flex gap-4 mt-2"><a href="/privacy" class="text-xs text-white/30 hover:text-white/60 transition">Privacy</a><a href="/terms" class="text-xs text-white/30 hover:text-white/60 transition">Terms</a></div>
-      </div>
-      <div class="flex gap-6">
-        <a href="https://www.instagram.com/whitewallstudios.co/" target="_blank" class="text-white/60 hover:text-white transition text-sm">Instagram</a>
-        <a href="https://www.facebook.com/whitewallstudios.co" target="_blank" class="text-white/60 hover:text-white transition text-sm">Facebook</a>
-      </div>
-    </div>
-  </footer>
+  <!-- Snap dot indicators -->
+  <div class="snap-dots" id="snap-dots">
+    <div class="snap-dot active" data-index="0"></div>
+    <div class="snap-dot" data-index="1"></div>
+    <div class="snap-dot" data-index="2"></div>
+    <div class="snap-dot" data-index="3"></div>
+    <div class="snap-dot" data-index="4"></div>
+    <div class="snap-dot" data-index="5"></div>
+    <div class="snap-dot" data-index="6"></div>
+  </div>
 
   <script>
-    document.getElementById('menu-toggle').addEventListener('click', (e) => {
+    // Mobile menu
+    document.getElementById('menu-toggle').addEventListener('click', function (e) {
       e.stopPropagation();
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', function (e) {
       var menu = document.getElementById('mobile-menu');
       if (!menu.classList.contains('hidden') && !menu.contains(e.target)) {
         menu.classList.add('hidden');
       }
     });
+
+    // Snap container scroll handling (nav + dots)
+    (function () {
+      var container = document.getElementById('snap-container');
+      var nav = document.getElementById('main-nav');
+      var logo = document.getElementById('nav-logo');
+      var links = document.getElementById('nav-links');
+      var toggle = document.getElementById('menu-toggle');
+      var themeColor = document.getElementById('theme-color');
+      var locationBar = document.getElementById('location-bar');
+      var dots = document.getElementById('snap-dots');
+      var dotEls = dots.querySelectorAll('.snap-dot');
+      var scrollIndicator = container.querySelector('.scroll-indicator');
+
+      var snapCount = 7;
+      // Sections: 0=hero(dark), 1=about(dark), 2=features(light), 3=notIncluded(dark), 4=photos(light), 5=compare(dark), 6=bestfor(dark)
+      var lightSnaps = [2, 4];
+      var lastNavState = null;
+
+      function isLightSnap(idx) { return lightSnaps.indexOf(idx) !== -1; }
+
+      function updateNav(state) {
+        if (state === 'dark-snap') {
+          nav.style.background = 'transparent';
+          nav.style.borderBottom = 'none';
+          logo.style.filter = 'none';
+          if (links) links.className = links.className.replace('text-black/50', 'text-white/80');
+          toggle.style.color = '#fff';
+          themeColor.content = '#000000';
+          locationBar.style.opacity = '0';
+        } else if (state === 'light-snap') {
+          nav.style.background = 'transparent';
+          nav.style.borderBottom = 'none';
+          logo.style.filter = 'brightness(0)';
+          if (links) links.className = links.className.replace('text-white/80', 'text-black/50');
+          toggle.style.color = '#000';
+          themeColor.content = '#F4F4F2';
+          locationBar.style.opacity = '0';
+        } else {
+          nav.style.background = 'rgba(255,255,255,0.97)';
+          nav.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
+          logo.style.filter = 'brightness(0)';
+          if (links) links.className = links.className.replace('text-white/80', 'text-black/50');
+          toggle.style.color = '#000';
+          themeColor.content = '#ffffff';
+          locationBar.style.opacity = '1';
+        }
+      }
+
+      container.addEventListener('scroll', function () {
+        var scrollTop = container.scrollTop;
+        var vh = window.innerHeight;
+        var currentSnap = Math.round(scrollTop / vh);
+        var inSnapZone = currentSnap < snapCount;
+
+        var navState = !inSnapZone ? 'content' : (isLightSnap(currentSnap) ? 'light-snap' : 'dark-snap');
+
+        if (lastNavState !== navState) {
+          lastNavState = navState;
+          updateNav(navState);
+        }
+
+        if (inSnapZone) {
+          dots.style.opacity = '1';
+          var isLight = isLightSnap(currentSnap);
+          dotEls.forEach(function (d, i) {
+            d.classList.toggle('active', i === currentSnap);
+            d.classList.toggle('light', isLight);
+          });
+        } else {
+          dots.style.opacity = '0';
+        }
+
+        if (scrollIndicator && scrollTop > 50) {
+          scrollIndicator.style.opacity = '0';
+          scrollIndicator.style.transition = 'opacity 0.3s ease';
+        }
+      });
+
+      dotEls.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          container.scrollTo({ top: parseInt(this.dataset.index) * window.innerHeight, behavior: 'smooth' });
+        });
+      });
+
+      var initSnap = Math.round(container.scrollTop / window.innerHeight);
+      var initState = initSnap >= snapCount ? 'content' : (isLightSnap(initSnap) ? 'light-snap' : 'dark-snap');
+      lastNavState = initState;
+      updateNav(initState);
+
+      function scrollToHash() {
+        var hash = window.location.hash;
+        if (!hash) return;
+        var target = document.querySelector(hash);
+        if (target && target.closest('#snap-container')) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      scrollToHash();
+      window.addEventListener('hashchange', scrollToHash);
+    })();
+
+    // Scroll pills
+    (function () {
+      var downArrow = '<span>More</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      var upArrow = '<span>Top</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>';
+
+      var pills = document.querySelectorAll('[data-target]');
+
+      pills.forEach(function (pill) {
+        var area = document.getElementById(pill.dataset.target);
+        if (!area) return;
+
+        var atBottom = false;
+
+        function checkOverflow() {
+          var hasOverflow = area.scrollHeight > area.clientHeight + 10;
+          pill.style.display = hasOverflow ? 'flex' : 'none';
+        }
+
+        function updateState() {
+          var scrollBottom = area.scrollTop + area.clientHeight;
+          var isAtBottom = scrollBottom >= area.scrollHeight - 10;
+          if (isAtBottom !== atBottom) {
+            atBottom = isAtBottom;
+            pill.innerHTML = atBottom ? upArrow : downArrow;
+          }
+        }
+
+        function smoothScroll(target) {
+          var start = area.scrollTop;
+          var distance = target - start;
+          var duration = 350;
+          var startTime = null;
+          function step(ts) {
+            if (!startTime) startTime = ts;
+            var progress = Math.min((ts - startTime) / duration, 1);
+            var ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+            area.scrollTop = start + distance * ease;
+            if (progress < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        }
+
+        pill.addEventListener('click', function () {
+          if (atBottom) { smoothScroll(0); }
+          else { smoothScroll(Math.min(area.scrollTop + area.clientHeight * 0.75, area.scrollHeight - area.clientHeight)); }
+        });
+
+        area.addEventListener('scroll', updateState);
+        pill.innerHTML = downArrow;
+        checkOverflow();
+        window.addEventListener('resize', checkOverflow);
+        window.addEventListener('load', function () { checkOverflow(); updateState(); });
+      });
+    })();
   </script>
 
   <!-- Cookie Consent Banner -->
