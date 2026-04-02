@@ -329,7 +329,14 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Homepage comparison: color Flagship (#4A90D9) and Taylor's Mill (#c4a882) CTA buttons to match column headers
 - [x] Homepage comparison: scrollable table body for mobile fit (max-height 50vh)
 
+## Feedback Round 13 (2026-04-02) — Drew's text 2026-04-02
+
+- [x] Flagship page: move studio tour video above the about paragraph
+- [x] Flagship page: move event video above the event paragraph
+- [x] Taylor's Mill page: move studio tour video above the about paragraph
+- [x] Both pages: changed from side-by-side grid to stacked layout (video on top, text below)
+
 ## Summary
 
-**Done: 128 items** (all revision items complete)
+**Done: 132 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
