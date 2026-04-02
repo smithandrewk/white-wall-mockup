@@ -319,9 +319,9 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 ## Feedback Round 11 (2026-04-02) — Drew's text 2026-04-02
 
 - [x] Homepage reviews: replace auto-scrolling carousel with stationary swipeable carousel (arrows + dots + touch swipe)
-- [ ] Homepage reviews: add Flagship/Powdersville reviews first, then Taylor's Mill — **blocked**: need Flagship review content from Drew (~2 reviews)
+- [x] Homepage reviews: add Flagship/Powdersville reviews first, then Taylor's Mill — scraped 2 Flagship reviews (Shawn Newby, Drew Shahoud) from Google
 
 ## Summary
 
-**Done: 122 items** (all revision items complete except blocked)
-**Remaining: 1 item** — Flagship reviews content needed from Drew.
+**Done: 123 items** (all revision items complete)
+**Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
