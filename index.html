@@ -417,39 +417,25 @@
       </div>
     </section>
 
-    <!-- Snap 5: Rest of page (no more snapping) -->
-    <div class="snap-section" style="height:auto; scroll-snap-align:start; scroll-snap-stop:normal;">
-
-  <!-- About Section -->
-  <section class="py-24 px-6 bg-white">
-    <div class="max-w-4xl mx-auto text-center">
-      <h3 class="font-display text-4xl md:text-5xl font-light mb-6">The Premier Natural Light Studio<br>&amp; Event Space in Greenville, South Carolina</h3>
-      <p class="text-wws-dark leading-relaxed max-w-2xl mx-auto">
-        Two unique spaces designed for creators, photographers, and event hosts. Our <strong>Flagship Location</strong> offers a larger, purpose-built studio designed for comfort, flexibility, and a more elevated experience from start to finish. With a private en-suite bathroom, 12-ft garage door access, on site parking, and a highly adaptable layout, everything was built from the ground up to make your shoot or event feel effortless. Our <strong>Taylors Mill studio</strong> offers a unique setting inside a historic mill, with natural light and authentic character. It&rsquo;s a great fit for simple sessions and creatives who are drawn to a texture-rich environment.
-      </p>
-    </div>
-  </section>
-
-  <!-- Sample Gallery Grid -->
-  <section class="bg-wws-light py-24 px-6">
-    <div class="max-w-6xl mx-auto">
-      <div class="text-center mb-12">
-        <h3 class="font-display text-4xl font-light mb-3">From Our Studios</h3>
-        <p class="text-sm text-wws-dark tracking-wide">A glimpse of what creators make at WhiteWall</p>
-      </div>
-      <div id="homepage-gallery" class="grid grid-cols-2 gap-3">
-        <a href="/powdersville" class="aspect-[3/4] overflow-hidden relative block"><img src="images/powdersville/whitewall-powdersville_v2-1.jpg" alt="Flagship Location interior" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></a>
-        <a href="/taylors-mill" class="aspect-[3/4] overflow-hidden relative block"><img src="images/gallery/mary-162.jpg" alt="Portrait at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></a>
-        <a href="/taylors-mill" class="aspect-[3/4] overflow-hidden relative block"><img src="images/gallery/modern-romantics-214.jpg" alt="Styled shoot at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></a>
-        <a href="/powdersville" class="aspect-[3/4] overflow-hidden relative block"><img src="images/powdersville/whitewall-powdersville_v2-20.jpg" alt="Flagship Location interior" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy"></a>
-      </div>
-      <div class="text-center mt-10">
-        <a href="/gallery" class="inline-block border border-wws-black px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
+    <!-- Snap 5: From Our Studios Gallery -->
+    <section class="snap-section bg-wws-light" id="gallery-snap">
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-4 py-16">
+        <h3 class="font-display text-4xl font-light mb-2">From Our Studios</h3>
+        <p class="text-sm text-wws-dark tracking-wide mb-6">A glimpse of what creators make at WhiteWall</p>
+        <div class="grid grid-cols-2 gap-3 w-full max-w-lg flex-1 min-h-0">
+          <a href="/powdersville" class="overflow-hidden relative block rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-1.jpg" alt="Flagship Location interior" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase font-medium bg-wws-accent text-black px-2 py-1 rounded-full">Flagship</span></a>
+          <a href="/taylors-mill" class="overflow-hidden relative block rounded-sm"><img src="images/gallery/mary-162.jpg" alt="Portrait at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase text-white/80 bg-black/40 px-2 py-1 rounded-full">Taylor's Mill</span></a>
+          <a href="/taylors-mill" class="overflow-hidden relative block rounded-sm"><img src="images/gallery/modern-romantics-214.jpg" alt="Styled shoot at Taylor's Mill" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase text-white/80 bg-black/40 px-2 py-1 rounded-full">Taylor's Mill</span></a>
+          <a href="/powdersville" class="overflow-hidden relative block rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-20.jpg" alt="Flagship Location interior" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"><span class="absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase font-medium bg-wws-accent text-black px-2 py-1 rounded-full">Flagship</span></a>
+        </div>
+        <a href="/gallery" class="inline-block mt-6 border border-wws-black px-10 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
           View Full Gallery
         </a>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- Snap 6: Rest of page (no more snapping) -->
+    <div class="snap-section" style="height:auto; scroll-snap-align:start; scroll-snap-stop:normal;">
 
   <!-- Google Reviews Carousel -->
   <section class="py-24 px-6">
@@ -614,6 +600,7 @@
     <div class="snap-dot" data-index="2"></div>
     <div class="snap-dot" data-index="3"></div>
     <div class="snap-dot" data-index="4"></div>
+    <div class="snap-dot" data-index="5"></div>
   </div>
 
   <script>
