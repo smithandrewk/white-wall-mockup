@@ -4,7 +4,7 @@ window.WWS_BOOKING_CONFIG = {
       slug: "powdersville",
       name: "Flagship Location",
       shortLabel: "Flagship",
-      accent: "#8ba7b8",
+      accent: "#6B9BC3",
       address: "2699 Powdersville Rd, Easley, SC 29642",
       eyebrow: "Flagship studio + event space",
       description:
