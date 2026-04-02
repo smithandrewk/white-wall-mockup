@@ -71,11 +71,7 @@
     }
 
     .scroll-indicator {
-      position: absolute;
-      bottom: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10;
       animation: bounce 2s ease infinite;
     }
     @keyframes bounce {
@@ -84,50 +80,43 @@
     }
 
     .snap-dots {
-      position: fixed;
-      right: 1.5rem;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 40;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      transition: opacity 0.3s ease;
+      position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%); z-index: 40;
+      display: flex; flex-direction: column; gap: 0.75rem; transition: opacity 0.3s ease;
     }
     .snap-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.3);
-      border: 1px solid rgba(255,255,255,0.5);
-      transition: all 0.3s ease;
-      cursor: pointer;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.5);
+      transition: all 0.3s ease; cursor: pointer;
     }
     .snap-dot.active { background: white; transform: scale(1.3); }
     .snap-dot.light { background: rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.25); }
     .snap-dot.light.active { background: rgba(0,0,0,0.6); border-color: rgba(0,0,0,0.6); }
 
     .expand-group {
-      display: grid;
-      grid-template-rows: 0fr;
+      display: grid; grid-template-rows: 0fr;
       transition: grid-template-rows 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .expand-group.expanded {
-      grid-template-rows: 1fr;
-    }
-    .expand-group > div {
-      overflow: hidden;
-    }
+    .expand-group.expanded { grid-template-rows: 1fr; }
+    .expand-group > div { overflow: hidden; }
 
-    .content-inner {
-      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+    .content-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
     .location-bar { height: 2px; background: #C4A882; position: absolute; bottom: 0; left: 0; right: 0; opacity: 0; transition: opacity 0.3s; }
 
-    .expand-btn { position: relative; }
-    .expand-btn svg { transition: transform 0.3s; }
-    .expand-btn.collapsed svg { animation: pulse-arrow 2s ease infinite; }
+    /* Pill button */
+    .expand-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 8px 20px; border-radius: 9999px;
+      font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600;
+      cursor: pointer; transition: all 0.25s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .expand-pill svg { width: 13px; height: 13px; transition: transform 0.3s; }
+    .expand-pill.collapsed svg { animation: pulse-arrow 2s ease infinite; }
+    .expand-pill.on-dark { background: white; color: #111; border: none; }
+    .expand-pill.on-dark:hover { background: #f0f0f0; box-shadow: 0 2px 12px rgba(0,0,0,0.25); }
+    .expand-pill.on-light { background: #111; color: white; border: none; }
+    .expand-pill.on-light:hover { background: #333; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
     @keyframes pulse-arrow {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(3px); }
@@ -223,7 +212,6 @@
           <h2 class="font-display text-3xl md:text-4xl font-light mb-3 shrink-0">The Location That Started It All</h2>
           <div class="flex-1 min-h-0 overflow-hidden" id="container-about">
             <div class="content-inner" id="inner-about">
-              <!-- YouTube Video Tour -->
               <div class="mb-4 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/cibusSN53y8?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
                 <img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg" alt="WhiteWall Taylor's Mill Location Tour" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300"></div>
@@ -234,33 +222,26 @@
                   <span class="text-white text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-medium bg-black/60 px-3 py-1 rounded-full">Watch Tour</span>
                 </div>
               </div>
-              <!-- Visible paragraphs (first 3) -->
               <div class="space-y-2.5 text-sm text-white/70 leading-relaxed">
                 <p>Our original WhiteWall location, located inside the historic Taylors Mill complex.</p>
                 <p>This <strong class="text-white/90">1,000 sq ft space</strong> is known for its timeless mill aesthetic, original windows, and authentic character that many photographers are drawn to.</p>
                 <p>Tucked within Taylor&rsquo;s Mill, the location offers a unique, creative environment with a short walk through the complex from the main parking area.</p>
               </div>
-              <!-- Expand group -->
-              <div class="expand-group">
-                <div>
-                  <div class="space-y-2.5 text-sm text-white/70 leading-relaxed mt-2.5">
-                    <p>Taylors Mill is a great fit for simple, intentional sessions&mdash;portraits, quick shoots, and creatives who prefer a more minimal, organic setting.</p>
-                    <p>For those looking for a more spacious, fully private, and amenity-rich experience, our <strong class="text-white/90">Flagship Location</strong> offers a purpose-built location designed for comfort, flexibility, and a more elevated production environment.</p>
-                  </div>
+              <div class="expand-group"><div>
+                <div class="space-y-2.5 text-sm text-white/70 leading-relaxed mt-2.5">
+                  <p>Taylors Mill is a great fit for simple, intentional sessions&mdash;portraits, quick shoots, and creatives who prefer a more minimal, organic setting.</p>
+                  <p>For those looking for a more spacious, fully private, and amenity-rich experience, our <strong class="text-white/90">Flagship Location</strong> offers a purpose-built location designed for comfort, flexibility, and a more elevated production environment.</p>
                 </div>
-              </div>
+              </div></div>
             </div>
           </div>
         </div>
-        <!-- Action bar -->
-        <div class="shrink-0 max-w-3xl mx-auto w-full flex items-center justify-center gap-3 py-3">
-          <button class="expand-btn collapsed inline-flex items-center gap-2 bg-white text-black px-6 py-3 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300" data-section="about">
-            Show More
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <div class="shrink-0 flex flex-col items-center gap-2 pb-5 pt-2">
+          <button class="expand-pill on-dark collapsed" data-section="about" data-more="Read More" data-less="Read Less">
+            Read More
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <a href="/book-taylors-mill" class="inline-block border border-white/30 text-white px-6 py-3 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all duration-300">
-            Book This Location
-          </a>
+          <a href="/book-taylors-mill" class="text-[10px] tracking-[0.15em] uppercase text-white/40 hover:text-white/80 transition">Book This Location</a>
         </div>
       </div>
     </section>
@@ -272,7 +253,6 @@
           <h3 class="font-display text-3xl font-light text-center mb-4 shrink-0">What's Included</h3>
           <div class="flex-1 min-h-0 overflow-hidden" id="container-features">
             <div class="content-inner" id="inner-features">
-              <!-- Visible: first 4 features -->
               <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div class="bg-white p-5 rounded-sm">
                   <svg class="w-5 h-5 text-tm-warm mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
@@ -299,35 +279,29 @@
                   <p class="text-[11px] text-wws-dark leading-relaxed">Keypad entry — come and go on your schedule.</p>
                 </div>
               </div>
-              <!-- Expand group: remaining 2 features -->
-              <div class="expand-group">
-                <div>
-                  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
-                    <div class="bg-white p-5 rounded-sm">
-                      <svg class="w-5 h-5 text-tm-warm mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
-                      <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Mill Character</h4>
-                      <p class="text-[11px] text-wws-dark leading-relaxed">100-year-old concrete floors, original cinder block wall, mill-style windows.</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-sm">
-                      <svg class="w-5 h-5 text-tm-warm mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Always Open</h4>
-                      <p class="text-[11px] text-wws-dark leading-relaxed">Book any time that works for you, day or night.</p>
-                    </div>
+              <div class="expand-group"><div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
+                  <div class="bg-white p-5 rounded-sm">
+                    <svg class="w-5 h-5 text-tm-warm mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
+                    <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Mill Character</h4>
+                    <p class="text-[11px] text-wws-dark leading-relaxed">100-year-old concrete floors, original cinder block wall, mill-style windows.</p>
+                  </div>
+                  <div class="bg-white p-5 rounded-sm">
+                    <svg class="w-5 h-5 text-tm-warm mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Always Open</h4>
+                    <p class="text-[11px] text-wws-dark leading-relaxed">Book any time that works for you, day or night.</p>
                   </div>
                 </div>
-              </div>
+              </div></div>
             </div>
           </div>
         </div>
-        <!-- Action bar -->
-        <div class="shrink-0 max-w-5xl mx-auto w-full flex items-center justify-center gap-3 py-3">
-          <button class="expand-btn collapsed inline-flex items-center gap-2 bg-wws-black text-white px-6 py-3 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-dark transition-all duration-300" data-section="features">
+        <div class="shrink-0 flex flex-col items-center gap-2 pb-5 pt-2">
+          <button class="expand-pill on-light collapsed" data-section="features" data-more="Show More" data-less="Show Less">
             Show More
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <a href="/book-taylors-mill" class="inline-block border border-wws-black/30 text-wws-black px-6 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-            Book This Location
-          </a>
+          <a href="/book-taylors-mill" class="text-[10px] tracking-[0.15em] uppercase text-wws-dark/40 hover:text-wws-dark/80 transition">Book This Location</a>
         </div>
       </div>
     </section>
@@ -339,7 +313,6 @@
           <h3 class="font-display text-3xl font-light text-center mb-4 shrink-0">What&rsquo;s NOT Included</h3>
           <div class="flex-1 min-h-0 overflow-hidden" id="container-notincluded">
             <div class="content-inner" id="inner-notincluded">
-              <!-- Visible: first 4 items -->
               <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div class="bg-red-950/40 border border-red-900/30 p-5 rounded-sm">
                   <svg class="w-5 h-5 text-red-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
@@ -362,35 +335,29 @@
                   <p class="text-[11px] text-white/60 leading-relaxed">At <strong class="text-white/80">1,000 sq ft</strong>, best for smaller portrait sessions.</p>
                 </div>
               </div>
-              <!-- Expand group: remaining 2 items -->
-              <div class="expand-group">
-                <div>
-                  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
-                    <div class="bg-red-950/40 border border-red-900/30 p-5 rounded-sm">
-                      <svg class="w-5 h-5 text-red-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-                      <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Sound Proofing</h4>
-                      <p class="text-[11px] text-white/60 leading-relaxed"><strong class="text-white/80">Not designed for sound sensitive shoots</strong> — a loud train goes by often.</p>
-                    </div>
-                    <div class="bg-red-950/40 border border-red-900/30 p-5 rounded-sm">
-                      <svg class="w-5 h-5 text-red-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="18"/></svg>
-                      <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Private Facility</h4>
-                      <p class="text-[11px] text-white/60 leading-relaxed"><strong class="text-white/80">Shared hallways and building traffic</strong> — people may walk by the glass entry door.</p>
-                    </div>
+              <div class="expand-group"><div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
+                  <div class="bg-red-950/40 border border-red-900/30 p-5 rounded-sm">
+                    <svg class="w-5 h-5 text-red-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                    <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Sound Proofing</h4>
+                    <p class="text-[11px] text-white/60 leading-relaxed"><strong class="text-white/80">Not designed for sound sensitive shoots</strong> — a loud train goes by often.</p>
+                  </div>
+                  <div class="bg-red-950/40 border border-red-900/30 p-5 rounded-sm">
+                    <svg class="w-5 h-5 text-red-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="18"/></svg>
+                    <h4 class="font-medium text-xs uppercase tracking-wide mb-1 text-red-300">Private Facility</h4>
+                    <p class="text-[11px] text-white/60 leading-relaxed"><strong class="text-white/80">Shared hallways and building traffic</strong> — people may walk by the glass entry door.</p>
                   </div>
                 </div>
-              </div>
+              </div></div>
             </div>
           </div>
         </div>
-        <!-- Action bar -->
-        <div class="shrink-0 max-w-5xl mx-auto w-full flex items-center justify-center gap-3 py-3">
-          <button class="expand-btn collapsed inline-flex items-center gap-2 bg-white text-black px-6 py-3 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300" data-section="notincluded">
+        <div class="shrink-0 flex flex-col items-center gap-2 pb-5 pt-2">
+          <button class="expand-pill on-dark collapsed" data-section="notincluded" data-more="Show More" data-less="Show Less">
             Show More
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <a href="/powdersville" class="inline-block border border-pv-cool text-pv-cool px-6 py-3 text-xs tracking-[0.2em] uppercase hover:bg-pv-cool hover:text-white transition-all duration-300">
-            Explore Flagship Location
-          </a>
+          <a href="/powdersville" class="text-[10px] tracking-[0.15em] uppercase text-white/40 hover:text-white/80 transition">Explore Flagship Location</a>
         </div>
       </div>
     </section>
@@ -403,7 +370,6 @@
           <p class="text-xs text-wws-dark text-center mb-3 shrink-0">1,000 sq ft of natural light, original mill windows, and authentic character</p>
           <div class="flex-1 min-h-0 overflow-hidden" id="container-photos">
             <div class="content-inner" id="inner-photos">
-              <!-- Visible: first 8 photos -->
               <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-12.jpg" alt="Wide angle with furniture" class="w-full h-full object-cover" loading="lazy"></div>
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-7.jpg" alt="Natural light and shadows" class="w-full h-full object-cover" loading="lazy"></div>
@@ -414,52 +380,43 @@
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-beauty-room-2.jpg" alt="Beauty room" class="w-full h-full object-cover" loading="lazy"></div>
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-22.jpg" alt="Backdrop rolls" class="w-full h-full object-cover" loading="lazy"></div>
               </div>
-              <!-- Expand group 1: next 8 -->
-              <div class="expand-group">
-                <div>
-                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mt-2 md:mt-3">
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-25.jpg" alt="Full space view" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-3.jpg" alt="Mill window corner" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-48.jpg" alt="Lighting equipment" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-47.jpg" alt="Lounge area" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-beauty-room-3.jpg" alt="Beauty vanity" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-35.jpg" alt="Lighting kit" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_.jpg" alt="Open space" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-26.jpg" alt="Wide view" class="w-full h-full object-cover" loading="lazy"></div>
-                  </div>
+              <div class="expand-group"><div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mt-2 md:mt-3">
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-25.jpg" alt="Full space view" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-3.jpg" alt="Mill window corner" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-48.jpg" alt="Lighting equipment" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-47.jpg" alt="Lounge area" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-beauty-room-3.jpg" alt="Beauty vanity" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-35.jpg" alt="Lighting kit" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_.jpg" alt="Open space" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-26.jpg" alt="Wide view" class="w-full h-full object-cover" loading="lazy"></div>
                 </div>
-              </div>
-              <!-- Expand group 2: remaining -->
-              <div class="expand-group">
-                <div>
-                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mt-2 md:mt-3">
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-5.jpg" alt="Clean white space" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-9.jpg" alt="Beauty room vanity" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-8.jpg" alt="Corner detail" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-12.jpg" alt="Product backdrop" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-19.jpg" alt="Interior details" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-23.jpg" alt="Natural light corner" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-24.jpg" alt="Taylor's Mill detail" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-10.jpg" alt="Vanity mirror" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-51.jpg" alt="Window detail" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg" alt="Space with light" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-39.jpg" alt="Setup detail" class="w-full h-full object-cover" loading="lazy"></div>
-                    <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-backdrop-2.jpg" alt="Backdrop setup" class="w-full h-full object-cover" loading="lazy"></div>
-                  </div>
+              </div></div>
+              <div class="expand-group"><div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mt-2 md:mt-3">
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-5.jpg" alt="Clean white space" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-9.jpg" alt="Beauty room vanity" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-8.jpg" alt="Corner detail" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-12.jpg" alt="Product backdrop" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-19.jpg" alt="Interior details" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-23.jpg" alt="Natural light corner" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still_-24.jpg" alt="Taylor's Mill detail" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-10.jpg" alt="Vanity mirror" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-51.jpg" alt="Window detail" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-still-v2_-20.jpg" alt="Space with light" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/tm-studio-v2-39.jpg" alt="Setup detail" class="w-full h-full object-cover" loading="lazy"></div>
+                  <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/taylors-mill/whitewall-studios-backdrop-2.jpg" alt="Backdrop setup" class="w-full h-full object-cover" loading="lazy"></div>
                 </div>
-              </div>
+              </div></div>
             </div>
           </div>
         </div>
-        <!-- Action bar -->
-        <div class="shrink-0 max-w-6xl mx-auto w-full flex items-center justify-center gap-3 py-3">
-          <button class="expand-btn collapsed inline-flex items-center gap-2 bg-wws-black text-white px-6 py-3 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-dark transition-all duration-300" data-section="photos">
-            Show More
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <div class="shrink-0 flex flex-col items-center gap-2 pb-5 pt-2">
+          <button class="expand-pill on-light collapsed" data-section="photos" data-more="See More" data-less="See Less">
+            See More
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <a href="/gallery?location=taylors-mill" class="inline-block border border-wws-black/30 text-wws-black px-6 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
-            View Session Gallery
-          </a>
+          <a href="/gallery?location=taylors-mill" class="text-[10px] tracking-[0.15em] uppercase text-wws-dark/40 hover:text-wws-dark/80 transition">View Session Gallery</a>
         </div>
       </div>
     </section>
@@ -683,9 +640,9 @@
       </footer>
     </div>
 
-  </div><!-- end snap-container -->
+  </div>
 
-  <!-- Snap dot indicators -->
+  <!-- Snap dots -->
   <div class="snap-dots" id="snap-dots">
     <div class="snap-dot active" data-index="0"></div>
     <div class="snap-dot" data-index="1"></div>
@@ -697,19 +654,15 @@
   </div>
 
   <script>
-    // Mobile menu
     document.getElementById('menu-toggle').addEventListener('click', function (e) {
       e.stopPropagation();
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
     document.addEventListener('click', function (e) {
       var menu = document.getElementById('mobile-menu');
-      if (!menu.classList.contains('hidden') && !menu.contains(e.target)) {
-        menu.classList.add('hidden');
-      }
+      if (!menu.classList.contains('hidden') && !menu.contains(e.target)) menu.classList.add('hidden');
     });
 
-    // Snap scroll handling (nav + dots)
     (function () {
       var container = document.getElementById('snap-container');
       var nav = document.getElementById('main-nav');
@@ -721,84 +674,37 @@
       var dots = document.getElementById('snap-dots');
       var dotEls = dots.querySelectorAll('.snap-dot');
       var scrollIndicator = container.querySelector('.scroll-indicator');
-
       var snapCount = 7;
-      var lightSnaps = [2, 4]; // features, photos
+      var lightSnaps = [2, 4];
       var lastNavState = null;
-
-      function isLightSnap(idx) { return lightSnaps.indexOf(idx) !== -1; }
-
-      function updateNav(state) {
-        if (state === 'dark-snap') {
-          nav.style.background = 'transparent';
-          nav.style.borderBottom = 'none';
-          logo.style.filter = 'none';
-          if (links) links.className = links.className.replace('text-black/50', 'text-white/80');
-          toggle.style.color = '#fff';
-          themeColor.content = '#000000';
-          locationBar.style.opacity = '0';
-        } else if (state === 'light-snap') {
-          nav.style.background = 'transparent';
-          nav.style.borderBottom = 'none';
-          logo.style.filter = 'brightness(0)';
-          if (links) links.className = links.className.replace('text-white/80', 'text-black/50');
-          toggle.style.color = '#000';
-          themeColor.content = '#F4F4F2';
-          locationBar.style.opacity = '0';
-        } else {
-          nav.style.background = 'rgba(255,255,255,0.97)';
-          nav.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
-          logo.style.filter = 'brightness(0)';
-          if (links) links.className = links.className.replace('text-white/80', 'text-black/50');
-          toggle.style.color = '#000';
-          themeColor.content = '#ffffff';
-          locationBar.style.opacity = '1';
-        }
+      function isLight(i) { return lightSnaps.indexOf(i) !== -1; }
+      function updateNav(s) {
+        if (s === 'dark') { nav.style.background='transparent'; nav.style.borderBottom='none'; logo.style.filter='none'; if(links) links.className=links.className.replace('text-black/50','text-white/80'); toggle.style.color='#fff'; themeColor.content='#000'; locationBar.style.opacity='0'; }
+        else if (s === 'light') { nav.style.background='transparent'; nav.style.borderBottom='none'; logo.style.filter='brightness(0)'; if(links) links.className=links.className.replace('text-white/80','text-black/50'); toggle.style.color='#000'; themeColor.content='#F4F4F2'; locationBar.style.opacity='0'; }
+        else { nav.style.background='rgba(255,255,255,0.97)'; nav.style.borderBottom='1px solid rgba(0,0,0,0.08)'; logo.style.filter='brightness(0)'; if(links) links.className=links.className.replace('text-white/80','text-black/50'); toggle.style.color='#000'; themeColor.content='#fff'; locationBar.style.opacity='1'; }
       }
-
       container.addEventListener('scroll', function () {
-        var scrollTop = container.scrollTop;
-        var vh = window.innerHeight;
-        var currentSnap = Math.round(scrollTop / vh);
-        var inSnapZone = currentSnap < snapCount;
-        var navState = !inSnapZone ? 'content' : (isLightSnap(currentSnap) ? 'light-snap' : 'dark-snap');
-        if (lastNavState !== navState) { lastNavState = navState; updateNav(navState); }
-        if (inSnapZone) {
-          dots.style.opacity = '1';
-          var isLight = isLightSnap(currentSnap);
-          dotEls.forEach(function (d, i) { d.classList.toggle('active', i === currentSnap); d.classList.toggle('light', isLight); });
-        } else { dots.style.opacity = '0'; }
-        if (scrollIndicator && scrollTop > 50) { scrollIndicator.style.opacity = '0'; scrollIndicator.style.transition = 'opacity 0.3s ease'; }
+        var st=container.scrollTop, vh=window.innerHeight, cs=Math.round(st/vh), inSnap=cs<snapCount;
+        var ns = !inSnap ? 'content' : (isLight(cs) ? 'light' : 'dark');
+        if (lastNavState!==ns) { lastNavState=ns; updateNav(ns); }
+        if (inSnap) { dots.style.opacity='1'; var il=isLight(cs); dotEls.forEach(function(d,i){d.classList.toggle('active',i===cs);d.classList.toggle('light',il);}); } else { dots.style.opacity='0'; }
+        if (scrollIndicator&&st>50) { scrollIndicator.style.opacity='0'; scrollIndicator.style.transition='opacity 0.3s'; }
       });
-
-      dotEls.forEach(function (dot) {
-        dot.addEventListener('click', function () {
-          container.scrollTo({ top: parseInt(this.dataset.index) * window.innerHeight, behavior: 'smooth' });
-        });
-      });
-
-      var initSnap = Math.round(container.scrollTop / window.innerHeight);
-      var initState = initSnap >= snapCount ? 'content' : (isLightSnap(initSnap) ? 'light-snap' : 'dark-snap');
-      lastNavState = initState;
-      updateNav(initState);
-
-      function scrollToHash() {
-        var hash = window.location.hash;
-        if (!hash) return;
-        var target = document.querySelector(hash);
-        if (target && target.closest('#snap-container')) { target.scrollIntoView({ behavior: 'smooth' }); }
-      }
-      scrollToHash();
-      window.addEventListener('hashchange', scrollToHash);
+      dotEls.forEach(function(d){d.addEventListener('click',function(){container.scrollTo({top:parseInt(this.dataset.index)*window.innerHeight,behavior:'smooth'});});});
+      var is=Math.round(container.scrollTop/window.innerHeight); lastNavState=is>=snapCount?'content':(isLight(is)?'light':'dark'); updateNav(lastNavState);
+      function scrollToHash(){var h=window.location.hash;if(!h)return;var t=document.querySelector(h);if(t&&t.closest('#snap-container'))t.scrollIntoView({behavior:'smooth'});}
+      scrollToHash(); window.addEventListener('hashchange',scrollToHash);
     })();
 
-    // Expand/collapse drawer system
+    // Expand/collapse — concurrent scroll via synchronous reflow
     (function () {
-      var downSvg = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-      var upSvg = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>';
+      var downSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      var upSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>';
 
-      document.querySelectorAll('.expand-btn').forEach(function (btn) {
+      document.querySelectorAll('.expand-pill[data-section]').forEach(function (btn) {
         var sectionName = btn.dataset.section;
+        var moreLabel = btn.dataset.more || 'Show More';
+        var lessLabel = btn.dataset.less || 'Show Less';
         var sectionEl = document.querySelector('[data-expand-section="' + sectionName + '"]');
         if (!sectionEl) return;
 
@@ -807,30 +713,29 @@
         var inner = document.getElementById('inner-' + sectionName);
         var currentIdx = 0;
         var totalGroups = groups.length;
-
         if (totalGroups === 0) { btn.style.display = 'none'; return; }
 
         btn.addEventListener('click', function () {
           if (currentIdx < totalGroups) {
+            // Expand next group
             groups[currentIdx].classList.add('expanded');
             currentIdx++;
-            requestAnimationFrame(function () {
-              requestAnimationFrame(function () {
-                var overflow = inner.scrollHeight - container.clientHeight;
-                if (overflow > 0) {
-                  inner.style.transform = 'translateY(-' + overflow + 'px)';
-                }
-              });
-            });
+            // Force synchronous reflow then apply translateY concurrently
+            void inner.offsetHeight;
+            var overflow = inner.scrollHeight - container.clientHeight;
+            if (overflow > 0) {
+              inner.style.transform = 'translateY(-' + overflow + 'px)';
+            }
             if (currentIdx >= totalGroups) {
-              btn.innerHTML = 'Show Less ' + upSvg;
+              btn.innerHTML = lessLabel + ' ' + upSvg;
               btn.classList.remove('collapsed');
             }
           } else {
+            // Collapse all
             groups.forEach(function (g) { g.classList.remove('expanded'); });
             currentIdx = 0;
             inner.style.transform = 'translateY(0)';
-            btn.innerHTML = 'Show More ' + downSvg;
+            btn.innerHTML = moreLabel + ' ' + downSvg;
             btn.classList.add('collapsed');
           }
         });
@@ -838,7 +743,6 @@
     })();
   </script>
 
-  <!-- Cookie Consent Banner -->
   <div id="cookie-consent" style="display:none" class="fixed bottom-0 left-0 right-0 bg-wws-black/95 backdrop-blur text-white px-6 py-4 z-[9999]">
     <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
       <p class="text-xs text-white/80 text-center sm:text-left">We use cookies to understand how you use our site and improve your experience. <a href="/privacy" class="underline text-white/60 hover:text-white">Privacy Policy</a></p>
