@@ -44,11 +44,10 @@ body.booking-page {
 }
 
 .booking-panel {
-  border: 1px solid var(--wws-border);
-  background: var(--wws-panel);
-  backdrop-filter: blur(24px);
-  border-radius: 1.5rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   min-width: 0;
 }
 
