@@ -924,7 +924,7 @@
         </button>
       </div>
 
-      ${state.eventIntent ? `
+      ${state.eventIntent === "yes" ? `
       <div style="margin-top:1.5rem">
         <label class="ui-field-label" for="participants">${participantLabel}</label>
         <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
@@ -937,11 +937,7 @@
       </div>
 
       <div data-event-form>
-      ${
-        state.eventIntent === "yes"
-          ? getEventFormHtml()
-          : ""
-      }
+        ${getEventFormHtml()}
       </div>
       ` : ""}
     `;
