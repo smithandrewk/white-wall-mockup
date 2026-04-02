@@ -100,6 +100,10 @@
     .expand-group.expanded { grid-template-rows: 1fr; }
     .expand-group > div { overflow: hidden; }
 
+    /* Flat expand for grid items — no animation, just show/hide with display:contents */
+    .expand-group-flat { display: none; }
+    .expand-group-flat.expanded { display: contents; }
+
     .content-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
     .location-bar { height: 2px; background: #4A90D9; position: absolute; bottom: 0; left: 0; right: 0; opacity: 0; transition: opacity 0.3s; }
@@ -260,9 +264,8 @@
                   <h4 class="font-medium text-xs uppercase tracking-wide mb-1">12ft Garage Door</h4>
                   <p class="text-[11px] text-wws-dark leading-relaxed">Pull right up and unload gear in seconds.</p>
                 </div>
-              </div>
-              <div class="expand-group"><div>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
+                <!-- Batch 1: cards 5-10 -->
+                <div class="expand-group-flat">
                   <div class="bg-white p-5 rounded-sm">
                     <svg class="w-5 h-5 text-pv-cool mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     <h4 class="font-medium text-xs uppercase tracking-wide mb-1">On-Site Parking</h4>
@@ -294,9 +297,8 @@
                     <p class="text-[11px] text-wws-dark leading-relaxed">Dedicated station with mirrors for stylists.</p>
                   </div>
                 </div>
-              </div></div>
-              <div class="expand-group"><div>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
+                <!-- Batch 2: cards 11-19 -->
+                <div class="expand-group-flat">
                   <div class="bg-white p-5 rounded-sm">
                     <svg class="w-5 h-5 text-pv-cool mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     <h4 class="font-medium text-xs uppercase tracking-wide mb-1">Furniture + Props</h4>
@@ -343,7 +345,7 @@
                     <p class="text-[11px] text-wws-dark leading-relaxed">Drive directly to the garage door.</p>
                   </div>
                 </div>
-              </div></div>
+              </div>
             </div>
           </div>
         </div>
@@ -557,7 +559,7 @@
         var sectionEl = document.querySelector('[data-expand-section="' + sectionName + '"]');
         if (!sectionEl) return;
 
-        var groups = sectionEl.querySelectorAll('.expand-group');
+        var groups = sectionEl.querySelectorAll('.expand-group, .expand-group-flat');
         var container = document.getElementById('container-' + sectionName);
         var inner = document.getElementById('inner-' + sectionName);
         var currentIdx = 0;
@@ -598,7 +600,7 @@
           var moreLabel = btn.dataset.more || 'Show More';
           var lessLabel = btn.dataset.less || 'Show Less';
           var sectionEl = document.querySelector('[data-expand-section="' + sectionName + '"]');
-          var groups = sectionEl.querySelectorAll('.expand-group');
+          var groups = sectionEl.querySelectorAll('.expand-group, .expand-group-flat');
           var container = document.getElementById('container-' + sectionName);
           var inner = document.getElementById('inner-' + sectionName);
 
