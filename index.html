@@ -134,7 +134,7 @@
         <a href="/powdersville#events" class="hover:text-white transition">Events</a>
         <a href="#contact" class="hover:text-white transition">Contact</a>
       </div>
-      <button id="menu-toggle" class="md:hidden p-2 text-white">
+      <button id="menu-toggle" class="md:hidden p-2" style="color:#4A90D9">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
@@ -682,8 +682,15 @@
   </div>
 
   <script>
-    document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('menu-toggle').addEventListener('click', (e) => {
+      e.stopPropagation();
       document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+    document.addEventListener('click', (e) => {
+      var menu = document.getElementById('mobile-menu');
+      if (!menu.classList.contains('hidden') && !menu.contains(e.target)) {
+        menu.classList.add('hidden');
+      }
     });
 
     // Snap container scroll handling
