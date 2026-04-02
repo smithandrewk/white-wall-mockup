@@ -47,7 +47,7 @@
         <a href="/gallery" class="hover:text-wws-dark transition">Gallery</a>
         <a href="/#contact" class="hover:text-wws-dark transition">Contact</a>
       </div>
-      <button id="menu-toggle" class="md:hidden p-2" aria-label="Menu">
+      <button id="menu-toggle" class="md:hidden p-2" style="color:#4A90D9" aria-label="Menu">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
@@ -122,7 +122,16 @@
     </div>
   </div>
   <script>
-    document.getElementById('menu-toggle').addEventListener('click',()=>{document.getElementById('mobile-menu').classList.toggle('hidden')});
+    document.getElementById('menu-toggle').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+    document.addEventListener('click', (e) => {
+      var menu = document.getElementById('mobile-menu');
+      if (!menu.classList.contains('hidden') && !menu.contains(e.target)) {
+        menu.classList.add('hidden');
+      }
+    });
     function acceptCookies(){localStorage.setItem("wws_cookie_consent","accepted");document.getElementById("cookie-consent").style.display="none";posthog.init("phc_QxOulRmelGJKszTf1CZd1DObWvqGIWdAPsMPDeL7IVm",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only"})}
     function declineCookies(){localStorage.setItem("wws_cookie_consent","declined");document.getElementById("cookie-consent").style.display="none"}
     if(!localStorage.getItem("wws_cookie_consent")){document.getElementById("cookie-consent").style.display="block"}
