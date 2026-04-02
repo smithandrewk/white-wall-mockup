@@ -756,7 +756,11 @@
 
       // Initialize
       dots.style.transition = 'opacity 0.3s ease';
-      updateNav(true);
+      // Set initial nav state based on current scroll position
+      var initSnap = Math.round(container.scrollTop / window.innerHeight);
+      var initState = initSnap >= snapCount ? 'content' : (initSnap === gallerySnapIndex ? 'light-snap' : 'dark-snap');
+      lastNavState = initState;
+      updateNav(initState);
 
       // Handle #hash deep links inside snap container
       function scrollToHash() {
