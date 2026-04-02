@@ -22,7 +22,7 @@
   const state = {
     step: 1,
     durationId: location.durations[0] ? location.durations[0].id : "",
-    eventIntent: "no",
+    eventIntent: "",
     participants: "",
     eventDescription: "",
     foodDrinks: null,
@@ -266,7 +266,7 @@
           actionTarget.classList.add("shake");
           setTimeout(function () { actionTarget.classList.remove("shake"); }, 600);
           showToast("Event bookings are only for 2+ hour sessions. Select a longer duration of time.");
-          state.eventIntent = "no";
+          state.eventIntent = "";
           renderStepContent();
           return;
         }
@@ -864,13 +864,23 @@
       return;
     }
 
+    var detailsSection = document.querySelector("[data-step3-details]");
+
     if (location.slug !== "powdersville") {
+      // TM is photo/video only — auto-set intent and show form
+      state.eventIntent = "no";
       container.innerHTML = `
         <div class="note-card">
           <p class="ui-copy-strong">This location is only approved for photo and video shoots, no events/parties allowed.</p>
         </div>
       `;
+      if (detailsSection) detailsSection.style.display = "";
       return;
+    }
+
+    // PV: show/hide form based on whether user has chosen photo/video or event
+    if (detailsSection) {
+      detailsSection.style.display = state.eventIntent ? "" : "none";
     }
 
     const selectedDuration = getSelectedDuration();
@@ -914,6 +924,7 @@
         </button>
       </div>
 
+      ${state.eventIntent ? `
       <div style="margin-top:1.5rem">
         <label class="ui-field-label" for="participants">${participantLabel}</label>
         <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
@@ -932,6 +943,7 @@
           : ""
       }
       </div>
+      ` : ""}
     `;
 
     // Hide intake participants field for PV events (already captured at top of step)
@@ -1327,6 +1339,14 @@
         fetchAvailableDates(aptId, state.calendarMonth);
       }
     }
+
+    // Scroll active step panel into view
+    var activePanel = document.querySelector('[data-step-panel="' + state.step + '"]');
+    if (activePanel) {
+      setTimeout(function() {
+        activePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
   }
 
   function renderWaiver() {
@@ -1642,7 +1662,7 @@
   }
 
   function resetEventState() {
-    state.eventIntent = "no";
+    state.eventIntent = "";
     state.participants = "";
     state.eventDescription = "";
     state.acknowledgements.cleanup = false;
@@ -1673,6 +1693,7 @@
     if (step === 1) return Boolean(state.durationId);
     if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
     if (step === 3) {
+      if (!state.eventIntent) return false;
       var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.instagram && isTermsAccepted());
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
@@ -1707,6 +1728,7 @@
     var errors = [];
     if (!state.durationId) errors.push("Please select a duration.");
     if (!state.selectedTime) errors.push("Please select a date and time.");
+    if (!state.eventIntent) errors.push("Please select photo/video session or event booking.");
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");
     if (!state.intake.instagram) errors.push("Please enter your Instagram handle.");
