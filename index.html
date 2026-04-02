@@ -438,8 +438,7 @@
 
         function updateScrollBtn() {
           if (!scrollBtn) return;
-          var hasScroll = tbodyWrap.scrollHeight > tbodyWrap.clientHeight + 2;
-          scrollBtn.style.display = hasScroll && window.innerWidth < 768 ? 'flex' : 'none';
+          scrollBtn.style.display = window.innerWidth < 768 ? 'flex' : 'none';
           scrolledDown = false;
           scrollBtn.innerHTML = '&#x25BC;';
         }
