@@ -134,62 +134,91 @@ body.booking-page {
   top: 0;
   z-index: 20;
   background: var(--wws-bg);
-  padding: 0.75rem 0;
+  padding: 0.6rem 0 0.4rem;
 }
 
 .progress-track {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.75rem;
+  position: relative;
+  padding: 0 1rem;
 }
 
-.progress-step {
-  padding: 1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--wws-border);
-  background: rgba(0, 0, 0, 0.02);
+.progress-bar-track {
+  position: absolute;
+  top: 0.7rem;
+  left: calc(10% + 0.5rem);
+  right: calc(10% + 0.5rem);
+  height: 2px;
+  background: var(--wws-border);
+  border-radius: 1px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--wws-text);
+  border-radius: 1px;
+  transition: width 300ms ease;
+}
+
+.progress-bar-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+.progress-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   color: var(--wws-text-muted);
-  min-width: 0;
-  overflow: hidden;
-  transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+  transition: color 180ms ease;
+  min-width: 2.5rem;
 }
 
-.progress-step.is-active,
-.progress-step.is-complete {
+.progress-dot.is-active,
+.progress-dot.is-complete {
   color: var(--wws-text);
-  border-color: rgba(0, 0, 0, 0.24);
 }
 
-.progress-step.is-active {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.progress-step.is-locked {
-  opacity: 0.35;
+.progress-dot.is-locked {
+  opacity: 0.3;
   cursor: not-allowed;
-  transform: none;
 }
 
-.progress-step-index {
-  display: inline-flex;
-  width: 1.85rem;
-  height: 1.85rem;
+.progress-dot-num {
+  display: flex;
+  width: 1.4rem;
+  height: 1.4rem;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid currentColor;
-  font-size: 0.75rem;
-  margin-bottom: 0.65rem;
+  border: 1.5px solid currentColor;
+  font-size: 0.65rem;
+  font-weight: 500;
+  background: var(--wws-bg);
 }
 
-.progress-step-label {
-  display: block;
-  text-align: left;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
+.progress-dot.is-active .progress-dot-num {
+  background: var(--wws-text);
+  color: var(--wws-bg);
+  border-color: var(--wws-text);
+}
+
+.progress-dot.is-complete .progress-dot-num {
+  background: var(--wws-text);
+  color: var(--wws-bg);
+  border-color: var(--wws-text);
+}
+
+.progress-dot-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  overflow-wrap: break-word;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 .choice-grid {
@@ -809,8 +838,8 @@ body.booking-page {
 }
 
 @media (max-width: 767px) {
-  .progress-track {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .progress-dot-label {
+    font-size: 0.5rem;
   }
 
   .booking-panel {

@@ -491,19 +491,24 @@
     ];
 
     const maxStep = getMaxAccessibleStep();
-    progress.innerHTML = steps
-      .map((step) => {
-        const isActive = step.index === state.step;
-        const isComplete = step.index < state.step;
-        const isLocked = step.index > maxStep;
-        return `
-          <button class="progress-step ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""} ${isLocked ? "is-locked" : ""}" type="button" data-action="go-step" data-step="${step.index}" ${isLocked ? "disabled" : ""}>
-            <span class="progress-step-index">${step.index}</span>
-            <span class="progress-step-label">${step.label}</span>
-          </button>
-        `;
-      })
-      .join("");
+    progress.innerHTML = `
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" style="width:${((state.step - 1) / (steps.length - 1)) * 100}%"></div>
+      </div>
+      <div class="progress-bar-steps">
+        ${steps.map((step) => {
+          const isActive = step.index === state.step;
+          const isComplete = step.index < state.step;
+          const isLocked = step.index > maxStep;
+          return `
+            <button class="progress-dot ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""} ${isLocked ? "is-locked" : ""}" type="button" data-action="go-step" data-step="${step.index}" ${isLocked ? "disabled" : ""}>
+              <span class="progress-dot-num">${step.index}</span>
+              <span class="progress-dot-label">${step.label}</span>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    `;
   }
 
   function renderDurations() {
