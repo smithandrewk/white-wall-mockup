@@ -232,49 +232,64 @@
         #compare-toggle {
           cursor: pointer;
           transition: all 0.2s ease;
+          border: 1px solid rgba(255,255,255,0.3) !important;
+          border-radius: 4px;
+          padding: 6px 12px !important;
+          background: rgba(255,255,255,0.08) !important;
+          color: rgba(255,255,255,0.8);
         }
         #compare-toggle:hover {
-          color: rgba(255,255,255,0.9);
+          background: rgba(255,255,255,0.15) !important;
+          border-color: rgba(255,255,255,0.5) !important;
+          color: #fff;
         }
         #compare-toggle::after {
           content: ' \21C5';
           font-size: 11px;
-          opacity: 0.5;
+          opacity: 0.6;
         }
+        #compare-tbody-wrap {
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255,255,255,0.15) transparent;
+        }
+        #compare-tbody-wrap::-webkit-scrollbar { width: 4px; }
+        #compare-tbody-wrap::-webkit-scrollbar-track { background: transparent; }
+        #compare-tbody-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
       </style>
       <div class="relative z-10 flex flex-col items-center justify-center h-full px-4 md:px-6 text-white text-center">
         <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-2 md:mb-4">At a Glance</p>
         <h2 class="font-display text-3xl md:text-5xl font-light mb-5 md:mb-8">Two Locations, One Standard</h2>
 
         <div class="w-full max-w-xl">
-          <table class="w-full text-xs md:text-sm" id="compare-table" style="table-layout:fixed">
+          <!-- Fixed header row -->
+          <table class="w-full text-xs md:text-sm" style="table-layout:fixed">
             <colgroup><col style="width:38%"><col style="width:31%"><col style="width:31%"></colgroup>
             <thead>
               <tr class="border-b border-white/10">
                 <th class="text-left px-3 md:px-4 py-2 md:py-3">
-                  <button id="compare-toggle" class="text-[10px] tracking-[0.15em] uppercase text-white/50 font-medium bg-transparent border-none p-0">Compare Prices</button>
+                  <button id="compare-toggle" class="text-[10px] tracking-[0.15em] uppercase font-medium">Compare Prices</button>
                 </th>
                 <th class="text-center px-3 md:px-4 py-2 md:py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#c4a882">Taylor's Mill</th>
                 <th class="text-center px-3 md:px-4 py-2 md:py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#4A90D9">Flagship</th>
               </tr>
             </thead>
-            <tbody id="compare-body" class="text-white/65">
-              <tr class="border-b border-white/5"><td class="px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell"><div class="flip-inner">Size</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell"><div class="flip-inner">1,000 sq ft</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">2,000 sq ft</div></td></tr>
-              <tr class="border-b border-white/5"><td class="px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell"><div class="flip-inner">Parking</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell"><div class="flip-inner">5 min walk</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">On-site</div></td></tr>
-              <tr class="border-b border-white/5"><td class="px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell"><div class="flip-inner">Bathroom</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell"><div class="flip-inner">Shared, down hall</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Private, ensuite</div></td></tr>
-              <tr class="border-b border-white/5"><td class="px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell"><div class="flip-inner">Running water</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell"><div class="flip-inner">No</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Yes</div></td></tr>
-              <tr class="border-b border-white/5"><td class="px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell"><div class="flip-inner">Load-in</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell"><div class="flip-inner">No garage door</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">12ft garage door</div></td></tr>
-              <tr class="border-b border-white/5"><td class="px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell"><div class="flip-inner">Privacy</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell"><div class="flip-inner">Shared building</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Private entrance</div></td></tr>
-              <tr><td class="px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell"><div class="flip-inner">Events</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell"><div class="flip-inner">Not approved</div></td><td class="text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Up to 150 guests</div></td></tr>
-            </tbody>
           </table>
+          <!-- Scrollable body -->
+          <div id="compare-tbody-wrap" style="max-height:min(50vh, 380px)">
+            <table class="w-full text-xs md:text-sm" id="compare-table" style="table-layout:fixed">
+              <colgroup><col style="width:38%"><col style="width:31%"><col style="width:31%"></colgroup>
+              <tbody id="compare-body" class="text-white/65">
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <p class="text-[10px] md:text-xs text-white/35 mt-4 md:mt-6 max-w-md">Both locations include props, backdrops, and self-service keypad entry with every booking.</p>
+        <p class="text-[10px] md:text-xs text-white/35 mt-3 md:mt-5 max-w-md">Both locations include props, backdrops, and self-service keypad entry with every booking.</p>
 
-        <div class="flex flex-row gap-3 mt-4 md:mt-6">
-          <a href="/powdersville" class="inline-block bg-white text-black px-5 md:px-8 py-2.5 md:py-3 text-[10px] md:text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">Flagship Location</a>
-          <a href="/taylors-mill" class="inline-block border border-white/30 text-white px-5 md:px-8 py-2.5 md:py-3 text-[10px] md:text-[11px] tracking-[0.15em] uppercase font-medium hover:border-white/60 transition-all duration-300">Taylor's Mill</a>
+        <div class="flex flex-row gap-3 mt-3 md:mt-5">
+          <a href="/powdersville" class="inline-block px-5 md:px-8 py-2.5 md:py-3 text-[10px] md:text-[11px] tracking-[0.15em] uppercase font-medium transition-all duration-300 text-white hover:opacity-80" style="background:#4A90D9">Flagship Location</a>
+          <a href="/taylors-mill" class="inline-block px-5 md:px-8 py-2.5 md:py-3 text-[10px] md:text-[11px] tracking-[0.15em] uppercase font-medium transition-all duration-300 text-white hover:opacity-80" style="background:#c4a882">Taylor's Mill</a>
         </div>
       </div>
 
@@ -287,7 +302,14 @@
           ['Running water', 'No', 'Yes'],
           ['Load-in', 'No garage door', '12ft garage door'],
           ['Privacy', 'Shared building', 'Private entrance'],
-          ['Events', 'Not approved', 'Up to 150 guests']
+          ['Events', 'Not approved', 'Up to 150 guests'],
+          ['Hair & makeup area', 'No', 'Yes'],
+          ['Rolling wall system', 'No', 'Yes'],
+          ['TV rental', 'No', 'Yes'],
+          ['PA system', 'No', 'Yes'],
+          ['Tables & chairs', 'No', 'Yes'],
+          ['Soundproofing', 'No', 'Yes'],
+          ['Blackout control', 'Curtains', 'Remote shades']
         ];
         var pricingData = [
           ['1 hour', '$110', '$130'],
@@ -295,17 +317,37 @@
           ['3 hours', '$230', '$270'],
           ['4 hours', '$280', '$350'],
           ['6 hours', '$420', '$500'],
-          ['12 hours', '$550', '$980'],
-          ['Per hour avg', '$46–$110', '$65–$130']
+          ['Full day', '$550 (12 hrs)', '$980 (18 hrs)']
         ];
 
         var showingPrices = false;
         var animating = false;
         var toggle = document.getElementById('compare-toggle');
         var tbody = document.getElementById('compare-body');
-        var cellClass = ['px-3 md:px-4 py-[7px] md:py-2.5 text-white/40 flip-cell',
-                         'text-center px-3 md:px-4 py-[7px] md:py-2.5 flip-cell',
-                         'text-center px-3 md:px-4 py-[7px] md:py-2.5 text-white/90 font-medium flip-cell'];
+        var tbodyWrap = document.getElementById('compare-tbody-wrap');
+        var rc = 'px-3 md:px-4 py-[5px] md:py-[7px]';
+        var cellClass = [rc + ' text-white/40 flip-cell', rc + ' text-center flip-cell', rc + ' text-center text-white/90 font-medium flip-cell'];
+
+        function buildRows(data) {
+          tbody.innerHTML = '';
+          data.forEach(function (rowData, ri) {
+            var tr = document.createElement('tr');
+            if (ri < data.length - 1) tr.className = 'border-b border-white/5';
+            rowData.forEach(function (val, ci) {
+              var td = document.createElement('td');
+              td.className = cellClass[ci];
+              var inner = document.createElement('div');
+              inner.className = 'flip-inner';
+              inner.textContent = val;
+              td.appendChild(inner);
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+        }
+
+        // Render initial features view
+        buildRows(featuresData);
 
         toggle.addEventListener('click', function () {
           if (animating) return;
@@ -316,17 +358,17 @@
           toggle.textContent = showingPrices ? 'Compare Features' : 'Compare Prices';
 
           var cells = tbody.querySelectorAll('.flip-inner');
+          var rowCount = Math.ceil(cells.length / 3);
 
-          // Phase 1: flip out each cell with staggered delay by row
+          // Phase 1: flip out
           cells.forEach(function (cell, i) {
             var row = Math.floor(i / 3);
-            setTimeout(function () {
-              cell.classList.add('flipping-out');
-            }, row * 35);
+            setTimeout(function () { cell.classList.add('flipping-out'); }, row * 25);
           });
 
-          // Phase 2: after flip-out, swap content and flip in
+          // Phase 2: swap and flip in
           setTimeout(function () {
+            tbodyWrap.scrollTop = 0;
             tbody.innerHTML = '';
             newData.forEach(function (rowData, ri) {
               var tr = document.createElement('tr');
@@ -343,19 +385,17 @@
               tbody.appendChild(tr);
             });
 
-            // Trigger settle animation with stagger
             var newCells = tbody.querySelectorAll('.flip-inner');
             requestAnimationFrame(function () {
               newCells.forEach(function (cell, i) {
                 var row = Math.floor(i / 3);
-                setTimeout(function () {
-                  cell.classList.add('settle');
-                }, row * 35);
+                setTimeout(function () { cell.classList.add('settle'); }, row * 25);
               });
             });
 
-            setTimeout(function () { animating = false; }, 7 * 35 + 250);
-          }, 7 * 35 + 300);
+            var newRowCount = newData.length;
+            setTimeout(function () { animating = false; }, newRowCount * 25 + 250);
+          }, rowCount * 25 + 300);
         });
       })();
       </script>

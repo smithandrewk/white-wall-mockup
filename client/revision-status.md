@@ -321,7 +321,15 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Homepage reviews: replace auto-scrolling carousel with stationary swipeable carousel (arrows + dots + touch swipe)
 - [x] Homepage reviews: add Flagship/Powdersville reviews first, then Taylor's Mill — scraped 2 Flagship reviews (Shawn Newby, Drew Shahoud) from Google
 
+## Feedback Round 12 (2026-04-02) — Drew's text 2026-04-02
+
+- [x] Homepage comparison: add 7 new feature rows (hair/makeup, rolling walls, TV, PA, tables/chairs, soundproofing, blackout control)
+- [x] Homepage comparison: update full day pricing to show hours and event eligibility
+- [x] Homepage comparison: make "Compare Prices" a visible styled button (border, background, hover)
+- [x] Homepage comparison: color Flagship (#4A90D9) and Taylor's Mill (#c4a882) CTA buttons to match column headers
+- [x] Homepage comparison: scrollable table body for mobile fit (max-height 50vh)
+
 ## Summary
 
-**Done: 123 items** (all revision items complete)
+**Done: 128 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
