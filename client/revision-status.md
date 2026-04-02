@@ -312,7 +312,11 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 
 - [x] Homepage: replace flagship card hero video with static image (whitewall-powdersville_v2-3.jpg)
 
+## Feedback Round 10 (2026-04-02) — Drew's voice note 2026-04-02
+
+- [x] Homepage comparison card: add "Compare Prices" button in top-left cell that triggers split-flap flip animation to swap features for pricing rows (1hr–full day, both locations)
+
 ## Summary
 
-**Done: 120 items** (all revision items complete)
+**Done: 121 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.

@@ -208,27 +208,63 @@
 
     <!-- Snap 4: Compare Locations -->
     <section class="snap-section" id="compare-snap" style="background:#111">
+      <style>
+        .flip-cell {
+          perspective: 600px;
+          overflow: hidden;
+        }
+        .flip-cell .flip-inner {
+          transition: transform 0.5s ease;
+          transform-style: preserve-3d;
+          position: relative;
+        }
+        .flip-cell .flip-inner.flipping-out {
+          transform: rotateX(-90deg);
+        }
+        .flip-cell .flip-inner.flipping-in {
+          transform: rotateX(90deg);
+          transition: none;
+        }
+        .flip-cell .flip-inner.flipping-in.settle {
+          transform: rotateX(0deg);
+          transition: transform 0.4s ease;
+        }
+        #compare-toggle {
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        #compare-toggle:hover {
+          color: rgba(255,255,255,0.9);
+        }
+        #compare-toggle::after {
+          content: ' \u21C5';
+          font-size: 11px;
+          opacity: 0.5;
+        }
+      </style>
       <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-white text-center">
         <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-4">At a Glance</p>
         <h2 class="font-display text-4xl md:text-5xl font-light mb-10">Two Studios, One Standard</h2>
 
         <div class="w-full max-w-xl">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm" id="compare-table">
             <thead>
               <tr class="border-b border-white/10">
-                <th class="text-left px-4 py-3 text-[10px] tracking-[0.15em] uppercase text-white/35 font-medium"></th>
+                <th class="text-left px-4 py-3">
+                  <button id="compare-toggle" class="text-[10px] tracking-[0.15em] uppercase text-white/50 font-medium bg-transparent border-none p-0">Compare Prices</button>
+                </th>
                 <th class="text-center px-4 py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#c4a882">Taylor's Mill</th>
                 <th class="text-center px-4 py-3 text-[10px] tracking-[0.15em] uppercase font-medium" style="color:#4A90D9">Flagship</th>
               </tr>
             </thead>
-            <tbody class="text-white/65">
-              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Size</td><td class="text-center px-4 py-2.5">1,000 sq ft</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">2,000 sq ft</td></tr>
-              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Parking</td><td class="text-center px-4 py-2.5">5 min walk</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">On-site</td></tr>
-              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Bathroom</td><td class="text-center px-4 py-2.5">Shared, down hall</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Private, ensuite</td></tr>
-              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Running water</td><td class="text-center px-4 py-2.5">No</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Yes</td></tr>
-              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Load-in</td><td class="text-center px-4 py-2.5">No garage door</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">12ft garage door</td></tr>
-              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40">Privacy</td><td class="text-center px-4 py-2.5">Shared building</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Private entrance</td></tr>
-              <tr><td class="px-4 py-2.5 text-white/40">Events</td><td class="text-center px-4 py-2.5">Not approved</td><td class="text-center px-4 py-2.5 text-white/90 font-medium">Up to 150 guests</td></tr>
+            <tbody id="compare-body" class="text-white/65">
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40 flip-cell"><div class="flip-inner">Size</div></td><td class="text-center px-4 py-2.5 flip-cell"><div class="flip-inner">1,000 sq ft</div></td><td class="text-center px-4 py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">2,000 sq ft</div></td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40 flip-cell"><div class="flip-inner">Parking</div></td><td class="text-center px-4 py-2.5 flip-cell"><div class="flip-inner">5 min walk</div></td><td class="text-center px-4 py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">On-site</div></td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40 flip-cell"><div class="flip-inner">Bathroom</div></td><td class="text-center px-4 py-2.5 flip-cell"><div class="flip-inner">Shared, down hall</div></td><td class="text-center px-4 py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Private, ensuite</div></td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40 flip-cell"><div class="flip-inner">Running water</div></td><td class="text-center px-4 py-2.5 flip-cell"><div class="flip-inner">No</div></td><td class="text-center px-4 py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Yes</div></td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40 flip-cell"><div class="flip-inner">Load-in</div></td><td class="text-center px-4 py-2.5 flip-cell"><div class="flip-inner">No garage door</div></td><td class="text-center px-4 py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">12ft garage door</div></td></tr>
+              <tr class="border-b border-white/5"><td class="px-4 py-2.5 text-white/40 flip-cell"><div class="flip-inner">Privacy</div></td><td class="text-center px-4 py-2.5 flip-cell"><div class="flip-inner">Shared building</div></td><td class="text-center px-4 py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Private entrance</div></td></tr>
+              <tr><td class="px-4 py-2.5 text-white/40 flip-cell"><div class="flip-inner">Events</div></td><td class="text-center px-4 py-2.5 flip-cell"><div class="flip-inner">Not approved</div></td><td class="text-center px-4 py-2.5 text-white/90 font-medium flip-cell"><div class="flip-inner">Up to 150 guests</div></td></tr>
             </tbody>
           </table>
         </div>
@@ -240,6 +276,94 @@
           <a href="/taylors-mill" class="inline-block border border-white/30 text-white px-8 py-3 text-[11px] tracking-[0.15em] uppercase font-medium hover:border-white/60 transition-all duration-300">Taylor's Mill</a>
         </div>
       </div>
+
+      <script>
+      (function () {
+        var featuresData = [
+          ['Size', '1,000 sq ft', '2,000 sq ft'],
+          ['Parking', '5 min walk', 'On-site'],
+          ['Bathroom', 'Shared, down hall', 'Private, ensuite'],
+          ['Running water', 'No', 'Yes'],
+          ['Load-in', 'No garage door', '12ft garage door'],
+          ['Privacy', 'Shared building', 'Private entrance'],
+          ['Events', 'Not approved', 'Up to 150 guests']
+        ];
+        var pricingData = [
+          ['1 hour', '$110', '$130'],
+          ['2 hours', '$170', '$200'],
+          ['3 hours', '$230', '$270'],
+          ['4 hours', '$280', '$350'],
+          ['6 hours', '$420', '$500'],
+          ['Full day', '$550', '$980']
+        ];
+
+        var showingPrices = false;
+        var animating = false;
+        var toggle = document.getElementById('compare-toggle');
+        var tbody = document.getElementById('compare-body');
+
+        toggle.addEventListener('click', function () {
+          if (animating) return;
+          animating = true;
+          showingPrices = !showingPrices;
+
+          var newData = showingPrices ? pricingData : featuresData;
+          toggle.textContent = showingPrices ? 'Compare Features' : 'Compare Prices';
+
+          var rows = tbody.querySelectorAll('tr');
+          var cells = tbody.querySelectorAll('.flip-inner');
+          var totalCells = cells.length;
+          var done = 0;
+
+          // Phase 1: flip out each cell with staggered delay by row
+          cells.forEach(function (cell, i) {
+            var row = Math.floor(i / 3);
+            setTimeout(function () {
+              cell.classList.add('flipping-out');
+            }, row * 60);
+          });
+
+          // Phase 2: after flip-out, swap content and flip in
+          var maxRows = Math.max(featuresData.length, pricingData.length);
+          setTimeout(function () {
+            // Rebuild tbody with new data
+            tbody.innerHTML = '';
+            newData.forEach(function (rowData, ri) {
+              var tr = document.createElement('tr');
+              if (ri < newData.length - 1) tr.className = 'border-b border-white/5';
+              rowData.forEach(function (val, ci) {
+                var td = document.createElement('td');
+                td.className = ci === 0
+                  ? 'px-4 py-2.5 text-white/40 flip-cell'
+                  : ci === 2
+                    ? 'text-center px-4 py-2.5 text-white/90 font-medium flip-cell'
+                    : 'text-center px-4 py-2.5 flip-cell';
+                var inner = document.createElement('div');
+                inner.className = 'flip-inner flipping-in';
+                inner.textContent = val;
+                td.appendChild(inner);
+                tr.appendChild(td);
+              });
+              tbody.appendChild(tr);
+            });
+
+            // Trigger settle animation with stagger
+            var newCells = tbody.querySelectorAll('.flip-inner');
+            requestAnimationFrame(function () {
+              newCells.forEach(function (cell, i) {
+                var row = Math.floor(i / 3);
+                setTimeout(function () {
+                  cell.classList.add('settle');
+                }, row * 60);
+              });
+            });
+
+            // Done
+            setTimeout(function () { animating = false; }, maxRows * 60 + 400);
+          }, maxRows * 60 + 500);
+        });
+      })();
+      </script>
     </section>
 
     <!-- Snap 5: Book an Event -->
