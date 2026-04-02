@@ -256,28 +256,33 @@
         }
         #compare-scroll-btn {
           position: absolute;
-          right: 8px;
+          right: 6px;
           bottom: 6px;
           z-index: 10;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 1px solid rgba(255,255,255,0.15);
-          background: rgba(0,0,0,0.35);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          color: rgba(255,255,255,0.7);
+          border-radius: 20px;
+          border: 1px solid #c4a882;
+          background: transparent;
+          color: #c4a882;
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 4px;
+          padding: 5px 10px;
           cursor: pointer;
           transition: all 0.2s;
-          font-size: 16px;
+          font-size: 9px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          font-weight: 500;
           line-height: 1;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        #compare-scroll-btn svg {
+          width: 12px;
+          height: 12px;
+          flex-shrink: 0;
+          transition: transform 0.2s;
         }
         #compare-scroll-btn:active {
-          background: rgba(255,255,255,0.15);
+          background: rgba(196,168,130,0.15);
         }
         @media (min-width: 768px) {
           #compare-scroll-btn { display: none !important; }
@@ -310,7 +315,7 @@
                 </tbody>
               </table>
             </div>
-            <button id="compare-scroll-btn" aria-label="Scroll table">&#x25BC;</button>
+            <button id="compare-scroll-btn" aria-label="Scroll table"><span>Show More</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
           </div>
         </div>
 
@@ -438,7 +443,7 @@
           if (!scrollBtn) return;
           scrollBtn.style.display = window.innerWidth < 768 ? 'flex' : 'none';
           scrolledDown = false;
-          scrollBtn.innerHTML = '&#x25BC;';
+          scrollBtn.innerHTML = downArrow;
         }
 
         function smoothScroll(target) {
@@ -456,13 +461,16 @@
           requestAnimationFrame(step);
         }
 
+        var downArrow = '<span>Show More</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        var upArrow = '<span>Show Less</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>';
+
         scrollBtn.addEventListener('click', function () {
           if (scrolledDown) {
             smoothScroll(0);
-            scrollBtn.innerHTML = '&#x25BC;';
+            scrollBtn.innerHTML = downArrow;
           } else {
             smoothScroll(tbodyWrap.scrollHeight);
-            scrollBtn.innerHTML = '&#x25B2;';
+            scrollBtn.innerHTML = upArrow;
           }
           scrolledDown = !scrolledDown;
         });
