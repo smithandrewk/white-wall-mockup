@@ -109,8 +109,20 @@
 
   <!-- About -->
   <section id="about" class="py-24 px-6">
-    <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-      <div>
+    <div class="max-w-5xl mx-auto">
+      <div class="max-w-3xl mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/MvcRA0mSOfM?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+        <img src="images/powdersville/whitewall-powdersville_v2-20.jpg"
+             alt="WhiteWall Flagship Location Tour"
+             class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <div class="w-20 h-20 bg-white/95 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-wws-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          <span class="text-white text-xs tracking-[0.2em] uppercase font-medium bg-black/60 px-4 py-1.5 rounded-full">Watch Studio Tour</span>
+        </div>
+      </div>
+      <div class="max-w-3xl mx-auto">
         <div class="w-3 h-3 rounded-full bg-pv-cool mb-6"></div>
         <h2 class="font-display text-4xl font-light mb-6">The Studio You've Been Looking For</h2>
         <p class="text-wws-dark leading-relaxed mb-4">
@@ -143,18 +155,6 @@
         <a href="/book-powdersville" class="inline-block mt-6 border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
           Book This Studio
         </a>
-      </div>
-      <div class="aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/MvcRA0mSOfM?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
-        <img src="images/powdersville/whitewall-powdersville_v2-20.jpg"
-             alt="WhiteWall Flagship Location Tour"
-             class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all duration-300"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <div class="w-20 h-20 bg-white/95 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <svg class="w-8 h-8 text-wws-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
-          <span class="text-white text-xs tracking-[0.2em] uppercase font-medium bg-black/60 px-4 py-1.5 rounded-full">Watch Studio Tour</span>
-        </div>
       </div>
     </div>
   </section>
@@ -289,29 +289,17 @@
 
   <!-- Events Section -->
   <section id="events" class="py-24 px-6">
-    <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-      <div class="order-2 md:order-1 flex flex-col gap-4">
-        <div class="aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
-          <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover">
-          <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-            <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
-              <svg class="w-6 h-6 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-            <span class="absolute bottom-4 left-0 right-0 text-center text-white text-sm tracking-[0.15em] uppercase font-medium drop-shadow-lg">Host Your Event</span>
+    <div class="max-w-5xl mx-auto">
+      <div class="max-w-3xl mx-auto mb-12 aspect-video overflow-hidden rounded-sm relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+        <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover">
+        <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+          <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+            <svg class="w-6 h-6 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
           </div>
+          <span class="absolute bottom-4 left-0 right-0 text-center text-white text-sm tracking-[0.15em] uppercase font-medium drop-shadow-lg">Host Your Event</span>
         </div>
-        <a href="#studio-photos" class="block relative group">
-          <div class="aspect-[4/3] overflow-hidden rounded-sm">
-            <img src="images/powdersville/whitewall-powdersville_v2-1.jpg"
-                 alt="Flagship Location studio event space"
-                 class="w-full h-full object-cover">
-          </div>
-          <div class="absolute inset-0 flex items-end justify-center pb-5">
-            <span class="text-sm text-white tracking-wide uppercase drop-shadow-lg group-hover:underline">See more photos below</span>
-          </div>
-        </a>
       </div>
-      <div class="order-1 md:order-2">
+      <div class="max-w-3xl mx-auto">
         <div class="inline-block bg-pv-cool/10 text-pv-cool text-xs tracking-widest uppercase px-4 py-2 rounded-full mb-6">Event Space</div>
         <h2 class="font-display text-4xl font-light mb-6">Host your next event</h2>
         <p class="text-wws-dark leading-relaxed mb-4">
@@ -334,6 +322,16 @@
         </p>
         <a href="/book-powdersville" class="inline-block border border-wws-black px-8 py-3 text-xs tracking-[0.2em] uppercase hover:bg-wws-black hover:text-white transition-all duration-300">
           Book Your Event
+        </a>
+        <a href="#studio-photos" class="block relative group mt-8">
+          <div class="aspect-[4/3] overflow-hidden rounded-sm">
+            <img src="images/powdersville/whitewall-powdersville_v2-1.jpg"
+                 alt="Flagship Location studio event space"
+                 class="w-full h-full object-cover">
+          </div>
+          <div class="absolute inset-0 flex items-end justify-center pb-5">
+            <span class="text-sm text-white tracking-wide uppercase drop-shadow-lg group-hover:underline">See more photos below</span>
+          </div>
         </a>
       </div>
     </div>
