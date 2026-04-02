@@ -343,7 +343,12 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Flagship: Events section restructured — title above video, paragraphs below, "See More Photos" link under text
 - [x] Taylor's Mill: What's Included left as-is per Drew's instructions
 
+## Feedback Round 15 (2026-04-02) — Drew's text 2026-04-02
+
+- [x] Homepage comparison table: full-length on desktop (no scroll, all rows visible)
+- [x] Homepage comparison table: mobile gets a single arrow toggle button (▼/▲) instead of scrollbar to navigate the table
+
 ## Summary
 
-**Done: 136 items** (all revision items complete)
+**Done: 138 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
