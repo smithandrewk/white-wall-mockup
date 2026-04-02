@@ -118,8 +118,8 @@ body.booking-page {
 }
 
 .location-chip.is-powdersville.is-active {
-  background: #6B9BC3;
-  border-color: #6B9BC3;
+  background: #4A90D9;
+  border-color: #4A90D9;
   color: #ffffff;
 }
 
@@ -271,7 +271,7 @@ body.booking-page {
 
 .choice-grid.is-two-up > .booking-choice.is-active {
   background: #ffffff;
-  border: 2px solid #6B9BC3;
+  border: 2px solid #4A90D9;
   font-weight: 600;
 }
 
@@ -924,7 +924,7 @@ body.booking-page {
 
 /* Event textarea notice (subtle border for 35+ participants) */
 .event-textarea-warning {
-  border-color: #6B9BC3 !important;
+  border-color: #4A90D9 !important;
   box-shadow: 0 0 0 1px rgba(139, 167, 184, 0.4);
 }
 
