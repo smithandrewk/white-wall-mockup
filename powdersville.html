@@ -590,13 +590,16 @@
 
         btn.addEventListener('click', function () {
           if (btn._exp.currentIdx < totalGroups) {
-            groups[btn._exp.currentIdx].classList.add('expanded');
+            var g = groups[btn._exp.currentIdx];
+            g.style.transition = 'none';
+            g.classList.add('expanded');
             btn._exp.currentIdx++;
             void inner.offsetHeight;
             var overflow = inner.scrollHeight - container.clientHeight;
             if (overflow > 0) {
               inner.style.transform = 'translateY(-' + overflow + 'px)';
             }
+            requestAnimationFrame(function () { g.style.transition = ''; });
             if (btn._exp.currentIdx >= totalGroups) {
               btn.innerHTML = lessLabel + ' ' + upSvg;
               btn.classList.remove('collapsed');
