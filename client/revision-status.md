@@ -308,7 +308,11 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Taylor's Mill page: change "Parking lot is about a 2 minute walk" to "Taylor's Mill is a 5 minute walk" (Keep In Mind pills + comparison table)
 - [x] Homepage: add full-screen comparison card between Taylor's Mill snap and Events snap — dark background, side-by-side feature table, subtext about props/backdrops included, CTA buttons for both locations
 
+## Feedback Round 9 (2026-04-02) — Drew's text 2026-04-02
+
+- [x] Homepage: replace flagship card hero video with static image (whitewall-powdersville_v2-3.jpg)
+
 ## Summary
 
-**Done: 119 items** (all revision items complete)
+**Done: 120 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
