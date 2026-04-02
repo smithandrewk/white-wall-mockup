@@ -348,7 +348,14 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Homepage comparison table: full-length on desktop (no scroll, all rows visible)
 - [x] Homepage comparison table: mobile gets a single arrow toggle button (▼/▲) instead of scrollbar to navigate the table
 
+## Feedback Round 16 (2026-04-02) — Drew's PDF + text 2026-04-02
+
+- [x] Replace all existing FAQs with 25 new FAQs from Drew's PDF (word-for-word)
+- [x] Keep collapsible accordion style
+- [x] Add FAQ link to navigation menu bar on all pages (desktop + mobile)
+- [x] Link "secret videos page" in FAQ answer #2 to `/theresavideoforthat`
+
 ## Summary
 
-**Done: 138 items** (all revision items complete)
+**Done: 142 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.

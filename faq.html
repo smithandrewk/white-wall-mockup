@@ -34,7 +34,7 @@
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
     .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-    .faq-answer.open { max-height: 500px; }
+    .faq-answer.open { max-height: 800px; }
     .faq-chevron { transition: transform 0.3s ease; }
     .faq-chevron.open { transform: rotate(180deg); }
   </style>
@@ -52,6 +52,7 @@
         <a href="/powdersville" class="hover:text-wws-dark transition">Flagship Location</a>
         <a href="/taylors-mill" class="hover:text-wws-dark transition">Taylor's Mill Location</a>
         <a href="/gallery" class="hover:text-wws-dark transition">Gallery</a>
+        <a href="/faq" class="hover:text-wws-dark transition">FAQ</a>
         <a href="/#contact" class="hover:text-wws-dark transition">Contact</a>
       </div>
       <button id="menu-toggle" class="md:hidden p-2" style="color:#4A90D9">
@@ -66,6 +67,7 @@
         <a href="/powdersville">Flagship Location</a>
         <a href="/taylors-mill">Taylor's Mill Location</a>
         <a href="/gallery">Gallery</a>
+        <a href="/faq">FAQ</a>
         <a href="/#contact">Contact</a>
       </div>
     </div>
@@ -85,51 +87,192 @@
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">How do I access the studio?</span>
+          <span class="font-medium text-sm pr-4">Can I arrive early to my booking?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">Both studios are self-service with keypad entry. After booking, you'll receive an email with your unique access code and detailed directions. You can arrive and get started on your own schedule — no staff required.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>No — please <strong>do not arrive early to your booking time.</strong></p>
+            <p>Our studios are often booked <strong>5–6 sessions per day</strong>, usually back-to-back. This means there is almost always another client using the studio right up until your scheduled start time, and another client arriving immediately after your session ends.</p>
+            <p>Because of this, <strong>your booking window is your total time in the studio</strong>, including:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Setup</li>
+              <li>Shooting time</li>
+              <li>Teardown</li>
+              <li>Resetting the space</li>
+            </ul>
+            <p>Please make sure to <strong>budget enough time at the beginning and end of your booking</strong> to set up and fully reset the studio before leaving.</p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">What's the cancellation policy?</span>
+          <span class="font-medium text-sm pr-4">Is there a video explaining how everything works?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">You may cancel or reschedule up to <strong>48 hours</strong> before your session at no charge. Cancellations within 48 hours are non-refundable.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes! There's a video for that.</p>
+            <p>Click the link below to watch our full video library, where we walk through how to access the studio, where to park, how the doors work, and many other helpful tips.</p>
+            <p>You can watch all the videos or search for the specific topic you need.</p>
+            <p><a href="/theresavideoforthat" class="underline hover:text-pv-cool font-medium">Watch the videos here</a></p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">How do refunds work?</span>
+          <span class="font-medium text-sm pr-4">Can I host an event at the studio, or is it only for photoshoots?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">Approved refunds are processed within 3-5 business days to your original payment method.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>At our <strong>Flagship (Powdersville) location</strong>, the space can be used for <strong>photo, video, or events.</strong></p>
+            <p>At our <strong>Taylors Mill location</strong>, the studio is designed for <strong>photo and video sessions only</strong>, and events are not permitted.</p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">Can I add or subtract hours from my booking?</span>
+          <span class="font-medium text-sm pr-4">What is the maximum number of people allowed in the studio?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">Cancel your existing booking and rebook with the updated hours. Your refund will arrive in 3-5 business days. Changes must be made at least 48 hours before your session.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>At our <strong>Flagship location</strong>, bookings with <strong>under 50 guests require no additional approval.</strong></p>
+            <p>Events <strong>over 50 guests are still allowed</strong>, but we may reach out if we have any logistical concerns.</p>
+            <p>The <strong>maximum capacity at the Flagship location is 150 people.</strong></p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">What about natural light? When is it best?</span>
+          <span class="font-medium text-sm pr-4">Do I need to include setup and cleanup time in my booking?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">The best time to book is around noon for the strongest natural light. Both studios are designed for natural light photography. Our Flagship Location has large windows plus remote blackout shades and diffusion curtains if you want to modify or control the light; Taylor's Mill has oversized mill windows and classic mill character.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes. Your booking time includes <strong>everything</strong> — setup, shooting, teardown, and resetting the space.</p>
+            <p>Because sessions are often <strong>scheduled back-to-back</strong>, it's very important that you <strong>leave the studio fully reset before your session ends</strong> so the next guest can begin on time.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can multiple photographers share the studio during one booking?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes, absolutely.</p>
+            <p>The only requirement is that the <strong>total number of people attending the session is accurately listed in the booking intake form.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can I bring my own lighting equipment or props?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes — you are welcome to bring <strong>any lighting, equipment, or props you'd like.</strong></p>
+            <p>Just make sure you <strong>leave enough time to reset the studio</strong> before your booking ends.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Is the studio suitable for video production?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes.</p>
+            <p>Our <strong>Flagship location is especially ideal for video production</strong>, as it is larger and sound-treated.</p>
+            <p>Video production is also allowed at <strong>Taylors Mill</strong>, but it may not be the best option for certain productions since the building is not soundproof and <strong>a train occasionally passes nearby.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Is the studio soundproof?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p><strong>At the Flagship location — yes.</strong></p>
+            <p>The space was designed with soundproofing in mind, making it much better suited for video production and interviews.</p>
+            <p><strong>At Taylors Mill — no.</strong> Because it is located inside a historic mill building, outside noise (including a nearby train) may occasionally be heard.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Does the studio have blackout capability?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes — both studios have blackout options.</p>
+            <p>At the <strong>Flagship location</strong>, we have <strong>100% blackout remote shades</strong> that descend directly from the window frames.</p>
+            <p>At <strong>Taylors Mill</strong>, blackout is achieved using <strong>blackout curtains on rods.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Is there a hair and makeup area?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>At the <strong>Flagship location</strong>, there is a <strong>dedicated hair and makeup prep area.</strong></p>
+            <p>At <strong>Taylors Mill</strong>, there is a <strong>small back room with mirrors</strong> that works well for simple getting-ready setups, but it is not a full open prep area like the Flagship location.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">What equipment or rentals are available at the studio?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Both studios include <strong>free furniture and props with every booking</strong>, and both offer <strong>backdrops and lighting rentals.</strong></p>
+            <p>However, our <strong>Flagship location offers additional rentals</strong>, including:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Rolling wall system</li>
+              <li>Higher-end lighting equipment</li>
+              <li>TV for presentations</li>
+              <li>PA system</li>
+              <li>Banquet tables and chairs</li>
+            </ul>
+            <p>These items are <strong>not available at the Taylors Mill location.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Where should clients or guests park?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>At <strong>Taylors Mill</strong>, parking is located in the <strong>main parking lot shared by the mill complex.</strong> You may want to meet your clients there and guide them to the studio entrance.</p>
+            <p>At the <strong>Flagship location</strong>, guests can <strong>park directly in front of the studio entrance</strong>, making load-in very convenient.</p>
+          </div>
         </div>
       </div>
 
@@ -139,67 +282,225 @@
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">Yes, but you are financially liable for any damages or messes your pet causes, which will be charged to your booking card. Please clean up after them and leave the space in the condition you found it.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes, you can.</p>
+            <p>However, you are <strong>financially responsible for any damages or messes caused by your dog.</strong> If damages occur, the card associated with your booking may be charged to cover the costs.</p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">What if I'm running late?</span>
+          <span class="font-medium text-sm pr-4">What is the best time of day for natural light?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">Your booking time is your booking time — the studio is yours for that window. If you arrive late, your session still ends at the scheduled time. We can't extend into the next booking.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>If you're looking for strong natural light, <strong>around noon is usually the best time to book.</strong></p>
+            <p>During the <strong>summer months</strong>, the sun's path reduces the amount of direct windowpane light. During <strong>fall through spring</strong>, you'll see more of the dramatic windowpane lighting.</p>
+            <p>Both studios include <strong>diffusion and blackout options</strong> so you can modify the light as needed.</p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">Which studio should I book?</span>
+          <span class="font-medium text-sm pr-4">I'm running late. Can I postpone or reschedule my session?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4"><strong>Flagship Location</strong> is our 2,000+ sq ft flagship and the best fit for events, large productions, heavy equipment load-in, and anything requiring more space or privacy. <strong>Taylor's Mill</strong> is ideal for portrait sessions, headshots, and natural light photography in a 1,000 sq ft historic mill setting. Events are only available at the Flagship Location.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Unfortunately, no.</p>
+            <p>Because we usually have <strong>back-to-back bookings</strong>, we cannot shift session times.</p>
+            <p>You are welcome to arrive anytime <strong>after your session starts</strong>, but the <strong>end time will remain the same.</strong></p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">Can I host an event at Taylor's Mill?</span>
+          <span class="font-medium text-sm pr-4">I'm already shooting but need more time. Can I extend my booking?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">No — Taylor's Mill is not available for events. For events, please book our <a href="/powdersville" class="underline hover:text-pv-cool">Flagship Location</a>, which is event-approved for gatherings of all sizes.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>It is <strong>very unlikely</strong>, since we usually have another session booked immediately after yours.</p>
+            <p>However, you can <strong>text our customer service number (do not call)</strong> to check if the studio is available.</p>
+            <p>If you don't hear back in time, please assume the answer is <strong>no</strong> and plan to leave by your scheduled end time.</p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">I'm already shooting — can I add more time?</span>
+          <span class="font-medium text-sm pr-4">How do I reschedule or cancel my booking?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">Unfortunately, this is unlikely due to back-to-back scheduling. You can text us at (803) 873-8153 to ask, but please assume the answer will be no. We recommend booking extra time upfront if you think you might need it.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>You can reschedule or cancel your booking <strong>up to 48 hours before your session start time.</strong></p>
+            <p>To do this, scroll to the bottom of your <strong>booking confirmation email</strong> and click <strong>"Change/Cancel Appointment."</strong></p>
+            <p>Within <strong>48 hours of your session</strong>, bookings can no longer be changed or canceled per the Booking Agreement.</p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">I received an invoice — do I need to pay it?</span>
+          <span class="font-medium text-sm pr-4">Why can't I cancel or reschedule my session?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">No — it's just a receipt. You already paid when you booked your session.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>The reschedule/cancellation window closes <strong>48 hours before your session start time.</strong></p>
+            <p>After that point, changes are no longer allowed according to the terms of the Booking Agreement.</p>
+          </div>
         </div>
       </div>
 
       <div class="faq-item py-6">
         <button class="faq-toggle w-full flex items-center justify-between text-left">
-          <span class="font-medium text-sm pr-4">Are props and styling items included?</span>
+          <span class="font-medium text-sm pr-4">How do I add or subtract hours from my booking?</span>
           <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="faq-answer">
-          <p class="text-sm text-wws-dark leading-relaxed pt-4">Yes! All props, plants, and styling items are included free with every booking. Check out our <a href="/props" class="underline hover:text-wws-dark">props page</a> to see everything available. Equipment rentals (lighting, backdrops, rolling walls, etc.) are available as paid add-ons.</p>
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>To change your booking length, you will need to <strong>cancel your current booking and rebook with the correct number of hours.</strong></p>
+            <p>After canceling, your refund will typically appear in <strong>3–5 business days.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">I just canceled my session. When will I get my refund?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Once a cancellation is processed, our customer service team will manually issue the refund.</p>
+            <p>Refunds typically appear in your bank account within <strong>3–5 business days.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">I don't have the confirmation email with access information.</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>You should receive <strong>two emails</strong> when booking:</p>
+            <ol class="list-decimal pl-5 space-y-1">
+              <li>Your invoice (for records)</li>
+              <li>Your <strong>Appointment Confirmation email</strong></li>
+            </ol>
+            <p>All access information is inside the <strong>Appointment Confirmation email.</strong></p>
+            <p>If you can't find it, please check your <strong>Spam or Junk folders.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">What is the invoice I received? Do I need to pay it?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>No — you already paid when you booked.</p>
+            <p>The invoice is simply a <strong>receipt for your records.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">What happens if the studio is left messy or not reset?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>If the studio is left unclean or not reset properly, a <strong>$250 cleaning fee</strong> will be charged to the card on file.</p>
+            <p>If the condition of the studio <strong>negatively affects the next client's booking</strong>, additional charges may apply to compensate for their session.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can I use the photos or videos taken in the studio for commercial purposes?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Of course — and we encourage it.</p>
+            <p>Many of our clients use the studio for <strong>professional branding, marketing, and commercial work.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can brands or businesses rent the studio?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Absolutely.</p>
+            <p>Brands, agencies, and businesses regularly use the studio for <strong>content creation, product photography, and marketing campaigns.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Which location should I choose — Flagship or Taylors Mill?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>In most situations, the <strong>Flagship location is the more convenient and versatile option.</strong></p>
+            <p>It is:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Larger</li>
+              <li>More private</li>
+              <li>More luxurious</li>
+              <li>Equipped with more amenities and rentals</li>
+            </ul>
+            <p>However, the <strong>Taylors Mill location offers a unique historic mill aesthetic</strong>, which many photographers love for its character and texture.</p>
+            <p>Both spaces are excellent — they simply provide <strong>different creative environments.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Is the studio beginner-friendly?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>Yes — extremely.</p>
+            <p>When designing the <strong>Flagship location</strong>, our motto during construction was:</p>
+            <p><strong>"Build a studio where it's almost impossible to take a bad photo."</strong></p>
+            <p>The lighting and layout were intentionally designed to make it <strong>easy for beginners while still serving professional photographers.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item py-6">
+        <button class="faq-toggle w-full flex items-center justify-between text-left">
+          <span class="font-medium text-sm pr-4">Can I tour the studio before booking?</span>
+          <svg class="faq-chevron w-5 h-5 flex-shrink-0 text-wws-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="text-sm text-wws-dark leading-relaxed pt-4 space-y-3">
+            <p>We do not offer tours for standard bookings.</p>
+            <p>However, we provide <strong>plenty of photos and videos</strong> to help you understand the space before reserving.</p>
+            <p>If you are planning a <strong>full-day event at the Flagship location</strong>, a brief venue tour may be arranged.</p>
+          </div>
         </div>
       </div>
 
