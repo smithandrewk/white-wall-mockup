@@ -45,6 +45,25 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
+
+    /* Snap container for hero + location cards */
+    .snap-container {
+      height: 100vh;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .snap-container::-webkit-scrollbar { display: none; }
+
+    .snap-section {
+      height: 100vh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      position: relative;
+      overflow: hidden;
+    }
+
     /* Let hero video bleed behind the notch/Dynamic Island */
     .hero-video-section { padding-top: 0; height: calc(100vh + env(safe-area-inset-top)); margin-top: calc(-1 * env(safe-area-inset-top)); }
     .hero-video-section video { top: 0; }
@@ -55,20 +74,47 @@
       background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4));
     }
 
-    .location-card {
-      transition: transform 0.4s ease, box-shadow 0.4s ease;
-    }
-    .location-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    .snap-section .hero-overlay {
+      background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%);
     }
 
-    @keyframes marquee {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
+    /* Scroll indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      animation: bounce 2s ease infinite;
     }
-    .marquee-track {
-      animation: marquee 20s linear infinite;
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+      50% { transform: translateX(-50%) translateY(8px); opacity: 1; }
+    }
+
+    /* Snap dot indicators */
+    .snap-dots {
+      position: fixed;
+      right: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .snap-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.5);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .snap-dot.active {
+      background: white;
+      transform: scale(1.3);
     }
   </style>
 </head>
@@ -106,113 +152,88 @@
     </div>
   </nav>
 
-  <!-- Video Hero -->
-  <section class="relative h-screen overflow-hidden hero-video-section">
-    <video class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline>
-      <source src="videos/hero.mp4" type="video/mp4">
-    </video>
-    <div class="hero-overlay absolute inset-0"></div>
-    <div class="relative z-10 flex flex-col items-center justify-center h-full px-8 text-white text-center">
-      <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios & Events" class="w-[70vw] md:w-[40vw] max-w-2xl mb-10">
-      <a href="#locations" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
-        Book Now
-      </a>
-    </div>
-  </section>
+  <!-- Snap Container: Hero + Location Cards + Event -->
+  <div class="snap-container" id="snap-container">
 
-  <!-- Location Cards -->
-  <section id="locations" class="py-24 px-6">
-    <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+    <!-- Snap 1: Video Hero -->
+    <section class="snap-section hero-video-section">
+      <video class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline>
+        <source src="videos/hero.mp4" type="video/mp4">
+      </video>
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-8 text-white text-center">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios & Events" class="w-[70vw] md:w-[40vw] max-w-2xl mb-10">
+        <a href="/book-powdersville" class="inline-block bg-white text-black px-12 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
+          Book Now
+        </a>
+      </div>
+      <div class="scroll-indicator">
+        <svg class="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+    </section>
 
-      <!-- Flagship Location Card -->
-      <a href="/powdersville" class="location-card rounded-sm overflow-hidden block relative">
-        <div class="aspect-[4/3] overflow-hidden">
-          <img src="images/powdersville/whitewall-powdersville-v2-16.jpg"
-               alt="Flagship Location Interior"
-               class="w-full h-full object-cover">
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 p-6 flex flex-col items-center text-center">
-          <div class="bg-black/50 rounded-sm px-5 py-3 mb-3">
-            <p class="text-sm text-white leading-relaxed">
-              2,000+ sq ft, purpose-built for shoots &amp; events. Private bathroom, garage door access, on-site parking.
-            </p>
-          </div>
-          <span class="inline-block bg-black text-white text-xs tracking-[0.2em] uppercase font-medium px-6 py-3 rounded-sm">
-            Flagship Location &rarr;
-          </span>
-        </div>
-      </a>
+    <!-- Snap 2: Flagship Location -->
+    <section class="snap-section" id="flagship-snap">
+      <video class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline>
+        <source src="images/powdersville/powdersville-hero-video.mp4" type="video/mp4">
+      </video>
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="relative z-10 flex flex-col items-center justify-end h-full px-8 pb-24 text-white text-center">
+        <h2 class="font-display text-5xl md:text-6xl font-light mb-4">Flagship Location</h2>
+        <p class="text-sm tracking-wide opacity-80 max-w-lg mb-3">
+          2,000+ sq ft, purpose-built for shoots &amp; events. Private bathroom, garage door access, on-site parking.
+        </p>
+        <p class="text-xs tracking-widest uppercase opacity-50 mb-8">Powdersville &bull; Greenville, SC</p>
+        <a href="/book-powdersville" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
+          Book the Flagship Location
+        </a>
+      </div>
+    </section>
 
-      <!-- Taylor's Mill Card -->
-      <a href="/taylors-mill" class="location-card rounded-sm overflow-hidden block relative">
-        <div class="aspect-[4/3] overflow-hidden">
-          <img src="images/taylors-mill/taylors-mill-hero.jpg"
-               alt="Taylor's Mill Interior"
-               class="w-full h-full object-cover">
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 p-6 flex flex-col items-center text-center">
-          <div class="bg-black/50 rounded-sm px-5 py-3 mb-3">
-            <p class="text-sm text-white leading-relaxed">
-              1,000 sq ft inside a historic mill. Natural light and authentic character for texture-rich sessions.
-            </p>
-          </div>
-          <span class="inline-block bg-black text-white text-xs tracking-[0.2em] uppercase font-medium px-6 py-3 rounded-sm">
-            Taylor's Mill Studio &rarr;
-          </span>
-        </div>
-      </a>
-
-    </div>
-  </section>
-
-  <!-- Tagline Marquee -->
-  <section class="bg-wws-black text-white py-4 overflow-hidden">
-    <div class="marquee-track whitespace-nowrap inline-flex">
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Natural Light Photography</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Event Space</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Two Locations</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Greenville, SC</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Natural Light Photography</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Event Space</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Two Locations</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-      <span class="text-sm tracking-[0.3em] uppercase mx-8">Greenville, SC</span>
-      <span class="text-wws-accent mx-4">&#9733;</span>
-    </div>
-  </section>
-
-  <!-- About Section -->
-  <section class="py-24 px-6">
-    <div class="max-w-4xl mx-auto text-center">
-      <h3 class="font-display text-4xl md:text-5xl font-light mb-6">The Premier Natural Light Studio<br>&amp; Event Space in Greenville, South Carolina</h3>
-      <p class="text-wws-dark leading-relaxed max-w-2xl mx-auto">
-        Two unique spaces designed for creators, photographers, and event hosts. Our <strong>Flagship Location</strong> offers a larger, purpose-built studio designed for comfort, flexibility, and a more elevated experience from start to finish. With a private en-suite bathroom, 12-ft garage door access, on site parking, and a highly adaptable layout, everything was built from the ground up to make your shoot or event feel effortless. Located just minutes from downtown Greenville, this space combines a clean, refined atmosphere with the functionality of a fully equipped studio&mdash;ideal for photo, video, and events that benefit from a more polished, comfortable environment. Our <strong>Taylors Mill studio</strong> offers a unique setting inside a historic mill, with natural light and authentic character. It&rsquo;s a great fit for simple sessions and creatives who are drawn to a texture-rich environment.
-      </p>
-    </div>
-  </section>
-
-
-  <!-- Book an Event CTA -->
-  <section class="px-6 pb-24">
-    <div class="max-w-6xl mx-auto relative overflow-hidden rounded-sm" style="min-height: 400px;">
-      <img src="images/gallery/modern-romantics-214.jpg"
-           alt="Bridal session at Flagship Location studio"
+    <!-- Snap 3: Taylor's Mill -->
+    <section class="snap-section" id="taylors-mill-snap">
+      <img src="images/taylors-mill/taylors-mill-hero.jpg"
+           alt="Taylor's Mill Studio Interior"
            class="absolute inset-0 w-full h-full object-cover">
-      <div class="absolute inset-0 bg-black/50"></div>
-      <div class="relative z-10 flex flex-col items-center justify-center text-center text-white px-8 py-24">
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="relative z-10 flex flex-col items-center justify-end h-full px-8 pb-24 text-white text-center">
+        <h2 class="font-display text-5xl md:text-6xl font-light mb-4">Taylor's Mill</h2>
+        <p class="text-sm tracking-wide opacity-80 max-w-lg mb-3">
+          1,000 sq ft inside a historic mill. Natural light and authentic character for texture-rich sessions.
+        </p>
+        <p class="text-xs tracking-widest uppercase opacity-50 mb-8">Taylors &bull; Greenville, SC</p>
+        <a href="/book-taylors-mill" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
+          Book Taylor's Mill
+        </a>
+      </div>
+    </section>
+
+    <!-- Snap 4: Book an Event -->
+    <section class="snap-section" id="event-snap">
+      <img src="images/powdersville/whitewall-powdersville_v2-23.jpg"
+           alt="Event space at Flagship Location"
+           class="absolute inset-0 w-full h-full object-cover">
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="relative z-10 flex flex-col items-center justify-end h-full px-8 pb-24 text-white text-center">
         <div class="w-12 h-[1px] bg-pv-cool mb-6"></div>
-        <h3 class="font-display text-4xl md:text-5xl font-light mb-4">Book an Event With Us</h3>
+        <h2 class="font-display text-5xl md:text-6xl font-light mb-4">Host Your Event</h2>
         <p class="text-sm tracking-wide opacity-80 max-w-lg mb-8">From bridal showers and birthday parties to workshops and pop-ups, our Flagship Location studio transforms into the perfect event space for up to 150 guests.</p>
         <a href="/powdersville#events" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
           Book an Event With Us
         </a>
       </div>
+    </section>
+
+    <!-- Snap 5: Rest of page (no more snapping) -->
+    <div class="snap-section" style="height:auto; scroll-snap-align:start; scroll-snap-stop:normal;">
+
+  <!-- About Section -->
+  <section class="py-24 px-6 bg-white">
+    <div class="max-w-4xl mx-auto text-center">
+      <h3 class="font-display text-4xl md:text-5xl font-light mb-6">The Premier Natural Light Studio<br>&amp; Event Space in Greenville, South Carolina</h3>
+      <p class="text-wws-dark leading-relaxed max-w-2xl mx-auto">
+        Two unique spaces designed for creators, photographers, and event hosts. Our <strong>Flagship Location</strong> offers a larger, purpose-built studio designed for comfort, flexibility, and a more elevated experience from start to finish. With a private en-suite bathroom, 12-ft garage door access, on site parking, and a highly adaptable layout, everything was built from the ground up to make your shoot or event feel effortless. Our <strong>Taylors Mill studio</strong> offers a unique setting inside a historic mill, with natural light and authentic character. It&rsquo;s a great fit for simple sessions and creatives who are drawn to a texture-rich environment.
+      </p>
     </div>
   </section>
 
@@ -388,40 +409,99 @@
     </div>
   </footer>
 
+    </div><!-- end non-snapping wrapper -->
+  </div><!-- end snap-container -->
+
+  <!-- Snap dot indicators -->
+  <div class="snap-dots" id="snap-dots">
+    <div class="snap-dot active" data-index="0"></div>
+    <div class="snap-dot" data-index="1"></div>
+    <div class="snap-dot" data-index="2"></div>
+    <div class="snap-dot" data-index="3"></div>
+  </div>
+
   <script>
     document.getElementById('menu-toggle').addEventListener('click', () => {
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
 
-    // Navbar: transparent over hero, solid white on scroll
+    // Snap container scroll handling
     (function () {
+      var container = document.getElementById('snap-container');
       var nav = document.getElementById('main-nav');
       var logo = document.getElementById('nav-logo');
       var links = document.getElementById('nav-links');
       var toggle = document.getElementById('menu-toggle');
       var themeColor = document.getElementById('theme-color');
-      var heroHeight = window.innerHeight * 0.85;
-      var scrolled = false;
-      window.addEventListener('scroll', function () {
-        var isScrolled = window.scrollY > heroHeight;
-        if (isScrolled === scrolled) return;
-        scrolled = isScrolled;
-        if (isScrolled) {
-          nav.style.background = 'rgba(255,255,255,0.97)';
-          nav.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
-          logo.style.filter = 'brightness(0)';
-          if (links) { links.className = links.className.replace('text-white/80', 'text-black/50'); }
-          toggle.style.color = '#000';
-          themeColor.content = '#ffffff';
-        } else {
+      var dots = document.getElementById('snap-dots');
+      var dotEls = dots.querySelectorAll('.snap-dot');
+      var snapSections = container.querySelectorAll('.snap-section');
+      var scrollIndicator = container.querySelector('.scroll-indicator');
+
+      // Number of full-screen snap sections (hero + 3 location/event cards)
+      var snapCount = 4;
+      var lastNavState = null;
+
+      function updateNav(isInSnap) {
+        if (isInSnap) {
+          // Over full-bleed dark sections — white nav
           nav.style.background = 'transparent';
           nav.style.borderBottom = 'none';
           logo.style.filter = 'none';
           if (links) { links.className = links.className.replace('text-black/50', 'text-white/80'); }
           toggle.style.color = '#fff';
           themeColor.content = '#000000';
+        } else {
+          // Over light content sections
+          nav.style.background = 'rgba(255,255,255,0.97)';
+          nav.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
+          logo.style.filter = 'brightness(0)';
+          if (links) { links.className = links.className.replace('text-white/80', 'text-black/50'); }
+          toggle.style.color = '#000';
+          themeColor.content = '#ffffff';
+        }
+      }
+
+      container.addEventListener('scroll', function () {
+        var scrollTop = container.scrollTop;
+        var vh = window.innerHeight;
+        var currentSnap = Math.round(scrollTop / vh);
+        var inSnapZone = currentSnap < snapCount;
+
+        // Update nav
+        if (lastNavState !== inSnapZone) {
+          lastNavState = inSnapZone;
+          updateNav(inSnapZone);
+        }
+
+        // Update dots
+        if (inSnapZone) {
+          dots.style.opacity = '1';
+          dotEls.forEach(function (d, i) {
+            d.classList.toggle('active', i === currentSnap);
+          });
+        } else {
+          dots.style.opacity = '0';
+        }
+
+        // Hide scroll indicator after first scroll
+        if (scrollIndicator && scrollTop > 50) {
+          scrollIndicator.style.opacity = '0';
+          scrollIndicator.style.transition = 'opacity 0.3s ease';
         }
       });
+
+      // Dot click → scroll to section
+      dotEls.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          var idx = parseInt(this.dataset.index);
+          container.scrollTo({ top: idx * window.innerHeight, behavior: 'smooth' });
+        });
+      });
+
+      // Initialize
+      dots.style.transition = 'opacity 0.3s ease';
+      updateNav(true);
     })();
 
     // Fisher-Yates shuffle for homepage gallery
