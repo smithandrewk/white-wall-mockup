@@ -585,13 +585,14 @@
         var inner = document.getElementById('inner-' + sectionName);
         var totalGroups = groups.length;
         if (totalGroups === 0) { btn.style.display = 'none'; return; }
+        var grid = inner.querySelector('.grid');
 
         btn._exp = { currentIdx: 0 };
 
         btn.addEventListener('click', function () {
-          // Photo grid: row-based pagination
-          if (sectionName === 'photos') {
-            if (btn._exp.photoDone) {
+          // Grid sections: row-based pagination (photos, features, not-included)
+          if (grid) {
+            if (btn._exp.gridDone) {
               groups.forEach(function (g) { g.classList.remove('expanded'); });
               btn._exp = { currentIdx: 0 };
               inner.style.transform = 'translateY(0)';
@@ -600,23 +601,28 @@
               checkOverflow(container, inner);
               return;
             }
-            if (!btn._exp.photoInit) {
+            if (!btn._exp.gridInit) {
               for (var i = btn._exp.currentIdx; i < totalGroups; i++) {
                 groups[i].style.transition = 'none';
                 groups[i].classList.add('expanded');
               }
               btn._exp.currentIdx = totalGroups;
               void inner.offsetHeight;
-              var grid = inner.querySelector('.grid');
-              var allPhotos = grid.querySelectorAll('[class*="aspect-"]');
-              var cols = Math.round(grid.offsetWidth / allPhotos[0].offsetWidth);
-              var r0 = allPhotos[0].getBoundingClientRect().top;
-              var r1 = allPhotos[cols].getBoundingClientRect().top;
+              var items = [];
+              for (var c = 0; c < grid.children.length; c++) {
+                var child = grid.children[c];
+                if (child.classList.contains('expand-group-flat')) {
+                  for (var k = 0; k < child.children.length; k++) items.push(child.children[k]);
+                } else items.push(child);
+              }
+              var cols = Math.round(grid.offsetWidth / items[0].offsetWidth);
+              var r0 = items[0].getBoundingClientRect().top;
+              var r1 = items[cols].getBoundingClientRect().top;
               btn._exp.rowH = r1 - r0;
               btn._exp.visRows = Math.floor(container.clientHeight / btn._exp.rowH);
               btn._exp.offset = 0;
               btn._exp.maxY = inner.scrollHeight - container.clientHeight;
-              btn._exp.photoInit = true;
+              btn._exp.gridInit = true;
               requestAnimationFrame(function () {
                 for (var j = 0; j < totalGroups; j++) groups[j].style.transition = '';
               });
@@ -628,7 +634,7 @@
               btn.innerHTML = lessLabel + ' ' + upSvg;
               btn.classList.remove('collapsed');
               container.classList.remove('has-overflow');
-              btn._exp.photoDone = true;
+              btn._exp.gridDone = true;
             } else {
               inner.style.transform = 'translateY(-' + y + 'px)';
               checkOverflow(container, inner);
@@ -636,7 +642,7 @@
             return;
           }
 
-          // Generic expand/collapse for non-photo sections
+          // Generic expand/collapse for non-grid sections (about text)
           if (btn._exp.currentIdx < totalGroups) {
             var g = groups[btn._exp.currentIdx];
             g.style.transition = 'none';
@@ -676,8 +682,8 @@
           var container = document.getElementById('container-' + sectionName);
           var inner = document.getElementById('inner-' + sectionName);
 
-          // Photo grids: skip auto-expand, just check overflow for fade
-          if (sectionName === 'photos') {
+          // Grid sections: skip auto-expand, use row pagination instead
+          if (inner.querySelector('.grid')) {
             checkOverflow(container, inner);
             return;
           }
