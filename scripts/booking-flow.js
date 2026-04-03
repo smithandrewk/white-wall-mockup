@@ -751,7 +751,7 @@
       return { label: "Cleaning fee", amount: 150, note: "" };
     }
     if (effectiveCount >= 35 && state.eventIntent === "yes") {
-      return { label: "Cleaning fee", amount: 0, note: "We will be in touch if there are any changes." };
+      return { label: "Cleaning fee", amount: 150, note: "Our team may reach out to waive this fee based on your booking details." };
     }
     return null;
   }
@@ -967,7 +967,7 @@
       /^\d+$/.test(state.participants.trim()) && Number(state.participants) >= 35
         ? `
           <div class="warning-card" style="margin-top:1rem">
-            For events with 35+ attendees, our team will follow up to confirm details, including a potential $150 cleaning fee. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.
+            For events with 35+ attendees, a $150 cleaning fee will be automatically included. Our team may reach out to waive this fee based on your booking details.
           </div>
         `
         : "";
@@ -1081,7 +1081,7 @@
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="capacity" ${state.acknowledgements.capacity ? "checked" : ""}>
-            <span>I understand that bookings with 35+ guests require internal approval. The WhiteWall team will review my request and follow up with confirmation, along with any additional details, including a cleaning fee for larger gatherings.</span>
+            <span>I understand that bookings with 35+ guests include a $150 cleaning fee. The WhiteWall team may reach out to waive this fee based on my booking details.</span>
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="self-service" ${state.acknowledgements.selfService ? "checked" : ""}>
@@ -1100,7 +1100,7 @@
     return `
       <div class="booking-panel-soft p-5 mt-4">
         <p class="ui-copy-strong" style="margin-bottom:0.75rem">Tell us more about your shoot</p>
-        <p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.55)">A cleaning fee may be added due to the high traffic count. If we need to discuss anything further we will reach out. If you don&rsquo;t hear from us, you&rsquo;re good.</p>
+        <p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.55)">A $150 cleaning fee will be included with your booking. Our team may reach out to waive this fee based on your booking details.</p>
         <textarea class="booking-textarea" data-input="high-traffic-note" placeholder="Describe your shoot or event…">${escapeHtml(state.highTrafficNote)}</textarea>
       </div>
     `;
@@ -1130,7 +1130,7 @@
         : "";
     var capacityNotice =
       /^\d+$/.test(state.participants.trim()) && count >= 35
-        ? '<div class="warning-card" style="margin-top:1rem">For events with 35+ attendees, our team will follow up to confirm details, including a potential $150 cleaning fee. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.</div>'
+        ? '<div class="warning-card" style="margin-top:1rem">For events with 35+ attendees, a $150 cleaning fee will be automatically included. Our team may reach out to waive this fee based on your booking details.</div>'
         : "";
 
     container.innerHTML = warning + capacityNotice + getHighTrafficHtml();

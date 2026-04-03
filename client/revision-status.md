@@ -364,7 +364,13 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Change Taylor's Mill page title from "Taylor's Mill" to "Taylor's Mill Location"
 - [x] Update Taylor's Mill hamburger/nav text to "Taylor's Mill Location" on all pages
 
+## Feedback Round 18 (2026-04-03) — Drew's text 2026-04-03
+
+- [x] Change cleaning fee for 35+ event attendees from $0 (potential/follow-up) to $150 auto-applied
+- [x] Update all messaging: fee is now automatic, team may reach out to *waive* it (inverse of before)
+- [x] Updated: event step capacity notice, details step warning card, schedule step warning card, acknowledgement checkbox, high-traffic description text, terms page
+
 ## Summary
 
-**Done: 148 items** (all revision items complete)
+**Done: 151 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
