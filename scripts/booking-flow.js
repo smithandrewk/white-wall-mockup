@@ -65,11 +65,23 @@
     state.addons[addon.id] = getInitialAddonState(addon);
   });
 
+  // PostHog funnel tracking helper — safe to call even if consent was declined
+  function trackEvent(name, props) {
+    if (typeof posthog !== "undefined" && posthog.capture) {
+      posthog.capture(name, props);
+    }
+  }
+
   bindStaticContent();
   renderLocationSwitcher();
   renderProgress();
   renderStepContent();
   bindEvents();
+
+  trackEvent("booking_started", {
+    location: location.slug,
+    referrer: document.referrer
+  });
 
   window.addEventListener("resize", function() {
     var progress = document.querySelector("[data-progress]");
@@ -116,6 +128,13 @@
         state.availableTimes = [];
         state.selectedDate = "";
         state.selectedTime = "";
+        var selDuration = getSelectedDuration();
+        trackEvent("duration_selected", {
+          location: location.slug,
+          duration_id: state.durationId,
+          duration_hours: selDuration ? selDuration.hours : null,
+          price: selDuration ? selDuration.price : null
+        });
         setStep(2);
         return;
       }
@@ -227,6 +246,7 @@
         state.selectedTime = "";
         var aptId = getAppointmentTypeID();
         if (aptId) fetchAvailableTimes(aptId, date);
+        trackEvent("date_selected", { location: location.slug, date: date });
         // Show Powdersville upsell on TM after first date selection
         if (locationSlug === "taylors-mill" && !state._pvUpsellShown) {
           state._pvUpsellShown = true;
@@ -237,6 +257,7 @@
 
       if (action === "select-time") {
         state.selectedTime = actionTarget.dataset.time;
+        trackEvent("time_selected", { location: location.slug, date: state.selectedDate, time: state.selectedTime });
         renderScheduleStep();
         return;
       }
@@ -258,6 +279,7 @@
 
       if (action === "sign-waiver") {
         state.waiverSigned = true;
+        trackEvent("waiver_signed", { location: location.slug });
         renderWaiver();
         updateWaiverGate();
         return;
@@ -809,6 +831,7 @@
     // Client-side validation safety net — prevents checkout if steps were skipped
     var errors = getValidationErrors();
     if (errors.length > 0) {
+      trackEvent("checkout_validation_failed", { location: location.slug, error: errors[0] });
       alert(errors[0]); // Show first error
       // Navigate to the earliest incomplete step
       if (!state.durationId) { setStep(1); return; }
@@ -817,6 +840,17 @@
       if (!state.waiverSigned) { setStep(4); return; }
       return;
     }
+
+    var payDuration = getSelectedDuration();
+    var activeAddons = 0;
+    location.addons.forEach(function(a) { if (getAddonTotal(a) > 0) activeAddons++; });
+    trackEvent("pay_and_book_clicked", {
+      location: location.slug,
+      duration_id: state.durationId,
+      duration_hours: payDuration ? payDuration.hours : null,
+      total: payDuration ? payDuration.price : null,
+      addon_count: activeAddons
+    });
 
     state.isSubmitting = true;
     renderScheduleStep();
@@ -878,9 +912,11 @@
       }
 
       // Redirect to Square's hosted checkout page
+      trackEvent("checkout_redirect", { location: location.slug });
       window.location.href = checkoutData.checkoutUrl;
     } catch (err) {
       console.error("Checkout error:", err);
+      trackEvent("checkout_error", { location: location.slug, error_message: err.message });
       alert("Something went wrong creating your checkout. Please try again.");
       state.isSubmitting = false;
       renderScheduleStep();
@@ -1353,8 +1389,11 @@
     });
   }
 
+  var STEP_NAMES = { 1: "Duration", 2: "Schedule", 3: "Details", 4: "Waiver", 5: "Add-ons & Pay" };
+
   function setStep(step) {
     state.step = clamp(step, 1, 5);
+    trackEvent("step_viewed", { location: location.slug, step: state.step, step_name: STEP_NAMES[state.step] });
     renderStepContent();
 
     // Load availability when entering step 2 (Schedule)
@@ -1929,4 +1968,16 @@
   function escapeAttribute(value) {
     return escapeHtml(value).replaceAll("'", "&#39;");
   }
+
+  // Cart abandonment tracking — fires when user leaves mid-booking (step 3+)
+  window.addEventListener("beforeunload", function () {
+    if (state.step >= 3 && !state.isSubmitting) {
+      trackEvent("booking_abandoned", {
+        location: location.slug,
+        last_step: state.step,
+        duration_id: state.durationId,
+        had_time_selected: !!state.selectedTime
+      });
+    }
+  });
 })();

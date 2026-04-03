@@ -24,6 +24,8 @@ const {
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
 const { notifyOwner } = require("./notify-owner");
+const { alertFailure } = require("./_lib/alert");
+const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -71,13 +73,28 @@ module.exports = async function handler(req, res) {
     try {
       var order = await getOrder(orderId);
       log("square", "order verified", { orderId: orderId, state: order.state });
+      captureServerEvent(bookingState.contact.email, "payment_verified_server", {
+        order_id: orderId,
+        order_state: order.state,
+        location: bookingState.location
+      });
       if (order.state !== "COMPLETED" && order.state !== "OPEN") {
         log("square", "order not paid: " + order.state);
+        await alertFailure("alert", "Square order not in paid state", {
+          orderId: orderId,
+          orderState: order.state,
+          customer: bookingState.contact ? bookingState.contact.email : "unknown"
+        });
         if (debug) return res.status(400).json({ error: "payment-incomplete", logs: logs });
         return res.redirect(302, "/booking-error?reason=payment-incomplete");
       }
     } catch (err) {
       log("square", "verification FAILED: " + err.message);
+      await alertFailure("alert", "Square payment verification failed", {
+        orderId: orderId,
+        error: err.message,
+        customer: bookingState.contact ? bookingState.contact.email : "unknown"
+      });
       if (debug) return res.status(500).json({ error: "payment-verification-failed", logs: logs });
       return res.redirect(302, "/booking-error?reason=payment-verification-failed");
     }
@@ -127,6 +144,16 @@ module.exports = async function handler(req, res) {
     });
 
     log("acuity", "appointment created", { id: appointment.id });
+    captureServerEvent(bookingState.contact.email, "booking_completed_server", {
+      appointment_id: appointment.id,
+      location: bookingState.location,
+      appointment_type_id: bookingState.appointmentTypeID,
+      datetime: bookingState.datetime,
+      order_id: orderId || "",
+      participants: bookingState.participants || "",
+      addon_count: addonIDs.length,
+      has_cleaning_fee: !!(bookingState.cleaningFee && bookingState.cleaningFee.amount > 0)
+    });
 
     // PV cleaning fee: block 2.5 hours after session for cleaners
     if (bookingState.location === "powdersville" && bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
@@ -163,6 +190,7 @@ module.exports = async function handler(req, res) {
     // (separate function invocation so Vercel doesn't kill it after redirect)
 
     log("done", "all steps complete — redirecting");
+    await flushPostHog();
 
     if (debug) return res.status(200).json({ success: true, appointmentId: appointment.id, logs: logs });
 
@@ -172,6 +200,24 @@ module.exports = async function handler(req, res) {
     return res.redirect(302, "/booking-confirmation?id=" + appointment.id + "&location=" + locationSlug + "&fn=" + firstName + "&ln=" + lastName);
   } catch (err) {
     log("acuity", "appointment creation FAILED: " + err.message);
+    captureServerEvent(bookingState.contact.email, "booking_failed_server", {
+      location: bookingState.location,
+      order_id: orderId || "",
+      error: err.message,
+      failure_type: "appointment-creation-failed"
+    });
+    await flushPostHog();
+    var contact = bookingState.contact || {};
+    await alertFailure("critical", "Appointment creation failed — manual refund needed", {
+      customer: (contact.firstName || "") + " " + (contact.lastName || ""),
+      email: contact.email || "",
+      phone: contact.phone || "",
+      location: bookingState.location,
+      datetime: bookingState.datetime,
+      orderId: orderId || "",
+      error: err.message,
+      action: "Refund via Square Dashboard, then manually create appointment in Acuity if slot is still open"
+    });
     if (debug) return res.status(500).json({ error: "appointment-creation-failed", logs: logs });
     return res.redirect(302, "/booking-error?reason=slot-conflict&orderId=" + (orderId || ""));
   }

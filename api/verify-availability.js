@@ -8,6 +8,7 @@
 // exact datetime is still in the list.
 
 const { acuityGet, isValidAppointmentTypeID } = require("./_lib/acuity");
+const { alertFailure } = require("./_lib/alert");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -52,6 +53,11 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ available });
   } catch (err) {
     console.error("verify-availability error:", err.message);
+    await alertFailure("warning", "Acuity availability check failed", {
+      appointmentTypeID: appointmentTypeID,
+      datetime: datetime,
+      error: err.message
+    });
     return res.status(502).json({ error: "Unable to verify availability" });
   }
 };

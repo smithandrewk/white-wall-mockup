@@ -3,5 +3,9 @@
   "name": "whitewallstudios",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "posthog-node": "^5.28.11",
+    "puppeteer": "^24.40.0"
   }
 }

@@ -18,6 +18,7 @@ const {
   CALENDAR_IDS
 } = require("./_lib/acuity");
 const { createPaymentLink } = require("./_lib/square");
+const { alertFailure } = require("./_lib/alert");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -237,6 +238,11 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ checkoutUrl });
   } catch (err) {
     console.error("create-checkout error:", err.message);
+    await alertFailure("alert", "Square checkout creation failed", {
+      location: location,
+      customer: contact ? contact.email : "unknown",
+      error: err.message
+    });
     return res.status(500).json({ error: "Failed to create checkout" });
   }
 };
