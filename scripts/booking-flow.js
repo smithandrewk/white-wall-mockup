@@ -843,7 +843,10 @@
 
     var payDuration = getSelectedDuration();
     var activeAddons = 0;
-    location.addons.forEach(function(a) { if (getAddonTotal(a) > 0) activeAddons++; });
+    location.addons.forEach(function(a) {
+      var s = state.addons[a.id];
+      if (s && (s.selected || s.quantity > 0)) activeAddons++;
+    });
     trackEvent("pay_and_book_clicked", {
       location: location.slug,
       duration_id: state.durationId,
