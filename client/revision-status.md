@@ -355,7 +355,16 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Add FAQ link to navigation menu bar on all pages (desktop + mobile)
 - [x] Link "secret videos page" in FAQ answer #2 to `/theresavideoforthat`
 
+## Feedback Round 17 (2026-04-03) — Drew's text 2026-04-03
+
+- [x] Make "Book This Location" hero buttons more prominent: larger padding, bold text, renamed to "Book Flagship Location" and "Book Taylor's Mill Location"
+- [x] Make secondary "Book This Location" links into pill-style buttons on both location pages (about, features sections)
+- [x] Make "View Full Gallery" into a pill-style button on both location pages
+- [x] Add "See More" expand pill to "Host Your Event" card on Powdersville page (text was cut off on mobile)
+- [x] Change Taylor's Mill page title from "Taylor's Mill" to "Taylor's Mill Location"
+- [x] Update Taylor's Mill hamburger/nav text to "Taylor's Mill Location" on all pages
+
 ## Summary
 
-**Done: 142 items** (all revision items complete)
+**Done: 148 items** (all revision items complete)
 **Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.

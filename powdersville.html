@@ -152,7 +152,7 @@
       <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-white/80" id="nav-links">
         <a href="/" class="hover:text-white transition">Home</a>
         <a href="/powdersville" class="text-pv-cool">Flagship Location</a>
-        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill</a>
+        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill Location</a>
         <a href="/gallery" class="hover:text-white transition">Gallery</a>
         <a href="/faq" class="hover:text-white transition">FAQ</a>
         <a href="#events" class="hover:text-white transition">Events</a>
@@ -168,7 +168,7 @@
       <div class="px-6 py-4 flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-white/80">
         <a href="/" class="hover:text-white transition">Home</a>
         <a href="/powdersville" class="text-pv-cool">Flagship Location</a>
-        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill</a>
+        <a href="/taylors-mill" class="hover:text-white transition">Taylor's Mill Location</a>
         <a href="/gallery" class="hover:text-white transition">Gallery</a>
         <a href="/faq" class="hover:text-white transition">FAQ</a>
         <a href="#events" class="hover:text-white transition">Events</a>
@@ -192,8 +192,8 @@
         <h1 class="font-display text-5xl md:text-7xl font-light mb-4 tracking-wide">Flagship Location</h1>
         <p class="text-sm md:text-base tracking-widest uppercase opacity-80 mb-2">Greenville's Premier Location & Event Space</p>
         <p class="text-xs opacity-50 mb-8">2699 Powdersville Rd, Easley, SC &middot; 2,000+ sq ft</p>
-        <a href="/book-powdersville" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
-          Book This Location
+        <a href="/book-powdersville" class="inline-block bg-white text-black px-12 py-5 text-sm tracking-[0.2em] uppercase font-semibold hover:bg-wws-accent transition-all duration-300 shadow-lg">
+          Book Flagship Location
         </a>
       </div>
       <div class="scroll-indicator">
@@ -246,7 +246,7 @@
             Read More
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <a href="/book-powdersville" class="text-[10px] tracking-[0.15em] uppercase text-white/40 hover:text-white/80 transition">Book This Location</a>
+          <a href="/book-powdersville" class="expand-pill on-dark" style="text-decoration:none; color:#111">Book Flagship Location <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
         </div>
       </div>
     </section>
@@ -369,38 +369,47 @@
             Show More
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <a href="/book-powdersville" class="text-[10px] tracking-[0.15em] uppercase text-wws-dark/40 hover:text-wws-dark/80 transition">Book This Location</a>
+          <a href="/book-powdersville" class="expand-pill on-light" style="text-decoration:none">Book Flagship Location <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
         </div>
       </div>
     </section>
 
-    <!-- ═══ SNAP 4: Events (no expand — all text shown) ═══ -->
-    <section class="snap-section" id="events">
+    <!-- ═══ SNAP 4: Events ═══ -->
+    <section class="snap-section" id="events" data-expand-section="events">
       <img src="images/powdersville/whitewall-powdersville-event-3.22_-2.jpeg" alt="Event space at Flagship Location" class="absolute inset-0 w-full h-full object-cover">
       <div class="absolute inset-0 bg-black/30"></div>
       <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 px-4 md:px-6">
         <div class="max-w-3xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <div class="inline-block bg-pv-cool/20 text-pv-cool text-[10px] tracking-widest uppercase px-3 py-1.5 rounded-full mb-2 self-start shrink-0 backdrop-blur-sm">Event Space</div>
           <h2 class="font-display text-3xl md:text-5xl font-light mb-3 shrink-0 text-white">Host Your Event</h2>
-          <!-- Frosted glass panel — all text visible, no expand -->
-          <div class="flex-1 min-h-0 overflow-hidden bg-wws-light/75 backdrop-blur-lg rounded-2xl p-4 md:p-5">
-            <div class="mb-4 aspect-video overflow-hidden rounded-lg relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full rounded-lg\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
-              <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover rounded-lg">
-              <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors rounded-lg">
-                <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <div class="flex-1 min-h-0 overflow-hidden bg-wws-light/75 backdrop-blur-lg rounded-2xl p-4 md:p-5 fade-light" id="container-events">
+            <div class="content-inner" id="inner-events">
+              <div class="mb-4 aspect-video overflow-hidden rounded-lg relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full rounded-lg\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+                <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover rounded-lg">
+                <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors rounded-lg">
+                  <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="space-y-2 text-sm text-wws-dark leading-relaxed">
-              <p>Our Flagship Location is a flexible, open-concept space that adapts to any gathering. From birthday parties and bridal showers to workshops, fitness classes, and small weddings.</p>
-              <p>The <strong>12ft garage door</strong> makes load-in simple and can open for an indoor-outdoor feel. We have <strong>100 chairs and 10 eight-foot tables</strong> available.</p>
-              <p>The space can be used as-is or cleared entirely into the storage building for a completely empty event space.</p>
-              <p>Simply <strong>complete the booking form and reserve the time slot</strong>. For gatherings <strong>larger than 30 guests</strong>, we may confirm a few details. Accommodates <strong>up to 150 people</strong>.</p>
+              <div class="space-y-2 text-sm text-wws-dark leading-relaxed">
+                <p>Our Flagship Location is a flexible, open-concept space that adapts to any gathering. From birthday parties and bridal showers to workshops, fitness classes, and small weddings.</p>
+                <p>The <strong>12ft garage door</strong> makes load-in simple and can open for an indoor-outdoor feel. We have <strong>100 chairs and 10 eight-foot tables</strong> available.</p>
+              </div>
+              <div class="expand-group"><div>
+                <div class="space-y-2 text-sm text-wws-dark leading-relaxed mt-2">
+                  <p>The space can be used as-is or cleared entirely into the storage building for a completely empty event space.</p>
+                  <p>Simply <strong>complete the booking form and reserve the time slot</strong>. For gatherings <strong>larger than 30 guests</strong>, we may confirm a few details. Accommodates <strong>up to 150 people</strong>.</p>
+                </div>
+              </div></div>
             </div>
           </div>
         </div>
         <div class="shrink-0 flex flex-col items-center gap-2 pb-5 pt-2">
+          <button class="expand-pill on-dark collapsed" data-section="events" data-more="See More" data-less="See Less">
+            See More
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
           <a href="/book-powdersville" class="expand-pill on-dark" style="text-decoration:none; color:#111">
             Book Your Event
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg>
@@ -441,7 +450,7 @@
             See More
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <a href="/gallery?location=powdersville" class="text-[10px] tracking-[0.15em] uppercase text-wws-dark/40 hover:text-wws-dark/80 transition">View Full Gallery</a>
+          <a href="/gallery?location=powdersville" class="expand-pill on-light" style="text-decoration:none">View Full Gallery <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
         </div>
       </div>
     </section>
