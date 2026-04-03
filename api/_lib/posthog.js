@@ -10,7 +10,11 @@ var client;
 function getClient() {
   if (client) return client;
   if (!PostHog) PostHog = require("posthog-node").PostHog;
-  var apiKey = process.env.POSTHOG_API_KEY || "phc_QxOulRmelGJKszTf1CZd1DObWvqGIWdAPsMPDeL7IVm";
+  var apiKey = process.env.POSTHOG_API_KEY;
+  if (!apiKey) {
+    console.warn("posthog: POSTHOG_API_KEY not set, skipping");
+    return null;
+  }
   client = new PostHog(apiKey, { host: "https://us.i.posthog.com" });
   return client;
 }
@@ -18,6 +22,7 @@ function getClient() {
 function captureServerEvent(distinctId, event, properties) {
   try {
     var ph = getClient();
+    if (!ph) return;
     ph.capture({ distinctId: distinctId, event: event, properties: properties });
   } catch (err) {
     console.error("posthog server capture error:", err.message);
