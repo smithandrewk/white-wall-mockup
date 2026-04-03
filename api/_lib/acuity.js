@@ -346,6 +346,38 @@ const SESSION_PRICES = {
   "28312569": { label: "Full Day Session", cents: 55000 }
 };
 
+// ---------------------------------------------------------------------------
+// Square Catalog IDs — session items in "Booking Sessions" category
+// Coupons scoped to this category apply only to the session, not add-ons.
+// These are sandbox IDs — run scripts/square-catalog-setup.js --create
+// against production to get production IDs, then set via env var.
+// ---------------------------------------------------------------------------
+const SQUARE_CATALOG_SANDBOX = {
+  "89113040": "VGCZJLPLEAJUTX566UEEE4F3",
+  "89113116": "RTHUB45BQHZ2AHPZGVS6G373",
+  "89114444": "RVIEPZLDJ3YDLTIXZPIJA4CO",
+  "89114517": "DO2VVO55EE5JIWVDVLDYEHME",
+  "89114539": "CQUBMEHPZOXZMLIDO6CA5R4A",
+  "89114581": "CIHBY3IG7LAWHFCQZYFTICU7",
+  "38342199": "HCML3FUK2CBN2YCA4WJEXRSW",
+  "28312352": "3DGAVCMMITO2NFTZD6V6XQNY",
+  "28312534": "6JBCZQQRBRC7JYTROP4FBFIS",
+  "28312549": "EJUGP6WJRKPWLBOQTI2ZML73",
+  "36030598": "TVEHKO634YS3S5Y5G3NZD63U",
+  "28312569": "WVGRL35QGU3IUOMYK7CWOQF2"
+};
+
+function getSquareCatalogVariationId(appointmentTypeID) {
+  var isProd = process.env.SQUARE_ENVIRONMENT === "production";
+  if (isProd) {
+    // Production catalog IDs stored as JSON env var
+    var prodMap = process.env.SQUARE_CATALOG_SESSIONS
+      ? JSON.parse(process.env.SQUARE_CATALOG_SESSIONS) : null;
+    return prodMap ? prodMap[String(appointmentTypeID)] : null;
+  }
+  return SQUARE_CATALOG_SANDBOX[String(appointmentTypeID)] || null;
+}
+
 // Add-on prices in cents — for building Square line items
 const ADDON_PRICES = {
   "lighting-powdersville": { label: "Lighting Rental", cents: 12500 },
@@ -364,13 +396,17 @@ const ADDON_PRICES = {
 };
 
 // Build Square line items array from booking state
-// Returns [{ name, amount (cents), quantity }]
+// Returns [{ name, amount (cents), quantity, catalogObjectId? }]
+// Session item includes catalogObjectId so Square coupons can target it
 function buildSquareLineItems(appointmentTypeID, addons, location) {
   const items = [];
   const session = SESSION_PRICES[String(appointmentTypeID)];
   if (!session) throw new Error("Unknown appointment type: " + appointmentTypeID);
 
-  items.push({ name: session.label, amount: session.cents, quantity: 1 });
+  var sessionItem = { name: session.label, amount: session.cents, quantity: 1 };
+  var variationId = getSquareCatalogVariationId(appointmentTypeID);
+  if (variationId) sessionItem.catalogObjectId = variationId;
+  items.push(sessionItem);
 
   if (!addons) return items;
 

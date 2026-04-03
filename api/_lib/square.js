@@ -49,6 +49,13 @@ async function createPaymentLink(lineItems, redirectUrl, buyerEmail) {
   const locationId = getLocationId();
 
   const orderLineItems = lineItems.map(function (item) {
+    // If item has a catalog variation ID, use it so Square coupons can target it
+    if (item.catalogObjectId) {
+      return {
+        catalog_object_id: item.catalogObjectId,
+        quantity: String(item.quantity)
+      };
+    }
     return {
       name: item.name,
       quantity: String(item.quantity),
