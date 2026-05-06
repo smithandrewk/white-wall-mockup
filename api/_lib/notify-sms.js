@@ -105,16 +105,25 @@ async function notifyOwnerSMS(bookingState, appointmentId) {
   const tempGuid = "wws-" + appointmentId + "-" + Date.now();
   const endpoint = url.replace(/\/$/, "") + "/api/v1/message/text?password=" + encodeURIComponent(bbPassword);
 
+  // Hard timeout — BB occasionally hangs in validateText for ~120s when its
+  // primary AppleScript falls back. Don't let that wedge the booking flow.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(function () { controller.abort(); }, 8000);
+
   try {
     const res = await fetch(endpoint, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "CF-Access-Client-Id": cfId,
         "CF-Access-Client-Secret": cfSecret
       },
       body: JSON.stringify({
-        chatGuid: "iMessage;-;" + ownerPhone,
+        // "any;-;" lets BB pick the right service. "iMessage;-;" forces
+        // iMessage but breaks BB's primary AppleScript path on first send
+        // and forces the slow fallback that times out validateText (~120s).
+        chatGuid: "any;-;" + ownerPhone,
         tempGuid: tempGuid,
         message: body,
         method: "apple-script"
@@ -126,7 +135,12 @@ async function notifyOwnerSMS(bookingState, appointmentId) {
       console.error("notify-sms: Watson/BB error", res.status, errText.slice(0, 500));
     }
   } catch (err) {
+    // Note: BB occasionally returns 500 / aborts after sending the message
+    // (validateText timeout). The message often went out anyway. Logged for
+    // observability but not surfaced to the booking flow.
     console.error("notify-sms: failed to send", err.message);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
