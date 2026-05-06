@@ -500,6 +500,8 @@ module.exports = {
   buildAcuityFields,
   buildAppointmentNotes,
   buildSquareLineItems,
+  SESSION_PRICES,
+  ADDON_PRICES,
   signState,
   verifyAndDecodeState
 };

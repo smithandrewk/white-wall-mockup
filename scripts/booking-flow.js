@@ -896,6 +896,8 @@
           foodDrinks: state.foodDrinks,
           highTrafficNote: state.highTrafficNote,
           tmHighTrafficNote: state.tmHighTrafficNote,
+          emailAcknowledgment: state.emailAcknowledgment,
+          termsSignature: state.termsSignature,
           waiverSigned: state.waiverSigned,
           cleaningFee: getCleaningFee()
         })

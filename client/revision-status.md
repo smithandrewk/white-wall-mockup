@@ -371,7 +371,34 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 - [x] Updated: event step capacity notice, details step warning card, schedule step warning card, acknowledgement checkbox, high-traffic description text, terms page
 - [x] Updated Flagship location page "Host Your Event" section: replaced old paragraph with new cleaning fee language matching booking flow
 
+## Feedback Round 19 — Post-delivery revisions (2026-05-05)
+
+Source: `client/comms/2026-05-05-drew-text-post-delivery-revisions.md`
+Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
+
+### Item 7 — Audit physical-waiver language
+- [x] Grep entire codebase for "physical sign," "in person," "at the studio," "upon arrival," "paper waiver," "hard copy" — **no occurrences found**. The waiver explicitly states (section 10) that the electronic signature has full legal force.
+
+### Item 6 — Verify Oct 10 booking
+- [x] Pulled appointment 1697834248 (Angela Anderson, 50 ppl, Wedding Shower) from Acuity. Cleaning fee **was applied** ($150 in price, in notes). Buffer block **was created** (block 9857142274, 5:30 PM → 8:00 PM). System worked as designed.
+
+### Items 2 + 3 — Full notification email rewrite
+- [x] New `api/_lib/waiver-text.js` — server-side waiver text matching client-side renderWaiver()
+- [x] Rewrote `api/notify-owner.js` — every booking gets a confirmation email (was 35+ only). Includes: contact, intake, event details, add-ons with specifics (backdrop colors, wall numbers, chair tier, table count), pricing breakdown, signatures, full waiver text. 35+ bookings get "[White Wall] HIGH TRAFFIC" subject prefix.
+- [x] Customer also receives the same email with a different intro/subject ("Your WhiteWall Studios booking is confirmed").
+- [x] Removed `>= 35` gate in `api/booking-callback.js` — emails fire for every booking.
+- [x] `api/create-checkout.js` and `scripts/booking-flow.js` now pass `emailAcknowledgment` and `termsSignature` through (they were dropped before).
+
+### Item 1 — April cleaner notification
+- [ ] Pending — needs implementation (will reuse notify-owner pattern). April's contact: cleanspacesco.gvl@gmail.com / +1 (916) 579-9248.
+
+### Item 4 — 3 videos on theresavideoforthat
+- [ ] Blocked on Drew — need YouTube IDs for Storage Building, Chair Rental, Lighting Rental (likely unlisted on his channel)
+
+### Item 5 — SMS to Drew via Watson + Blue Bubbles
+- [ ] Blocked on Drew — need Watson webhook URL + Drew's iMessage handle
+
 ## Summary
 
-**Done: 152 items** (all revision items complete)
-**Remaining: 0 items** — all client feedback implemented. See launch checklist for go-live blockers.
+**Done: 156 items** (all original revisions + Round 19 items 2/3/6/7 complete)
+**Remaining: 3 items** — Round 19 items 1, 4, 5 (1 unblocked, 4 + 5 awaiting Drew)

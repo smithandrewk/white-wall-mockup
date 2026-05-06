@@ -1,5 +1,21 @@
 # White Wall Studios - Website Mockup
 
+## High-Level Summary Format
+
+When Andrew asks for a high-level summary of where things stand with the client (engagement status, "where did we leave off", etc.), respond in a short git-log style:
+
+```
+[YYYY-MM-DD] Critical event
+[YYYY-MM-DD] Critical event
+[YYYY-MM-DD] Critical event
+
+One- or two-sentence status line.
+```
+
+Use `[YYYY-??-??]` (or just `[????]`) when the date is unknown — don't guess. Keep events to one line each. The trailing summary should be brief — current state and what's next, nothing more.
+
+This is for high-level/strategic asks only. Implementation details (file:line, code references) belong in normal prose.
+
 ## Context Management (Avoid Rate Limits)
 
 This project involves multiple large HTML files. Follow these rules to avoid blowing up the context window:
@@ -27,6 +43,53 @@ The `vault/` directory is indexed as QMD collection `"wws"` (12 docs). It contai
 - `design/` - LaTeX design sheets and reports
 - `fonts/` - Web fonts
 - `wws-logo.png` - Logo asset
+
+## Change Request Protocol
+
+Every time Andrew pastes or relays a client message requesting a change (text, email, PDF, voice note, etc.):
+
+### Step 1 — Always: log the source material
+
+Save the raw message to `client/comms/` using:
+
+```
+client/comms/YYYY-MM-DD-{source}-{brief-topic}.md
+```
+
+Include sender, date, medium, and **verbatim content** (faithful transcription if voice). Do not paraphrase — the original wording is the record.
+
+### Step 2 — Pick a path
+
+After logging, decide:
+
+- **Fast path** — for trivial/obvious changes (typo fix, single copy tweak, phone number swap, color change, etc.): go straight to implement, then update `client/revision-status.md`, commit, push.
+- **Standard path** — for anything substantive (multiple changes, ambiguous scope, structural/UX shifts, anything where Drew's intent isn't 100% clear): run the full deliberative loop below.
+
+When in doubt, use the standard path. The fast path is for changes where there's nothing to plan.
+
+### Standard path
+
+1. **Log** the revision (Step 1 above).
+2. **Draft a detailed plan** as a file: `client/comms/YYYY-MM-DD-{topic}-plan.md`. List every change, file touched, and decision point. Survives compaction and gives Andrew something concrete to react to.
+3. **Ask Andrew clarifying questions** using the `AskUserQuestion` tool, *after* the plan is drafted — so he can poke holes in something concrete instead of predicting needs.
+4. **Refine the plan** based on Andrew's answers. Update the plan file.
+5. **Surface any questions for Drew** as a single copy-paste-ready message in the conversation. Andrew will relay it. If there are no questions for Drew, skip to step 8.
+6. *(Andrew's turn)* Andrew sends the questions to Drew, gets answers.
+7. *(Andrew's turn)* Andrew comes back with Drew's answers.
+8. **Finalize the plan** — incorporate Drew's answers into the plan file.
+9. **Implement.** Update `client/revision-status.md` with each change as a checkbox item. Commit and push.
+
+### Revision tracker conventions
+
+In `client/revision-status.md`:
+- Add a **section header** per round: `## Feedback Round N (YYYY-MM-DD) — Drew's text YYYY-MM-DD`
+- List every change as `- [x]` (done) or `- [ ]` (pending)
+- Note blocker + owner for deferred items
+- Update **Summary** counts at the bottom
+
+### Why this matters
+
+Paper trail. Every site change traces back to a specific client request. If a change can't be traced to a documented request, it shouldn't exist.
 
 ## Active Product Directives
 

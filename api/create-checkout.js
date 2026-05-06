@@ -39,6 +39,8 @@ module.exports = async function handler(req, res) {
     foodDrinks,
     highTrafficNote,
     tmHighTrafficNote,
+    emailAcknowledgment,
+    termsSignature,
     waiverSigned,
     cleaningFee
   } = body;
@@ -218,6 +220,8 @@ module.exports = async function handler(req, res) {
       foodDrinks: foodDrinks != null ? foodDrinks : false,
       highTrafficNote: highTrafficNote || "",
       tmHighTrafficNote: tmHighTrafficNote || "",
+      emailAcknowledgment: emailAcknowledgment || "",
+      termsSignature: termsSignature || "",
       waiverSigned: true,
       cleaningFee: cleaningFee || null
     };

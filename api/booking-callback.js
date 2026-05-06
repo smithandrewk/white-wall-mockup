@@ -173,17 +173,12 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Send owner notification for high-traffic bookings (35+ participants)
+    // Send confirmation emails (every booking — owner + customer)
     try {
-      var participantsForNotify = Number(bookingState.participants) || 0;
-      if (participantsForNotify >= 35) {
-        await notifyOwner(bookingState, appointment.id);
-        log("notify", "owner notification sent", { participants: participantsForNotify });
-      } else {
-        log("notify", "skipped (participants: " + participantsForNotify + ", threshold: 35)");
-      }
+      await notifyOwner(bookingState, appointment.id);
+      log("notify", "confirmation emails sent");
     } catch (err) {
-      log("notify", "owner notification FAILED: " + err.message);
+      log("notify", "confirmation email FAILED: " + err.message);
     }
 
     // QBO invoice marking happens from the confirmation page via /api/qbo-mark-paid
