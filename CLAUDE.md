@@ -284,6 +284,11 @@ Static:
 | `RESEND_API_KEY` | Resend dashboard | Owner + customer + cleaner notification emails |
 | `NOTIFICATION_EMAIL` | — | Drew's inbox — receives every-booking confirmation |
 | `CLEANER_EMAIL` | — | April Steadman's inbox (`cleanspacesco.gvl@gmail.com`) — receives cleaning-window notice with .ics attachment when a PV booking triggers the 35+/50+ cleaning fee |
+| `WATSON_SMS_URL` | Cloudflare Tunnel | Public hostname for Watson's Blue Bubbles, e.g. `https://wws-bb.entrpy.co` |
+| `WATSON_CF_ACCESS_CLIENT_ID` | Cloudflare Access | Service token ID — gates Watson at CF's edge |
+| `WATSON_CF_ACCESS_CLIENT_SECRET` | Cloudflare Access | Service token secret |
+| `BLUEBUBBLES_PASSWORD` | BB Server UI on Watson | Auth password for BB's REST API (sent as `?password=` query param) |
+| `OWNER_PHONE` | — | Drew's iMessage handle, e.g. `+18038738153` |
 
 ### Acuity API Details
 

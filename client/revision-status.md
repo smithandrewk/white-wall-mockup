@@ -399,9 +399,13 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 - [ ] Blocked on Drew — need YouTube IDs for Storage Building, Chair Rental, Lighting Rental (likely unlisted on his channel)
 
 ### Item 5 — SMS to Drew via Watson + Blue Bubbles
-- [ ] Blocked on Drew — need Watson webhook URL + Drew's iMessage handle
+- [x] New `api/_lib/notify-sms.js` — POSTs to Blue Bubbles on Watson via Cloudflare Tunnel + Cloudflare Access service token. Triggers when 35+ event OR ≥3hr shoot. Sends a tight SMS-style summary (trigger reason, name, location, time, total, Acuity ID). Architecture: Vercel → CF Edge (validates CF Access service token) → CF Tunnel → Watson `localhost:1234` → Blue Bubbles → iMessage to Drew.
+- [x] Wired into `api/booking-callback.js` — fires after cleaner notification, isolated try/catch. No-ops gracefully if env vars missing.
+- [x] Env vars documented in CLAUDE.md: `WATSON_SMS_URL`, `WATSON_CF_ACCESS_CLIENT_ID`, `WATSON_CF_ACCESS_CLIENT_SECRET`, `BLUEBUBBLES_PASSWORD`, `OWNER_PHONE`.
+- [ ] Awaiting Cloudflare Tunnel + Access setup on Watson (Andrew + Drew). Once values are in Vercel env, SMS goes live.
+- [ ] "3+ hour shoot" defaults to ANY 3+ hour booking (incl. events). Narrow to photo/video only if Drew confirms.
 
 ## Summary
 
-**Done: 159 items** (all original revisions + Round 19 items 1/2/3/6/7 complete)
-**Remaining: 2 items** — Round 19 items 4 + 5 (both blocked on Drew's input)
+**Done: 162 items** (all original revisions + Round 19 items 1/2/3/5/6/7 — Item 5 code done, awaiting CF Tunnel + env vars to fire)
+**Remaining: 1 item** — Round 19 item 4 (3 YouTube IDs from Drew)

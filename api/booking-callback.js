@@ -25,6 +25,7 @@ const {
 const { getOrder } = require("./_lib/square");
 const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
+const { notifyOwnerSMS } = require("./_lib/notify-sms");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 
@@ -188,6 +189,14 @@ module.exports = async function handler(req, res) {
       log("notify", "cleaner notification handled");
     } catch (err) {
       log("notify", "cleaner notification FAILED: " + err.message);
+    }
+
+    // SMS Drew via Blue Bubbles (35+ event OR 3+ hour shoot)
+    try {
+      await notifyOwnerSMS(bookingState, appointment.id);
+      log("notify", "owner SMS handled");
+    } catch (err) {
+      log("notify", "owner SMS FAILED: " + err.message);
     }
 
     // QBO invoice marking happens from the confirmation page via /api/qbo-mark-paid
