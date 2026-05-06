@@ -326,6 +326,26 @@
       }
     });
 
+    // Block non-digit keystrokes/pastes on participant fields. type="number"
+    // alone doesn't actually prevent non-numeric input across all browsers
+    // (Safari is especially loose). Cancelling beforeinput stops the
+    // character from ever entering the input value — no strip-after-the-fact.
+    // Real incident: Molly Hensley booked Nov 14 2026 with "35 +".
+    document.addEventListener("beforeinput", (event) => {
+      const t = event.target;
+      if (!t || !t.matches) return;
+      if (
+        t.matches("[data-input='participants']") ||
+        t.matches("[data-input='intake-participants']")
+      ) {
+        // event.data is the text being inserted (null for deletions/etc).
+        // Reject if it contains anything but digits.
+        if (event.data != null && /\D/.test(event.data)) {
+          event.preventDefault();
+        }
+      }
+    });
+
     document.addEventListener("input", (event) => {
       const target = event.target;
 
@@ -412,7 +432,7 @@
         }
         // PV photo/video: cleaning fee popup for 50+
         if (location.slug === "powdersville" && state.eventIntent !== "yes") {
-          var pvCount = Number(target.value);
+          var pvCount = parseCount(target.value);
           if (pvCount >= 50) {
             showCleaningFeePopup();
           }
