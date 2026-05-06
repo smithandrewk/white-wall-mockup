@@ -19,6 +19,18 @@
     maximumFractionDigits: 0
   });
 
+  // Robust int parse for participant counts. Customers occasionally type
+  // "35 +", "35+", "~35", "35-50", etc. Number() returns NaN for those and
+  // ALL the >=35 / >=50 thresholds silently fall through (missed cleaning
+  // fee + missed high-traffic warnings). Extract the first integer instead.
+  // Real incident: Molly Hensley booked Nov 14 2026 with "35 +" — no fee
+  // applied, no warnings shown, no buffer block.
+  function parseCount(v) {
+    if (v == null) return 0;
+    const m = String(v).match(/\d+/);
+    return m ? parseInt(m[0], 10) : 0;
+  }
+
   const state = {
     step: 1,
     durationId: location.durations[0] ? location.durations[0].id : "",
@@ -379,7 +391,7 @@
         state.intake.participants = target.value;
         // TM: hard cap at 50 people
         if (location.slug === "taylors-mill") {
-          var tmCount = Number(target.value);
+          var tmCount = parseCount(target.value);
           if (tmCount > 50) {
             showCapacityModal("Taylor\u2019s Mill has a maximum capacity of 50 people, including vendors and contractors. Please reduce your count or consider our Flagship Location for larger groups.");
             target.value = "50";
@@ -392,8 +404,8 @@
         }
         // PV: cross-validate intake participants with top-level attendee count for events
         if (location.slug === "powdersville" && state.eventIntent === "yes" && state.participants) {
-          var topCount = Number(state.participants);
-          var intakeCount = Number(target.value);
+          var topCount = parseCount(state.participants);
+          var intakeCount = parseCount(target.value);
           if (intakeCount && topCount && intakeCount !== topCount) {
             showToast("Your attendee count (" + topCount + ") doesn\u2019t match the participant count you just entered (" + intakeCount + "). Please make sure these match.");
           }
@@ -743,10 +755,10 @@
   }
 
   function getCleaningFee() {
-    var count = Number(state.participants);
+    var count = parseCount(state.participants);
     // Also check intake participants for photo/video sessions
-    var intakeCount = Number(state.intake.participants);
-    var effectiveCount = Math.max(count || 0, intakeCount || 0);
+    var intakeCount = parseCount(state.intake.participants);
+    var effectiveCount = Math.max(count, intakeCount);
     if (effectiveCount >= 50) {
       return { label: "Cleaning fee", amount: 150, note: "" };
     }
@@ -966,7 +978,7 @@
         : "";
 
     const capacityNotice =
-      /^\d+$/.test(state.participants.trim()) && Number(state.participants) >= 35
+      /^\d+$/.test(state.participants.trim()) && parseCount(state.participants) >= 35
         ? `
           <div class="warning-card" style="margin-top:1rem">
             For events with 35+ attendees, a $150 cleaning fee will be automatically included. Our team may reach out to waive this fee based on your booking details.
@@ -997,7 +1009,7 @@
       ${state.eventIntent === "yes" ? `
       <div style="margin-top:1.5rem">
         <label class="ui-field-label" for="participants">${participantLabel}</label>
-        <input class="booking-input" id="participants" data-input="participants" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
+        <input class="booking-input" id="participants" data-input="participants" type="number" inputmode="numeric" min="1" value="${escapeHtml(state.participants)}" placeholder="Expected number of attendees">
       </div>
 
       <div data-participant-notices>
@@ -1025,7 +1037,7 @@
     if (existingTextarea) {
       state.eventDescription = existingTextarea.value;
     }
-    var count = Number(state.participants);
+    var count = parseCount(state.participants);
 
     // 150+ people: block booking entirely
     if (count > 150) {
@@ -1097,7 +1109,7 @@
   function getHighTrafficHtml() {
     // Only show high-traffic note for non-event bookings with 35+ participants
     if (state.eventIntent === "yes") return "";
-    var count = Number(state.participants);
+    var count = parseCount(state.participants);
     if (!count || count < 35) return "";
     return `
       <div class="booking-panel-soft p-5 mt-4">
@@ -1125,7 +1137,7 @@
     var container = document.querySelector("[data-participant-notices]");
     if (!container) return;
 
-    var count = Number(state.participants);
+    var count = parseCount(state.participants);
     var warning =
       state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
         ? '<div class="warning-card" style="margin-top:1rem">Looks like you have attendees — did you mean to select "Event booking" above? If this is a photo/video session, leave this blank.</div>'
@@ -1767,7 +1779,7 @@
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
-      var count = Number(state.participants);
+      var count = parseCount(state.participants);
       // Block PV events with 150+ people
       if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) return false;
       // For PV events with 35+ people, require event description
@@ -1775,7 +1787,7 @@
       // For non-events with 35+ participants, require high-traffic note
       if (state.eventIntent !== "yes" && count >= 35 && !state.highTrafficNote.trim()) return false;
       // TM: hard cap at 50, and if intake participants > 35, require acknowledgment
-      var tmCount = Number(state.intake.participants);
+      var tmCount = parseCount(state.intake.participants);
       if (location.slug === "taylors-mill" && tmCount > 50) return false;
       if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) return false;
       return baseComplete;
@@ -1805,11 +1817,11 @@
     if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) errors.push("Please sign the email acknowledgment with your full name.");
     if (!isTermsAccepted()) errors.push("Please sign the terms & conditions with your full name.");
     if (!state.waiverSigned) errors.push("Please sign the liability waiver.");
-    var count = Number(state.participants);
+    var count = parseCount(state.participants);
     if (state.eventIntent !== "yes" && count >= 35 && !state.highTrafficNote.trim()) errors.push("Please describe your shoot (required for 35+ participants).");
     if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) errors.push("The event cannot host more than 150 people total, including vendors and contractors.");
     if (location.slug === "powdersville" && state.eventIntent === "yes" && count >= 35 && !state.eventDescription.trim()) errors.push("Please tell us about your event (required for 35+ participants).");
-    var tmCount = Number(state.intake.participants);
+    var tmCount = parseCount(state.intake.participants);
     if (location.slug === "taylors-mill" && tmCount > 50) errors.push("Taylor\u2019s Mill has a maximum capacity of 50 people.");
     if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 35+ participants.");
     return errors;

@@ -201,9 +201,31 @@ module.exports = async function handler(req, res) {
     // 1. Build Square line items (server-side pricing is authoritative)
     const lineItems = buildSquareLineItems(appointmentTypeID, addons, location);
 
-    // Add cleaning fee line item if applicable (50+ participants = $150)
-    if (cleaningFee && cleaningFee.amount > 0) {
-      lineItems.push({ name: "Cleaning Fee", amount: cleaningFee.amount * 100, quantity: 1 });
+    // Server-side cleaning fee fallback. The client computes cleaningFee, but
+    // a parser bug there (e.g. customer typing "35 +" instead of a number) can
+    // silently miss the threshold. Recompute and override if missing.
+    // Real incident: Molly Hensley booked Nov 14 2026 with "35 +" — client
+    // didn't apply the fee. Server-side guard prevents this.
+    function parseCount(v) {
+      if (v == null) return 0;
+      const m = String(v).match(/\d+/);
+      return m ? parseInt(m[0], 10) : 0;
+    }
+    const intakeParticipants = (intake && intake.participants) || "";
+    const effectiveCount = Math.max(parseCount(participants), parseCount(intakeParticipants));
+    let effectiveCleaningFee = cleaningFee;
+    if (!effectiveCleaningFee || !effectiveCleaningFee.amount) {
+      if (effectiveCount >= 50) {
+        effectiveCleaningFee = { label: "Cleaning fee", amount: 150, note: "" };
+        console.warn("create-checkout: server-applied cleaning fee (50+ ppl)", { count: effectiveCount, customer: contact && contact.email });
+      } else if (effectiveCount >= 35 && eventIntent === "yes") {
+        effectiveCleaningFee = { label: "Cleaning fee", amount: 150, note: "Our team may reach out to waive this fee based on your booking details." };
+        console.warn("create-checkout: server-applied cleaning fee (35+ event)", { count: effectiveCount, customer: contact && contact.email });
+      }
+    }
+
+    if (effectiveCleaningFee && effectiveCleaningFee.amount > 0) {
+      lineItems.push({ name: "Cleaning Fee", amount: effectiveCleaningFee.amount * 100, quantity: 1 });
     }
 
     // 2. Sign the full booking state for the callback
@@ -223,7 +245,7 @@ module.exports = async function handler(req, res) {
       emailAcknowledgment: emailAcknowledgment || "",
       termsSignature: termsSignature || "",
       waiverSigned: true,
-      cleaningFee: cleaningFee || null
+      cleaningFee: effectiveCleaningFee || null
     };
 
     const { encoded, sig } = signState(bookingState);

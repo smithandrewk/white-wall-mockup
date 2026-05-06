@@ -411,5 +411,13 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 
 ## Summary
 
-**Done: 167 items** (all original revisions + Round 19 fully complete: items 1/2/3/4/5/6/7)
-**Remaining: 0 items** — Round 19 closed.
+### Item 6b — Verify Nov 14 booking (Molly Hensley)
+- [x] Pulled appointment 1696694829. Drew's worry was correct this time — cleaning fee was NOT applied. Total $1,030 (should have been $1,180). No buffer block created either.
+- [x] Root cause: customer typed `"35 +"` (string with space + plus) in the participants field. Client-side `Number("35 +") = NaN`, so the >=35 / >=50 threshold checks silently failed. This same bug also missed the high-traffic warning UI for the customer.
+- [x] Fix: introduced `parseCount(v)` helper that extracts the first integer from arbitrary input; replaced all `Number(state.participants)` / `Number(state.intake.participants)` call sites with `parseCount`. Tested across edge cases ("35 +", "35+", "~35", "35-50", etc.).
+- [x] Tightened the input field: added `type="number"` + `inputmode="numeric"` + `min="1"` to discourage non-numeric input on new bookings.
+- [x] Server-side belt-and-suspenders: `api/create-checkout.js` now recomputes the cleaning fee server-side and applies it if the client missed. Logs a warning when this fires so we can see if the client is dropping fees.
+- [x] Logged escalation in `client/escalations.md`: Molly's booking was underbilled $150. Drew decides remediation.
+
+**Done: 175 items** (all original revisions + Round 19 fully complete + bonus Item 6b)
+**Remaining: 0 items** — Round 19 closed; Molly remediation flagged in escalations.md.
