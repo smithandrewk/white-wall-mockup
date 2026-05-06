@@ -24,6 +24,7 @@ const {
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
 const { notifyOwner } = require("./notify-owner");
+const { notifyCleaner } = require("./_lib/notify-cleaner");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 
@@ -179,6 +180,14 @@ module.exports = async function handler(req, res) {
       log("notify", "confirmation emails sent");
     } catch (err) {
       log("notify", "confirmation email FAILED: " + err.message);
+    }
+
+    // Notify cleaner (April) when a cleaning fee + buffer is in play
+    try {
+      await notifyCleaner(bookingState, appointment.id);
+      log("notify", "cleaner notification handled");
+    } catch (err) {
+      log("notify", "cleaner notification FAILED: " + err.message);
     }
 
     // QBO invoice marking happens from the confirmation page via /api/qbo-mark-paid

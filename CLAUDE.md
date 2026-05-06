@@ -281,6 +281,9 @@ Static:
 | `SQUARE_LOCATION_ID` | Square Dashboard > Locations | `LTPQKY2V3N0AH` (sandbox) |
 | `SQUARE_ENVIRONMENT` | — | `sandbox` (change to `production` for go-live) |
 | `BOOKING_SECRET` | `openssl rand -hex 32` | HMAC signing key |
+| `RESEND_API_KEY` | Resend dashboard | Owner + customer + cleaner notification emails |
+| `NOTIFICATION_EMAIL` | — | Drew's inbox — receives every-booking confirmation |
+| `CLEANER_EMAIL` | — | April Steadman's inbox (`cleanspacesco.gvl@gmail.com`) — receives cleaning-window notice with .ics attachment when a PV booking triggers the 35+/50+ cleaning fee |
 
 ### Acuity API Details
 

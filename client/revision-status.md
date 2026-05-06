@@ -390,7 +390,10 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 - [x] `api/create-checkout.js` and `scripts/booking-flow.js` now pass `emailAcknowledgment` and `termsSignature` through (they were dropped before).
 
 ### Item 1 — April cleaner notification
-- [ ] Pending — needs implementation (will reuse notify-owner pattern). April's contact: cleanspacesco.gvl@gmail.com / +1 (916) 579-9248.
+- [x] New `api/_lib/notify-cleaner.js` — sends April an email when a Powdersville booking triggers the 35+/50+ cleaning fee. Email includes session-end time, the 2.5hr cleaning window, studio address, and an `.ics` attachment with a 30-min reminder so she can add it to her calendar in one tap. Email asks her to reply to confirm.
+- [x] Wired into `api/booking-callback.js` — fires after the owner/customer email, isolated try/catch so a cleaner-email failure doesn't break the booking.
+- [x] `CLEANER_EMAIL` env var documented in CLAUDE.md — Andrew sets `cleanspacesco.gvl@gmail.com` in Vercel for production.
+- [ ] Trigger only fires for Powdersville (matches existing buffer-block scope). TM 50+ photo/video sessions still get a cleaning fee but no cleaner notification — flag to Drew if he wants TM coverage too.
 
 ### Item 4 — 3 videos on theresavideoforthat
 - [ ] Blocked on Drew — need YouTube IDs for Storage Building, Chair Rental, Lighting Rental (likely unlisted on his channel)
@@ -400,5 +403,5 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 
 ## Summary
 
-**Done: 156 items** (all original revisions + Round 19 items 2/3/6/7 complete)
-**Remaining: 3 items** — Round 19 items 1, 4, 5 (1 unblocked, 4 + 5 awaiting Drew)
+**Done: 159 items** (all original revisions + Round 19 items 1/2/3/6/7 complete)
+**Remaining: 2 items** — Round 19 items 4 + 5 (both blocked on Drew's input)
