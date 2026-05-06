@@ -117,7 +117,7 @@ async function notifyOwnerSMS(bookingState, appointmentId) {
         chatGuid: "iMessage;-;" + ownerPhone,
         tempGuid: tempGuid,
         message: body,
-        method: "private-api"
+        method: "apple-script"
       })
     });
 
