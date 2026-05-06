@@ -157,8 +157,9 @@ module.exports = async function handler(req, res) {
       has_cleaning_fee: !!(bookingState.cleaningFee && bookingState.cleaningFee.amount > 0)
     });
 
-    // PV cleaning fee: block 2.5 hours after session for cleaners
-    if (bookingState.location === "powdersville" && bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
+    // Cleaning fee: block 2.5 hours after session for April. Fires at PV and
+    // TM — Drew confirmed (2026-05-05) that April covers both locations.
+    if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
       try {
         var durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 60;
         var sessionEnd = new Date(new Date(bookingState.datetime).getTime() + durationMin * 60000);
@@ -166,10 +167,10 @@ module.exports = async function handler(req, res) {
         await acuityPost("/blocks", {
           start: sessionEnd.toISOString(),
           end: bufferEnd.toISOString(),
-          calendarID: CALENDAR_IDS.powdersville,
+          calendarID: CALENDAR_IDS[bookingState.location],
           notes: "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
         });
-        log("cleaning", "buffer block created");
+        log("cleaning", "buffer block created", { location: bookingState.location });
       } catch (err) {
         log("cleaning", "buffer block FAILED: " + err.message);
       }

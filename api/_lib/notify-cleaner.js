@@ -2,10 +2,9 @@
 // booking triggers a cleaning fee. Includes an .ics attachment so she can
 // add the cleaning window to her calendar in one tap.
 //
-// Triggers when bookingState.cleaningFee.amount > 0 AND location is
-// Powdersville (matching the buffer-block trigger in booking-callback.js).
-// At Taylor's Mill the cleaning fee is rare (50+ photo/video session only)
-// and no buffer block is created, so we don't notify there for now.
+// Triggers whenever bookingState.cleaningFee.amount > 0 — fires at both
+// Powdersville and Taylor's Mill (Drew confirmed 2026-05-05 that April
+// covers both locations).
 //
 // Env vars: RESEND_API_KEY, CLEANER_EMAIL (April's email address)
 
@@ -116,7 +115,6 @@ async function notifyCleaner(bookingState, appointmentId) {
 
   // Only fire when there's actually a cleaning fee + buffer block
   if (!bookingState.cleaningFee || bookingState.cleaningFee.amount <= 0) return;
-  if (bookingState.location !== "powdersville") return;
 
   const TYPE_TO_DURATION = require("./acuity").TYPE_TO_DURATION;
   const durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 60;

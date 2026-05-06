@@ -64,7 +64,8 @@ module.exports = async function handler(req, res) {
 
   try {
     // 0. If cleaning fee applies, check that the 2.5hr buffer after session is clear
-    if (cleaningFee && cleaningFee.amount > 0 && location === "powdersville") {
+    if (cleaningFee && cleaningFee.amount > 0) {
+      var calendarID = CALENDAR_IDS[location];
       var durationMin = TYPE_TO_DURATION[String(appointmentTypeID)] || 60;
       var sessionStart = new Date(datetime);
       var sessionEnd = new Date(sessionStart.getTime() + durationMin * 60000);
@@ -72,12 +73,12 @@ module.exports = async function handler(req, res) {
 
       // Query Acuity for appointments AND blocks in the buffer window
       var bufferAppts = await acuityGet("/appointments", {
-        calendarID: CALENDAR_IDS.powdersville,
+        calendarID: calendarID,
         minDate: sessionEnd.toISOString(),
         maxDate: bufferEnd.toISOString()
       });
       var bufferBlocks = await acuityGet("/blocks", {
-        calendarID: CALENDAR_IDS.powdersville,
+        calendarID: calendarID,
         minDate: sessionEnd.toISOString(),
         maxDate: bufferEnd.toISOString()
       });
@@ -106,12 +107,12 @@ module.exports = async function handler(req, res) {
         var dayStart = date + "T00:00:00";
         var dayEnd = date + "T23:59:59";
         var allDayAppts = await acuityGet("/appointments", {
-          calendarID: CALENDAR_IDS.powdersville,
+          calendarID: calendarID,
           minDate: dayStart,
           maxDate: dayEnd
         });
         var allDayBlocks = await acuityGet("/blocks", {
-          calendarID: CALENDAR_IDS.powdersville,
+          calendarID: calendarID,
           minDate: dayStart,
           maxDate: dayEnd
         });

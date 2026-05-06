@@ -393,7 +393,7 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 - [x] New `api/_lib/notify-cleaner.js` — sends April an email when a Powdersville booking triggers the 35+/50+ cleaning fee. Email includes session-end time, the 2.5hr cleaning window, studio address, and an `.ics` attachment with a 30-min reminder so she can add it to her calendar in one tap. Email asks her to reply to confirm.
 - [x] Wired into `api/booking-callback.js` — fires after the owner/customer email, isolated try/catch so a cleaner-email failure doesn't break the booking.
 - [x] `CLEANER_EMAIL` env var documented in CLAUDE.md — Andrew sets `cleanspacesco.gvl@gmail.com` in Vercel for production.
-- [ ] Trigger only fires for Powdersville (matches existing buffer-block scope). TM 50+ photo/video sessions still get a cleaning fee but no cleaner notification — flag to Drew if he wants TM coverage too.
+- [x] Drew confirmed (2026-05-05) that April covers Taylor's Mill too. Removed the PV-only gate from `notify-cleaner.js`, the buffer-block creation in `booking-callback.js`, and the buffer-conflict pre-check in `create-checkout.js`. All three now use `CALENDAR_IDS[bookingState.location]` and fire for whichever location triggers the cleaning fee.
 
 ### Item 4 — Videos on theresavideoforthat
 - [x] Drew sent 4 video URLs (was originally 3 — added Events Info as a bonus). Added to `theresavideoforthat.html` videos array next to the existing rental info videos:
