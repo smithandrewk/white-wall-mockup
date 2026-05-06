@@ -395,8 +395,12 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 - [x] `CLEANER_EMAIL` env var documented in CLAUDE.md — Andrew sets `cleanspacesco.gvl@gmail.com` in Vercel for production.
 - [ ] Trigger only fires for Powdersville (matches existing buffer-block scope). TM 50+ photo/video sessions still get a cleaning fee but no cleaner notification — flag to Drew if he wants TM coverage too.
 
-### Item 4 — 3 videos on theresavideoforthat
-- [ ] Blocked on Drew — need YouTube IDs for Storage Building, Chair Rental, Lighting Rental (likely unlisted on his channel)
+### Item 4 — Videos on theresavideoforthat
+- [x] Drew sent 4 video URLs (was originally 3 — added Events Info as a bonus). Added to `theresavideoforthat.html` videos array next to the existing rental info videos:
+  - `aNTLiqzGxp4` — Chair Rental Info
+  - `EmN3ppbh-lk` — Lighting Rental Video
+  - `K810lp2kEYc` — All Storage Building Info
+  - `BsyruYsoA-I` — WhiteWall Events Info
 
 ### Item 5 — SMS to Drew via Watson + Blue Bubbles
 - [x] New `api/_lib/notify-sms.js` — POSTs to Blue Bubbles on Watson via Cloudflare Tunnel + Cloudflare Access service token. Triggers when 35+ event OR ≥3hr shoot. Sends a tight SMS-style summary (trigger reason, name, location, time, total, Acuity ID). Architecture: Vercel → CF Edge (validates CF Access service token) → CF Tunnel → Watson `localhost:1234` → Blue Bubbles → iMessage to Drew.
@@ -407,5 +411,5 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 
 ## Summary
 
-**Done: 162 items** (all original revisions + Round 19 items 1/2/3/5/6/7 — Item 5 code done, awaiting CF Tunnel + env vars to fire)
-**Remaining: 1 item** — Round 19 item 4 (3 YouTube IDs from Drew)
+**Done: 167 items** (all original revisions + Round 19 fully complete: items 1/2/3/4/5/6/7)
+**Remaining: 0 items** — Round 19 closed.
