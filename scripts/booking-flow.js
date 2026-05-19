@@ -1513,15 +1513,23 @@
 
           <p><strong>4. Responsibility for Guests.</strong> I accept full legal and financial responsibility for <strong>all individuals I allow into the Studio</strong> and acknowledge that WhiteWall Studios has no obligation to supervise guests during my booking.</p>
 
-          <p><strong>5. Damage Responsibility.</strong> I accept full financial responsibility for any damage caused by myself or My Party to the Studio, building, furniture, equipment, props, fixtures, or any other property belonging to WhiteWall Studios.</p>
-          <p>I authorize WhiteWall Studios, LLC to <strong>charge the payment method used for booking for any repair or replacement costs</strong>, including labor if applicable.</p>
+          <p><strong>5. Booking Time, Early Entry, Late Exit, and Automatic Charges.</strong> I understand that my booking time is strict. I may not enter the Studio before my scheduled start time, and I must be fully cleaned up, reset, packed up, and completely out of the Studio by my scheduled end time.</p>
+          <p>If I enter the Studio early or leave late, even by one minute, I authorize WhiteWall Studios, LLC to <strong>automatically charge the card/payment method used for booking $130 per 15-minute increment</strong>. I understand this charge may be made without additional approval because I am agreeing to this policy as part of this waiver and booking agreement.</p>
 
-          <p><strong>6. Studio Rules &amp; Condition.</strong> I agree to:</p>
+          <p><strong>6. Cleaning, Trash, and Studio Reset Responsibility.</strong> I agree to leave the Studio completely clean, reset, and ready for the next guest. This includes returning all furniture, benches, mirrors, plants, clothing racks/hangers, props, backdrops, lighting, add-ons, and equipment to their original locations.</p>
+          <p>I agree to remove all trash from the Studio and bathroom trash cans and take it to the blue dumpster behind the building, even if there is only one item in the trash bag. I agree to replace all trash bags with fresh bags from the white storage closet or from the bottom of the trash can.</p>
+          <p>If the Studio is not fully cleaned, reset, re-bagged, and ready for the next guest when I leave, I authorize WhiteWall Studios, LLC to automatically charge the card/payment method used for booking a <strong>minimum $200 cleaning/reset fee</strong>. I understand additional charges may apply if WhiteWall Studios has to send someone to clean, reset, remove trash, repair damage, or prepare the Studio for the next booking.</p>
+
+          <p><strong>7. Damage, Missing Items, and Unauthorized Add-On Use.</strong> I accept full financial responsibility for any damage caused by myself or My Party to the Studio, bathroom, building, furniture, props, plants, backdrops, lighting, equipment, add-ons, fixtures, or other property belonging to WhiteWall Studios.</p>
+          <p>I authorize WhiteWall Studios, LLC to <strong>charge the card/payment method used for booking</strong> for repair costs, replacement costs, labor, missing items, unauthorized add-on use, or any other fees caused by violation of Studio policies.</p>
+
+          <p><strong>8. Studio Rules &amp; Condition.</strong> I agree to:</p>
           <ul style="margin-left:1.5rem;list-style:disc">
             <li>Return all furniture, props, and equipment to their original positions</li>
             <li>Leave the Studio in the condition it was found</li>
+            <li>Fully clean up all food, drinks, spills, crumbs, packaging, hair, confetti, glitter, dirt, backdrop debris, or other messes before leaving</li>
+            <li>Lower the shades, turn off the lights, remove all trash, and make sure the Studio is ready for the next guest</li>
           </ul>
-          <p>Failure to do so may result in a <strong>minimum $250 cleaning or reset fee</strong>.</p>
           <p>The following are strictly prohibited:</p>
           <ul style="margin-left:1.5rem;list-style:disc">
             <li>Smoking or vaping</li>
@@ -1531,15 +1539,13 @@
           </ul>
           <p>Haze machines are only permitted with bookings of <strong>four (4) hours or longer</strong>.</p>
 
-          <p><strong>7. Personal Property.</strong> WhiteWall Studios, LLC is <strong>not responsible for lost, stolen, or damaged personal property</strong> brought into the Studio.</p>
+          <p><strong>9. Personal Property.</strong> WhiteWall Studios, LLC is <strong>not responsible for lost, stolen, or damaged personal property</strong> brought into the Studio. There is no lost and found. Any items left behind may be discarded after the booking ends.</p>
 
-          <p><strong>8. Security Cameras.</strong> I acknowledge that <strong>security cameras operate within and around the Studio</strong> for safety and property protection.</p>
+          <p><strong>10. Security Cameras.</strong> I acknowledge that <strong>security cameras operate within and around the Studio</strong> for safety, property protection, and policy enforcement.</p>
 
-          <p><strong>9. Booking Compliance &amp; Cancellation.</strong> I agree to vacate the Studio by the end of my booking time. Failure to do so may result in additional charges.</p>
-          <p>Cancellations made <strong>within 48 hours of the booking</strong> will result in the full session charge.</p>
-          <p>WhiteWall Studios reserves the right to <strong>terminate a booking immediately without refund</strong> if Studio rules are violated.</p>
+          <p><strong>11. Booking Compliance &amp; Cancellation.</strong> Cancellations made <strong>within 48 hours of the booking</strong> will result in the full session charge. WhiteWall Studios reserves the right to <strong>terminate a booking immediately without refund</strong> if Studio rules are violated.</p>
 
-          <p><strong>10. Governing Law &amp; Electronic Signature.</strong> This agreement shall be governed by the laws of the <strong>State of South Carolina</strong>.</p>
+          <p><strong>12. Governing Law &amp; Electronic Signature.</strong> This agreement shall be governed by the laws of the <strong>State of South Carolina</strong>.</p>
           <p>I acknowledge that my <strong>electronic signature has the same legal force as a handwritten signature</strong>, and by signing I confirm that I have read, understood, and agreed to all terms of this agreement.</p>
         </div>
       </div>
