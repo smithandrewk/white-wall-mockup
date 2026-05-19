@@ -1,24 +1,47 @@
 // POST /api/create-checkout
 //
-// Pay → Book flow:
-//   1. Build Square line items from booking state (server-side pricing)
-//   2. HMAC-sign the booking state into the redirect URL
-//   3. Create Square Payment Link with redirect to /api/booking-callback
-//   4. Return checkout URL to client for redirect
+// Pay → Save card → Book flow (Square Web Payments SDK, card-on-file):
+//   1. Buffer-conflict pre-check for cleaning-fee bookings (unchanged)
+//   2. Build Square line items (server-side pricing is authoritative)
+//   3. findOrCreateCustomer → createPayment (charges the tokenized card)
+//   4. createCardOnFile (saves the card for later merchant-initiated fees)
+//   5. Create the Acuity appointment + buffer block + notifications
+//   6. Return { success, redirect } — the client navigates to confirmation
 //
-// No appointment or block is created at this point. The appointment is
-// only created in the callback after Square confirms payment.
+// The hosted Payment Link + /api/booking-callback redirect dance is gone:
+// the card form is now embedded on our page via the Web Payments SDK, the
+// browser POSTs a single-use token here, and the whole charge→save→book
+// sequence runs inline in this one request. On any failure after the
+// charge succeeds, the payment is automatically refunded.
+//
+// maxDuration is bumped in vercel.json — this handler makes ~5 sequential
+// Square + Acuity calls and must not be killed at the 10s default.
 
 const {
   isValidAppointmentTypeID,
   buildSquareLineItems,
-  signState,
   acuityGet,
+  acuityPost,
+  buildAcuityAddonIDs,
+  buildAcuityFields,
+  buildAppointmentNotes,
   TYPE_TO_DURATION,
-  CALENDAR_IDS
+  CALENDAR_IDS,
+  ACUITY_ADDON_IDS
 } = require("./_lib/acuity");
-const { createPaymentLink } = require("./_lib/square");
+const {
+  findOrCreateCustomer,
+  createPayment,
+  createCardOnFile,
+  refundPayment
+} = require("./_lib/square");
+const { buildWaiverText } = require("./_lib/waiver-text");
+const { notifyOwner } = require("./notify-owner");
+const { notifyCleaner } = require("./_lib/notify-cleaner");
+const { notifyOwnerSMS } = require("./_lib/notify-sms");
 const { alertFailure } = require("./_lib/alert");
+const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
+const crypto = require("crypto");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -42,7 +65,10 @@ module.exports = async function handler(req, res) {
     emailAcknowledgment,
     termsSignature,
     waiverSigned,
-    cleaningFee
+    cleaningFee,
+    squareToken,
+    clientIdempotencyKey,
+    consent
   } = body;
 
   // Validate
@@ -60,6 +86,12 @@ module.exports = async function handler(req, res) {
   }
   if (!waiverSigned) {
     return res.status(400).json({ error: "Waiver must be signed" });
+  }
+  if (!squareToken) {
+    return res.status(400).json({ error: "Missing payment token" });
+  }
+  if (!consent || consent.cardOnFile !== true) {
+    return res.status(400).json({ error: "Card-on-file authorization is required to book" });
   }
 
   try {
@@ -229,7 +261,7 @@ module.exports = async function handler(req, res) {
       lineItems.push({ name: "Cleaning Fee", amount: effectiveCleaningFee.amount * 100, quantity: 1 });
     }
 
-    // 2. Sign the full booking state for the callback
+    // 2. Canonical booking state (drives notes + notifications)
     const bookingState = {
       appointmentTypeID,
       datetime,
@@ -249,27 +281,184 @@ module.exports = async function handler(req, res) {
       cleaningFee: effectiveCleaningFee || null
     };
 
-    const { encoded, sig } = signState(bookingState);
+    const totalCents = lineItems.reduce(function (sum, li) {
+      return sum + (li.amount * (li.quantity || 1));
+    }, 0);
 
-    // 3. Build redirect URL — Square appends orderId + transactionId
-    const baseUrl = "https://white-wall-mockup.vercel.app";
-    const redirectUrl = baseUrl + "/api/booking-callback?state=" + encoded + "&sig=" + sig;
+    // Idempotency: keyed on a stable client-generated booking-attempt ID
+    // (falls back to the token tail). Survives tokenize retries so a
+    // resubmit after a lost response never double-charges. Square dedupes
+    // on this key.
+    const idempotencySeed = clientIdempotencyKey || String(squareToken).slice(-16);
+    const idempotencyKey = crypto.createHash("sha256")
+      .update(appointmentTypeID + "|" + datetime + "|" + contact.email + "|" + idempotencySeed)
+      .digest("hex");
 
-    // 4. Create Square Payment Link
-    const { checkoutUrl } = await createPaymentLink(
-      lineItems,
-      redirectUrl,
-      contact.email
-    );
+    var customerId, payment, cardOnFile, appointment;
 
-    return res.status(200).json({ checkoutUrl });
+    try {
+      // 3. Square customer (reused if the email already exists)
+      customerId = await findOrCreateCustomer({
+        email: contact.email,
+        firstName: contact.firstName,
+        lastName: contact.lastName || "",
+        phone: contact.phone || ""
+      });
+
+      // 4. Charge the tokenized card. SCA/3DS already resolved client-side
+      //    and baked into squareToken.
+      payment = await createPayment({
+        sourceId: squareToken,
+        amountCents: totalCents,
+        customerId: customerId,
+        idempotencyKey: idempotencyKey,
+        note: "WhiteWall booking — " + contact.firstName + " " + (contact.lastName || "") + " — " + datetime
+      });
+
+      // 5. Save the card on file for later merchant-initiated fees
+      //    (damage / early-late / unauthorized add-ons / cleaning).
+      cardOnFile = await createCardOnFile({
+        paymentId: payment.id,
+        customerId: customerId,
+        cardholderName: (contact.firstName + " " + (contact.lastName || "")).trim()
+      });
+
+      // 6. Acuity appointment
+      var addonIDs = buildAcuityAddonIDs(bookingState.addons, bookingState.location);
+      if (effectiveCleaningFee && effectiveCleaningFee.amount > 0) {
+        addonIDs.push(ACUITY_ADDON_IDS["cleaning-fee"]);
+      }
+      var fields = buildAcuityFields(bookingState.intake || {}, bookingState.location);
+      var notes = buildAppointmentNotes(bookingState);
+
+      if (effectiveCount >= 50) {
+        notes += "\n\n[CAPACITY ALERT: " + effectiveCount + " participants — follow-up required]";
+      } else if (effectiveCount >= 25) {
+        notes += "\n\n[HIGH TRAFFIC: " + effectiveCount + " participants]";
+      }
+      if (highTrafficNote) notes += "\nCustomer note: " + highTrafficNote;
+      if (tmHighTrafficNote) notes += "\nTM high-traffic note: " + tmHighTrafficNote;
+
+      // Consent proof — survives chargebacks. The hash binds to the exact
+      // waiver text the customer saw, so later waiver edits don't void it.
+      var consentTextHash = crypto.createHash("sha256")
+        .update(buildWaiverText({
+          fullName: (contact.firstName + " " + (contact.lastName || "")).trim(),
+          locationSlug: location,
+          signedAt: (consent && consent.timestamp) || ""
+        }))
+        .digest("hex");
+      notes += "\n\n--- CARD-ON-FILE CONSENT (auto, do not edit) ---" +
+        "\nsquare_customer_id: " + customerId +
+        "\nsquare_card_id: " + cardOnFile.id +
+        "\nsquare_payment_id: " + payment.id +
+        "\nconsent_timestamp: " + ((consent && consent.timestamp) || "") +
+        "\nconsent_ip: " + (req.headers["x-forwarded-for"] || "") +
+        "\nconsent_user_agent: " + ((consent && consent.userAgent) || "") +
+        "\nterms_signature: " + (termsSignature || "") +
+        "\nwaiver_signed_name: " + (contact.firstName + " " + (contact.lastName || "")).trim() +
+        "\nconsent_text_hash: " + consentTextHash +
+        "\n--- END CONSENT ---";
+
+      appointment = await acuityPost("/appointments?admin=true", {
+        appointmentTypeID: appointmentTypeID,
+        datetime: datetime,
+        firstName: contact.firstName,
+        lastName: contact.lastName || "",
+        email: contact.email,
+        phone: contact.phone || "",
+        addonIDs: addonIDs,
+        fields: fields,
+        notes: notes,
+        noPayment: true
+      });
+
+      captureServerEvent(contact.email, "booking_completed_server", {
+        appointment_id: appointment.id,
+        location: location,
+        appointment_type_id: appointmentTypeID,
+        datetime: datetime,
+        square_payment_id: payment.id,
+        square_card_id: cardOnFile.id,
+        participants: participants || "",
+        addon_count: addonIDs.length,
+        has_cleaning_fee: !!(effectiveCleaningFee && effectiveCleaningFee.amount > 0)
+      });
+
+      // Cleaning fee → 2.5h cleaner buffer block (PV + TM, per Drew 2026-05-05)
+      if (effectiveCleaningFee && effectiveCleaningFee.amount > 0) {
+        try {
+          var durMin = TYPE_TO_DURATION[String(appointmentTypeID)] || 60;
+          var sEnd = new Date(new Date(datetime).getTime() + durMin * 60000);
+          var bEnd = new Date(sEnd.getTime() + 150 * 60000);
+          await acuityPost("/blocks", {
+            start: sEnd.toISOString(),
+            end: bEnd.toISOString(),
+            calendarID: CALENDAR_IDS[location],
+            notes: "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
+          });
+        } catch (e) {
+          console.error("buffer block failed:", e.message);
+        }
+      }
+
+      // Notifications — isolated so one failure can't break a paid booking
+      try { await notifyOwner(bookingState, appointment.id); } catch (e) { console.error("notifyOwner:", e.message); }
+      try { await notifyCleaner(bookingState, appointment.id); } catch (e) { console.error("notifyCleaner:", e.message); }
+      try { await notifyOwnerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
+      await flushPostHog();
+
+      var fn = encodeURIComponent(contact.firstName);
+      var ln = encodeURIComponent(contact.lastName || "");
+      return res.status(200).json({
+        success: true,
+        redirect: "/booking-confirmation?id=" + appointment.id + "&location=" + location + "&fn=" + fn + "&ln=" + ln
+      });
+    } catch (innerErr) {
+      console.error("create-checkout payment/booking failed:", innerErr.message);
+      // Charged but a later step failed → refund automatically.
+      if (payment && !appointment) {
+        try {
+          await refundPayment(payment.id, payment.amount_money.amount, "Booking creation failed — automatic refund");
+        } catch (refundErr) {
+          await alertFailure("critical", "REFUND FAILED after booking error — manual refund needed", {
+            payment_id: payment.id,
+            amount: payment.amount_money && payment.amount_money.amount,
+            customer: contact.email,
+            error: refundErr.message
+          });
+        }
+      }
+      captureServerEvent(contact.email, "booking_failed_server", {
+        location: location,
+        error: innerErr.message,
+        stage: appointment ? "after_appointment" : (cardOnFile ? "after_card" : (payment ? "after_payment" : (customerId ? "after_customer" : "before_customer"))),
+        refunded: !!(payment && !appointment)
+      });
+      await flushPostHog();
+      await alertFailure("critical", "Booking failed in create-checkout", {
+        customer: (contact.firstName || "") + " " + (contact.lastName || ""),
+        email: contact.email,
+        location: location,
+        datetime: datetime,
+        stage: appointment ? "after_appointment" : (payment ? "after_payment" : "before_payment"),
+        error: innerErr.message,
+        refunded: !!(payment && !appointment)
+      });
+      return res.status(500).json({
+        error: payment && !appointment
+          ? "We couldn't finalize your booking and have refunded your payment. Please try again or contact us."
+          : "Your card was not charged. Please try again.",
+        refunded: !!(payment && !appointment)
+      });
+    }
   } catch (err) {
-    console.error("create-checkout error:", err.message);
-    await alertFailure("alert", "Square checkout creation failed", {
+    console.error("create-checkout pre-payment error:", err.message);
+    await alertFailure("alert", "create-checkout pre-payment failure", {
       location: location,
       customer: contact ? contact.email : "unknown",
       error: err.message
     });
-    return res.status(500).json({ error: "Failed to create checkout" });
+    return res.status(500).json({ error: "Failed to start checkout. Please try again." });
   }
 };

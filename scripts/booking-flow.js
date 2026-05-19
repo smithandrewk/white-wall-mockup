@@ -60,6 +60,9 @@
     emailAcknowledgment: "",
     termsSignature: "",
     waiverSigned: false,
+    cardOnFileConsent: false,
+    squareCard: null,
+    squareCardReady: false,
     tmHighTrafficAcknowledged: false,
     tmHighTrafficNote: "",
     addons: {},
@@ -494,6 +497,14 @@
         updateTermsGate();
       }
 
+      if (target.matches("[data-input='card-on-file-consent']")) {
+        state.cardOnFileConsent = target.checked;
+        var cofHint = document.querySelector("[data-hint='card-on-file-consent']");
+        if (cofHint) cofHint.textContent = "";
+        updatePayButton();
+        return;
+      }
+
       // terms signature handled via input event on [data-input='terms-signature']
     });
   }
@@ -825,8 +836,8 @@
       }
     }
 
-    var btnDisabled = state.isSubmitting ? ' disabled' : '';
-    var btnLabel = state.isSubmitting ? 'Processing…' : 'Pay & Book — ' + currency.format(grandTotal);
+    // Stash the live total so updatePayButton() can label the button.
+    state._grandTotal = grandTotal;
 
     return '<div class="booking-panel-soft p-5 mt-5">' +
       '<p class="ui-kicker" style="margin-bottom:1rem">Order summary</p>' +
@@ -838,10 +849,6 @@
         '<div class="summary-line" style="font-size:1.1rem"><span><strong>Total</strong></span><span class="order-total"><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
       '</div>' +
       '<p class="ui-copy-muted" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
-      '<div style="margin-top:1.5rem">' +
-        '<button type="button" class="booking-button booking-button-primary" data-action="pay-and-book"' + btnDisabled + '>' + btnLabel + '</button>' +
-      '</div>' +
-      '<p class="ui-copy-muted" style="margin-top:0.75rem;font-size:0.8rem">You\'ll be redirected to Square to complete payment securely.</p>' +
     '</div>';
   }
 
@@ -849,12 +856,102 @@
     var container = document.querySelector("[data-checkout-summary]");
     if (!container) return;
 
+    var paySection = document.querySelector("[data-payment-section]");
+
     if (!state.selectedTime) {
       container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a date and time in Step 2 to see your order summary.</p></div>';
+      if (paySection) paySection.hidden = true;
       return;
     }
 
     container.innerHTML = renderOrderSummary();
+    if (paySection) paySection.hidden = false;
+    initSquareCard();
+    updatePayButton();
+  }
+
+  // --- Square Web Payments SDK (card-on-file) ---------------------------
+
+  var squareSdkPromise = null;
+
+  // Fetch public config + inject the SDK script. Resolves with the config.
+  function loadSquareSdk() {
+    if (squareSdkPromise) return squareSdkPromise;
+    squareSdkPromise = fetch("/api/booking-public-config")
+      .then(function (r) {
+        if (!r.ok) throw new Error("config " + r.status);
+        return r.json();
+      })
+      .then(function (cfg) {
+        if (window.Square) return cfg;
+        return new Promise(function (resolve, reject) {
+          var s = document.createElement("script");
+          s.src = cfg.squareSdkUrl;
+          s.onload = function () { resolve(cfg); };
+          s.onerror = function () { reject(new Error("Square SDK failed to load")); };
+          document.head.appendChild(s);
+        });
+      });
+    return squareSdkPromise;
+  }
+
+  // Initialize the card field once, when step 5 is reached. Idempotent —
+  // the iframe lives in [data-payment-section], which is never re-rendered.
+  function initSquareCard() {
+    if (state.squareCard || state._cardInitInFlight) return;
+    var target = document.querySelector("#card-container");
+    if (!target) return;
+    // offsetParent is null when any ancestor is display:none. Square's
+    // attach() needs a visible container — skip now, retry when step 5
+    // is actually shown (setStep / renderCheckoutPanel call us again).
+    if (target.offsetParent === null) return;
+    state._cardInitInFlight = true;
+
+    loadSquareSdk()
+      .then(function (cfg) {
+        var payments = window.Square.payments(cfg.squareAppId, cfg.squareLocationId);
+        return payments.card().then(function (card) {
+          return card.attach("#card-container").then(function () {
+            state.squareCard = card;
+            state.squareCardReady = true;
+            state._cardInitInFlight = false;
+            setCardStatus("");
+            updatePayButton();
+          });
+        });
+      })
+      .catch(function (err) {
+        state._cardInitInFlight = false;
+        state.squareCardReady = false;
+        console.error("Square card init failed:", err);
+        setCardStatus("Card field couldn't load. Refresh the page, or email us to book.");
+        updatePayButton();
+      });
+  }
+
+  function setCardStatus(msg) {
+    var el = document.querySelector("[data-card-status]");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? "" : "none";
+  }
+
+  // Single source of truth for the Pay & Book button's label + enabled
+  // state. Called whenever anything that gates payment changes.
+  function updatePayButton() {
+    var btn = document.querySelector("[data-pay-btn]");
+    if (!btn) return;
+    var total = state._grandTotal;
+    var ready = state.squareCardReady && state.cardOnFileConsent &&
+      !state.isSubmitting && !!state.selectedTime;
+    btn.disabled = !ready;
+    if (state.isSubmitting) {
+      btn.textContent = "Processing…";
+    } else if (typeof total === "number") {
+      btn.textContent = "Pay & Book — " + currency.format(total);
+    } else {
+      btn.textContent = "Pay & Book";
+    }
   }
 
   async function handlePayAndBook() {
@@ -887,8 +984,42 @@
       addon_count: activeAddons
     });
 
+    // Card-on-file gates
+    if (!state.squareCardReady) {
+      setCardStatus("The secure card field is still loading. One moment…");
+      return;
+    }
+    if (!state.cardOnFileConsent) {
+      var cofHint = document.querySelector("[data-hint='card-on-file-consent']");
+      if (cofHint) cofHint.textContent = "Please authorize the card-on-file policy to continue.";
+      return;
+    }
+
+    var payDuration = getSelectedDuration();
+    var activeAddons = 0;
+    location.addons.forEach(function(a) {
+      var s = state.addons[a.id];
+      if (s && (s.selected || s.quantity > 0)) activeAddons++;
+    });
+    trackEvent("pay_and_book_clicked", {
+      location: location.slug,
+      duration_id: state.durationId,
+      duration_hours: payDuration ? payDuration.hours : null,
+      total: payDuration ? payDuration.price : null,
+      addon_count: activeAddons
+    });
+
+    // Stable per-booking idempotency seed — survives tokenize retries so a
+    // resubmit after a lost response never double-charges.
+    if (!state.bookingAttemptId) {
+      state.bookingAttemptId = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+    }
+
     state.isSubmitting = true;
-    renderScheduleStep();
+    updatePayButton();
+    setCardStatus("");
 
     var appointmentTypeID = getAppointmentTypeID();
 
@@ -907,11 +1038,40 @@
         alert("Sorry, that time slot is no longer available. Please select a different time.");
         state.selectedTime = "";
         state.isSubmitting = false;
+        updatePayButton();
         fetchAvailableTimes(appointmentTypeID, state.selectedDate);
         return;
       }
 
-      // Create block (holds slot) + Square Payment Link
+      // Tokenize: CHARGE_AND_STORE = charge now + save card on file.
+      // Any SCA/3DS challenge the issuer requires happens inside tokenize().
+      var tok;
+      try {
+        tok = await state.squareCard.tokenize({
+          intent: "CHARGE_AND_STORE",
+          customerInitiated: true,
+          sellerKeyedIn: false,
+          amount: (typeof state._grandTotal === "number" ? state._grandTotal : 0).toFixed(2),
+          currencyCode: "USD",
+          billingContact: {
+            givenName: state.contact.firstName || "",
+            familyName: state.contact.lastName || "",
+            email: state.contact.email || "",
+            countryCode: "US"
+          }
+        });
+      } catch (tokErr) {
+        throw new Error("We couldn't read your card. Please re-enter it and try again.");
+      }
+      if (!tok || tok.status !== "OK" || !tok.token) {
+        var tdetail = tok && tok.errors && tok.errors[0] && tok.errors[0].detail;
+        state.isSubmitting = false;
+        updatePayButton();
+        setCardStatus(tdetail || "Your card could not be verified. Please check the details and try again.");
+        trackEvent("checkout_error", { location: location.slug, error_message: "tokenize:" + (tok && tok.status) });
+        return;
+      }
+
       var checkoutRes = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -931,32 +1091,38 @@
           emailAcknowledgment: state.emailAcknowledgment,
           termsSignature: state.termsSignature,
           waiverSigned: state.waiverSigned,
-          cleaningFee: getCleaningFee()
+          cleaningFee: getCleaningFee(),
+          squareToken: tok.token,
+          clientIdempotencyKey: state.bookingAttemptId,
+          consent: {
+            cardOnFile: true,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          }
         })
       });
       var checkoutData = await checkoutRes.json();
-      console.log("create-checkout response:", checkoutRes.status, checkoutData);
 
       // Buffer conflict — cleaning fee booking but next session is too close
       if (checkoutData.error === "buffer-conflict") {
         state.isSubmitting = false;
+        updatePayButton();
         showBufferConflictModal(checkoutData.message, checkoutData.options || []);
         return;
       }
 
-      if (!checkoutData.checkoutUrl) {
-        throw new Error(checkoutData.error || "No checkout URL returned");
+      if (!checkoutRes.ok || !checkoutData.success || !checkoutData.redirect) {
+        throw new Error(checkoutData.error || "Booking could not be completed.");
       }
 
-      // Redirect to Square's hosted checkout page
-      trackEvent("checkout_redirect", { location: location.slug });
-      window.location.href = checkoutData.checkoutUrl;
+      trackEvent("booking_completed", { location: location.slug });
+      window.location.href = checkoutData.redirect;
     } catch (err) {
       console.error("Checkout error:", err);
       trackEvent("checkout_error", { location: location.slug, error_message: err.message });
-      alert("Something went wrong creating your checkout. Please try again.");
       state.isSubmitting = false;
-      renderScheduleStep();
+      updatePayButton();
+      setCardStatus(err.message || "Something went wrong. Please try again.");
     }
   }
 
@@ -1439,6 +1605,12 @@
       if (aptId && state.availableDates.length === 0 && !state.isLoadingDates) {
         fetchAvailableDates(aptId, state.calendarMonth);
       }
+    }
+
+    // Attach the Square card field only once step 5's panel is visible —
+    // attaching into a display:none container yields a broken iframe.
+    if (state.step === 5) {
+      setTimeout(function () { initSquareCard(); updatePayButton(); }, 60);
     }
 
     // Scroll active step panel into view
