@@ -409,6 +409,23 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 - [ ] Awaiting Cloudflare Tunnel + Access setup on Watson (Andrew + Drew). Once values are in Vercel env, SMS goes live.
 - [ ] "3+ hour shoot" defaults to ANY 3+ hour booking (incl. events). Narrow to photo/video only if Drew confirms.
 
+## Feedback Round 20 (2026-05-18) — Drew's email 2026-05-11
+
+Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.md`. Plan: `client/comms/2026-05-11-drew-card-on-file-and-policy-update-plan.md`. Tech build: `client/comms/2026-05-11-drew-card-on-file-technical-build.md`.
+
+### PR 1 — T&C + liability waiver copy swap (this PR)
+- [x] `book-powdersville.html` — replaced 14-point T&C with Drew's new 19-point version. "Flagship Location" heading kept.
+- [x] `book-taylors-mill.html` — same 19-point T&C, "Taylor's Mill" heading + "no events/parties" line kept (Drew's option b, answer #2).
+- [x] `scripts/booking-flow.js` `renderWaiver()` — replaced 10-section waiver with Drew's new 12-section version. `fullName` / location-bracket / TM carve-out interpolations preserved.
+- [x] `api/_lib/waiver-text.js` — server-side email copy updated to the same 12 sections. Function signature + Signed trailer preserved.
+- [x] Fees per Drew's answer #3: early entry / late exit stays **$130 per 15-min** (T&C §3, Waiver §5); "trashed the place" cleaning/reset fee bumped **$130 → $200 minimum** (T&C §6, Waiver §6). $150 event cleaning-fee line item unchanged.
+- [x] Verified: both JS files pass `node --check`; waiver renders end-to-end; no stale `$250`/old wording; T&C lists run 1→19.
+
+### PR 2 — Card-on-file (separate PR, not started)
+- [ ] Rebuild payment step on Square Web Payments SDK (hosted Payment Links can't save a card). Customer can't confirm without a card-on-file consent checkbox. Server: CreateCustomer → CreatePayment → CreateCard → CreateAppointment, auto-refund on failure, consent proof in Acuity notes.
+- [ ] **Blocked on:** Drew's budget greenlight (est. ~3–7 hrs) + take-down of the direct Acuity scheduler URL (his answer #6, option B) so all bookings funnel through the site.
+- [ ] Apple/Google Pay deferred (Drew's answer #8). Existing customers re-enter card on next booking, no migration (answer #7).
+
 ## Summary
 
 ### Item 6b — Verify Nov 14 booking (Molly Hensley)
@@ -419,5 +436,5 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 - [x] Server-side belt-and-suspenders: `api/create-checkout.js` now recomputes the cleaning fee server-side and applies it if the client missed. Logs a warning when this fires so we can see if the client is dropping fees.
 - [x] Logged escalation in `client/escalations.md`: Molly's booking was underbilled $150. Drew decides remediation.
 
-**Done: 175 items** (all original revisions + Round 19 fully complete + bonus Item 6b)
-**Remaining: 0 items** — Round 19 closed; Molly remediation flagged in escalations.md.
+**Done: 181 items** (all original revisions + Round 19 + Item 6b + Round 20 PR 1)
+**Remaining: Round 20 PR 2 (card-on-file)** — blocked on Drew's budget greenlight. PR 1 (T&C + waiver copy) complete.
