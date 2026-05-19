@@ -9,12 +9,20 @@
 //                    SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
 
 // Load env vars manually (no dotenv dependency)
+// Usage: node scripts/square-catalog-setup.js [--dry-run|--create] [--env path] [--production]
 var fs = require("fs");
-var envFile = fs.readFileSync(".env.production", "utf8");
-envFile.split("\n").forEach(function (line) {
+var envPath = ".env.production";
+var forceProduction = false;
+process.argv.forEach(function (arg, i) {
+  if (arg === "--env" && process.argv[i + 1]) envPath = process.argv[i + 1];
+  if (arg === "--production") forceProduction = true;
+});
+var envFileContent = fs.readFileSync(envPath, "utf8");
+envFileContent.split("\n").forEach(function (line) {
   var match = line.match(/^([^#=]+)=(.*)$/);
   if (match) process.env[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, "");
 });
+if (forceProduction) process.env.SQUARE_ENVIRONMENT = "production";
 
 const crypto = require("crypto");
 

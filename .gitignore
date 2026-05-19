@@ -22,3 +22,4 @@ node_modules/
 
 # Obsidian vault (local ops docs)
 vault/
+.env*.local
