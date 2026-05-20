@@ -421,9 +421,20 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 - [x] Fees per Drew's answer #3: early entry / late exit stays **$130 per 15-min** (T&C §3, Waiver §5); "trashed the place" cleaning/reset fee bumped **$130 → $200 minimum** (T&C §6, Waiver §6). $150 event cleaning-fee line item unchanged.
 - [x] Verified: both JS files pass `node --check`; waiver renders end-to-end; no stale `$250`/old wording; T&C lists run 1→19.
 
-### PR 2 — Card-on-file (separate PR, not started)
-- [ ] Rebuild payment step on Square Web Payments SDK (hosted Payment Links can't save a card). Customer can't confirm without a card-on-file consent checkbox. Server: CreateCustomer → CreatePayment → CreateCard → CreateAppointment, auto-refund on failure, consent proof in Acuity notes.
-- [ ] **Blocked on:** Drew's budget greenlight (est. ~3–7 hrs) + take-down of the direct Acuity scheduler URL (his answer #6, option B) so all bookings funnel through the site.
+### PR 2 — Card-on-file (built, pending sandbox test + cutover)
+- [x] New `api/booking-public-config.js` — serves public Square App/Location ID + env-correct SDK URL to the browser.
+- [x] `api/_lib/square.js` — added `findOrCreateCustomer`, `createPayment`, `createCardOnFile`, `chargeCardOnFile` (MIT helper for future post-session damage charges).
+- [x] Rebuilt `api/create-checkout.js` — replaced Payment Link + redirect with inline flow: buffer-conflict check (preserved) → server pricing → findOrCreateCustomer → createPayment → createCardOnFile → Acuity appointment + capacity notes + cleaning buffer block + owner/cleaner/SMS/PostHog notifications. Auto-refund if anything fails after the charge. Consent proof (IDs, IP, UA, signed names, SHA-256 of waiver text) written to Acuity notes.
+- [x] Stable client-generated idempotency key — survives tokenize retries, Square dedupes, no double-charge.
+- [x] Frontend: SDK loader via `/api/booking-public-config`; card iframe in a stable `[data-payment-section]` (not re-rendered); required card-on-file consent checkbox; `tokenize({ intent: 'CHARGE_AND_STORE' })` in `handlePayAndBook`; new `{success, redirect}` response handling. Card attaches only when step 5 panel is visible (offsetParent guard — display:none breaks the iframe).
+- [x] `styles/booking.css` — card container + consent row styles.
+- [x] `api/booking-callback.js` — retired to a deprecated 302 stub (no traffic expected; alert if hit; delete next release).
+- [x] `vercel.json` — `create-checkout` `maxDuration` bumped to 30s (≈5 sequential Square+Acuity calls).
+- [x] All touched JS passes `node --check`; vercel.json valid; HTML markers present both pages.
+- [ ] **Blocked on (Andrew):** set `SQUARE_APPLICATION_ID` + `SQUARE_SANDBOX_APPLICATION_ID` in Vercel (public, from Square Developer Dashboard → app → Credentials).
+- [ ] Sandbox end-to-end test (needs the App ID env + a deployed env) — happy path, declined, tokenize fail, createCard fail, slot conflict, MIT charge, 3DS, mobile Safari.
+- [ ] Preview-URL real-card test with Drew (also confirms whether Square's $0 CreateCard verification shows as a pending charge on the statement).
+- [ ] Take down the direct Acuity scheduler URL so all bookings funnel through the site (Drew's answer #6, option B) — Andrew/Drew.
 - [ ] Apple/Google Pay deferred (Drew's answer #8). Existing customers re-enter card on next booking, no migration (answer #7).
 
 ## Summary
@@ -436,5 +447,5 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 - [x] Server-side belt-and-suspenders: `api/create-checkout.js` now recomputes the cleaning fee server-side and applies it if the client missed. Logs a warning when this fires so we can see if the client is dropping fees.
 - [x] Logged escalation in `client/escalations.md`: Molly's booking was underbilled $150. Drew decides remediation.
 
-**Done: 181 items** (all original revisions + Round 19 + Item 6b + Round 20 PR 1)
-**Remaining: Round 20 PR 2 (card-on-file)** — blocked on Drew's budget greenlight. PR 1 (T&C + waiver copy) complete.
+**Done: 190 items** (all original revisions + Round 19 + Item 6b + Round 20 PR 1 + PR 2 build)
+**Remaining: Round 20 PR 2 cutover** — code complete + syntax-clean. Blocked on Square App ID env vars (Andrew), sandbox test, preview real-card test with Drew, and Acuity URL takedown.

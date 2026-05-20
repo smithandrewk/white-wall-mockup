@@ -218,6 +218,22 @@
           <p class="text-sm text-black/50 mt-4">Enhance your session with backdrops and lighting.</p>
           <div class="choice-grid is-two-up mt-8" data-addon-list></div>
           <div class="mt-8" data-checkout-summary></div>
+
+          <div class="booking-panel-soft p-5 mt-6" data-payment-section hidden>
+            <p class="ui-kicker" style="margin-bottom:1rem">Payment</p>
+            <div id="card-container" class="square-card-container"></div>
+            <p class="ui-copy-muted" data-card-status style="margin-top:0.5rem;font-size:0.8rem">Loading secure card field…</p>
+            <label class="consent-row" style="margin-top:1.25rem">
+              <input type="checkbox" data-input="card-on-file-consent">
+              <span class="text-sm text-black/70">I authorize WhiteWall Studios, LLC to save this card on file and charge it for damage, early entry / late exit fees ($130 per 15-minute increment), unauthorized add-on use, and cleaning fees, as described in the Terms &amp; Conditions and Liability Waiver I signed above.</span>
+            </label>
+            <p class="signature-hint" data-hint="card-on-file-consent"></p>
+            <div style="margin-top:1.5rem">
+              <button type="button" class="booking-button booking-button-primary" data-action="pay-and-book" data-pay-btn disabled>Pay &amp; Book</button>
+            </div>
+            <p class="ui-copy-muted" style="margin-top:0.75rem;font-size:0.8rem">Your card is processed securely by Square. WhiteWall never sees or stores your card number.</p>
+          </div>
+
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="4">Back</button>
           </div>
