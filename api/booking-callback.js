@@ -171,9 +171,17 @@ module.exports = async function handler(req, res) {
         }
       });
     } else {
+      // ALWAYS pass calendarID explicitly. Appointment types are members of
+      // multiple calendars (e.g. Drew added the STAGING calendar to the prod
+      // types), and Acuity picks the FIRST calendar in the type's calendarIDs
+      // array when none is specified — which silently misroutes bookings to
+      // the wrong calendar. The 2026-05-22 Lisa Brantly incident landed a
+      // real prod booking on STAGING because of this default behavior.
+      var calendarID = stagingCalID || CALENDAR_IDS[bookingState.location];
       var acuityBody = {
         appointmentTypeID: bookingState.appointmentTypeID,
         datetime: bookingState.datetime,
+        calendarID: calendarID,
         firstName: stagedFirstName,
         lastName: bookingState.contact.lastName || "",
         email: stagedEmail,
@@ -183,7 +191,6 @@ module.exports = async function handler(req, res) {
         notes: stagedNotes,
         noPayment: true
       };
-      if (stagingCalID) acuityBody.calendarID = stagingCalID;
       appointment = await acuityPost("/appointments?admin=true", acuityBody);
     }
 
