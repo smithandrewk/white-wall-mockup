@@ -18,6 +18,7 @@ const {
   CALENDAR_IDS
 } = require("./_lib/acuity");
 const { createPaymentLink } = require("./_lib/square");
+const { stagingCalendarID } = require("./_lib/env");
 const { alertFailure } = require("./_lib/alert");
 
 module.exports = async function handler(req, res) {
@@ -63,9 +64,11 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // 0. If cleaning fee applies, check that the 2.5hr buffer after session is clear
+    // 0. If cleaning fee applies, check that the 2.5hr buffer after session is clear.
+    // On staging, route the conflict check to the STAGING calendar so staging
+    // tests don't bump into real prod bookings (and vice-versa).
     if (cleaningFee && cleaningFee.amount > 0) {
-      var calendarID = CALENDAR_IDS[location];
+      var calendarID = stagingCalendarID() || CALENDAR_IDS[location];
       var durationMin = TYPE_TO_DURATION[String(appointmentTypeID)] || 60;
       var sessionStart = new Date(datetime);
       var sessionEnd = new Date(sessionStart.getTime() + durationMin * 60000);

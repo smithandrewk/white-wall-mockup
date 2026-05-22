@@ -7,7 +7,8 @@
 // Uses the same Acuity GET /availability/times endpoint and checks if the
 // exact datetime is still in the list.
 
-const { acuityGet, isValidAppointmentTypeID } = require("./_lib/acuity");
+const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR } = require("./_lib/acuity");
+const { stagingCalendarID } = require("./_lib/env");
 const { alertFailure } = require("./_lib/alert");
 
 module.exports = async function handler(req, res) {
@@ -29,6 +30,9 @@ module.exports = async function handler(req, res) {
     // Extract date from ISO datetime (e.g. "2026-03-17T09:00:00-0400" → "2026-03-17")
     const date = datetime.slice(0, 10);
 
+    // ALWAYS pass calendarID — see availability-dates.js for the why.
+    const calendarID = stagingCalendarID() || TYPE_TO_CALENDAR[appointmentTypeID];
+
     // PV full day: we hardcode 5 AM on the client, which may not match any
     // Acuity time slot. Check date-level availability instead (any slot open
     // for this 18-hour type means the day is free).
@@ -37,6 +41,7 @@ module.exports = async function handler(req, res) {
       const dates = await acuityGet("/availability/dates", {
         appointmentTypeID,
         month: date.slice(0, 7),
+        calendarID,
         timezone: "America/New_York"
       });
       const available = (dates || []).some((d) => d.date === date);
@@ -46,6 +51,7 @@ module.exports = async function handler(req, res) {
     const data = await acuityGet("/availability/times", {
       appointmentTypeID,
       date,
+      calendarID,
       timezone: "America/New_York"
     });
 

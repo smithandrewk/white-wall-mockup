@@ -4,7 +4,8 @@
 // CORS — all API calls must go through a server-side proxy.
 // Docs: https://developers.acuityscheduling.com/reference/get-availability-dates
 
-const { acuityGet, isValidAppointmentTypeID } = require("./_lib/acuity");
+const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR } = require("./_lib/acuity");
+const { stagingCalendarID } = require("./_lib/env");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -22,10 +23,17 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // ALWAYS pass calendarID. Acuity returns the union of availability
+    // across every calendar an appointment type belongs to — since the
+    // STAGING calendar (14110701) is now a member of every prod type,
+    // omitting calendarID would let prod users see slots that are only
+    // free on STAGING (or vice versa). Filter explicitly to the type's
+    // production calendar; staging overrides to the STAGING calendar.
     const params = {
       appointmentTypeID,
       month,
-      timezone: "America/New_York" // Both locations are in Eastern time
+      calendarID: stagingCalendarID() || TYPE_TO_CALENDAR[appointmentTypeID],
+      timezone: "America/New_York"
     };
 
     const data = await acuityGet("/availability/dates", params);

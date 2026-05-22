@@ -25,7 +25,8 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: "Missing QBO credentials" });
   }
 
-  const baseUrl = "https://white-wall-mockup.vercel.app";
+  const inboundHost = req.headers["x-forwarded-host"] || req.headers.host || "white-wall-mockup.vercel.app";
+  const baseUrl = "https://" + inboundHost;
   const redirectUri = baseUrl + "/api/qbo-callback";
 
   try {
