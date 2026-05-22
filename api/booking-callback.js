@@ -23,7 +23,7 @@ const {
   ACUITY_ADDON_IDS
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
-const { isStaging, stagingSinkEmail, mapAppointmentTypeID, mapCalendarID } = require("./_lib/env");
+const { isStaging, stagingSinkEmail, stagingCalendarID } = require("./_lib/env");
 const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
 const { notifyOwnerSMS } = require("./_lib/notify-sms");
@@ -131,41 +131,38 @@ module.exports = async function handler(req, res) {
       notes += "\nTM high-traffic note: " + bookingState.tmHighTrafficNote;
     }
 
-    // Staging guards: translate appt type ID, override email to sink,
-    // stamp the client name + notes so a staging appt can't be mistaken
-    // for a real one. No-op in production (isStaging() returns false).
-    var apptTypeID = mapAppointmentTypeID(bookingState.appointmentTypeID);
+    // Staging guards: stamp the client name + notes, override email to a
+    // sink (Acuity's confirmation email is unsuppressible — better it land
+    // at our sink than at whatever the form said). Force calendarID to
+    // the STAGING calendar so the appointment doesn't land on Powdersville
+    // or Taylor's Mill. No-op in production.
     var stagedFirstName = bookingState.contact.firstName;
     var stagedEmail = bookingState.contact.email;
     var stagedNotes = notes;
+    var stagingCalID = stagingCalendarID();
+    var stagingMocked = isStaging() && !stagingCalID;
     if (isStaging()) {
       stagedFirstName = "[STAGING] " + stagedFirstName;
       stagedEmail = stagingSinkEmail();
       stagedNotes = "*** STAGING BOOKING — DO NOT FULFILL ***\n" +
-        "Original email: " + bookingState.contact.email + "\n" +
-        "Original appointment type: " + bookingState.appointmentTypeID + "\n\n" +
+        "Original email: " + bookingState.contact.email + "\n\n" +
         notes;
       log("staging", "applying staging guards", {
-        appt_type_map: apptTypeID !== bookingState.appointmentTypeID ? bookingState.appointmentTypeID + "->" + apptTypeID : "(no map)",
+        calendarID: stagingCalID || "(unset — will mock)",
         email_sink: stagedEmail
       });
     }
 
-    log("acuity", "creating appointment", { typeID: apptTypeID, datetime: bookingState.datetime, addons: addonIDs.length });
+    log("acuity", "creating appointment", { typeID: bookingState.appointmentTypeID, datetime: bookingState.datetime, addons: addonIDs.length });
 
-    // Staging fail-safe: if the dedicated STAGING calendar isn't configured
-    // (no ACUITY_STAGING_TYPE_MAP), skip the Acuity write entirely instead
-    // of falling through to the live calendars. Generate a fake appointment
-    // ID so the rest of the flow (notifications, confirmation page) still
-    // exercises. The [STAGING] sink-email path means even if a real write
-    // happened, it wouldn't reach a customer — this is belt-and-suspenders.
     var appointment;
-    var stagingMocked = isStaging() && !process.env.ACUITY_STAGING_TYPE_MAP;
     if (stagingMocked) {
+      // Fail-safe: staging with no STAGING calendar configured → mock the
+      // write entirely instead of polluting a prod calendar.
       appointment = { id: "staging-mock-" + Date.now() };
-      log("staging", "ACUITY_STAGING_TYPE_MAP unset — mocking Acuity write", {
+      log("staging", "ACUITY_STAGING_CALENDAR_ID unset — mocking Acuity write", {
         would_have_sent: {
-          appointmentTypeID: apptTypeID,
+          appointmentTypeID: bookingState.appointmentTypeID,
           datetime: bookingState.datetime,
           firstName: stagedFirstName,
           email: stagedEmail,
@@ -174,8 +171,8 @@ module.exports = async function handler(req, res) {
         }
       });
     } else {
-      appointment = await acuityPost("/appointments?admin=true", {
-        appointmentTypeID: apptTypeID,
+      var acuityBody = {
+        appointmentTypeID: bookingState.appointmentTypeID,
         datetime: bookingState.datetime,
         firstName: stagedFirstName,
         lastName: bookingState.contact.lastName || "",
@@ -185,7 +182,9 @@ module.exports = async function handler(req, res) {
         fields: fields,
         notes: stagedNotes,
         noPayment: true
-      });
+      };
+      if (stagingCalID) acuityBody.calendarID = stagingCalID;
+      appointment = await acuityPost("/appointments?admin=true", acuityBody);
     }
 
     log("acuity", "appointment created", { id: appointment.id });
@@ -211,7 +210,7 @@ module.exports = async function handler(req, res) {
         await acuityPost("/blocks", {
           start: sessionEnd.toISOString(),
           end: bufferEnd.toISOString(),
-          calendarID: mapCalendarID(bookingState.location, CALENDAR_IDS[bookingState.location]),
+          calendarID: stagingCalID || CALENDAR_IDS[bookingState.location],
           notes: (isStaging() ? "[STAGING] " : "") + "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
         });
         log("cleaning", "buffer block created", { location: bookingState.location });

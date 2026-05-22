@@ -2,14 +2,24 @@
 //
 // Staging is a Vercel custom environment that sets STAGING=1. Production
 // does not set STAGING. Preview deploys (random PR URLs) also don't set
-// STAGING by default — they read other env vars from the Preview scope.
+// STAGING by default.
 //
-// When isStaging() returns true, code paths:
-//   - Translate Acuity prod appointment-type IDs to staging IDs (when mapped)
-//   - Override the customer email to a sink before creating Acuity appointments
-//     (Acuity's confirmation email otherwise goes to whatever the form said)
+// Acuity routing model: the production appointment types are configured to
+// allow either their prod calendar OR the STAGING calendar (Drew set up
+// calendar 14110701 as a second member of each appointment type's
+// calendarIDs array). So we don't translate appointment-type IDs — we just
+// pass calendarID explicitly in the appointment-create POST when staging,
+// which forces Acuity to route to the STAGING calendar instead of the
+// location's real calendar.
+//
+// When isStaging():
+//   - Pass calendarID = ACUITY_STAGING_CALENDAR_ID on appointment create
+//     and on cleaning-buffer block create
+//   - Override customer email to ACUITY_STAGING_SINK_EMAIL (Acuity's own
+//     confirmation email otherwise goes to whatever the form said)
 //   - Stamp [STAGING] into the client name + appointment notes
-//   - Route the cleaning-buffer block to a staging calendar (or skip it)
+//   - If ACUITY_STAGING_CALENDAR_ID is unset, MOCK the Acuity write
+//     entirely instead of falling through to a prod calendar — fail-safe
 //
 // Notifications (Resend, Watson SMS, Cleaner email, QBO mark-paid) are NOT
 // gated here — they self-suppress when their env vars are absent, which we
@@ -27,30 +37,10 @@ exports.stagingSinkEmail = function () {
   return process.env.ACUITY_STAGING_SINK_EMAIL || "staging-bookings@invalid.local";
 };
 
-// Translate a prod Acuity appointment-type ID to its staging counterpart,
-// if a mapping is configured. Returns the input unchanged when not staging
-// or when no map is set / the ID isn't mapped.
-exports.mapAppointmentTypeID = function (prodID) {
-  if (process.env.STAGING !== "1") return prodID;
-  if (!process.env.ACUITY_STAGING_TYPE_MAP) return prodID;
-  try {
-    var map = JSON.parse(process.env.ACUITY_STAGING_TYPE_MAP);
-    return map[String(prodID)] || prodID;
-  } catch (e) {
-    return prodID;
-  }
-};
-
-// Translate a prod calendar ID to its staging counterpart. Used for the
-// cleaning-buffer block creation (which writes directly to a calendar
-// rather than going through an appointment type).
-exports.mapCalendarID = function (location, prodID) {
-  if (process.env.STAGING !== "1") return prodID;
-  if (location === "powdersville" && process.env.ACUITY_STAGING_CALENDAR_PV) {
-    return process.env.ACUITY_STAGING_CALENDAR_PV;
-  }
-  if (location === "taylors-mill" && process.env.ACUITY_STAGING_CALENDAR_TM) {
-    return process.env.ACUITY_STAGING_CALENDAR_TM;
-  }
-  return prodID;
+// The STAGING calendar ID, or null if not configured. When null and we're
+// in staging, the booking callback mocks Acuity writes entirely rather
+// than letting them fall through to prod calendars.
+exports.stagingCalendarID = function () {
+  if (process.env.STAGING !== "1") return null;
+  return process.env.ACUITY_STAGING_CALENDAR_ID || null;
 };
