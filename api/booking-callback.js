@@ -153,18 +153,40 @@ module.exports = async function handler(req, res) {
 
     log("acuity", "creating appointment", { typeID: apptTypeID, datetime: bookingState.datetime, addons: addonIDs.length });
 
-    var appointment = await acuityPost("/appointments?admin=true", {
-      appointmentTypeID: apptTypeID,
-      datetime: bookingState.datetime,
-      firstName: stagedFirstName,
-      lastName: bookingState.contact.lastName || "",
-      email: stagedEmail,
-      phone: bookingState.contact.phone || "",
-      addonIDs: addonIDs,
-      fields: fields,
-      notes: stagedNotes,
-      noPayment: true
-    });
+    // Staging fail-safe: if the dedicated STAGING calendar isn't configured
+    // (no ACUITY_STAGING_TYPE_MAP), skip the Acuity write entirely instead
+    // of falling through to the live calendars. Generate a fake appointment
+    // ID so the rest of the flow (notifications, confirmation page) still
+    // exercises. The [STAGING] sink-email path means even if a real write
+    // happened, it wouldn't reach a customer — this is belt-and-suspenders.
+    var appointment;
+    var stagingMocked = isStaging() && !process.env.ACUITY_STAGING_TYPE_MAP;
+    if (stagingMocked) {
+      appointment = { id: "staging-mock-" + Date.now() };
+      log("staging", "ACUITY_STAGING_TYPE_MAP unset — mocking Acuity write", {
+        would_have_sent: {
+          appointmentTypeID: apptTypeID,
+          datetime: bookingState.datetime,
+          firstName: stagedFirstName,
+          email: stagedEmail,
+          addonIDs: addonIDs,
+          notes_length: stagedNotes.length
+        }
+      });
+    } else {
+      appointment = await acuityPost("/appointments?admin=true", {
+        appointmentTypeID: apptTypeID,
+        datetime: bookingState.datetime,
+        firstName: stagedFirstName,
+        lastName: bookingState.contact.lastName || "",
+        email: stagedEmail,
+        phone: bookingState.contact.phone || "",
+        addonIDs: addonIDs,
+        fields: fields,
+        notes: stagedNotes,
+        noPayment: true
+      });
+    }
 
     log("acuity", "appointment created", { id: appointment.id });
     captureServerEvent(bookingState.contact.email, "booking_completed_server", {
@@ -180,7 +202,8 @@ module.exports = async function handler(req, res) {
 
     // Cleaning fee: block 2.5 hours after session for April. Fires at PV and
     // TM — Drew confirmed (2026-05-05) that April covers both locations.
-    if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
+    // Skipped in staging-mock mode (no real appointment was created).
+    if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0 && !stagingMocked) {
       try {
         var durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 60;
         var sessionEnd = new Date(new Date(bookingState.datetime).getTime() + durationMin * 60000);
