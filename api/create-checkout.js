@@ -251,8 +251,12 @@ module.exports = async function handler(req, res) {
 
     const { encoded, sig } = signState(bookingState);
 
-    // 3. Build redirect URL — Square appends orderId + transactionId
-    const baseUrl = "https://white-wall-mockup.vercel.app";
+    // 3. Build redirect URL — Square appends orderId + transactionId.
+    // Derive the base URL from the inbound request so prod, staging, and
+    // preview deploys each redirect back to themselves. Square requires
+    // an absolute https URL.
+    const inboundHost = req.headers["x-forwarded-host"] || req.headers.host || "white-wall-mockup.vercel.app";
+    const baseUrl = "https://" + inboundHost;
     const redirectUrl = baseUrl + "/api/booking-callback?state=" + encoded + "&sig=" + sig;
 
     // 4. Create Square Payment Link
