@@ -23,6 +23,7 @@ const {
   ACUITY_ADDON_IDS
 } = require("./_lib/acuity");
 const { getOrder } = require("./_lib/square");
+const { isStaging, stagingSinkEmail, mapAppointmentTypeID, mapCalendarID } = require("./_lib/env");
 const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
 const { notifyOwnerSMS } = require("./_lib/notify-sms");
@@ -130,18 +131,38 @@ module.exports = async function handler(req, res) {
       notes += "\nTM high-traffic note: " + bookingState.tmHighTrafficNote;
     }
 
-    log("acuity", "creating appointment", { typeID: bookingState.appointmentTypeID, datetime: bookingState.datetime, addons: addonIDs.length });
+    // Staging guards: translate appt type ID, override email to sink,
+    // stamp the client name + notes so a staging appt can't be mistaken
+    // for a real one. No-op in production (isStaging() returns false).
+    var apptTypeID = mapAppointmentTypeID(bookingState.appointmentTypeID);
+    var stagedFirstName = bookingState.contact.firstName;
+    var stagedEmail = bookingState.contact.email;
+    var stagedNotes = notes;
+    if (isStaging()) {
+      stagedFirstName = "[STAGING] " + stagedFirstName;
+      stagedEmail = stagingSinkEmail();
+      stagedNotes = "*** STAGING BOOKING — DO NOT FULFILL ***\n" +
+        "Original email: " + bookingState.contact.email + "\n" +
+        "Original appointment type: " + bookingState.appointmentTypeID + "\n\n" +
+        notes;
+      log("staging", "applying staging guards", {
+        appt_type_map: apptTypeID !== bookingState.appointmentTypeID ? bookingState.appointmentTypeID + "->" + apptTypeID : "(no map)",
+        email_sink: stagedEmail
+      });
+    }
+
+    log("acuity", "creating appointment", { typeID: apptTypeID, datetime: bookingState.datetime, addons: addonIDs.length });
 
     var appointment = await acuityPost("/appointments?admin=true", {
-      appointmentTypeID: bookingState.appointmentTypeID,
+      appointmentTypeID: apptTypeID,
       datetime: bookingState.datetime,
-      firstName: bookingState.contact.firstName,
+      firstName: stagedFirstName,
       lastName: bookingState.contact.lastName || "",
-      email: bookingState.contact.email,
+      email: stagedEmail,
       phone: bookingState.contact.phone || "",
       addonIDs: addonIDs,
       fields: fields,
-      notes: notes,
+      notes: stagedNotes,
       noPayment: true
     });
 
@@ -167,8 +188,8 @@ module.exports = async function handler(req, res) {
         await acuityPost("/blocks", {
           start: sessionEnd.toISOString(),
           end: bufferEnd.toISOString(),
-          calendarID: CALENDAR_IDS[bookingState.location],
-          notes: "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
+          calendarID: mapCalendarID(bookingState.location, CALENDAR_IDS[bookingState.location]),
+          notes: (isStaging() ? "[STAGING] " : "") + "Cleaning buffer (auto-created for booking #" + appointment.id + ")"
         });
         log("cleaning", "buffer block created", { location: bookingState.location });
       } catch (err) {
