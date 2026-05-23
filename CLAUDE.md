@@ -328,6 +328,21 @@ Static:
 3. **Duplicate addonIDs for quantity** — same ID × N charges N × price. Tested: 3× $20 = $60.
 4. **`fields` accepts `{id, value}`** — docs mention `label` but ID-based works and is more reliable.
 
+### ⚠️ Acuity multi-calendar gotcha — ALWAYS pass `calendarID`
+
+When an appointment type belongs to multiple calendars (e.g. Drew added STAGING `14110701` as a second member of every prod type on 2026-05-22), Acuity defaults to the **FIRST calendar in the `calendarIDs` array** for any API call that doesn't specify `calendarID` — silently misrouting writes AND mixing availability across calendars.
+
+Caused the 2026-05-22 Lisa Brantly misroute (real prod TM booking landed on STAGING calendar). See `client/comms/2026-05-22-lisa-brantly-misroute-incident.md`.
+
+**Rule:** every Acuity call that takes `appointmentTypeID` MUST also pass `calendarID`:
+
+- `POST /appointments` — booking-callback
+- `GET /availability/dates`, `GET /availability/times` — all three availability endpoints
+- `GET /appointments`, `GET /blocks` — buffer-conflict queries in create-checkout
+- `POST /blocks` — cleaning-buffer block creation
+
+Use the helper pattern `stagingCalendarID() || TYPE_TO_CALENDAR[id]` (or `|| CALENDAR_IDS[location]` when the location is known). Helpers live in `api/_lib/env.js` and `api/_lib/acuity.js`.
+
 **Things that DON'T work (tested and confirmed):**
 - `noEmail` param on POST /appointments — emails are still sent (tested 2026-03-17)
 - `POST /appointments/{id}/payments` — returns 500 for all source values. Tested 50+ values. Endpoint exists in router but is not in official docs. Likely broken or internal-only. (tested 2026-03-19, re-confirmed 2026-03-20)
@@ -421,6 +436,42 @@ Register at: Acuity dashboard > Integrations > Webhooks, or via API.
 - **Funnel data collection** — PostHog events or DB for abandoned booking follow-up
 - **Admin dashboard** — live booking feed combining Acuity + Square data
 - **A/B testing** — PostHog feature flags + Claude optimization
+
+## Staging Environment
+
+A fully isolated mirror of the booking system at **`staging.whitewallstudios.co`**, deployed from the `staging` git branch to a Vercel custom environment (id `env_tyxOrSgy4jxqkefMn39yF8WXNLiS`). Used for testing changes without touching real customers, payments, or calendars.
+
+See **`vault/Staging.md`** for the full design (env-var matrix, gotchas, smoke-test procedure).
+
+### Quick facts
+
+- URL: `staging.whitewallstudios.co` (CNAME at GoDaddy → `cname.vercel-dns.com`)
+- Square: sandbox tokens (no real money moves)
+- Acuity: **same tenant**, routed to dedicated STAGING calendar `14110701`
+- Customer emails: overridden to sink `andrewsmith1025+wws-staging@gmail.com` before Acuity write
+- Names: stamped `[STAGING] FirstName` so they're unmistakable on the calendar
+- Notifications: Resend / Watson SMS / QBO mark-paid all self-suppress (env vars deliberately unset)
+- Banner: yellow "STAGING — NOT THE LIVE SITE" bar from `scripts/staging-banner.js`
+
+### Staging detection
+
+Server-side: `process.env.STAGING === "1"` (only set in the staging Vercel scope). See `api/_lib/env.js` for helpers.
+
+Client-side (banner only): `location.hostname.startsWith("staging.")`. Won't fire on `*-git-staging-*.vercel.app` preview URLs.
+
+### Deploy mechanics — known quirk
+
+Auto-deploys from `git push origin staging` currently land in Vercel's **Preview** scope, not the `staging` custom env, despite the `branchTracking` config. To deploy to the staging environment use:
+
+```
+git checkout staging && vercel deploy --target=staging --yes
+```
+
+This is a loose end to be fixed later.
+
+### Fail-safe
+
+If `ACUITY_STAGING_CALENDAR_ID` is ever unset while `STAGING=1`, `booking-callback.js` MOCKS the Acuity write entirely (returns a `staging-mock-<ts>` ID) instead of falling through to prod calendars. Don't remove this safety net.
 
 ### Notes
 
