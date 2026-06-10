@@ -4,7 +4,11 @@ Items that need Andrew's manual intervention or can't be resolved programmatical
 
 ## Pending
 
-_None._
+### 2026-06-10 — QBO mark-paid broken: refresh token stale, re-auth needed
+- **Symptom:** `/api/qbo-test` returns `invalid_grant` ("Incorrect or invalid refresh token"). Every booking since the token went stale has left its QBO draft invoice unpaid.
+- **Cause:** Intuit rotates refresh tokens on use; the rotated value can't be persisted back into Vercel env vars (tokens last set ~2026-03-31), so the stored one died. Will recur until token storage moves out of env vars.
+- **Fix (manual, needs Drew's Intuit login):** visit `https://whitewallstudios.co/api/qbo-auth`, sign in as Drew, approve; copy fresh tokens from `/api/qbo-callback`; update `QBO_ACCESS_TOKEN` + `QBO_REFRESH_TOKEN` in Vercel (Production); redeploy; verify with `/api/qbo-test`.
+- **Note:** NOT the Intuit questionnaire — that was completed and prod has been live since 2026-03-31 (docs reconciled 2026-06-10, commit 1a28fc4). Low priority per Drew (he does not invoice customers), but unpaid drafts pile up.
 
 ## Resolved
 
