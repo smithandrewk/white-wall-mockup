@@ -72,7 +72,7 @@ polish into a scoped 11-item / 4-phase feature roadmap led by the card-on-file c
 | Watson SMS Cloudflare Tunnel + CF Access service token (#5) | 🔴 blocked | Watson |
 | Acuity lighting add-on price sync (6723268: $100 Acuity vs $125 site) | 🟡 pending | Drew |
 | Mobile Safari end-to-end booking verification (T15) | 🟡 pending | Andrew |
-| QuickBooks production OAuth (Intuit questionnaire; low priority) | 🔴 blocked | Andrew |
+| QuickBooks re-auth — refresh token stale (`invalid_grant` 2026-06-10); prod OAuth has been live since 2026-03-31, questionnaire done | 🔴 broken | Andrew |
 | Staging auto-deploy routing quirk (#10; workaround exists) | 🟡 pending | Andrew |
 | Squarespace subscription cancellation (final cleanup) | 🟡 pending | Drew |
 

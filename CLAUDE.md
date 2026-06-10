@@ -223,15 +223,17 @@ invoice"** (2026-03-20) so no invoice email is sent to the customer.
 **Current state:** Draft invoices appear in QuickBooks as unpaid. Drew confirmed he
 doesn't care about invoicing customers — he prefers they don't get invoiced.
 
-**Future fix:** Complete the Intuit Developer compliance questionnaire (~30 min) to
-get production QuickBooks API credentials. Then our callback can find the draft
-invoice and mark it as paid automatically. Tested successfully in sandbox (2026-03-20):
-query invoice by customer + date → record payment → invoice marked paid.
+**Production:** Live since 2026-03-31 (compliance questionnaire completed, realm
+`9130352011316236`). The callback finds the draft invoice and marks it paid
+automatically (tested in sandbox 2026-03-20, prod verified 2026-03-31). As of
+2026-06-10 the stored refresh token is stale (`invalid_grant` from `/api/qbo-test`)
+— re-auth via `/api/qbo-auth`, update `QBO_ACCESS_TOKEN`/`QBO_REFRESH_TOKEN` in
+Vercel Production, redeploy.
 
 **QuickBooks connections:**
 - Acuity → QuickBooks: creates draft invoices (keep connected — also auto-voids on cancel)
 - Square → QuickBooks: already connected, syncs payment transactions
-- Our app → QuickBooks: pending compliance questionnaire for production access
+- Our app → QuickBooks: production OAuth live since 2026-03-31; refresh token stale as of 2026-06-10 (re-auth needed)
 
 ### Files
 
@@ -431,7 +433,7 @@ Register at: Acuity dashboard > Integrations > Webhooks, or via API.
 
 ### Future Enhancements
 
-- **QuickBooks API: auto-mark invoices as paid** — Intuit compliance questionnaire needed for production credentials (~30 min). OAuth2 + token refresh + find invoice by customer/date + record payment. Tested successfully in sandbox 2026-03-20.
+- **QuickBooks API: auto-mark invoices as paid** — shipped to production 2026-03-31. OAuth2 + token refresh + find invoice by customer/date + record payment. Needs manual re-auth via `/api/qbo-auth` whenever the stored refresh token goes stale (rotation can't be persisted to env vars).
 - **Acuity/Square webhooks** — real-time notifications, backup payment verification
 - **Funnel data collection** — PostHog events or DB for abandoned booking follow-up
 - **Admin dashboard** — live booking feed combining Acuity + Square data
