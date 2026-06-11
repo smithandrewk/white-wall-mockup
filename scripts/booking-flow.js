@@ -2008,7 +2008,7 @@
     if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
     if (step === 3) {
       if (!state.eventIntent) return false;
-      var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.instagram && isTermsAccepted());
+      var baseComplete = Boolean(state.contact.firstName && state.contact.email && isTermsAccepted() && state.intake.readEmail);
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
@@ -2045,7 +2045,7 @@
     if (!state.eventIntent) errors.push("Please select photo/video session or event booking.");
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");
-    if (!state.intake.instagram) errors.push("Please enter your Instagram handle.");
+    if (!state.intake.readEmail) errors.push("Please confirm you will read the confirmation email and watch the linked videos.");
     var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
     if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) errors.push("Please sign the email acknowledgment with your full name.");
     if (!isTermsAccepted()) errors.push("Please sign the terms & conditions with your full name.");
