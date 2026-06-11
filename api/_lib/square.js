@@ -150,9 +150,137 @@ async function refundPayment(paymentId, amountCents, reason) {
   return data.refund;
 }
 
+// ---------------------------------------------------------------------------
+// Card-on-file flow (Web Payments SDK). The hosted Payment Link checkout
+// cannot save a card; this set of helpers replaces it.
+//   findOrCreateCustomer -> createPayment -> createCardOnFile
+// chargeCardOnFile is the future merchant-initiated (MIT) charge used to
+// bill damage / late-exit / unauthorized-add-on fees after the session.
+// ---------------------------------------------------------------------------
+
+// Find a Square customer by exact email, or create one. Square does not
+// guarantee email uniqueness, so we take the first exact match if any.
+async function findOrCreateCustomer(opts) {
+  const email = opts.email;
+  const searchRes = await fetch(getBaseUrl() + "/v2/customers/search", {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({
+      query: { filter: { email_address: { exact: email } } },
+      limit: 1
+    })
+  });
+  const searchData = await searchRes.json();
+  if (searchRes.ok && searchData.customers && searchData.customers.length > 0) {
+    return searchData.customers[0].id;
+  }
+
+  const createRes = await fetch(getBaseUrl() + "/v2/customers", {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({
+      idempotency_key: crypto.randomUUID(),
+      given_name: opts.firstName || "",
+      family_name: opts.lastName || "",
+      email_address: email,
+      phone_number: opts.phone || undefined
+    })
+  });
+  const createData = await createRes.json();
+  if (!createRes.ok) {
+    const msg = createData.errors ? createData.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
+    throw new Error("Square createCustomer " + createRes.status + ": " + msg);
+  }
+  return createData.customer.id;
+}
+
+// Charge the tokenized card (customer-initiated). The SCA / 3DS result is
+// already baked into sourceId by the client-side tokenize() call.
+async function createPayment(opts) {
+  const body = {
+    idempotency_key: opts.idempotencyKey || crypto.randomUUID(),
+    source_id: opts.sourceId,
+    customer_id: opts.customerId,
+    location_id: getLocationId(),
+    amount_money: { amount: opts.amountCents, currency: "USD" },
+    autocomplete: true
+  };
+  if (opts.note) body.note = opts.note;
+
+  const res = await fetch(getBaseUrl() + "/v2/payments", {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data.errors ? data.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
+    throw new Error("Square createPayment " + res.status + ": " + msg);
+  }
+  return data.payment;
+}
+
+// Save the just-charged card on file. Square performs a $0 verification
+// on CreateCard. source_id is the payment.id from createPayment().
+async function createCardOnFile(opts) {
+  const body = {
+    idempotency_key: crypto.randomUUID(),
+    source_id: opts.paymentId,
+    card: {
+      customer_id: opts.customerId
+    }
+  };
+  if (opts.cardholderName) body.card.cardholder_name = opts.cardholderName;
+
+  const res = await fetch(getBaseUrl() + "/v2/cards", {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data.errors ? data.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
+    throw new Error("Square createCard " + res.status + ": " + msg);
+  }
+  return data.card;
+}
+
+// Charge a saved card later (merchant-initiated, customer absent). Used
+// for post-session damage / late-exit / unauthorized-add-on fees. Not
+// surfaced in any UI yet — Drew uses the Square Dashboard until an admin
+// page exists. Built here so the capability is ready and tested.
+async function chargeCardOnFile(opts) {
+  const body = {
+    idempotency_key: crypto.randomUUID(),
+    source_id: opts.cardId,
+    customer_id: opts.customerId,
+    location_id: getLocationId(),
+    amount_money: { amount: opts.amountCents, currency: "USD" },
+    autocomplete: true,
+    customer_initiated: false
+  };
+  if (opts.note) body.note = opts.note;
+
+  const res = await fetch(getBaseUrl() + "/v2/payments", {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data.errors ? data.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
+    throw new Error("Square chargeCardOnFile " + res.status + ": " + msg);
+  }
+  return data.payment;
+}
+
 module.exports = {
   createPaymentLink,
   getOrder,
   deletePaymentLink,
-  refundPayment
+  refundPayment,
+  findOrCreateCustomer,
+  createPayment,
+  createCardOnFile,
+  chargeCardOnFile
 };

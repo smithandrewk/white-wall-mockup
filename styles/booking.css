@@ -975,3 +975,31 @@ body.booking-page {
   max-height: 90vh;
   overflow-y: auto;
 }
+
+/* --- Card-on-file payment (Square Web Payments SDK) --- */
+.square-card-container {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  min-height: 56px;
+}
+
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.consent-row input[type="checkbox"] {
+  margin-top: 4px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+[data-payment-section][hidden] {
+  display: none;
+}
