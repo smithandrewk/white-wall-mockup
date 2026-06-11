@@ -61,6 +61,8 @@
     termsSignature: "",
     waiverSigned: false,
     cardOnFileConsent: false,
+    nameOnCard: "",
+    _nameOnCardEdited: false,
     squareCard: null,
     squareCardReady: false,
     tmHighTrafficAcknowledged: false,
@@ -458,6 +460,12 @@
       if (target.matches("[data-input='terms-signature']")) {
         state.termsSignature = target.value;
         updateTermsGate();
+      }
+
+      if (target.matches("[data-input='name-on-card']")) {
+        state.nameOnCard = target.value;
+        state._nameOnCardEdited = true;
+        // Do NOT re-render — that would destroy the Square iframe + cursor.
       }
     });
 
@@ -866,6 +874,17 @@
 
     container.innerHTML = renderOrderSummary();
     if (paySection) paySection.hidden = false;
+
+    // Prefill "Name on card" from the Step-3 booker until the user edits it,
+    // so the saved card-on-file label matches whoever's card is used (which
+    // may differ from the booker — business card, spouse, planner, etc.).
+    var nameInput = document.querySelector("[data-input='name-on-card']");
+    if (nameInput && !state._nameOnCardEdited) {
+      var bookerName = ((state.contact.firstName || "") + " " + (state.contact.lastName || "")).trim();
+      nameInput.value = bookerName;
+      state.nameOnCard = bookerName;
+    }
+
     initSquareCard();
     updatePayButton();
   }
@@ -924,16 +943,19 @@
         state._cardInitInFlight = false;
         state.squareCardReady = false;
         console.error("Square card init failed:", err);
-        setCardStatus("Card field couldn't load. Refresh the page, or email us to book.");
+        setCardStatus("Card field couldn't load. Refresh the page, or email us to book.", true);
         updatePayButton();
       });
   }
 
-  function setCardStatus(msg) {
+  function setCardStatus(msg, isError) {
     var el = document.querySelector("[data-card-status]");
     if (!el) return;
     el.textContent = msg;
     el.style.display = msg ? "" : "none";
+    // Render failures in danger red (readable); normal/loading messages stay
+    // the muted payment-note grey. Class toggle only — no logic change.
+    el.classList.toggle("card-status-error", !!(msg && isError));
   }
 
   // Single source of truth for the Pay & Book button's label + enabled
@@ -1054,8 +1076,12 @@
           amount: (typeof state._grandTotal === "number" ? state._grandTotal : 0).toFixed(2),
           currencyCode: "USD",
           billingContact: {
-            givenName: state.contact.firstName || "",
-            familyName: state.contact.lastName || "",
+            // Single free-text name field — pass the cardholder name verbatim
+            // as givenName (no split: "WHITEWALL VENTURES LLC" / middle names
+            // would mangle). Falls back to the booker name when blank.
+            givenName: (state.nameOnCard || "").trim() ||
+              ((state.contact.firstName || "") + " " + (state.contact.lastName || "")).trim(),
+            familyName: "",
             email: state.contact.email || "",
             countryCode: "US"
           }
@@ -1067,7 +1093,7 @@
         var tdetail = tok && tok.errors && tok.errors[0] && tok.errors[0].detail;
         state.isSubmitting = false;
         updatePayButton();
-        setCardStatus(tdetail || "Your card could not be verified. Please check the details and try again.");
+        setCardStatus(tdetail || "Your card could not be verified. Please check the details and try again.", true);
         trackEvent("checkout_error", { location: location.slug, error_message: "tokenize:" + (tok && tok.status) });
         return;
       }
@@ -1092,6 +1118,7 @@
           termsSignature: state.termsSignature,
           waiverSigned: state.waiverSigned,
           cleaningFee: getCleaningFee(),
+          cardholderName: (state.nameOnCard || "").trim(),
           squareToken: tok.token,
           clientIdempotencyKey: state.bookingAttemptId,
           consent: {
@@ -1122,7 +1149,7 @@
       trackEvent("checkout_error", { location: location.slug, error_message: err.message });
       state.isSubmitting = false;
       updatePayButton();
-      setCardStatus(err.message || "Something went wrong. Please try again.");
+      setCardStatus(err.message || "Something went wrong. Please try again.", true);
     }
   }
 

@@ -811,6 +811,19 @@ body.booking-page {
   color: rgba(0, 0, 0, 0.42);
 }
 
+/* Payment panel helper copy — darker than .ui-copy-muted to meet WCAG AA
+   (~5.5:1 over the soft panel). Source order after .ui-copy-muted so this
+   color wins at equal specificity. */
+.payment-note {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Card-field failure messages render in danger red (~5.9:1) so a payment
+   error is readable, not faint grey. Toggled by setCardStatus. */
+.card-status-error {
+  color: var(--wws-danger);
+}
+
 .ui-empty {
   font-size: 0.95rem;
   color: rgba(0, 0, 0, 0.38);
@@ -892,6 +905,24 @@ body.booking-page {
 
   header h1 {
     font-size: 2.4rem;
+  }
+
+  /* Give Square's card field room past its ~248-260px minimum render width
+     so the iframe fits the grey box instead of overflowing. Trim the panel
+     and container padding that squeeze the content box on a 390px phone. */
+  [data-payment-section].booking-panel-soft {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .square-card-container {
+    padding: 8px;
+  }
+
+  /* Pay & Book is the conversion-critical action — stretch it full-width on
+     mobile. Scoped to [data-pay-btn] so Back/Continue keep natural sizing. */
+  [data-pay-btn] {
+    width: 100%;
   }
 }
 
@@ -982,7 +1013,15 @@ body.booking-page {
   border-radius: 8px;
   padding: 12px;
   background: #fff;
-  min-height: 56px;
+  overflow: hidden;
+}
+
+/* Square's SDK reserves an empty .sq-card-message validation slot (~43px)
+   inside #card-container even when there's no error — collapse it while
+   empty so the card box hugs the field. A real error makes :empty stop
+   matching and the message reappears. */
+#card-container .sq-card-message:empty {
+  display: none;
 }
 
 .consent-row {
@@ -993,13 +1032,23 @@ body.booking-page {
 }
 
 .consent-row input[type="checkbox"] {
-  margin-top: 4px;
+  margin-top: 0;
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
 }
 
 [data-payment-section][hidden] {
   display: none;
+}
+
+/* Keyboard focus indicator — WCAG 2.4.11/1.4.11. The #5a7d8f accent clears
+   >=3:1 against the black CTA, the light panel, and the white card box.
+   :focus-visible so rings show on keyboard nav but not mouse click. */
+.booking-button:focus-visible,
+.consent-row input[type="checkbox"]:focus-visible,
+.progress-dot:focus-visible {
+  outline: 2px solid #5a7d8f;
+  outline-offset: 2px;
 }
