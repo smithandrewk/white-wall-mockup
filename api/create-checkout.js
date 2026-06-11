@@ -67,10 +67,19 @@ module.exports = async function handler(req, res) {
     termsSignature,
     waiverSigned,
     cleaningFee,
+    cardholderName,
     squareToken,
     clientIdempotencyKey,
     consent
   } = body;
+
+  // Cardholder name as entered on the payment panel ("Name on card"). May
+  // differ from the booker (business card, spouse, planner). Falls back to
+  // the booker name when blank. Used only for the Square card-on-file label
+  // and payment note — the Acuity appointment still uses contact first/last.
+  var cardLabelName =
+    (typeof cardholderName === "string" && cardholderName.trim()) ||
+    (contact ? (contact.firstName + " " + (contact.lastName || "")).trim() : "");
 
   // Validate
   if (!appointmentTypeID || !isValidAppointmentTypeID(appointmentTypeID)) {
@@ -315,7 +324,7 @@ module.exports = async function handler(req, res) {
         amountCents: totalCents,
         customerId: customerId,
         idempotencyKey: idempotencyKey,
-        note: "WhiteWall booking — " + contact.firstName + " " + (contact.lastName || "") + " — " + datetime
+        note: "WhiteWall booking — " + cardLabelName + " — " + datetime
       });
 
       // 5. Save the card on file for later merchant-initiated fees
@@ -323,7 +332,7 @@ module.exports = async function handler(req, res) {
       cardOnFile = await createCardOnFile({
         paymentId: payment.id,
         customerId: customerId,
-        cardholderName: (contact.firstName + " " + (contact.lastName || "")).trim()
+        cardholderName: cardLabelName
       });
 
       // 6. Acuity appointment
