@@ -41,6 +41,13 @@ body.booking-page {
     grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
     align-items: start;
   }
+
+  /* Cap the calendar width on desktop so day cells stay proportionate to the
+     numerals instead of ballooning to ~92px squares that push time slots
+     below the fold. Left-aligned to match the sibling time-slot grid. */
+  .booking-calendar {
+    max-width: 460px;
+  }
 }
 
 .booking-panel {
@@ -276,6 +283,13 @@ body.booking-page {
   border: 1px solid rgba(139, 167, 184, 0.4);
   border-radius: 999px;
   padding: 0.3rem 0.65rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.duration-pill-badge.is-muted {
+  color: rgba(0, 0, 0, 0.35);
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .booking-choice:hover,
@@ -670,6 +684,10 @@ body.booking-page {
   border-color: var(--wws-text);
 }
 
+.calendar-day.is-today {
+  box-shadow: inset 0 0 0 1px var(--wws-text-muted);
+}
+
 .calendar-nav {
   display: flex;
   align-items: center;
@@ -706,8 +724,9 @@ body.booking-page {
   border-color: var(--wws-text);
 }
 
-/* Order total */
-.order-total {
+/* Order total — shared size for the in-step Total row and the aside
+   "Estimated total" so the same concept renders at one size. */
+.summary-total {
   font-size: 1.15rem;
 }
 
@@ -808,7 +827,7 @@ body.booking-page {
 .ui-copy-muted {
   font-size: 0.84rem;
   line-height: 1.6;
-  color: rgba(0, 0, 0, 0.42);
+  color: rgba(0, 0, 0, 0.6);
 }
 
 /* Payment panel helper copy — darker than .ui-copy-muted to meet WCAG AA
@@ -908,15 +927,23 @@ body.booking-page {
   }
 
   /* Give Square's card field room past its ~248-260px minimum render width
-     so the iframe fits the grey box instead of overflowing. Trim the panel
-     and container padding that squeeze the content box on a 390px phone. */
-  [data-payment-section].booking-panel-soft {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
-
+     so the iframe fits the grey box on a 390px phone. */
   .square-card-container {
     padding: 8px;
+  }
+
+  /* Day cells render ~33px in repeat(7,1fr) on a phone — below the 44px
+     minimum touch target. Release the 1:1 aspect lock and grow height
+     (width stays fluid via 1fr to avoid horizontal overflow). */
+  .calendar-day {
+    aspect-ratio: auto;
+    min-height: 44px;
+  }
+
+  /* Show more of the 12-clause waiver on a phone — max-h-80 (20rem) clips to
+     ~2-3 clauses. Use a viewport-relative cap so most of it is reachable. */
+  .waiver-scroll {
+    max-height: 60vh;
   }
 
   /* Pay & Book is the conversion-critical action — stretch it full-width on
@@ -924,6 +951,12 @@ body.booking-page {
   [data-pay-btn] {
     width: 100%;
   }
+}
+
+/* Waiver scroll box — caps the 12-clause document height (replaces the
+   former Tailwind max-h-80 so the mobile override below can win). */
+.waiver-scroll {
+  max-height: 20rem;
 }
 
 /* Signature hint (name mismatch / match feedback) */
@@ -1048,7 +1081,39 @@ body.booking-page {
    :focus-visible so rings show on keyboard nav but not mouse click. */
 .booking-button:focus-visible,
 .consent-row input[type="checkbox"]:focus-visible,
-.progress-dot:focus-visible {
+.progress-dot:focus-visible,
+.calendar-day.is-available:focus-visible,
+.time-slot:focus-visible,
+.booking-choice:focus-visible,
+.location-chip:focus-visible {
   outline: 2px solid #5a7d8f;
   outline-offset: 2px;
+}
+
+/* Bare intake/event checkboxes & radios not inside .consent-row */
+.booking-panel input[type="checkbox"]:focus-visible,
+.booking-panel input[type="radio"]:focus-visible {
+  outline: 2px solid #5a7d8f;
+  outline-offset: 2px;
+}
+
+/* Rounded text fields — use a box-shadow ring that follows the corner radius
+   (an offset outline would look detached from the 1rem border). */
+.booking-input:focus-visible,
+.booking-textarea:focus-visible,
+.booking-select:focus-visible {
+  outline: none;
+  border-color: #5a7d8f;
+  box-shadow: 0 0 0 3px rgba(90, 125, 143, 0.35);
+}
+
+/* Match the Name-on-card input's corner radius to the Square card box (8px)
+   directly below it so the stacked payment fields read as one unit. */
+#name-on-card {
+  border-radius: 8px;
+}
+
+/* Programmatic step-heading focus (a11y) must not paint a ring for mouse users. */
+[data-step-panel] h2:focus {
+  outline: none;
 }

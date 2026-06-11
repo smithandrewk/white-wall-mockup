@@ -281,6 +281,8 @@
 
       if (action === "navigate-month") {
         var delta = Number(actionTarget.dataset.delta);
+        var currentMonth = new Date().toISOString().slice(0, 7);
+        if (delta < 0 && state.calendarMonth <= currentMonth) return;
         var mParts = state.calendarMonth.split("-");
         var mDate = new Date(Number(mParts[0]), Number(mParts[1]) - 1 + delta, 1);
         state.calendarMonth = mDate.toISOString().slice(0, 7);
@@ -579,7 +581,7 @@
           const isComplete = step.index < state.step;
           const isLocked = step.index > maxStep;
           return `
-            <button class="progress-dot ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""} ${isLocked ? "is-locked" : ""}" type="button" data-action="go-step" data-step="${step.index}" ${isLocked ? "disabled" : ""}>
+            <button class="progress-dot ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""} ${isLocked ? "is-locked" : ""}" type="button" data-action="go-step" data-step="${step.index}" ${isActive ? 'aria-current="step"' : ""} ${isLocked ? `aria-disabled="true" aria-label="Step ${step.index}, ${step.label} — complete earlier steps first"` : ""}>
               <span class="progress-dot-num">${step.index}</span>
               <span class="progress-dot-label">${step.label}</span>
             </button>
@@ -626,10 +628,10 @@
         const isOneHr = location.slug === "powdersville" && duration.hours === 1;
         const priceTag = duration.price ? currency.format(duration.price) : "";
         return `
-          <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}">
-            <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.4);font-weight:400">' + priceTag + '</span>' : ''}</span>
+          <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}" aria-pressed="${isActive}">
+            <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : ''}</span>
             ${eventEligible ? '<span class="duration-pill-badge">Event eligible</span>' : ""}
-            ${isOneHr ? '<span style="font-size:0.75rem;color:rgba(0,0,0,0.35)">(Not eligible for events)</span>' : ""}
+            ${isOneHr ? '<span class="duration-pill-badge is-muted">Not eligible</span>' : ""}
           </button>
         `;
       })
@@ -743,13 +745,17 @@
       if (isSelected) cls += " is-selected";
       else if (isAvailable && !isPast) cls += " is-available";
       else cls += " is-unavailable";
+      if (dateStr === today) cls += " is-today";
 
       if (isAvailable && !isPast) {
-        cells += '<button type="button" class="' + cls + '" data-action="select-date" data-date="' + dateStr + '">' + d + '</button>';
+        var dayLabel = new Date(year, month, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+        cells += '<button type="button" class="' + cls + '" data-action="select-date" data-date="' + dateStr + '" aria-pressed="' + (isSelected ? "true" : "false") + '" aria-label="' + escapeAttribute(dayLabel) + '">' + d + '</button>';
       } else {
         cells += '<span class="' + cls + '">' + d + '</span>';
       }
     }
+
+    var atCurrentMonth = state.calendarMonth <= new Date().toISOString().slice(0, 7);
 
     var spinner = state.isLoadingDates ? '<div class="booking-spinner"></div>' : '';
     var noAvail = !state.isLoadingDates && state.availableDates.length === 0
@@ -758,7 +764,7 @@
 
     return '<div class="booking-panel-soft p-5">' +
       '<div class="calendar-nav">' +
-        '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="-1" style="padding:0.5rem 0.8rem">&larr;</button>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="-1" style="padding:0.5rem 0.8rem"' + (atCurrentMonth ? " disabled" : "") + '>&larr;</button>' +
         '<span class="ui-copy-strong">' + monthName + '</span>' +
         '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="1" style="padding:0.5rem 0.8rem">&rarr;</button>' +
       '</div>' +
@@ -779,17 +785,21 @@
       return '<div class="booking-panel-soft p-5 mt-5"><p class="ui-copy-muted" style="text-align:center">No time slots available for this date</p></div>';
     }
 
+    var dp = state.selectedDate.split("-");
+    var humanDate = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
+      .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
     var pills = state.availableTimes.map(function (t) {
       var d = new Date(t);
       var label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
       var isSelected = t === state.selectedTime;
       var cls = "time-slot" + (isSelected ? " is-selected" : "");
-      return '<button type="button" class="' + cls + '" data-action="select-time" data-time="' + escapeAttribute(t) + '">' + label + '</button>';
+      return '<button type="button" class="' + cls + '" data-action="select-time" data-time="' + escapeAttribute(t) + '" aria-pressed="' + (isSelected ? "true" : "false") + '" aria-label="' + escapeAttribute(humanDate + " at " + label) + '">' + label + '</button>';
     }).join("");
 
     return '<div class="booking-panel-soft p-5 mt-5">' +
-      '<p class="ui-kicker" style="margin-bottom:1rem">Available times for ' + state.selectedDate + '</p>' +
-      '<div class="time-slot-grid">' + pills + '</div>' +
+      '<p class="ui-kicker" id="timeslot-label" style="margin-bottom:1rem">Available times for ' + escapeHtml(humanDate) + '</p>' +
+      '<div class="time-slot-grid" role="group" aria-labelledby="timeslot-label">' + pills + '</div>' +
     '</div>';
   }
 
@@ -840,7 +850,7 @@
     if (cleaningFee) {
       cleaningFeeHtml = '<div class="summary-line summary-line-muted"><span>' + cleaningFee.label + '</span><span>' + currency.format(cleaningFee.amount) + '</span></div>';
       if (cleaningFee.note) {
-        cleaningFeeHtml += '<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.45);font-style:italic">' + cleaningFee.note + '</span></div>';
+        cleaningFeeHtml += '<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.6);font-style:italic">' + cleaningFee.note + '</span></div>';
       }
     }
 
@@ -854,9 +864,9 @@
         addonHtml +
         cleaningFeeHtml +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-        '<div class="summary-line" style="font-size:1.1rem"><span><strong>Total</strong></span><span class="order-total"><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
+        '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
       '</div>' +
-      '<p class="ui-copy-muted" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
+      '<p class="ui-copy-muted payment-note" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
     '</div>';
   }
 
@@ -991,20 +1001,6 @@
       if (!state.waiverSigned) { setStep(4); return; }
       return;
     }
-
-    var payDuration = getSelectedDuration();
-    var activeAddons = 0;
-    location.addons.forEach(function(a) {
-      var s = state.addons[a.id];
-      if (s && (s.selected || s.quantity > 0)) activeAddons++;
-    });
-    trackEvent("pay_and_book_clicked", {
-      location: location.slug,
-      duration_id: state.durationId,
-      duration_hours: payDuration ? payDuration.hours : null,
-      total: payDuration ? payDuration.price : null,
-      addon_count: activeAddons
-    });
 
     // Card-on-file gates
     if (!state.squareCardReady) {
@@ -1206,16 +1202,16 @@
     container.innerHTML = `
       <p class="ui-copy" style="margin-bottom:1.5rem;color:rgba(0,0,0,0.55)">Events are allowed for 2-hour sessions and longer.</p>
       <div class="choice-grid is-two-up">
-        <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no">
+        <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no" aria-pressed="${state.eventIntent === "no"}">
           <p class="ui-kicker">Use this for</p>
           <h3 class="ui-display-sm" style="margin-top:0.75rem">Photo / video session</h3>
           <p class="ui-copy" style="margin-top:1rem">Standard photo, video, or production session.</p>
         </button>
-        <button type="button" class="booking-choice ${state.eventIntent === "yes" ? "is-active" : ""}" data-action="set-event-intent" data-value="yes">
+        <button type="button" class="booking-choice ${state.eventIntent === "yes" ? "is-active" : ""}" data-action="set-event-intent" data-value="yes" aria-pressed="${state.eventIntent === "yes"}">
           <p class="ui-kicker">Use this for</p>
           <h3 class="ui-display-sm" style="margin-top:0.75rem">Event booking</h3>
           <p class="ui-copy" style="margin-top:1rem">Parties, receptions, workshops, and gatherings.</p>
-          ${isOneHour ? '<p class="ui-copy" style="margin-top:0.5rem;color:rgba(0,0,0,0.35);font-size:0.8rem">(Not eligible for events)</p>' : ""}
+          ${isOneHour ? '<p class="ui-copy" style="margin-top:0.5rem;color:rgba(0,0,0,0.6);font-size:0.8rem">(Not eligible for events)</p>' : ""}
         </button>
       </div>
 
@@ -1287,19 +1283,19 @@
           ${textareaPrompt ? '<p class="ui-copy" style="margin-bottom:0.75rem;color:rgba(0,0,0,0.55);font-size:0.85rem">' + textareaPrompt + '</p>' : ''}
           <textarea class="booking-textarea ${borderClass}" id="event-description" data-input="event-description" placeholder="What are you hosting?">${escapeHtml(state.eventDescription)}</textarea>
         </div>
-        <div class="booking-panel-soft panel-pad">
-          <p class="ui-kicker" style="margin-bottom:1rem">Will there be food or drinks at your event?</p>
+        <fieldset class="booking-panel-soft panel-pad" style="border:0;margin:0">
+          <legend class="ui-kicker" style="margin-bottom:1rem;padding:0">Will there be food or drinks at your event?</legend>
           <div style="display:flex;gap:1rem">
             <label class="helper-item">
-              <input type="checkbox" data-check="food-drinks-yes" ${state.foodDrinks === true ? "checked" : ""}>
+              <input type="radio" name="food-drinks" data-check="food-drinks-yes" ${state.foodDrinks === true ? "checked" : ""}>
               <span>Yes</span>
             </label>
             <label class="helper-item">
-              <input type="checkbox" data-check="food-drinks-no" ${state.foodDrinks === false ? "checked" : ""}>
+              <input type="radio" name="food-drinks" data-check="food-drinks-no" ${state.foodDrinks === false ? "checked" : ""}>
               <span>No</span>
             </label>
           </div>
-        </div>
+        </fieldset>
         <div class="booking-panel-soft panel-pad">
           <p class="ui-kicker">Required acknowledgements</p>
           <label class="helper-item" style="margin-top:1rem">
@@ -1587,7 +1583,7 @@
     if (cleaningFee) {
       cleaningFeeHtml = `<div class="summary-line summary-line-muted"><span>${cleaningFee.label}</span><span>${currency.format(cleaningFee.amount)}</span></div>`;
       if (cleaningFee.note) {
-        cleaningFeeHtml += `<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.45);font-style:italic">${cleaningFee.note}</span></div>`;
+        cleaningFeeHtml += `<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.6);font-style:italic">${cleaningFee.note}</span></div>`;
       }
     }
 
@@ -1645,6 +1641,8 @@
     if (activePanel) {
       setTimeout(function() {
         activePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        var h = activePanel.querySelector("h2");
+        if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
       }, 50);
     }
   }
@@ -1681,15 +1679,16 @@
         <div class="summary-list">
           <div class="summary-line"><span>Name</span><span>${escapeHtml(displayName)}</span></div>
           <div class="summary-line"><span>Email</span><span>${escapeHtml(state.contact.email || "—")}</span></div>
-          <div class="summary-line"><span>Phone</span><span>${escapeHtml(state.contact.phone || "—")}</span></div>
-          <div class="summary-line"><span>Business</span><span>${escapeHtml(state.intake.business || "—")}</span></div>
-          <div class="summary-line"><span>Participants</span><span>${escapeHtml(state.intake.participants || "—")}</span></div>
+          ${state.contact.phone ? `<div class="summary-line"><span>Phone</span><span>${escapeHtml(state.contact.phone)}</span></div>` : ""}
+          ${state.intake.business ? `<div class="summary-line"><span>Business</span><span>${escapeHtml(state.intake.business)}</span></div>` : ""}
+          ${state.intake.participants ? `<div class="summary-line"><span>Participants</span><span>${escapeHtml(state.intake.participants)}</span></div>` : ""}
         </div>
       </div>
 
       <div class="booking-panel-soft p-5 mt-6">
-        <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Liability waiver &amp; use agreement</p>
-        <div class="text-sm text-black/60 leading-relaxed space-y-3 max-h-80 overflow-y-auto pr-2" style="scrollbar-width:thin">
+        <p class="text-xs tracking-[0.2em] uppercase text-black/60 mb-2">Liability waiver &amp; use agreement</p>
+        <p class="text-xs text-black/50 mb-4">Scroll to read the full waiver before signing.</p>
+        <div class="waiver-scroll text-sm text-black/60 leading-relaxed space-y-3 overflow-y-auto pr-2" style="scrollbar-width:thin">
           <p><strong>WhiteWall Studios Liability Waiver &amp; Use Agreement</strong></p>
           <p>I, <strong>${escapeHtml(fullName || "the individual")}</strong>, booking this session (&ldquo;Renter&rdquo;), acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located in <strong>${location.slug === "powdersville" ? "Powdersville, South Carolina" : "Taylors, South Carolina"}</strong> (&ldquo;the Studio&rdquo;).</p>
           <p>By signing this agreement, I confirm that I am entering into this agreement <strong>on behalf of myself and every person I allow into the Studio during my booking</strong>, including but not limited to clients, guests, models, assistants, photographers, videographers, and other invitees (collectively referred to as &ldquo;My Party&rdquo;). I accept full responsibility for the conduct, safety, and actions of My Party.</p>
@@ -1759,6 +1758,10 @@
     var btn = document.querySelector("[data-requires-waiver]");
     if (!btn) return;
     btn.disabled = !state.waiverSigned;
+    var hint = document.querySelector("[data-gate-hint='waiver']");
+    if (hint) {
+      hint.textContent = state.waiverSigned ? "" : "Sign the waiver above to continue.";
+    }
   }
 
   function isTermsAccepted() {
@@ -1769,7 +1772,12 @@
   function updateTermsGate() {
     var btn = document.querySelector("[data-requires-terms]");
     if (!btn) return;
-    btn.disabled = !isStepComplete(3);
+    var complete = isStepComplete(3);
+    btn.disabled = !complete;
+    var hint = document.querySelector("[data-gate-hint='terms']");
+    if (hint) {
+      hint.textContent = complete ? "" : (getValidationErrors()[0] || "Complete the highlighted fields to continue.");
+    }
     updateSignatureHints();
   }
 
