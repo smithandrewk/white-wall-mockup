@@ -98,6 +98,7 @@
               <h2 class="font-display text-4xl mt-3">Choose timing</h2>
             </div>
           </div>
+          <p class="text-sm text-black/50 mt-4">Pick the length of your session — prices cover the full booked time.</p>
           <div class="choice-grid is-two-up mt-8" data-duration-options></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="2">Continue to schedule</button>
@@ -124,20 +125,20 @@
           <div data-step3-details style="display:none">
           <div class="mt-8">
             <div class="booking-panel-soft p-5">
-              <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Contact information</p>
-              <div class="flex gap-4">
+              <p class="text-xs tracking-[0.2em] uppercase text-black/60 mb-5">Contact information</p>
+              <div class="flex flex-col sm:flex-row gap-4">
                 <div class="flex-1">
-                  <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3" for="contact-first-name">First name</label>
+                  <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3" for="contact-first-name">First name</label>
                   <input id="contact-first-name" class="booking-input" data-input="contact-first-name" placeholder="First name">
                 </div>
                 <div class="flex-1">
-                  <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3" for="contact-last-name">Last name</label>
+                  <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3" for="contact-last-name">Last name</label>
                   <input id="contact-last-name" class="booking-input" data-input="contact-last-name" placeholder="Last name">
                 </div>
               </div>
-              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="contact-email">Email</label>
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="contact-email">Email</label>
               <input id="contact-email" class="booking-input" data-input="contact-email" placeholder="you@example.com" type="email">
-              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="contact-phone">Phone</label>
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="contact-phone">Phone (optional)</label>
               <input id="contact-phone" class="booking-input" data-input="contact-phone" placeholder="(555) 555-5555" type="tel">
               <label class="visually-hidden" for="contact-company">Company</label>
               <input id="contact-company" class="visually-hidden" name="company" autocomplete="off" tabindex="-1">
@@ -146,14 +147,14 @@
 
           <div class="mt-8">
             <div class="booking-panel-soft p-5">
-              <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Intake form</p>
-              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3" for="intake-business">Business / legal name</label>
+              <p class="text-xs tracking-[0.2em] uppercase text-black/60 mb-5">Intake form</p>
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3" for="intake-business">Business / legal name (optional)</label>
               <input id="intake-business" class="booking-input" data-input="intake-business" placeholder="Business or legal name">
               <div data-intake-participants-row>
-                <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="intake-participants">Total number of participants</label>
+                <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-participants">Total number of participants (optional)</label>
                 <input id="intake-participants" class="booking-input" data-input="intake-participants" placeholder="How many people total?" type="number" min="1">
               </div>
-              <label class="block text-xs tracking-[0.2em] uppercase text-black/45 mb-3 mt-5" for="intake-instagram">Instagram handle</label>
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-instagram">Instagram handle</label>
               <input id="intake-instagram" class="booking-input" data-input="intake-instagram" placeholder="@yourstudio">
               <label class="flex items-start gap-3 mt-5 cursor-pointer">
                 <input type="checkbox" data-check="read-email" class="mt-1 shrink-0">
@@ -164,17 +165,17 @@
 
           <div class="mt-8">
             <div class="booking-panel-soft p-5">
-              <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Important — Please read carefully</p>
+              <p class="text-xs tracking-[0.2em] uppercase text-black/60 mb-5">Important — Please read carefully</p>
               <p class="text-sm text-black/60 leading-relaxed">An email will be automatically emailed to you immediately after you book this session. That email is very important and contains all the info needed for your booking, such as address, door codes, and important informational YouTube videos. If you don't receive that email within 2 minutes, please check your Spam/Junk folder. If it's not there, please send us an email asking for this info.</p>
-              <p class="text-sm text-black/70 font-medium mt-5">Please acknowledge you have fully read this statement by e-signing your first and last name here.</p>
-              <input class="booking-input mt-3" data-input="email-acknowledgment" placeholder="Type your full name" autocomplete="off">
-              <p class="signature-hint" data-hint="email-acknowledgment"></p>
+              <label class="block text-sm text-black/70 font-medium mt-5" for="email-acknowledgment-sig">Please acknowledge you have fully read this statement by e-signing your first and last name here.</label>
+              <input id="email-acknowledgment-sig" class="booking-input mt-3" data-input="email-acknowledgment" placeholder="Type your full name" autocomplete="off" aria-describedby="email-acknowledgment-hint">
+              <p class="signature-hint" id="email-acknowledgment-hint" data-hint="email-acknowledgment" aria-live="polite"></p>
             </div>
           </div>
 
           <div class="mt-8">
             <div class="booking-panel-soft p-5">
-              <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Terms &amp; Conditions — Flagship Location</p>
+              <p class="text-xs tracking-[0.2em] uppercase text-black/60 mb-5">Terms &amp; Conditions — Flagship Location</p>
               <div class="text-sm text-black/60 leading-relaxed space-y-3 max-h-64 overflow-y-auto pr-2" style="scrollbar-width:thin">
                 <p>1. I acknowledge that I, the person booking this session, assume full responsibility and liability for myself and for every person I allow into the studio space during my booking. By booking this session, I release WhiteWall Studios, LLC from liability for injury, damage, loss, or other incidents that may occur during the session, except where prohibited by law.</p>
                 <p>2. <strong>Scheduled Time Policy:</strong> I understand that my booking begins at my scheduled start time and ends at my scheduled end time. I may not enter the studio early, even if the space appears empty. I must be fully packed up, cleaned up, reset, and completely out of the studio by the time my booking ends.</p>
@@ -196,9 +197,9 @@
                 <p>18. I have double-checked and confirmed that I booked the correct date, time, location, and AM/PM selection.</p>
                 <p>19. I agree that this form serves as a binding contract between myself and WhiteWall Studios, LLC, governed by the laws of the State of South Carolina.</p>
               </div>
-              <p class="text-sm text-black/70 font-medium mt-5">By signing below, I confirm I have read, completely understand, and agree to the terms above.</p>
-              <input class="booking-input mt-3" data-input="terms-signature" placeholder="Type your full name to accept" autocomplete="off">
-              <p class="signature-hint" data-hint="terms-signature"></p>
+              <label class="block text-sm text-black/70 font-medium mt-5" for="terms-signature-sig">By signing below, I confirm I have read, completely understand, and agree to the terms above.</label>
+              <input id="terms-signature-sig" class="booking-input mt-3" data-input="terms-signature" placeholder="Type your full name to accept" autocomplete="off" aria-describedby="terms-signature-hint">
+              <p class="signature-hint" id="terms-signature-hint" data-hint="terms-signature" aria-live="polite"></p>
             </div>
           </div>
 
@@ -206,6 +207,7 @@
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="2">Back</button>
             <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="4" data-requires-terms>Continue to sign waiver</button>
           </div>
+          <p class="signature-hint" data-gate-hint="terms" aria-live="polite"></p>
           </div>
         </div>
 
@@ -218,6 +220,7 @@
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="3">Back</button>
             <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="5" data-requires-waiver disabled>Continue to add-ons</button>
           </div>
+          <p class="signature-hint" data-gate-hint="waiver" aria-live="polite"></p>
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="5">
@@ -230,7 +233,8 @@
           <div class="booking-panel-soft p-5 mt-6" data-payment-section hidden>
             <p class="ui-kicker" style="margin-bottom:1rem">Payment</p>
             <label class="ui-field-label" for="name-on-card">Name on card</label>
-            <input type="text" id="name-on-card" class="booking-input" data-input="name-on-card" autocomplete="cc-name" style="margin-bottom:0.75rem">
+            <input type="text" id="name-on-card" class="booking-input" data-input="name-on-card" autocomplete="cc-name" placeholder="Name as it appears on the card" style="margin-bottom:0.75rem">
+            <p class="ui-copy-muted payment-note" style="margin-top:0.4rem;font-size:0.8rem">Use the name exactly as it appears on the card you're paying with — this may differ from the booker.</p>
             <div id="card-container" class="square-card-container"></div>
             <p class="ui-copy-muted payment-note" data-card-status role="status" aria-live="polite" style="margin-top:0.5rem;font-size:0.8rem">Loading secure card field…</p>
             <label class="consent-row" style="margin-top:1.25rem">
@@ -260,7 +264,7 @@
             <span class="summary-pill" style="border:1px solid rgba(139,167,184,0.4);color:#5a7d8f">Flagship</span>
           </div>
 
-          <p class="text-sm text-black/45 mt-4" data-location-address></p>
+          <p class="text-sm text-black/60 mt-4" data-location-address></p>
 
           <div class="summary-divider my-6"></div>
 
@@ -288,7 +292,7 @@
             <p class="text-xs tracking-[0.2em] uppercase text-black/40">Add-ons</p>
             <div class="mt-4 summary-list" data-summary-addons></div>
             <div class="summary-divider my-6"></div>
-            <div class="summary-line text-lg">
+            <div class="summary-line summary-total">
               <span>Estimated total</span>
               <strong data-summary-total></strong>
             </div>
