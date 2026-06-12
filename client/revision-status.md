@@ -458,3 +458,6 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 
 **Done: 190 items** (all original revisions + Round 19 + Item 6b + Round 20 PR 1 + PR 2 build)
 **Remaining: Round 20 PR 2 cutover** — code complete + syntax-clean. Blocked on Square App ID env vars (Andrew), sandbox test, preview real-card test with Drew, and Acuity URL takedown.
+
+### 2026-06-12 — PostHog server-side env gap documented (worker/posthog-env-gap)
+- [x] Verified `api/_lib/posthog.js` silently no-ops when `POSTHOG_API_KEY` is unset (returns `null` from `getClient()`). Added Pending escalation entry to `client/escalations.md` noting symptom, env var needed, fix, and F2/#19 dependency.
