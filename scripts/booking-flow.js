@@ -21,8 +21,8 @@
 
   // Robust int parse for participant counts. Customers occasionally type
   // "35 +", "35+", "~35", "35-50", etc. Number() returns NaN for those and
-  // ALL the >=35 / >=50 thresholds silently fall through (missed cleaning
-  // fee + missed high-traffic warnings). Extract the first integer instead.
+  // the >=35 threshold silently falls through (missed cleaning fee + missed
+  // high-traffic warnings). Extract the first integer instead.
   // Real incident: Molly Hensley booked Nov 14 2026 with "35 +" — no fee
   // applied, no warnings shown, no buffer block.
   function parseCount(v) {
@@ -808,11 +808,8 @@
     // Also check intake participants for photo/video sessions
     var intakeCount = parseCount(state.intake.participants);
     var effectiveCount = Math.max(count, intakeCount);
-    if (effectiveCount >= 50) {
+    if (effectiveCount >= 35) {
       return { label: "Cleaning fee", amount: 150, note: "" };
-    }
-    if (effectiveCount >= 35 && state.eventIntent === "yes") {
-      return { label: "Cleaning fee", amount: 150, note: "Our team may reach out to waive this fee based on your booking details." };
     }
     return null;
   }
@@ -1190,7 +1187,7 @@
       /^\d+$/.test(state.participants.trim()) && parseCount(state.participants) >= 35
         ? `
           <div class="warning-card" style="margin-top:1rem">
-            For events with 35+ attendees, a $150 cleaning fee will be automatically included. Our team may reach out to waive this fee based on your booking details.
+            For events with 35+ attendees, a $150 cleaning fee is automatically included.
           </div>
         `
         : "";
@@ -1263,14 +1260,10 @@
     var textareaPrompt = "";
     var borderClass = "";
 
-    if (count >= 50) {
+    if (count >= 35) {
       borderClass = "event-textarea-warning";
       textareaLabel = "Tell Us About Your Event";
-      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. A team member will follow up if any additional details or approvals are needed. If you don\u2019t hear from us, you\u2019re all set. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.";
-    } else if (count >= 35) {
-      borderClass = "event-textarea-warning";
-      textareaLabel = "Tell Us About Your Event";
-      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. A team member will follow up if any additional details or approvals are needed. If you don\u2019t hear from us, you\u2019re all set. For events with 35+ attendees, we may follow up regarding a potential $150 cleaning fee. For events with 50+ attendees, a $150 cleaning fee will be automatically applied.";
+      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. A team member will follow up if any additional details or approvals are needed. If you don\u2019t hear from us, you\u2019re all set. For events with 35+ attendees, a $150 cleaning fee is automatically applied.";
     } else {
       textareaLabel = "Tell Us About Your Event";
       textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly.";
@@ -1304,7 +1297,7 @@
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="capacity" ${state.acknowledgements.capacity ? "checked" : ""}>
-            <span>I understand that bookings with 35+ guests include a $150 cleaning fee. The WhiteWall team may reach out to waive this fee based on my booking details.</span>
+            <span>I understand that bookings with 35+ guests include a $150 cleaning fee.</span>
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="self-service" ${state.acknowledgements.selfService ? "checked" : ""}>
@@ -1323,7 +1316,7 @@
     return `
       <div class="booking-panel-soft p-5 mt-4">
         <p class="ui-copy-strong" style="margin-bottom:0.75rem">Tell us more about your shoot</p>
-        <p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.55)">A $150 cleaning fee will be included with your booking. Our team may reach out to waive this fee based on your booking details.</p>
+        <p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.55)">A $150 cleaning fee is included with your booking.</p>
         <textarea class="booking-textarea" data-input="high-traffic-note" placeholder="Describe your shoot or event…">${escapeHtml(state.highTrafficNote)}</textarea>
       </div>
     `;
@@ -1353,7 +1346,7 @@
         : "";
     var capacityNotice =
       /^\d+$/.test(state.participants.trim()) && count >= 35
-        ? '<div class="warning-card" style="margin-top:1rem">For events with 35+ attendees, a $150 cleaning fee will be automatically included. Our team may reach out to waive this fee based on your booking details.</div>'
+        ? '<div class="warning-card" style="margin-top:1rem">For events with 35+ attendees, a $150 cleaning fee is automatically included.</div>'
         : "";
 
     container.innerHTML = warning + capacityNotice + getHighTrafficHtml();
