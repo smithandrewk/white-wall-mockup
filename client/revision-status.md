@@ -469,3 +469,13 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 
 ### 2026-06-12 — PostHog server-side env gap documented (worker/posthog-env-gap)
 - [x] Verified `api/_lib/posthog.js` silently no-ops when `POSTHOG_API_KEY` is unset (returns `null` from `getClient()`). Added Pending escalation entry to `client/escalations.md` noting symptom, env var needed, fix, and F2/#19 dependency.
+
+## SEO Improvements (2026-06-12) — issue #18
+
+- [x] Added homepage `<h1>` (visually-hidden `sr-only`) — index.html had none.
+- [x] Added JSON-LD structured data: Organization + two `PhotographyBusiness` departments (Powdersville first) on index.html; single-location `PhotographyBusiness` on powdersville.html and taylors-mill.html. Real NAP, America/New_York.
+- [x] Added `<link rel="canonical">` to index, powdersville, taylors-mill, gallery, book-powdersville, book-taylors-mill.
+- [x] Trimmed over-length meta descriptions to <155 chars (index 165→141, powdersville 172→147, taylors-mill 173→151).
+- [x] Added geo keywords to `<title>` on powdersville, taylors-mill, gallery, book-powdersville, book-taylors-mill.
+- [x] Added `<lastmod>2026-06-12</lastmod>` to all 12 sitemap.xml URLs.
+- Plan: `client/docs/2026-06-12-seo-plan.md`. Deferred (Tier 2/3): OG image domain consistency, alt-text audit, Google Business Profile (Drew action).
