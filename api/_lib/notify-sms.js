@@ -5,7 +5,8 @@
 //
 // Triggers:
 //   - 35+ event booking, OR
-//   - any 3+ hour shoot (default — narrow to photo/video only if Drew confirms)
+//   - any 3+ hour shoot (kept deliberately broad — over-notify rather than
+//     under-notify; events 3hr+ still text Drew even under 35 people)
 //
 // Two layers of auth on every call:
 //   1. CF-Access-Client-Id + CF-Access-Client-Secret — verified at Cloudflare's
@@ -55,10 +56,12 @@ function buildSmsText(bookingState, appointmentId) {
   const participants = Number(bookingState.participants) || Number((bookingState.intake || {}).participants) || 0;
   const locName = bookingState.location === "powdersville" ? "Flagship" : "TM";
 
-  // Trigger reason — show why this fired
+  // Trigger reason — show why this fired. Flag events whenever eventIntent is
+  // "yes" (not just at the 35+ threshold) so a long event under 35 people still
+  // reads as an event in the header, not just a "3hr shoot".
   const reasons = [];
-  if (bookingState.eventIntent === "yes" && participants >= SMS_PARTICIPANT_THRESHOLD) {
-    reasons.push("event " + participants + "ppl");
+  if (bookingState.eventIntent === "yes") {
+    reasons.push(participants ? "event " + participants + "ppl" : "event");
   }
   if (durationMin >= SMS_DURATION_THRESHOLD_MIN) {
     reasons.push((durationMin / 60).toFixed(0) + "hr shoot");

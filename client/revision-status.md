@@ -407,7 +407,7 @@ Plan:   `client/comms/2026-05-05-drew-revisions-plan.md`
 - [x] Wired into `api/booking-callback.js` — fires after cleaner notification, isolated try/catch. No-ops gracefully if env vars missing.
 - [x] Env vars documented in CLAUDE.md: `WATSON_SMS_URL`, `WATSON_CF_ACCESS_CLIENT_ID`, `WATSON_CF_ACCESS_CLIENT_SECRET`, `BLUEBUBBLES_PASSWORD`, `OWNER_PHONE`.
 - [ ] Awaiting Cloudflare Tunnel + Access setup on Watson (Andrew + Drew). Once values are in Vercel env, SMS goes live.
-- [ ] "3+ hour shoot" defaults to ANY 3+ hour booking (incl. events). Narrow to photo/video only if Drew confirms.
+- [x] "3+ hour shoot" deliberately kept broad — fires for ANY 3+ hour booking incl. events (over-notify rather than under-notify; decision 2026-06-12, no need to bother Drew). Also flagged events in the SMS reason line whenever `eventIntent === "yes"` so long sub-35 events read as events, not just "3hr shoot" (`notify-sms.js`). Closes #6.
 
 ## Feedback Round 20 (2026-05-18) — Drew's email 2026-05-11
 
