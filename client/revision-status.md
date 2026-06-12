@@ -442,6 +442,10 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 - [ ] Take down the direct Acuity scheduler URL so all bookings funnel through the site (Drew's answer #6, option B) — Andrew/Drew.
 - [ ] Apple/Google Pay deferred (Drew's answer #8). Existing customers re-enter card on next booking, no migration (answer #7).
 
+## Research — Square coupon feasibility (#29, 2026-06-12)
+
+- [x] Researched Square API coupon/discount capability (doc only, no app code). Findings + recommendation in `client/docs/square-coupon-feasibility.md`. Square has no native coupon-code system (no codes, no per-customer/one-time limits, no booking-date scope, no %-OR-free-add-on dual mode); only ad-hoc discounts + auto-applied catalog pricing rules. Recommendation: server-side coupon layer in `api/create-checkout.js` applying a single ad-hoc Square discount. Unblocks #13 (C1), #14 (C2), #20 (revenue-recovery).
+
 ## Summary
 
 ### Item 6b — Verify Nov 14 booking (Molly Hensley)
