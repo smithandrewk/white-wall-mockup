@@ -4,6 +4,14 @@ Items that need Andrew's manual intervention or can't be resolved programmatical
 
 ## Pending
 
+### 2026-06-12 — PostHog server-side events no-op — POSTHOG_API_KEY not set in Vercel Production (issue #19 / F2)
+- **Symptom:** Every `captureServerEvent()` call in `api/create-checkout.js` (fires on `booking_completed_server` and `booking_failed_server`) is silently dropped. `api/_lib/posthog.js` `getClient()` checks `process.env.POSTHOG_API_KEY` at call time; when the var is absent it logs `"posthog: POSTHOG_API_KEY not set, skipping"` and returns `null`, so the event is never sent. No error is surfaced to the caller — the booking flow continues normally.
+- **Env vars needed:**
+  - `POSTHOG_API_KEY` — project API key from PostHog dashboard (Project Settings > Project API key). Required.
+  - The host is hardcoded to `https://us.i.posthog.com` in `api/_lib/posthog.js`; no separate env var needed unless the host changes.
+- **Fix:** Set `POSTHOG_API_KEY` in Vercel **Production** (and optionally staging if server-side funnel events are wanted there), then redeploy. Client-side PostHog (`scripts/booking-flow.js`) is a separate snippet loaded in the browser and is unaffected by this var.
+- **Why it matters:** This gates F2 / issue #19 (lead-source + conversion reporting). Server-side `booking_completed_server` events are the reliable signal for conversion attribution (fires after payment, not subject to ad blockers or page-close timing). Until the var is set, there is no server-side funnel data in PostHog.
+
 ### 2026-06-12 — Twilio A2P 10DLC registration for customer confirmation SMS (issue #7 / B1)
 - **What's blocked:** Customer booking-confirmation SMS code is built and merged (`api/_lib/notify-customer-sms.js`, wired into `create-checkout.js`), but it no-ops until Twilio is provisioned. It cannot legally send to US numbers without A2P 10DLC registration.
 - **Action (manual, needs Drew's business info):**
