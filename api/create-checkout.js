@@ -302,9 +302,14 @@ module.exports = async function handler(req, res) {
     // resubmit after a lost response never double-charges. Square dedupes
     // on this key.
     const idempotencySeed = clientIdempotencyKey || String(squareToken).slice(-16);
+    // Square caps idempotency_key at 45 chars; a full sha256 hex is 64 and
+    // gets rejected with a 400 ("Field must not be greater than 45 length"),
+    // which would fail EVERY card-on-file charge. Truncate to 45 — still
+    // 180 bits of entropy, far more than enough to dedupe.
     const idempotencyKey = crypto.createHash("sha256")
       .update(appointmentTypeID + "|" + datetime + "|" + contact.email + "|" + idempotencySeed)
-      .digest("hex");
+      .digest("hex")
+      .slice(0, 45);
 
     var customerId, payment, cardOnFile, appointment;
 
