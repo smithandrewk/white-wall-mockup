@@ -442,6 +442,13 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 - [ ] Take down the direct Acuity scheduler URL so all bookings funnel through the site (Drew's answer #6, option B) — Andrew/Drew.
 - [ ] Apple/Google Pay deferred (Drew's answer #8). Existing customers re-enter card on next booking, no migration (answer #7).
 
+## Feedback Round 21 (2026-06-12) — Wishlist issue #17
+
+- [x] Added a required "How did you hear about us?" select to Step 3 (Details) on `book-powdersville.html` and `book-taylors-mill.html`. Options (in order): Google Search, Instagram, Facebook, Friend / Referral, Drove by, Other. Placed after the Instagram field, before the read-email checkbox. Mirrors existing intake-field markup/classes.
+- [x] `scripts/booking-flow.js` — added `intake.leadSource` to state; added a `change` handler (`[data-input='intake-lead-source']`) that updates state + calls `updateTermsGate()` (no full re-render); made it REQUIRED in `isStepComplete(3)` baseComplete and added a `getValidationErrors()` message.
+- [x] Threading: `intake.leadSource` rides through `bookingState.intake` in `api/create-checkout.js`. `api/_lib/acuity.js` `buildAppointmentNotes()` adds a "Heard about us: X" line. `api/notify-owner.js` `buildEmailBody()` shows "Heard about us:" in the owner/customer email intake block.
+- [x] Verified: all touched JS passes `node --check`; both HTML pages contain the field with all 6 options.
+
 ## Summary
 
 ### Item 6b — Verify Nov 14 booking (Molly Hensley)
