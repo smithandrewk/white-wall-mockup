@@ -247,6 +247,9 @@ function buildAcuityFields(intake, location) {
 function buildAppointmentNotes(bookingState) {
   const lines = [];
 
+  const intake = bookingState.intake || {};
+  if (intake.leadSource) lines.push("Heard about us: " + intake.leadSource);
+
   if (bookingState.eventIntent === "yes") {
     lines.push("Event booking: Yes");
     if (bookingState.participants) lines.push("Event guests: " + bookingState.participants);
