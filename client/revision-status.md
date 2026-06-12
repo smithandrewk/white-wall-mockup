@@ -306,6 +306,7 @@ Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a 
 **Resolution (2026-06-12, issue #7):** Acuity's built-in confirmation SMS is templated and can't carry per-booking instructional video links — which the B1 wishlist explicitly requires — so the zero-code toggle path is dead. Andrew chose **Twilio**. Built `api/_lib/notify-customer-sms.js` and wired it into `api/create-checkout.js` (after `notifyOwnerSMS`; note the live notify path is create-checkout, not the deprecated booking-callback). The SMS sends booking details + video links relevant to the add-ons booked (lighting/chairs/events) plus the studio walkthrough. No-ops until `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` are set, and hard-skips in staging.
 - [ ] **Blocked (owner/Drew):** Twilio account + A2P 10DLC brand/campaign registration (needs Drew's business/EIN info; days–weeks carrier approval), buy a sending number, set the three env vars in Vercel Production.
 - [ ] **Pending Drew sign-off:** customer-facing SMS copy in `buildCustomerSms()` is a draft.
+- [x] SMS consent disclosure added under the phone field on both booking pages (`book-powdersville.html`, `book-taylors-mill.html`) + "Text Messaging (SMS)" section in `privacy.html` with the no-sell/no-share-mobile-data clause TCR/carriers require. Needed so the A2P campaign's stated opt-in matches the live site. Wording is standard A2P boilerplate — fold into the #26 attorney review.
 
 ## Feedback Round 8 (2026-04-02) — Drew's text 2026-04-02
 
