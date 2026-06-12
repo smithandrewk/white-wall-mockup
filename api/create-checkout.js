@@ -374,6 +374,8 @@ module.exports = async function handler(req, res) {
         "\nconsent_user_agent: " + ((consent && consent.userAgent) || "") +
         "\nterms_signature: " + (termsSignature || "") +
         "\nwaiver_signed_name: " + (contact.firstName + " " + (contact.lastName || "")).trim() +
+        "\nname_on_card: " + cardLabelName +
+        "\ncardholder_authorization: confirmed (booker attested they are the cardholder or are authorized by them)" +
         "\nconsent_text_hash: " + consentTextHash +
         "\n--- END CONSENT ---";
 
