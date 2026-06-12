@@ -247,11 +247,12 @@ module.exports = async function handler(req, res) {
     // 1. Build Square line items (server-side pricing is authoritative)
     const lineItems = buildSquareLineItems(appointmentTypeID, addons, location);
 
-    // Server-side cleaning fee fallback. The client computes cleaningFee, but
-    // a parser bug there (e.g. customer typing "35 +" instead of a number) can
-    // silently miss the threshold. Recompute and override if missing.
-    // Real incident: Molly Hensley booked Nov 14 2026 with "35 +" — client
-    // didn't apply the fee. Server-side guard prevents this.
+    // Server-side cleaning fee — authoritative. The flat $150 fee applies
+    // automatically whenever effectiveCount >= 35 (per Drew 2026-06-10).
+    // The server recomputes from participant counts rather than trusting the
+    // client-sent cleaningFee, so a parser bug or stale client can't change
+    // the total. Real incident: Molly Hensley booked Nov 14 2026 with "35 +"
+    // — client didn't apply the fee. Server-side guard prevents this.
     function parseCount(v) {
       if (v == null) return 0;
       const m = String(v).match(/\d+/);
@@ -259,14 +260,11 @@ module.exports = async function handler(req, res) {
     }
     const intakeParticipants = (intake && intake.participants) || "";
     const effectiveCount = Math.max(parseCount(participants), parseCount(intakeParticipants));
-    let effectiveCleaningFee = cleaningFee;
-    if (!effectiveCleaningFee || !effectiveCleaningFee.amount) {
-      if (effectiveCount >= 50) {
-        effectiveCleaningFee = { label: "Cleaning fee", amount: 150, note: "" };
-        console.warn("create-checkout: server-applied cleaning fee (50+ ppl)", { count: effectiveCount, customer: contact && contact.email });
-      } else if (effectiveCount >= 35 && eventIntent === "yes") {
-        effectiveCleaningFee = { label: "Cleaning fee", amount: 150, note: "Our team may reach out to waive this fee based on your booking details." };
-        console.warn("create-checkout: server-applied cleaning fee (35+ event)", { count: effectiveCount, customer: contact && contact.email });
+    let effectiveCleaningFee = null;
+    if (effectiveCount >= 35) {
+      effectiveCleaningFee = { label: "Cleaning fee", amount: 150, note: "" };
+      if (!cleaningFee || !cleaningFee.amount) {
+        console.warn("create-checkout: server-applied cleaning fee (35+ ppl)", { count: effectiveCount, customer: contact && contact.email });
       }
     }
 
