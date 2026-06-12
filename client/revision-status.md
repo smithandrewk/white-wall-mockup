@@ -442,6 +442,14 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 - [ ] Take down the direct Acuity scheduler URL so all bookings funnel through the site (Drew's answer #6, option B) — Andrew/Drew.
 - [ ] Apple/Google Pay deferred (Drew's answer #8). Existing customers re-enter card on next booking, no migration (answer #7).
 
+## Feedback Round 21 (2026-06-12) — Drew's text 2026-06-10
+
+- [x] Cleaning fee → flat $150 applied automatically at 35+ participants. Collapsed the old `>=50` vs `>=35 && event` split into a single `>=35 → $150` rule, client (`scripts/booking-flow.js` `getCleaningFee()`) and server (`api/create-checkout.js` recompute, now authoritative — recomputes from participant count rather than trusting the client-sent fee).
+- [x] Removed all client-facing "reach out to waive" / "may follow up regarding a potential $150 cleaning fee" copy (capacity notices, acknowledgement checkbox, high-traffic prompt, event textarea prompt). Fee is now automatic and non-waivable in the UI.
+- [x] Removed "2.5-hour cleaning buffer" language from the owner email (`api/notify-owner.js`); collapsed its 50+/35+ participant split to "35+". (Buffer block machinery in `create-checkout.js` is unchanged — operational, not client copy.)
+- [x] Acuity appointment notes (`api/_lib/acuity.js` `buildAppointmentNotes`): dropped the dead "pending review (35-49 event participants)" branch; single "auto-applied, 35+ participants" line. Updated the `cleaning-fee` add-on ID comment.
+- [x] All touched JS passes `node --check`. Traced a 35+ booking: exactly one $150 cleaning-fee line item client-side and server-side, no double-count; below 35 yields no fee.
+
 ## Summary
 
 ### Item 6b — Verify Nov 14 booking (Molly Hensley)
