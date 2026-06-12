@@ -303,6 +303,10 @@ Drew wants customers to receive a text message confirmation in addition to the e
 
 Acuity's Business plan (via Squarespace) includes SMS. If confirmation SMS is a toggle, this may just need to be turned on — no code changes required. If Acuity only supports SMS as pre-appointment *reminders* (not instant confirmations), then Twilio (~$0.008/text) is the fallback, added to `booking-callback.js` similar to `notifyOwner`.
 
+**Resolution (2026-06-12, issue #7):** Acuity's built-in confirmation SMS is templated and can't carry per-booking instructional video links — which the B1 wishlist explicitly requires — so the zero-code toggle path is dead. Andrew chose **Twilio**. Built `api/_lib/notify-customer-sms.js` and wired it into `api/create-checkout.js` (after `notifyOwnerSMS`; note the live notify path is create-checkout, not the deprecated booking-callback). The SMS sends booking details + video links relevant to the add-ons booked (lighting/chairs/events) plus the studio walkthrough. No-ops until `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` are set, and hard-skips in staging.
+- [ ] **Blocked (owner/Drew):** Twilio account + A2P 10DLC brand/campaign registration (needs Drew's business/EIN info; days–weeks carrier approval), buy a sending number, set the three env vars in Vercel Production.
+- [ ] **Pending Drew sign-off:** customer-facing SMS copy in `buildCustomerSms()` is a draft.
+
 ## Feedback Round 8 (2026-04-02) — Drew's text 2026-04-02
 
 - [x] Taylor's Mill page: change "Parking lot is about a 2 minute walk" to "Taylor's Mill is a 5 minute walk" (Keep In Mind pills + comparison table)

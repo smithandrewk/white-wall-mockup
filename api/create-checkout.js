@@ -40,6 +40,7 @@ const { buildWaiverText } = require("./_lib/waiver-text");
 const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
 const { notifyOwnerSMS } = require("./_lib/notify-sms");
+const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 const crypto = require("crypto");
@@ -449,6 +450,7 @@ module.exports = async function handler(req, res) {
       try { await notifyOwner(bookingState, appointment.id); } catch (e) { console.error("notifyOwner:", e.message); }
       try { await notifyCleaner(bookingState, appointment.id); } catch (e) { console.error("notifyCleaner:", e.message); }
       try { await notifyOwnerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
+      try { await notifyCustomerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyCustomerSMS:", e.message); }
       await flushPostHog();
 
       var fn = encodeURIComponent(contact.firstName);
