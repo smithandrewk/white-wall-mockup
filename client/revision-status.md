@@ -450,6 +450,10 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 - [x] Acuity appointment notes (`api/_lib/acuity.js` `buildAppointmentNotes`): dropped the dead "pending review (35-49 event participants)" branch; single "auto-applied, 35+ participants" line. Updated the `cleaning-fee` add-on ID comment.
 - [x] All touched JS passes `node --check`. Traced a 35+ booking: exactly one $150 cleaning-fee line item client-side and server-side, no double-count; below 35 yields no fee.
 
+## Research — Square coupon feasibility (#29, 2026-06-12)
+
+- [x] Researched Square API coupon/discount capability (doc only, no app code). Findings + recommendation in `client/docs/square-coupon-feasibility.md`. Square has no native coupon-code system (no codes, no per-customer/one-time limits, no booking-date scope, no %-OR-free-add-on dual mode); only ad-hoc discounts + auto-applied catalog pricing rules. Recommendation: server-side coupon layer in `api/create-checkout.js` applying a single ad-hoc Square discount. Unblocks #13 (C1), #14 (C2), #20 (revenue-recovery).
+
 ## Summary
 
 ### Item 6b — Verify Nov 14 booking (Molly Hensley)
@@ -462,3 +466,6 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 
 **Done: 190 items** (all original revisions + Round 19 + Item 6b + Round 20 PR 1 + PR 2 build)
 **Remaining: Round 20 PR 2 cutover** — code complete + syntax-clean. Blocked on Square App ID env vars (Andrew), sandbox test, preview real-card test with Drew, and Acuity URL takedown.
+
+### 2026-06-12 — PostHog server-side env gap documented (worker/posthog-env-gap)
+- [x] Verified `api/_lib/posthog.js` silently no-ops when `POSTHOG_API_KEY` is unset (returns `null` from `getClient()`). Added Pending escalation entry to `client/escalations.md` noting symptom, env var needed, fix, and F2/#19 dependency.
