@@ -291,6 +291,9 @@ Static:
 | `WATSON_CF_ACCESS_CLIENT_SECRET` | Cloudflare Access | Service token secret |
 | `BLUEBUBBLES_PASSWORD` | BB Server UI on Watson | Auth password for BB's REST API (sent as `?password=` query param) |
 | `OWNER_PHONE` | — | Drew's iMessage handle, e.g. `+18038738153` |
+| `TWILIO_ACCOUNT_SID` | Twilio console | Customer booking-confirmation SMS (B1, issue #7). **Not live until A2P 10DLC registration approved.** Unset until then — `notify-customer-sms.js` no-ops. |
+| `TWILIO_AUTH_TOKEN` | Twilio console | Paired with the SID |
+| `TWILIO_FROM_NUMBER` | Twilio console | Registered sending number, E.164 (`+1…`) |
 
 ### Acuity API Details
 

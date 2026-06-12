@@ -4,6 +4,16 @@ Items that need Andrew's manual intervention or can't be resolved programmatical
 
 ## Pending
 
+### 2026-06-12 — Twilio A2P 10DLC registration for customer confirmation SMS (issue #7 / B1)
+- **What's blocked:** Customer booking-confirmation SMS code is built and merged (`api/_lib/notify-customer-sms.js`, wired into `create-checkout.js`), but it no-ops until Twilio is provisioned. It cannot legally send to US numbers without A2P 10DLC registration.
+- **Action (manual, needs Drew's business info):**
+  1. Create/confirm a Twilio account.
+  2. Register A2P 10DLC **brand** (legal business name, EIN, address) + **campaign** (use case: booking confirmations; provide sample message). Carrier approval typically takes days–weeks.
+  3. Buy a sending number (or use an existing Twilio number) attached to the approved campaign.
+  4. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` in Vercel **Production** (leave unset in staging).
+- **Also pending:** Drew sign-off on the draft SMS copy in `buildCustomerSms()` before go-live.
+- **Note:** no rush on our side — code ships dark and activates the moment the env vars land.
+
 ### 2026-06-10 — QBO mark-paid broken: refresh token stale, re-auth needed
 - **Symptom:** `/api/qbo-test` returns `invalid_grant` ("Incorrect or invalid refresh token"). Every booking since the token went stale has left its QBO draft invoice unpaid.
 - **Cause:** Intuit rotates refresh tokens on use; the rotated value can't be persisted back into Vercel env vars (tokens last set ~2026-03-31), so the stored one died. Will recur until token storage moves out of env vars.
