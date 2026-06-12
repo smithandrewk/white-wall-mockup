@@ -60,6 +60,11 @@
     emailAcknowledgment: "",
     termsSignature: "",
     waiverSigned: false,
+    cardOnFileConsent: false,
+    nameOnCard: "",
+    _nameOnCardEdited: false,
+    squareCard: null,
+    squareCardReady: false,
     tmHighTrafficAcknowledged: false,
     tmHighTrafficNote: "",
     addons: {},
@@ -276,6 +281,8 @@
 
       if (action === "navigate-month") {
         var delta = Number(actionTarget.dataset.delta);
+        var currentMonth = new Date().toISOString().slice(0, 7);
+        if (delta < 0 && state.calendarMonth <= currentMonth) return;
         var mParts = state.calendarMonth.split("-");
         var mDate = new Date(Number(mParts[0]), Number(mParts[1]) - 1 + delta, 1);
         state.calendarMonth = mDate.toISOString().slice(0, 7);
@@ -456,6 +463,12 @@
         state.termsSignature = target.value;
         updateTermsGate();
       }
+
+      if (target.matches("[data-input='name-on-card']")) {
+        state.nameOnCard = target.value;
+        state._nameOnCardEdited = true;
+        // Do NOT re-render — that would destroy the Square iframe + cursor.
+      }
     });
 
     document.addEventListener("change", (event) => {
@@ -492,6 +505,14 @@
       if (target.matches("[data-check='read-email']")) {
         state.intake.readEmail = target.checked;
         updateTermsGate();
+      }
+
+      if (target.matches("[data-input='card-on-file-consent']")) {
+        state.cardOnFileConsent = target.checked;
+        var cofHint = document.querySelector("[data-hint='card-on-file-consent']");
+        if (cofHint) cofHint.textContent = "";
+        updatePayButton();
+        return;
       }
 
       // terms signature handled via input event on [data-input='terms-signature']
@@ -560,7 +581,7 @@
           const isComplete = step.index < state.step;
           const isLocked = step.index > maxStep;
           return `
-            <button class="progress-dot ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""} ${isLocked ? "is-locked" : ""}" type="button" data-action="go-step" data-step="${step.index}" ${isLocked ? "disabled" : ""}>
+            <button class="progress-dot ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""} ${isLocked ? "is-locked" : ""}" type="button" data-action="go-step" data-step="${step.index}" ${isActive ? 'aria-current="step"' : ""} ${isLocked ? `aria-disabled="true" aria-label="Step ${step.index}, ${step.label} — complete earlier steps first"` : ""}>
               <span class="progress-dot-num">${step.index}</span>
               <span class="progress-dot-label">${step.label}</span>
             </button>
@@ -607,10 +628,10 @@
         const isOneHr = location.slug === "powdersville" && duration.hours === 1;
         const priceTag = duration.price ? currency.format(duration.price) : "";
         return `
-          <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}">
-            <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.4);font-weight:400">' + priceTag + '</span>' : ''}</span>
+          <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}" aria-pressed="${isActive}">
+            <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : ''}</span>
             ${eventEligible ? '<span class="duration-pill-badge">Event eligible</span>' : ""}
-            ${isOneHr ? '<span style="font-size:0.75rem;color:rgba(0,0,0,0.35)">(Not eligible for events)</span>' : ""}
+            ${isOneHr ? '<span class="duration-pill-badge is-muted">Not eligible</span>' : ""}
           </button>
         `;
       })
@@ -724,13 +745,17 @@
       if (isSelected) cls += " is-selected";
       else if (isAvailable && !isPast) cls += " is-available";
       else cls += " is-unavailable";
+      if (dateStr === today) cls += " is-today";
 
       if (isAvailable && !isPast) {
-        cells += '<button type="button" class="' + cls + '" data-action="select-date" data-date="' + dateStr + '">' + d + '</button>';
+        var dayLabel = new Date(year, month, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+        cells += '<button type="button" class="' + cls + '" data-action="select-date" data-date="' + dateStr + '" aria-pressed="' + (isSelected ? "true" : "false") + '" aria-label="' + escapeAttribute(dayLabel) + '">' + d + '</button>';
       } else {
         cells += '<span class="' + cls + '">' + d + '</span>';
       }
     }
+
+    var atCurrentMonth = state.calendarMonth <= new Date().toISOString().slice(0, 7);
 
     var spinner = state.isLoadingDates ? '<div class="booking-spinner"></div>' : '';
     var noAvail = !state.isLoadingDates && state.availableDates.length === 0
@@ -739,7 +764,7 @@
 
     return '<div class="booking-panel-soft p-5">' +
       '<div class="calendar-nav">' +
-        '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="-1" style="padding:0.5rem 0.8rem">&larr;</button>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="-1" style="padding:0.5rem 0.8rem"' + (atCurrentMonth ? " disabled" : "") + '>&larr;</button>' +
         '<span class="ui-copy-strong">' + monthName + '</span>' +
         '<button type="button" class="booking-button booking-button-secondary" data-action="navigate-month" data-delta="1" style="padding:0.5rem 0.8rem">&rarr;</button>' +
       '</div>' +
@@ -760,17 +785,21 @@
       return '<div class="booking-panel-soft p-5 mt-5"><p class="ui-copy-muted" style="text-align:center">No time slots available for this date</p></div>';
     }
 
+    var dp = state.selectedDate.split("-");
+    var humanDate = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
+      .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
     var pills = state.availableTimes.map(function (t) {
       var d = new Date(t);
       var label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
       var isSelected = t === state.selectedTime;
       var cls = "time-slot" + (isSelected ? " is-selected" : "");
-      return '<button type="button" class="' + cls + '" data-action="select-time" data-time="' + escapeAttribute(t) + '">' + label + '</button>';
+      return '<button type="button" class="' + cls + '" data-action="select-time" data-time="' + escapeAttribute(t) + '" aria-pressed="' + (isSelected ? "true" : "false") + '" aria-label="' + escapeAttribute(humanDate + " at " + label) + '">' + label + '</button>';
     }).join("");
 
     return '<div class="booking-panel-soft p-5 mt-5">' +
-      '<p class="ui-kicker" style="margin-bottom:1rem">Available times for ' + state.selectedDate + '</p>' +
-      '<div class="time-slot-grid">' + pills + '</div>' +
+      '<p class="ui-kicker" id="timeslot-label" style="margin-bottom:1rem">Available times for ' + escapeHtml(humanDate) + '</p>' +
+      '<div class="time-slot-grid" role="group" aria-labelledby="timeslot-label">' + pills + '</div>' +
     '</div>';
   }
 
@@ -821,12 +850,12 @@
     if (cleaningFee) {
       cleaningFeeHtml = '<div class="summary-line summary-line-muted"><span>' + cleaningFee.label + '</span><span>' + currency.format(cleaningFee.amount) + '</span></div>';
       if (cleaningFee.note) {
-        cleaningFeeHtml += '<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.45);font-style:italic">' + cleaningFee.note + '</span></div>';
+        cleaningFeeHtml += '<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.6);font-style:italic">' + cleaningFee.note + '</span></div>';
       }
     }
 
-    var btnDisabled = state.isSubmitting ? ' disabled' : '';
-    var btnLabel = state.isSubmitting ? 'Processing…' : 'Pay & Book — ' + currency.format(grandTotal);
+    // Stash the live total so updatePayButton() can label the button.
+    state._grandTotal = grandTotal;
 
     return '<div class="booking-panel-soft p-5 mt-5">' +
       '<p class="ui-kicker" style="margin-bottom:1rem">Order summary</p>' +
@@ -835,13 +864,9 @@
         addonHtml +
         cleaningFeeHtml +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-        '<div class="summary-line" style="font-size:1.1rem"><span><strong>Total</strong></span><span class="order-total"><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
+        '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
       '</div>' +
-      '<p class="ui-copy-muted" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
-      '<div style="margin-top:1.5rem">' +
-        '<button type="button" class="booking-button booking-button-primary" data-action="pay-and-book"' + btnDisabled + '>' + btnLabel + '</button>' +
-      '</div>' +
-      '<p class="ui-copy-muted" style="margin-top:0.75rem;font-size:0.8rem">You\'ll be redirected to Square to complete payment securely.</p>' +
+      '<p class="ui-copy-muted payment-note" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
     '</div>';
   }
 
@@ -849,12 +874,116 @@
     var container = document.querySelector("[data-checkout-summary]");
     if (!container) return;
 
+    var paySection = document.querySelector("[data-payment-section]");
+
     if (!state.selectedTime) {
       container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a date and time in Step 2 to see your order summary.</p></div>';
+      if (paySection) paySection.hidden = true;
       return;
     }
 
     container.innerHTML = renderOrderSummary();
+    if (paySection) paySection.hidden = false;
+
+    // Prefill "Name on card" from the Step-3 booker until the user edits it,
+    // so the saved card-on-file label matches whoever's card is used (which
+    // may differ from the booker — business card, spouse, planner, etc.).
+    var nameInput = document.querySelector("[data-input='name-on-card']");
+    if (nameInput && !state._nameOnCardEdited) {
+      var bookerName = ((state.contact.firstName || "") + " " + (state.contact.lastName || "")).trim();
+      nameInput.value = bookerName;
+      state.nameOnCard = bookerName;
+    }
+
+    initSquareCard();
+    updatePayButton();
+  }
+
+  // --- Square Web Payments SDK (card-on-file) ---------------------------
+
+  var squareSdkPromise = null;
+
+  // Fetch public config + inject the SDK script. Resolves with the config.
+  function loadSquareSdk() {
+    if (squareSdkPromise) return squareSdkPromise;
+    squareSdkPromise = fetch("/api/booking-public-config")
+      .then(function (r) {
+        if (!r.ok) throw new Error("config " + r.status);
+        return r.json();
+      })
+      .then(function (cfg) {
+        if (window.Square) return cfg;
+        return new Promise(function (resolve, reject) {
+          var s = document.createElement("script");
+          s.src = cfg.squareSdkUrl;
+          s.onload = function () { resolve(cfg); };
+          s.onerror = function () { reject(new Error("Square SDK failed to load")); };
+          document.head.appendChild(s);
+        });
+      });
+    return squareSdkPromise;
+  }
+
+  // Initialize the card field once, when step 5 is reached. Idempotent —
+  // the iframe lives in [data-payment-section], which is never re-rendered.
+  function initSquareCard() {
+    if (state.squareCard || state._cardInitInFlight) return;
+    var target = document.querySelector("#card-container");
+    if (!target) return;
+    // offsetParent is null when any ancestor is display:none. Square's
+    // attach() needs a visible container — skip now, retry when step 5
+    // is actually shown (setStep / renderCheckoutPanel call us again).
+    if (target.offsetParent === null) return;
+    state._cardInitInFlight = true;
+
+    loadSquareSdk()
+      .then(function (cfg) {
+        var payments = window.Square.payments(cfg.squareAppId, cfg.squareLocationId);
+        return payments.card().then(function (card) {
+          return card.attach("#card-container").then(function () {
+            state.squareCard = card;
+            state.squareCardReady = true;
+            state._cardInitInFlight = false;
+            setCardStatus("");
+            updatePayButton();
+          });
+        });
+      })
+      .catch(function (err) {
+        state._cardInitInFlight = false;
+        state.squareCardReady = false;
+        console.error("Square card init failed:", err);
+        setCardStatus("Card field couldn't load. Refresh the page, or email us to book.", true);
+        updatePayButton();
+      });
+  }
+
+  function setCardStatus(msg, isError) {
+    var el = document.querySelector("[data-card-status]");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? "" : "none";
+    // Render failures in danger red (readable); normal/loading messages stay
+    // the muted payment-note grey. Class toggle only — no logic change.
+    el.classList.toggle("card-status-error", !!(msg && isError));
+  }
+
+  // Single source of truth for the Pay & Book button's label + enabled
+  // state. Called whenever anything that gates payment changes.
+  function updatePayButton() {
+    var btn = document.querySelector("[data-pay-btn]");
+    if (!btn) return;
+    var total = state._grandTotal;
+    var ready = state.squareCardReady && state.cardOnFileConsent &&
+      !state.isSubmitting && !!state.selectedTime;
+    btn.disabled = !ready;
+    if (state.isSubmitting) {
+      btn.textContent = "Processing…";
+    } else if (typeof total === "number") {
+      btn.textContent = "Pay & Book — " + currency.format(total);
+    } else {
+      btn.textContent = "Pay & Book";
+    }
   }
 
   async function handlePayAndBook() {
@@ -873,6 +1002,17 @@
       return;
     }
 
+    // Card-on-file gates
+    if (!state.squareCardReady) {
+      setCardStatus("The secure card field is still loading. One moment…");
+      return;
+    }
+    if (!state.cardOnFileConsent) {
+      var cofHint = document.querySelector("[data-hint='card-on-file-consent']");
+      if (cofHint) cofHint.textContent = "Please authorize the card-on-file policy to continue.";
+      return;
+    }
+
     var payDuration = getSelectedDuration();
     var activeAddons = 0;
     location.addons.forEach(function(a) {
@@ -887,8 +1027,17 @@
       addon_count: activeAddons
     });
 
+    // Stable per-booking idempotency seed — survives tokenize retries so a
+    // resubmit after a lost response never double-charges.
+    if (!state.bookingAttemptId) {
+      state.bookingAttemptId = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+    }
+
     state.isSubmitting = true;
-    renderScheduleStep();
+    updatePayButton();
+    setCardStatus("");
 
     var appointmentTypeID = getAppointmentTypeID();
 
@@ -907,11 +1056,44 @@
         alert("Sorry, that time slot is no longer available. Please select a different time.");
         state.selectedTime = "";
         state.isSubmitting = false;
+        updatePayButton();
         fetchAvailableTimes(appointmentTypeID, state.selectedDate);
         return;
       }
 
-      // Create block (holds slot) + Square Payment Link
+      // Tokenize: CHARGE_AND_STORE = charge now + save card on file.
+      // Any SCA/3DS challenge the issuer requires happens inside tokenize().
+      var tok;
+      try {
+        tok = await state.squareCard.tokenize({
+          intent: "CHARGE_AND_STORE",
+          customerInitiated: true,
+          sellerKeyedIn: false,
+          amount: (typeof state._grandTotal === "number" ? state._grandTotal : 0).toFixed(2),
+          currencyCode: "USD",
+          billingContact: {
+            // Single free-text name field — pass the cardholder name verbatim
+            // as givenName (no split: "WHITEWALL VENTURES LLC" / middle names
+            // would mangle). Falls back to the booker name when blank.
+            givenName: (state.nameOnCard || "").trim() ||
+              ((state.contact.firstName || "") + " " + (state.contact.lastName || "")).trim(),
+            familyName: "",
+            email: state.contact.email || "",
+            countryCode: "US"
+          }
+        });
+      } catch (tokErr) {
+        throw new Error("We couldn't read your card. Please re-enter it and try again.");
+      }
+      if (!tok || tok.status !== "OK" || !tok.token) {
+        var tdetail = tok && tok.errors && tok.errors[0] && tok.errors[0].detail;
+        state.isSubmitting = false;
+        updatePayButton();
+        setCardStatus(tdetail || "Your card could not be verified. Please check the details and try again.", true);
+        trackEvent("checkout_error", { location: location.slug, error_message: "tokenize:" + (tok && tok.status) });
+        return;
+      }
+
       var checkoutRes = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -931,32 +1113,39 @@
           emailAcknowledgment: state.emailAcknowledgment,
           termsSignature: state.termsSignature,
           waiverSigned: state.waiverSigned,
-          cleaningFee: getCleaningFee()
+          cleaningFee: getCleaningFee(),
+          cardholderName: (state.nameOnCard || "").trim(),
+          squareToken: tok.token,
+          clientIdempotencyKey: state.bookingAttemptId,
+          consent: {
+            cardOnFile: true,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          }
         })
       });
       var checkoutData = await checkoutRes.json();
-      console.log("create-checkout response:", checkoutRes.status, checkoutData);
 
       // Buffer conflict — cleaning fee booking but next session is too close
       if (checkoutData.error === "buffer-conflict") {
         state.isSubmitting = false;
+        updatePayButton();
         showBufferConflictModal(checkoutData.message, checkoutData.options || []);
         return;
       }
 
-      if (!checkoutData.checkoutUrl) {
-        throw new Error(checkoutData.error || "No checkout URL returned");
+      if (!checkoutRes.ok || !checkoutData.success || !checkoutData.redirect) {
+        throw new Error(checkoutData.error || "Booking could not be completed.");
       }
 
-      // Redirect to Square's hosted checkout page
-      trackEvent("checkout_redirect", { location: location.slug });
-      window.location.href = checkoutData.checkoutUrl;
+      trackEvent("booking_completed", { location: location.slug });
+      window.location.href = checkoutData.redirect;
     } catch (err) {
       console.error("Checkout error:", err);
       trackEvent("checkout_error", { location: location.slug, error_message: err.message });
-      alert("Something went wrong creating your checkout. Please try again.");
       state.isSubmitting = false;
-      renderScheduleStep();
+      updatePayButton();
+      setCardStatus(err.message || "Something went wrong. Please try again.", true);
     }
   }
 
@@ -1013,16 +1202,16 @@
     container.innerHTML = `
       <p class="ui-copy" style="margin-bottom:1.5rem;color:rgba(0,0,0,0.55)">Events are allowed for 2-hour sessions and longer.</p>
       <div class="choice-grid is-two-up">
-        <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no">
+        <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no" aria-pressed="${state.eventIntent === "no"}">
           <p class="ui-kicker">Use this for</p>
           <h3 class="ui-display-sm" style="margin-top:0.75rem">Photo / video session</h3>
           <p class="ui-copy" style="margin-top:1rem">Standard photo, video, or production session.</p>
         </button>
-        <button type="button" class="booking-choice ${state.eventIntent === "yes" ? "is-active" : ""}" data-action="set-event-intent" data-value="yes">
+        <button type="button" class="booking-choice ${state.eventIntent === "yes" ? "is-active" : ""}" data-action="set-event-intent" data-value="yes" aria-pressed="${state.eventIntent === "yes"}">
           <p class="ui-kicker">Use this for</p>
           <h3 class="ui-display-sm" style="margin-top:0.75rem">Event booking</h3>
           <p class="ui-copy" style="margin-top:1rem">Parties, receptions, workshops, and gatherings.</p>
-          ${isOneHour ? '<p class="ui-copy" style="margin-top:0.5rem;color:rgba(0,0,0,0.35);font-size:0.8rem">(Not eligible for events)</p>' : ""}
+          ${isOneHour ? '<p class="ui-copy" style="margin-top:0.5rem;color:rgba(0,0,0,0.6);font-size:0.8rem">(Not eligible for events)</p>' : ""}
         </button>
       </div>
 
@@ -1094,19 +1283,19 @@
           ${textareaPrompt ? '<p class="ui-copy" style="margin-bottom:0.75rem;color:rgba(0,0,0,0.55);font-size:0.85rem">' + textareaPrompt + '</p>' : ''}
           <textarea class="booking-textarea ${borderClass}" id="event-description" data-input="event-description" placeholder="What are you hosting?">${escapeHtml(state.eventDescription)}</textarea>
         </div>
-        <div class="booking-panel-soft panel-pad">
-          <p class="ui-kicker" style="margin-bottom:1rem">Will there be food or drinks at your event?</p>
+        <fieldset class="booking-panel-soft panel-pad" style="border:0;margin:0">
+          <legend class="ui-kicker" style="margin-bottom:1rem;padding:0">Will there be food or drinks at your event?</legend>
           <div style="display:flex;gap:1rem">
             <label class="helper-item">
-              <input type="checkbox" data-check="food-drinks-yes" ${state.foodDrinks === true ? "checked" : ""}>
+              <input type="radio" name="food-drinks" data-check="food-drinks-yes" ${state.foodDrinks === true ? "checked" : ""}>
               <span>Yes</span>
             </label>
             <label class="helper-item">
-              <input type="checkbox" data-check="food-drinks-no" ${state.foodDrinks === false ? "checked" : ""}>
+              <input type="radio" name="food-drinks" data-check="food-drinks-no" ${state.foodDrinks === false ? "checked" : ""}>
               <span>No</span>
             </label>
           </div>
-        </div>
+        </fieldset>
         <div class="booking-panel-soft panel-pad">
           <p class="ui-kicker">Required acknowledgements</p>
           <label class="helper-item" style="margin-top:1rem">
@@ -1394,7 +1583,7 @@
     if (cleaningFee) {
       cleaningFeeHtml = `<div class="summary-line summary-line-muted"><span>${cleaningFee.label}</span><span>${currency.format(cleaningFee.amount)}</span></div>`;
       if (cleaningFee.note) {
-        cleaningFeeHtml += `<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.45);font-style:italic">${cleaningFee.note}</span></div>`;
+        cleaningFeeHtml += `<div style="margin-top:0.25rem"><span style="font-size:0.75rem;color:rgba(0,0,0,0.6);font-style:italic">${cleaningFee.note}</span></div>`;
       }
     }
 
@@ -1441,11 +1630,19 @@
       }
     }
 
+    // Attach the Square card field only once step 5's panel is visible —
+    // attaching into a display:none container yields a broken iframe.
+    if (state.step === 5) {
+      setTimeout(function () { initSquareCard(); updatePayButton(); }, 60);
+    }
+
     // Scroll active step panel into view
     var activePanel = document.querySelector('[data-step-panel="' + state.step + '"]');
     if (activePanel) {
       setTimeout(function() {
         activePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        var h = activePanel.querySelector("h2");
+        if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
       }, 50);
     }
   }
@@ -1482,15 +1679,16 @@
         <div class="summary-list">
           <div class="summary-line"><span>Name</span><span>${escapeHtml(displayName)}</span></div>
           <div class="summary-line"><span>Email</span><span>${escapeHtml(state.contact.email || "—")}</span></div>
-          <div class="summary-line"><span>Phone</span><span>${escapeHtml(state.contact.phone || "—")}</span></div>
-          <div class="summary-line"><span>Business</span><span>${escapeHtml(state.intake.business || "—")}</span></div>
-          <div class="summary-line"><span>Participants</span><span>${escapeHtml(state.intake.participants || "—")}</span></div>
+          ${state.contact.phone ? `<div class="summary-line"><span>Phone</span><span>${escapeHtml(state.contact.phone)}</span></div>` : ""}
+          ${state.intake.business ? `<div class="summary-line"><span>Business</span><span>${escapeHtml(state.intake.business)}</span></div>` : ""}
+          ${state.intake.participants ? `<div class="summary-line"><span>Participants</span><span>${escapeHtml(state.intake.participants)}</span></div>` : ""}
         </div>
       </div>
 
       <div class="booking-panel-soft p-5 mt-6">
-        <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Liability waiver &amp; use agreement</p>
-        <div class="text-sm text-black/60 leading-relaxed space-y-3 max-h-80 overflow-y-auto pr-2" style="scrollbar-width:thin">
+        <p class="text-xs tracking-[0.2em] uppercase text-black/60 mb-2">Liability waiver &amp; use agreement</p>
+        <p class="text-xs text-black/50 mb-4">Scroll to read the full waiver before signing.</p>
+        <div class="waiver-scroll text-sm text-black/60 leading-relaxed space-y-3 overflow-y-auto pr-2" style="scrollbar-width:thin">
           <p><strong>WhiteWall Studios Liability Waiver &amp; Use Agreement</strong></p>
           <p>I, <strong>${escapeHtml(fullName || "the individual")}</strong>, booking this session (&ldquo;Renter&rdquo;), acknowledge and agree to the following in connection with my use of the WhiteWall Studios, LLC facility located in <strong>${location.slug === "powdersville" ? "Powdersville, South Carolina" : "Taylors, South Carolina"}</strong> (&ldquo;the Studio&rdquo;).</p>
           <p>By signing this agreement, I confirm that I am entering into this agreement <strong>on behalf of myself and every person I allow into the Studio during my booking</strong>, including but not limited to clients, guests, models, assistants, photographers, videographers, and other invitees (collectively referred to as &ldquo;My Party&rdquo;). I accept full responsibility for the conduct, safety, and actions of My Party.</p>
@@ -1560,6 +1758,10 @@
     var btn = document.querySelector("[data-requires-waiver]");
     if (!btn) return;
     btn.disabled = !state.waiverSigned;
+    var hint = document.querySelector("[data-gate-hint='waiver']");
+    if (hint) {
+      hint.textContent = state.waiverSigned ? "" : "Sign the waiver above to continue.";
+    }
   }
 
   function isTermsAccepted() {
@@ -1570,7 +1772,12 @@
   function updateTermsGate() {
     var btn = document.querySelector("[data-requires-terms]");
     if (!btn) return;
-    btn.disabled = !isStepComplete(3);
+    var complete = isStepComplete(3);
+    btn.disabled = !complete;
+    var hint = document.querySelector("[data-gate-hint='terms']");
+    if (hint) {
+      hint.textContent = complete ? "" : (getValidationErrors()[0] || "Complete the highlighted fields to continue.");
+    }
     updateSignatureHints();
   }
 
@@ -1801,7 +2008,7 @@
     if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
     if (step === 3) {
       if (!state.eventIntent) return false;
-      var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.instagram && isTermsAccepted());
+      var baseComplete = Boolean(state.contact.firstName && state.contact.email && isTermsAccepted() && state.intake.readEmail);
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
@@ -1838,7 +2045,7 @@
     if (!state.eventIntent) errors.push("Please select photo/video session or event booking.");
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");
-    if (!state.intake.instagram) errors.push("Please enter your Instagram handle.");
+    if (!state.intake.readEmail) errors.push("Please confirm you will read the confirmation email and watch the linked videos.");
     var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
     if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) errors.push("Please sign the email acknowledgment with your full name.");
     if (!isTermsAccepted()) errors.push("Please sign the terms & conditions with your full name.");
