@@ -442,7 +442,19 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 - [ ] Take down the direct Acuity scheduler URL so all bookings funnel through the site (Drew's answer #6, option B) — Andrew/Drew.
 - [ ] Apple/Google Pay deferred (Drew's answer #8). Existing customers re-enter card on next booking, no migration (answer #7).
 
-## Feedback Round 21 (2026-06-12) — Wishlist issue #17
+## Feedback Round 21 (2026-06-12) — Drew's text 2026-06-10
+
+- [x] Cleaning fee → flat $150 applied automatically at 35+ participants. Collapsed the old `>=50` vs `>=35 && event` split into a single `>=35 → $150` rule, client (`scripts/booking-flow.js` `getCleaningFee()`) and server (`api/create-checkout.js` recompute, now authoritative — recomputes from participant count rather than trusting the client-sent fee).
+- [x] Removed all client-facing "reach out to waive" / "may follow up regarding a potential $150 cleaning fee" copy (capacity notices, acknowledgement checkbox, high-traffic prompt, event textarea prompt). Fee is now automatic and non-waivable in the UI.
+- [x] Removed "2.5-hour cleaning buffer" language from the owner email (`api/notify-owner.js`); collapsed its 50+/35+ participant split to "35+". (Buffer block machinery in `create-checkout.js` is unchanged — operational, not client copy.)
+- [x] Acuity appointment notes (`api/_lib/acuity.js` `buildAppointmentNotes`): dropped the dead "pending review (35-49 event participants)" branch; single "auto-applied, 35+ participants" line. Updated the `cleaning-fee` add-on ID comment.
+- [x] All touched JS passes `node --check`. Traced a 35+ booking: exactly one $150 cleaning-fee line item client-side and server-side, no double-count; below 35 yields no fee.
+
+## Research — Square coupon feasibility (#29, 2026-06-12)
+
+- [x] Researched Square API coupon/discount capability (doc only, no app code). Findings + recommendation in `client/docs/square-coupon-feasibility.md`. Square has no native coupon-code system (no codes, no per-customer/one-time limits, no booking-date scope, no %-OR-free-add-on dual mode); only ad-hoc discounts + auto-applied catalog pricing rules. Recommendation: server-side coupon layer in `api/create-checkout.js` applying a single ad-hoc Square discount. Unblocks #13 (C1), #14 (C2), #20 (revenue-recovery).
+
+## Feedback Round 22 (2026-06-12) — Wishlist issue #17
 
 - [x] Added a required "How did you hear about us?" select to Step 3 (Details) on `book-powdersville.html` and `book-taylors-mill.html`. Options (in order): Google Search, Instagram, Facebook, Friend / Referral, Drove by, Other. Placed after the Instagram field, before the read-email checkbox. Mirrors existing intake-field markup/classes.
 - [x] `scripts/booking-flow.js` — added `intake.leadSource` to state; added a `change` handler (`[data-input='intake-lead-source']`) that updates state + calls `updateTermsGate()` (no full re-render); made it REQUIRED in `isStepComplete(3)` baseComplete and added a `getValidationErrors()` message.
@@ -461,3 +473,16 @@ Source: `client/comms/2026-05-11-drew-email-card-on-file-and-tc-waiver-updates.m
 
 **Done: 190 items** (all original revisions + Round 19 + Item 6b + Round 20 PR 1 + PR 2 build)
 **Remaining: Round 20 PR 2 cutover** — code complete + syntax-clean. Blocked on Square App ID env vars (Andrew), sandbox test, preview real-card test with Drew, and Acuity URL takedown.
+
+### 2026-06-12 — PostHog server-side env gap documented (worker/posthog-env-gap)
+- [x] Verified `api/_lib/posthog.js` silently no-ops when `POSTHOG_API_KEY` is unset (returns `null` from `getClient()`). Added Pending escalation entry to `client/escalations.md` noting symptom, env var needed, fix, and F2/#19 dependency.
+
+## SEO Improvements (2026-06-12) — issue #18
+
+- [x] Added homepage `<h1>` (visually-hidden `sr-only`) — index.html had none.
+- [x] Added JSON-LD structured data: Organization + two `PhotographyBusiness` departments (Powdersville first) on index.html; single-location `PhotographyBusiness` on powdersville.html and taylors-mill.html. Real NAP, America/New_York.
+- [x] Added `<link rel="canonical">` to index, powdersville, taylors-mill, gallery, book-powdersville, book-taylors-mill.
+- [x] Trimmed over-length meta descriptions to <155 chars (index 165→141, powdersville 172→147, taylors-mill 173→151).
+- [x] Added geo keywords to `<title>` on powdersville, taylors-mill, gallery, book-powdersville, book-taylors-mill.
+- [x] Added `<lastmod>2026-06-12</lastmod>` to all 12 sitemap.xml URLs.
+- Plan: `client/docs/2026-06-12-seo-plan.md`. Deferred (Tier 2/3): OG image domain consistency, alt-text audit, Google Business Profile (Drew action).

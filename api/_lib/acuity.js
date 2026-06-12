@@ -132,7 +132,7 @@ const ACUITY_ADDON_IDS = {
   "tv": 6840276,                    // "86in Rolling TV" — $50
   "pa-system": 6840278,             // "PA System" — $40
 
-  // Cleaning fee (PV only, 50+ participants)
+  // Cleaning fee (auto-applied at 35+ participants)
   "cleaning-fee": 6881547           // "Cleaning Fee" — $150
 };
 
@@ -278,12 +278,8 @@ function buildAppointmentNotes(bookingState) {
     lines.push("", "Add-ons:", ...addonLines);
   }
 
-  if (bookingState.cleaningFee) {
-    if (bookingState.cleaningFee.amount > 0) {
-      lines.push("", "Cleaning fee: $" + bookingState.cleaningFee.amount + " (auto-applied, 50+ participants)");
-    } else {
-      lines.push("", "Cleaning fee: pending review (35-49 event participants)");
-    }
+  if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
+    lines.push("", "Cleaning fee: $" + bookingState.cleaningFee.amount + " (auto-applied, 35+ participants)");
   }
 
   lines.push("", "Booked via whitewallstudios.co");

@@ -191,8 +191,7 @@ function buildEmailBody(bookingState, appointmentId, recipientType) {
   if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
     sections.push(
       "",
-      "Cleaning fee applies (" + (participantsForFlag >= 50 ? "50+" : "35+") + " participants).",
-      "A 2.5-hour cleaning buffer has been blocked on the calendar after your session ends."
+      "Cleaning fee applies (35+ participants)."
     );
   }
 
