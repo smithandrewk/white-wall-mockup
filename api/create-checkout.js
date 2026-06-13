@@ -35,6 +35,7 @@ const {
   createCardOnFile,
   refundPayment
 } = require("./_lib/square");
+const { validateCoupon, sessionDiscountCents } = require("./_lib/coupons");
 const { isStaging, stagingSinkEmail, stagingCalendarID } = require("./_lib/env");
 const { buildWaiverText } = require("./_lib/waiver-text");
 const { notifyOwner } = require("./notify-owner");
@@ -71,7 +72,8 @@ module.exports = async function handler(req, res) {
     cardholderName,
     squareToken,
     clientIdempotencyKey,
-    consent
+    consent,
+    couponCode
   } = body;
 
   // Cardholder name as entered on the payment panel ("Name on card"). May
@@ -292,9 +294,57 @@ module.exports = async function handler(req, res) {
       cleaningFee: effectiveCleaningFee || null
     };
 
-    const totalCents = lineItems.reduce(function (sum, li) {
+    let totalCents = lineItems.reduce(function (sum, li) {
       return sum + (li.amount * (li.quantity || 1));
     }, 0);
+
+    // Promo code (#20, Phase 1 MVP) — the discount is RE-VALIDATED here and the
+    // amount is RE-COMPUTED server-side. The client may send a code but never a
+    // discount amount, so a forged client discount is ignored entirely. The
+    // discount applies ONLY to the raw session line item (the catalog item that
+    // buildSquareLineItems puts first), never add-ons or the cleaning fee. This
+    // whole block is isolated and fail-open: any problem leaves totalCents
+    // exactly as it was (a normal, no-coupon booking is never affected).
+    let appliedCoupon = null;
+    let couponDiscountCents = 0;
+    if (couponCode && String(couponCode).trim()) {
+      try {
+        var couponResult = validateCoupon(couponCode, { location: location });
+        if (couponResult.valid) {
+          // Session line item = the one carrying the catalog object id; fall
+          // back to the first item, which buildSquareLineItems guarantees is
+          // the session. Add-on items never carry catalogObjectId.
+          var sessionItem = null;
+          for (var ci = 0; ci < lineItems.length; ci++) {
+            if (lineItems[ci].catalogObjectId) { sessionItem = lineItems[ci]; break; }
+          }
+          if (!sessionItem) sessionItem = lineItems[0];
+          var sessionAmount = sessionItem ? (sessionItem.amount * (sessionItem.quantity || 1)) : 0;
+          couponDiscountCents = sessionDiscountCents(sessionAmount, couponResult.percentOff);
+          // Clamp defensively — never discount more than the session, never below 0.
+          if (couponDiscountCents > sessionAmount) couponDiscountCents = sessionAmount;
+          if (couponDiscountCents < 0) couponDiscountCents = 0;
+          if (couponDiscountCents > 0) {
+            totalCents = totalCents - couponDiscountCents;
+            appliedCoupon = {
+              code: couponResult.code,
+              percentOff: couponResult.percentOff,
+              discountCents: couponDiscountCents
+            };
+          }
+        } else {
+          console.warn("create-checkout: promo code rejected", {
+            code: String(couponCode).slice(0, 32),
+            reason: couponResult.reason
+          });
+        }
+      } catch (couponErr) {
+        // Coupon failures must never break a booking — ignore and charge full.
+        console.error("create-checkout: coupon validation error (ignored):", couponErr.message);
+        appliedCoupon = null;
+        couponDiscountCents = 0;
+      }
+    }
 
     // Idempotency: keyed on a stable client-generated booking-attempt ID
     // (falls back to the token tail). Survives tokenize retries so a
@@ -354,6 +404,11 @@ module.exports = async function handler(req, res) {
       }
       if (highTrafficNote) notes += "\nCustomer note: " + highTrafficNote;
       if (tmHighTrafficNote) notes += "\nTM high-traffic note: " + tmHighTrafficNote;
+      if (appliedCoupon) {
+        notes += "\n\nPromo code: " + appliedCoupon.code +
+          " (" + appliedCoupon.percentOff + "% off session, -$" +
+          (appliedCoupon.discountCents / 100).toFixed(2) + ")";
+      }
 
       // Consent proof — survives chargebacks. The hash binds to the exact
       // waiver text the customer saw, so later waiver edits don't void it.
@@ -423,7 +478,9 @@ module.exports = async function handler(req, res) {
         square_card_id: cardOnFile.id,
         participants: participants || "",
         addon_count: addonIDs.length,
-        has_cleaning_fee: !!(effectiveCleaningFee && effectiveCleaningFee.amount > 0)
+        has_cleaning_fee: !!(effectiveCleaningFee && effectiveCleaningFee.amount > 0),
+        coupon_code: appliedCoupon ? appliedCoupon.code : null,
+        coupon_discount_cents: appliedCoupon ? appliedCoupon.discountCents : 0
       });
 
       // Cleaning fee → 2.5h cleaner buffer block (PV + TM, per Drew 2026-05-05).

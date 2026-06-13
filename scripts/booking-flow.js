@@ -69,6 +69,10 @@
     tmHighTrafficAcknowledged: false,
     tmHighTrafficNote: "",
     addons: {},
+    coupon: null,        // applied promo: { code, percentOff, discountCents }
+    couponInput: "",     // current text in the promo field (preserves on re-render)
+    couponError: "",     // inline error message for a rejected code
+    couponPending: false,
     selectedDate: "",
     selectedTime: "",
     availableDates: [],
@@ -297,6 +301,19 @@
         return;
       }
 
+      if (action === "apply-coupon") {
+        applyCoupon();
+        return;
+      }
+
+      if (action === "remove-coupon") {
+        state.coupon = null;
+        state.couponError = "";
+        state.couponInput = "";
+        renderCheckoutPanel();
+        return;
+      }
+
       if (action === "sign-waiver") {
         state.waiverSigned = true;
         trackEvent("waiver_signed", { location: location.slug });
@@ -469,6 +486,28 @@
         state.nameOnCard = target.value;
         state._nameOnCardEdited = true;
         // Do NOT re-render — that would destroy the Square iframe + cursor.
+      }
+
+      if (target.matches("[data-input='coupon-code']")) {
+        // Mirror name-on-card: store the value, do NOT re-render (that would
+        // blow away the input + cursor). Clearing a stale error is a targeted
+        // DOM update, not a render.
+        state.couponInput = target.value;
+        if (state.couponError) {
+          state.couponError = "";
+          var errEl = document.querySelector("[data-coupon-error]");
+          if (errEl) { errEl.textContent = ""; errEl.style.display = "none"; }
+        }
+      }
+    });
+
+    // Enter inside the promo field applies the code (instead of submitting the
+    // page / doing nothing). Targeted listener — no re-render on keydown.
+    document.addEventListener("keydown", function (event) {
+      var t = event.target;
+      if (t && t.matches && t.matches("[data-input='coupon-code']") && event.key === "Enter") {
+        event.preventDefault();
+        applyCoupon();
       }
     });
 
@@ -838,7 +877,18 @@
 
     var cleaningFee = getCleaningFee();
     var cleaningFeeAmount = cleaningFee ? cleaningFee.amount : 0;
-    var grandTotal = sessionPrice + addonTotal + cleaningFeeAmount;
+
+    // Promo discount applies to the RAW SESSION price only. The amount shown
+    // here is a preview; the server re-validates and re-computes at pay time.
+    // If the session price changed since the code was applied (duration swap),
+    // re-derive the discount from the live session price so the preview stays
+    // honest. The displayed dollars come from percentOff (whole-cent floor).
+    var couponDiscount = 0;
+    if (state.coupon && state.coupon.percentOff > 0 && sessionPrice > 0) {
+      couponDiscount = Math.floor(sessionPrice * state.coupon.percentOff) / 100;
+    }
+    var grandTotal = sessionPrice + addonTotal + cleaningFeeAmount - couponDiscount;
+    if (grandTotal < 0) grandTotal = 0;
     var timeLabel = new Date(state.selectedTime).toLocaleString("en-US", {
       weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
     });
@@ -860,16 +910,51 @@
     // Stash the live total so updatePayButton() can label the button.
     state._grandTotal = grandTotal;
 
+    // Discount line — only when a code is applied and discounts the session.
+    var couponLineHtml = '';
+    if (state.coupon && couponDiscount > 0) {
+      couponLineHtml =
+        '<div class="summary-line summary-line-muted"><span>Promo · ' + escapeHtml(state.coupon.code) +
+        ' (' + state.coupon.percentOff + '% off session)</span><span>−' + currency.format(couponDiscount) + '</span></div>';
+    }
+
     return '<div class="booking-panel-soft p-5 mt-5">' +
       '<p class="ui-kicker" style="margin-bottom:1rem">Order summary</p>' +
       '<div class="summary-list">' +
         '<div class="summary-line"><span>' + escapeHtml(selectedDuration.label) + ' session</span><span>' + currency.format(sessionPrice) + '</span></div>' +
         addonHtml +
         cleaningFeeHtml +
+        couponLineHtml +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
         '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
       '</div>' +
+      renderCouponRow() +
       '<p class="ui-copy-muted payment-note" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
+    '</div>';
+  }
+
+  // Promo-code input + Apply button (or the applied state + Remove). Lives
+  // inside the order summary so it re-renders with the total. The handlers do
+  // targeted DOM work (no full re-render from keystrokes — see input handler).
+  function renderCouponRow() {
+    if (state.coupon) {
+      return '<div class="coupon-row" style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
+        '<span class="ui-copy-strong" style="font-size:0.85rem">Promo code <strong>' + escapeHtml(state.coupon.code) + '</strong> applied</span>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="remove-coupon" style="padding:0.4rem 0.8rem;font-size:0.8rem">Remove</button>' +
+      '</div>';
+    }
+
+    var errHtml = state.couponError
+      ? '<p class="ui-copy-muted" data-coupon-error role="status" aria-live="polite" style="margin-top:0.4rem;font-size:0.8rem;color:#b3261e">' + escapeHtml(state.couponError) + '</p>'
+      : '<p class="ui-copy-muted" data-coupon-error role="status" aria-live="polite" style="margin-top:0.4rem;font-size:0.8rem;display:none"></p>';
+
+    return '<div class="coupon-row" style="margin-top:1rem">' +
+      '<label class="ui-field-label" for="coupon-code" style="font-size:0.8rem">Promo code</label>' +
+      '<div style="display:flex;gap:0.5rem;margin-top:0.35rem">' +
+        '<input type="text" id="coupon-code" class="booking-input" data-input="coupon-code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Enter code" value="' + escapeAttribute(state.couponInput || "") + '" style="flex:1;text-transform:uppercase"' + (state.couponPending ? ' disabled' : '') + '>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="apply-coupon" data-coupon-apply' + (state.couponPending ? ' disabled' : '') + ' style="white-space:nowrap">' + (state.couponPending ? 'Checking…' : 'Apply') + '</button>' +
+      '</div>' +
+      errHtml +
     '</div>';
   }
 
@@ -987,6 +1072,65 @@
     } else {
       btn.textContent = "Pay & Book";
     }
+  }
+
+  // Validate the typed promo code against the server (read-only preview). On
+  // success store state.coupon and re-render the summary (shows discount line +
+  // new total). On failure show an inline error. The server is authoritative —
+  // this only previews; create-checkout re-validates at pay time.
+  async function applyCoupon() {
+    if (state.couponPending) return;
+    var raw = (state.couponInput || "").trim();
+    if (!raw) {
+      setCouponError("Enter a promo code.");
+      return;
+    }
+    var appointmentTypeID = getAppointmentTypeID();
+
+    state.couponPending = true;
+    state.couponError = "";
+    renderCheckoutPanel();
+
+    try {
+      var res = await fetch("/api/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: raw,
+          location: location.slug,
+          appointmentTypeID: appointmentTypeID
+        })
+      });
+      var data = await res.json();
+      state.couponPending = false;
+
+      if (res.ok && data && data.valid) {
+        state.coupon = {
+          code: data.code,
+          percentOff: data.percentOff,
+          discountCents: data.discountCents || 0
+        };
+        state.couponInput = "";
+        state.couponError = "";
+        trackEvent("coupon_applied", { location: location.slug, code: data.code, percent_off: data.percentOff });
+        renderCheckoutPanel();
+      } else {
+        state.coupon = null;
+        setCouponError((data && data.reason) || "That promo code isn’t valid.");
+        trackEvent("coupon_rejected", { location: location.slug, code: raw });
+      }
+    } catch (err) {
+      state.couponPending = false;
+      state.coupon = null;
+      setCouponError("Couldn’t check that code. Please try again.");
+    }
+  }
+
+  function setCouponError(msg) {
+    state.couponError = msg;
+    // Re-render the summary so the (now error) state is reflected, and so the
+    // Apply button / input are re-enabled after a pending check.
+    renderCheckoutPanel();
   }
 
   async function handlePayAndBook() {
@@ -1118,6 +1262,7 @@
           waiverSigned: state.waiverSigned,
           cleaningFee: getCleaningFee(),
           cardholderName: (state.nameOnCard || "").trim(),
+          couponCode: state.coupon ? state.coupon.code : "",
           squareToken: tok.token,
           clientIdempotencyKey: state.bookingAttemptId,
           consent: {
