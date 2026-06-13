@@ -8,12 +8,21 @@
 //
 // Env-switched on SQUARE_ENVIRONMENT, mirroring api/_lib/square.js.
 
+var { hasActiveCoupon } = require("./_lib/coupons");
+
 module.exports = function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   var isProd = process.env.SQUARE_ENVIRONMENT === "production";
+
+  // promoActive gates the promo-code UI on the booking page: the field only
+  // renders when a campaign is live for this location. The booking page passes
+  // ?location=. Safe-by-default: no COUPONS configured → false.
+  var location = (req.query && req.query.location) ? String(req.query.location) : null;
+  var promoActive = false;
+  try { promoActive = hasActiveCoupon(location); } catch (e) { promoActive = false; }
 
   var squareAppId = isProd
     ? process.env.SQUARE_APPLICATION_ID
@@ -43,6 +52,7 @@ module.exports = function handler(req, res) {
     squareEnvironment: isProd ? "production" : "sandbox",
     squareSdkUrl: isProd
       ? "https://web.squarecdn.com/v1/square.js"
-      : "https://sandbox.web.squarecdn.com/v1/square.js"
+      : "https://sandbox.web.squarecdn.com/v1/square.js",
+    promoActive: promoActive
   });
 };

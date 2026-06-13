@@ -45,16 +45,34 @@ function getHeaders() {
 // lineItems: [{ name, amount (cents), quantity }]
 // redirectUrl: where Square sends the customer after payment
 // buyerEmail: optional, pre-fills email on checkout page
-async function createPaymentLink(lineItems, redirectUrl, buyerEmail) {
+// discount: optional { name, percentage } — a LINE_ITEM-scoped percentage
+//   discount (e.g. { name: "25% off session (WEEKEND25)", percentage: "25" }).
+//   When present it is applied ONLY to the session line item(s) (the ones
+//   built from a catalog_object_id), never to ad-hoc add-on / fee line items.
+//   Omit it and the payment link behaves exactly as before.
+async function createPaymentLink(lineItems, redirectUrl, buyerEmail, discount) {
   const locationId = getLocationId();
 
+  // When a discount is present we attach it (scope LINE_ITEM) to the session
+  // line item(s). Square requires the applied_discounts uid to reference a
+  // discount declared in order.discounts.
+  var discountUid = null;
+  var hasDiscount = !!(discount && discount.percentage &&
+    Number(discount.percentage) > 0);
+  if (hasDiscount) discountUid = "session-discount";
+
   const orderLineItems = lineItems.map(function (item) {
-    // If item has a catalog variation ID, use it so Square coupons can target it
+    // If item has a catalog variation ID, use it so Square discounts can target it
     if (item.catalogObjectId) {
-      return {
+      var li = {
         catalog_object_id: item.catalogObjectId,
         quantity: String(item.quantity)
       };
+      // Apply the session discount only to catalog (session) line items.
+      if (discountUid) {
+        li.applied_discounts = [{ discount_uid: discountUid }];
+      }
+      return li;
     }
     return {
       name: item.name,
@@ -66,12 +84,22 @@ async function createPaymentLink(lineItems, redirectUrl, buyerEmail) {
     };
   });
 
+  const order = {
+    location_id: locationId,
+    line_items: orderLineItems
+  };
+  if (discountUid) {
+    order.discounts = [{
+      uid: discountUid,
+      name: discount.name || "Promo discount",
+      percentage: String(discount.percentage),
+      scope: "LINE_ITEM"
+    }];
+  }
+
   const body = {
     idempotency_key: crypto.randomUUID(),
-    order: {
-      location_id: locationId,
-      line_items: orderLineItems
-    },
+    order: order,
     checkout_options: {
       redirect_url: redirectUrl
     }
