@@ -73,6 +73,7 @@
     couponInput: "",     // current text in the promo field (preserves on re-render)
     couponError: "",     // inline error message for a rejected code
     couponPending: false,
+    promoActive: false,  // true only while a coupon campaign is live (gates the promo UI)
     selectedDate: "",
     selectedTime: "",
     availableDates: [],
@@ -86,6 +87,19 @@
   location.addons.forEach((addon) => {
     state.addons[addon.id] = getInitialAddonState(addon);
   });
+
+  // Promo campaign gate — only show the promo-code field when a campaign is
+  // live for this location (server computes promoActive from the COUPONS env).
+  // Safe default: stays hidden if the request fails or no campaign is active.
+  fetch("/api/booking-public-config?location=" + encodeURIComponent(location.slug))
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (cfg) {
+      if (cfg && cfg.promoActive) {
+        state.promoActive = true;
+        if (document.querySelector("[data-checkout-summary]")) renderCheckoutPanel();
+      }
+    })
+    .catch(function () {});
 
   // PostHog funnel tracking helper — safe to call even if consent was declined
   function trackEvent(name, props) {
@@ -937,6 +951,9 @@
   // inside the order summary so it re-renders with the total. The handlers do
   // targeted DOM work (no full re-render from keystrokes — see input handler).
   function renderCouponRow() {
+    // Gate: only render the promo field during an active campaign (or if a code
+    // is already applied this session). Hidden entirely otherwise.
+    if (!state.promoActive && !state.coupon) return '';
     if (state.coupon) {
       return '<div class="coupon-row" style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
         '<span class="ui-copy-strong" style="font-size:0.85rem">Promo code <strong>' + escapeHtml(state.coupon.code) + '</strong> applied</span>' +

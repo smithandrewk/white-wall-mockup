@@ -176,8 +176,33 @@ function sessionDiscountCents(sessionCents, percentOff) {
   return Math.floor(s * p / 100);
 }
 
+// hasActiveCoupon(location, nowISO) — true if ANY configured code is currently
+// valid for this location. Used to gate the promo-code UI so the field only
+// appears while a campaign is live (no dead "invalid code" box between campaigns).
+function hasActiveCoupon(location, nowISO) {
+  var coupons = loadCoupons();
+  if (!coupons.length) return false;
+
+  var now = nowISO ? new Date(nowISO) : new Date();
+  if (isNaN(now.getTime())) now = new Date();
+  var loc = (location == null ? "" : String(location).trim().toLowerCase());
+
+  for (var i = 0; i < coupons.length; i++) {
+    var c = coupons[i];
+    if (!c) continue;
+    var pct = Number(c.percentOff);
+    if (!isFinite(pct) || pct <= 0 || pct > 100) continue;
+    var scope = (c.location == null ? "any" : String(c.location).trim().toLowerCase());
+    if (scope !== "any" && scope !== loc) continue;
+    if (!withinValidity(c, now)) continue;
+    return true;
+  }
+  return false;
+}
+
 module.exports = {
   validateCoupon,
   normalizeCode,
-  sessionDiscountCents
+  sessionDiscountCents,
+  hasActiveCoupon
 };
