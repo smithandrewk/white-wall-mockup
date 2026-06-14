@@ -5,17 +5,19 @@
 // client may send a *code*, but never a discount amount. create-checkout.js
 // re-validates every code here before applying any discount.
 //
-// Phase 3 (#20): coupons can ALSO come from the WWS dashboard API
-// (wws.entrpy.co). When WWS_DASHBOARD_URL + both Cloudflare Access service-token
-// creds are set, getActiveCoupons() fetches the live, already-filtered coupon
-// list from the dashboard (same shape as the COUPONS env array) and caches it
-// for 60s. The dashboard is the source of truth when configured. If it is
-// unset, unreachable, slow, or errors in ANY way, we fall back to the COUPONS
-// env var EXACTLY as before — this is the dark-launch state. recordRedemption()
-// likewise POSTs to the dashboard and fail-opens: a redemption-log failure can
-// NEVER break a paid booking.
+// Phase 3 redux (#20): coupons come from a Vercel Edge Config store. The WWS
+// dashboard PUSHES the active, already-filtered coupon list into Edge Config
+// under the key "coupons"; the booking site READS it here. Edge Config reads
+// are Vercel-native and edge-cached — the checkout path never touches the
+// self-hosted mini / dashboard at request time.
 //
-// Coupon definitions (whether from the dashboard or the env var) are a JSON
+// SAFE-BY-DEFAULT / DARK-LAUNCH: if EDGE_CONFIG is unset, the read throws, or
+// it returns null/undefined/a non-array, getActiveCoupons() falls back to the
+// COUPONS env var EXACTLY as before. With no Edge Config store connected AND no
+// COUPONS env var, NO code is ever valid — the field can ship before any codes
+// exist and simply rejects everything. Nothing here ever throws.
+//
+// Coupon definitions (whether from Edge Config or the env var) are a JSON
 // array of
 //   { code, percentOff, location, validFrom, validUntil }
 // where:
@@ -29,12 +31,14 @@
 // Date-only bounds are inclusive of the whole ET day (validFrom from 00:00 ET,
 // validUntil through 23:59:59 ET).
 //
-// SAFE-BY-DEFAULT: if no source yields coupons (env unset/empty/malformed AND
-// the dashboard is unconfigured/unreachable), NO code is ever valid. This is
-// the dark-launch state — the field can ship before any codes exist and simply
-// rejects everything.
+// Redemptions are NOT reported from here. create-checkout writes "Promo code: X"
+// into the Acuity appointment notes; the dashboard derives redemptions from its
+// Acuity ingest. The booking site no longer phones home.
 //
-// No external dependencies (raw JS only — consistent with the rest of api/_lib).
+// Only dependency: @vercel/edge-config (Vercel-native SDK). Everything else is
+// raw JS, consistent with the rest of api/_lib.
+
+const { get } = require("@vercel/edge-config");
 
 // Parse + cache the COUPONS env var. Returns [] on any problem (safe default).
 var _couponsCache = null;
@@ -67,123 +71,43 @@ function loadCoupons() {
 }
 
 // ---------------------------------------------------------------------------
-// Dashboard API integration (Phase 3) — optional, dark-launched.
+// Edge Config integration (Phase 3 redux) — Vercel-native, dark-launched.
 //
-// Until WWS_DASHBOARD_URL + both CF service-token creds are set, every helper
-// below short-circuits to the COUPONS env behavior above. Nothing here ever
-// throws; the worst case is a fall back to the env var.
+// The dashboard pushes the active coupon array into the store under key
+// "coupons". We read it here. Until EDGE_CONFIG is set (Vercel auto-injects
+// the connection string when an Edge Config store is connected to the project),
+// or until the "coupons" key exists, every read falls back to the COUPONS env
+// behavior above. Nothing here ever throws.
 // ---------------------------------------------------------------------------
-
-var DASHBOARD_TIMEOUT_MS = 3000;
-var DASHBOARD_CACHE_TTL_MS = 60 * 1000; // 60s — warm lambdas reuse the fetch.
-
-// Cache of the last successful dashboard fetch.
-var _dashboardCache = null;        // array of coupons
-var _dashboardCacheAt = 0;         // epoch ms of the fetch
-
-// True only when all three dashboard env vars are present.
-function dashboardConfigured() {
-  return !!(
-    process.env.WWS_DASHBOARD_URL &&
-    process.env.WWS_DASHBOARD_CF_ACCESS_CLIENT_ID &&
-    process.env.WWS_DASHBOARD_CF_ACCESS_CLIENT_SECRET
-  );
-}
-
-function dashboardHeaders(extra) {
-  var h = {
-    "CF-Access-Client-Id": process.env.WWS_DASHBOARD_CF_ACCESS_CLIENT_ID,
-    "CF-Access-Client-Secret": process.env.WWS_DASHBOARD_CF_ACCESS_CLIENT_SECRET
-  };
-  if (extra) {
-    for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) h[k] = extra[k]; }
-  }
-  return h;
-}
-
-function dashboardBase() {
-  return String(process.env.WWS_DASHBOARD_URL).replace(/\/$/, "");
-}
 
 // getActiveCoupons() — async. Returns the authoritative coupon array.
 //
-//   - Dashboard configured: fetch GET ${WWS_DASHBOARD_URL}/api/coupons with the
-//     CF service-token headers and a 3s timeout. On success, cache (60s TTL) and
-//     return data.coupons. On ANY error/timeout/bad-shape, fall back to the
-//     COUPONS env parse.
-//   - Dashboard unconfigured: return the COUPONS env parse (exactly as before).
+//   - EDGE_CONFIG set: read the "coupons" key from Edge Config (edge-cached,
+//     fast). On success with an array, return it. On ANY error, or a
+//     null/undefined/non-array value, fall back to the COUPONS env parse.
+//   - EDGE_CONFIG unset: return the COUPONS env parse (exactly as before).
 //
 // Never throws.
 async function getActiveCoupons() {
-  if (!dashboardConfigured()) {
+  if (!process.env.EDGE_CONFIG) {
     return loadCoupons();
   }
 
-  // Serve from the warm-instance cache if still fresh.
-  var now = Date.now();
-  if (_dashboardCache !== null && (now - _dashboardCacheAt) < DASHBOARD_CACHE_TTL_MS) {
-    return _dashboardCache;
-  }
-
-  var controller = new AbortController();
-  var timeoutId = setTimeout(function () { controller.abort(); }, DASHBOARD_TIMEOUT_MS);
   try {
-    var res = await fetch(dashboardBase() + "/api/coupons", {
-      method: "GET",
-      signal: controller.signal,
-      headers: dashboardHeaders()
-    });
-    if (!res.ok) {
-      console.error("coupons: dashboard /api/coupons returned " + res.status + " — falling back to COUPONS env");
+    var coupons = await get("coupons");
+    if (!Array.isArray(coupons)) {
+      // Missing key (undefined), null, or a malformed non-array value → fall
+      // back to the env var. Only log on a present-but-malformed value; a
+      // not-yet-populated key is the normal dark-launch state.
+      if (coupons != null) {
+        console.error("coupons: Edge Config 'coupons' is not an array — falling back to COUPONS env");
+      }
       return loadCoupons();
     }
-    var data = await res.json();
-    if (!data || !Array.isArray(data.coupons)) {
-      console.error("coupons: dashboard /api/coupons bad shape — falling back to COUPONS env");
-      return loadCoupons();
-    }
-    _dashboardCache = data.coupons;
-    _dashboardCacheAt = Date.now();
-    return _dashboardCache;
+    return coupons;
   } catch (err) {
-    console.error("coupons: dashboard /api/coupons fetch failed (" + (err && err.message) + ") — falling back to COUPONS env");
+    console.error("coupons: Edge Config read failed (" + (err && err.message) + ") — falling back to COUPONS env");
     return loadCoupons();
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-// recordRedemption({ code, email, bookingId, discountCents }) — async.
-// POSTs the redemption to the dashboard so it can track usage. FAIL-OPEN:
-// swallows every error (logs only) and no-ops entirely when the dashboard is
-// unconfigured. Must NEVER throw or break a paid booking.
-async function recordRedemption(payload) {
-  if (!dashboardConfigured()) return;
-  payload = payload || {};
-
-  var controller = new AbortController();
-  var timeoutId = setTimeout(function () { controller.abort(); }, DASHBOARD_TIMEOUT_MS);
-  try {
-    var res = await fetch(dashboardBase() + "/api/coupons/redeem", {
-      method: "POST",
-      signal: controller.signal,
-      headers: dashboardHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        code: payload.code,
-        email: payload.email,
-        bookingId: payload.bookingId,
-        discountCents: payload.discountCents
-      })
-    });
-    if (!res.ok) {
-      var txt = "";
-      try { txt = await res.text(); } catch (e2) { /* ignore */ }
-      console.error("coupons: dashboard /api/coupons/redeem returned " + res.status, String(txt).slice(0, 300));
-    }
-  } catch (err) {
-    console.error("coupons: recordRedemption failed (ignored):", err && err.message);
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -244,8 +168,8 @@ function withinValidity(coupon, now) {
 //   opts:     { location, nowISO }
 //
 // This is the original validateCoupon body, refactored to take the coupon
-// array as a parameter so the source (env var vs. dashboard) is decoupled from
-// the matching rules. Semantics are UNCHANGED.
+// array as a parameter so the source (env var vs. Edge Config) is decoupled
+// from the matching rules. Semantics are UNCHANGED.
 //
 // Returns:
 //   { valid: true,  code, percentOff, label }
@@ -308,7 +232,7 @@ function validateCouponAgainst(code, coupons, opts) {
 //   location: "powdersville" | "taylors-mill" (the booking's location)
 //   nowISO:   optional ISO string to override "now" (testing); defaults to Date.now()
 //
-// Resolves the active coupon list (dashboard-or-env) then runs the pure
+// Resolves the active coupon list (Edge-Config-or-env) then runs the pure
 // validation. Returns:
 //   { valid: true,  code, percentOff, label }
 //   { valid: false, reason }
@@ -356,7 +280,6 @@ module.exports = {
   validateCoupon,
   validateCouponAgainst,
   getActiveCoupons,
-  recordRedemption,
   normalizeCode,
   sessionDiscountCents,
   hasActiveCoupon

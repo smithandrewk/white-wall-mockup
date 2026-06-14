@@ -5,6 +5,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@vercel/edge-config": "^1.4.0",
     "posthog-node": "^5.28.11",
     "puppeteer": "^24.40.0"
   }
