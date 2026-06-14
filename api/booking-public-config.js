@@ -10,7 +10,7 @@
 
 var { hasActiveCoupon } = require("./_lib/coupons");
 
-module.exports = function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -22,7 +22,7 @@ module.exports = function handler(req, res) {
   // ?location=. Safe-by-default: no COUPONS configured → false.
   var location = (req.query && req.query.location) ? String(req.query.location) : null;
   var promoActive = false;
-  try { promoActive = hasActiveCoupon(location); } catch (e) { promoActive = false; }
+  try { promoActive = await hasActiveCoupon(location); } catch (e) { promoActive = false; }
 
   var squareAppId = isProd
     ? process.env.SQUARE_APPLICATION_ID
