@@ -35,7 +35,7 @@ const {
   createCardOnFile,
   refundPayment
 } = require("./_lib/square");
-const { validateCoupon, sessionDiscountCents, recordRedemption } = require("./_lib/coupons");
+const { validateCoupon, sessionDiscountCents } = require("./_lib/coupons");
 const { isStaging, stagingSinkEmail, stagingCalendarID } = require("./_lib/env");
 const { buildWaiverText } = require("./_lib/waiver-text");
 const { notifyOwner } = require("./notify-owner");
@@ -507,20 +507,10 @@ module.exports = async function handler(req, res) {
       try { await notifyOwnerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
       try { await notifyCustomerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyCustomerSMS:", e.message); }
 
-      // Record the coupon redemption on the dashboard (Phase 3, #20). Isolated
-      // and fail-open — recordRedemption already swallows errors and no-ops when
-      // the dashboard is unconfigured, but wrap defensively so it can NEVER
-      // break a paid booking.
-      if (appliedCoupon) {
-        try {
-          await recordRedemption({
-            code: appliedCoupon.code,
-            email: contact.email,
-            bookingId: appointment.id,
-            discountCents: appliedCoupon.discountCents
-          });
-        } catch (e) { console.error("recordRedemption:", e.message); }
-      }
+      // Coupon redemptions are NOT reported from here. The "Promo code: X" line
+      // written into the Acuity appointment notes above is the redemption
+      // signal — the WWS dashboard derives redemptions from its Acuity ingest,
+      // so the booking site never phones home (Phase 3 redux, #20).
 
       await flushPostHog();
 

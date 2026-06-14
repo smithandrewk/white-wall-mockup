@@ -294,32 +294,32 @@ Static:
 | `TWILIO_ACCOUNT_SID` | Twilio console | Customer booking-confirmation SMS (B1, issue #7). **Not live until A2P 10DLC registration approved.** Unset until then — `notify-customer-sms.js` no-ops. |
 | `TWILIO_AUTH_TOKEN` | Twilio console | Paired with the SID |
 | `TWILIO_FROM_NUMBER` | Twilio console | Registered sending number, E.164 (`+1…`) |
-| `WWS_DASHBOARD_URL` | — | Coupon source-of-truth base URL, e.g. `https://wws.entrpy.co` (#20 Phase 3). **Unset = dark-launched:** coupons read from `COUPONS` env exactly as before. |
-| `WWS_DASHBOARD_CF_ACCESS_CLIENT_ID` | Cloudflare Access | Service-token ID gating the dashboard coupon API at CF's edge. Sent as `CF-Access-Client-Id`. Unset = fall back to `COUPONS` env. |
-| `WWS_DASHBOARD_CF_ACCESS_CLIENT_SECRET` | Cloudflare Access | Service-token secret. Sent as `CF-Access-Client-Secret`. Unset = fall back to `COUPONS` env. |
+| `EDGE_CONFIG` | Vercel (auto-injected) | Coupon source-of-truth connection string. Vercel sets this automatically when an Edge Config store is connected to the project; `api/_lib/coupons.js` reads key `coupons`. **Unset / no `coupons` key = dark-launched:** coupons fall back to the `COUPONS` env var exactly as today. |
 
-### Coupon Source: Dashboard API (#20, Phase 3)
+### Coupon Source: Vercel Edge Config (#20, Phase 3 redux)
 
-`api/_lib/coupons.js` reads the active coupon list from the WWS dashboard when
-`WWS_DASHBOARD_URL` + both `WWS_DASHBOARD_CF_ACCESS_CLIENT_*` creds are set;
-otherwise it falls back to the `COUPONS` env var EXACTLY as before. **Dark-launched:**
-prod is unchanged until all three env vars are configured.
+`api/_lib/coupons.js` reads the active coupon list from a **Vercel Edge Config**
+store (key `coupons`). The WWS dashboard PUSHES the active, already-filtered coupon
+array into the store; the booking site READS it edge-cached, Vercel-native — the
+checkout path never touches the self-hosted mini / dashboard at request time. If
+`EDGE_CONFIG` is unset, the read throws, or the `coupons` key is missing/null/not an
+array, it falls back to the `COUPONS` env var EXACTLY as before. **Dark-launched:**
+prod is unchanged until an Edge Config store is connected and populated.
 
-- `getActiveCoupons()` — fetches `GET ${WWS_DASHBOARD_URL}/api/coupons` (CF service-token
-  headers, 3s timeout, 60s warm-instance cache). On ANY error/timeout/bad-shape, or
-  when unconfigured, falls back to the parsed `COUPONS` env. Never throws.
+- `getActiveCoupons()` — `await get("coupons")` via `@vercel/edge-config`. On an array,
+  returns it; on ANY error or a null/undefined/non-array value, or when `EDGE_CONFIG` is
+  unset, falls back to the parsed `COUPONS` env. Never throws.
 - `validateCouponAgainst(code, coupons, opts)` — pure matching/validity logic (the old
-  `validateCoupon` body), unchanged semantics. `validateCoupon`/`hasActiveCoupon` are now
+  `validateCoupon` body), unchanged semantics. `validateCoupon`/`hasActiveCoupon` are
   **async** wrappers that resolve the source then run it.
-- `recordRedemption({ code, email, bookingId, discountCents })` — POSTs to
-  `${WWS_DASHBOARD_URL}/api/coupons/redeem` (3s timeout). **Fail-open** (swallows errors,
-  no-ops when unconfigured). Called from `create-checkout.js` after a coupon-applied
-  appointment is created, inside an isolated try/catch so it can never break a paid booking.
+- **Redemptions are not reported from the booking site.** `create-checkout.js` writes
+  `Promo code: X` into the Acuity appointment notes; the dashboard derives redemptions
+  from its Acuity ingest. (`recordRedemption` and the dashboard-pull/CF-Access logic were
+  removed in this round.)
 
-Dashboard contract (built in parallel on the dashboard side):
-- `GET /api/coupons` → `{ coupons: [{ code, percentOff, location, validFrom, validUntil }] }` (active+valid only).
-- `POST /api/coupons/redeem` body `{ code, email, bookingId, discountCents }` → `{ ok }`.
-- Both gated by Cloudflare Access service token (same header pattern as Watson SMS).
+Edge Config contract (written by the dashboard side):
+- Key `coupons` → `[{ code, percentOff, location, validFrom, validUntil }]` (active+valid only;
+  same shape the `COUPONS` env var uses).
 
 ### Acuity API Details
 
