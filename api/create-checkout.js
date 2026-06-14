@@ -35,7 +35,7 @@ const {
   createCardOnFile,
   refundPayment
 } = require("./_lib/square");
-const { validateCoupon, sessionDiscountCents } = require("./_lib/coupons");
+const { validateCoupon, sessionDiscountCents, recordRedemption } = require("./_lib/coupons");
 const { isStaging, stagingSinkEmail, stagingCalendarID } = require("./_lib/env");
 const { buildWaiverText } = require("./_lib/waiver-text");
 const { notifyOwner } = require("./notify-owner");
@@ -309,7 +309,7 @@ module.exports = async function handler(req, res) {
     let couponDiscountCents = 0;
     if (couponCode && String(couponCode).trim()) {
       try {
-        var couponResult = validateCoupon(couponCode, { location: location });
+        var couponResult = await validateCoupon(couponCode, { location: location });
         if (couponResult.valid) {
           // Session line item = the one carrying the catalog object id; fall
           // back to the first item, which buildSquareLineItems guarantees is
@@ -506,6 +506,22 @@ module.exports = async function handler(req, res) {
       try { await notifyCleaner(bookingState, appointment.id); } catch (e) { console.error("notifyCleaner:", e.message); }
       try { await notifyOwnerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
       try { await notifyCustomerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyCustomerSMS:", e.message); }
+
+      // Record the coupon redemption on the dashboard (Phase 3, #20). Isolated
+      // and fail-open — recordRedemption already swallows errors and no-ops when
+      // the dashboard is unconfigured, but wrap defensively so it can NEVER
+      // break a paid booking.
+      if (appliedCoupon) {
+        try {
+          await recordRedemption({
+            code: appliedCoupon.code,
+            email: contact.email,
+            bookingId: appointment.id,
+            discountCents: appliedCoupon.discountCents
+          });
+        } catch (e) { console.error("recordRedemption:", e.message); }
+      }
+
       await flushPostHog();
 
       var fn = encodeURIComponent(contact.firstName);

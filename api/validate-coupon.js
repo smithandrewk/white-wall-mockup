@@ -28,7 +28,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const result = validateCoupon(code, { location: location });
+    const result = await validateCoupon(code, { location: location });
 
     if (!result.valid) {
       // 200 with valid:false — an invalid code is a normal outcome, not an
