@@ -22,7 +22,9 @@
 //   { code, percentOff, location, validFrom, validUntil }
 // where:
 //   - code        string, customer-typed (normalized: trim + uppercase)
-//   - percentOff  number 1..100 (whole-number percent off the session)
+//   - percentOff  number 1..99 (whole-number percent off the session). Capped
+//                 at 99, never 100: a 100%-off code on an add-on-free session
+//                 would post a $0 charge to Square, which Square rejects.
 //   - location    "powdersville" | "taylors-mill" | "any"
 //   - validFrom   ISO date "YYYY-MM-DD" (or full ISO) or null = no lower bound
 //   - validUntil  ISO date "YYYY-MM-DD" (or full ISO) or null = no upper bound
@@ -199,9 +201,13 @@ function validateCouponAgainst(code, coupons, opts) {
     return { valid: false, reason: "That promo code isn’t valid." };
   }
 
-  // percentOff must be a sane whole-ish number 1..100.
+  // percentOff must be a sane whole-ish number 1..99. The upper bound is 99 (not
+  // 100) on purpose: a 100%-off code would drive a session-only (add-on-free)
+  // booking's charged total to $0, which Square rejects → the booking fails.
+  // Capping at 99% guarantees a charge of at least ~1% of the session, so the
+  // floor in create-checkout.js never has to engage in the realistic case.
   var pct = Number(match.percentOff);
-  if (!isFinite(pct) || pct <= 0 || pct > 100) {
+  if (!isFinite(pct) || pct <= 0 || pct > 99) {
     console.error("coupons: coupon " + normalized + " has invalid percentOff", match.percentOff);
     return { valid: false, reason: "That promo code isn’t valid." };
   }
@@ -267,7 +273,7 @@ async function hasActiveCoupon(location, nowISO) {
     var c = coupons[i];
     if (!c) continue;
     var pct = Number(c.percentOff);
-    if (!isFinite(pct) || pct <= 0 || pct > 100) continue;
+    if (!isFinite(pct) || pct <= 0 || pct > 99) continue;
     var scope = (c.location == null ? "any" : String(c.location).trim().toLowerCase());
     if (scope !== "any" && scope !== loc) continue;
     if (!withinValidity(c, now)) continue;
