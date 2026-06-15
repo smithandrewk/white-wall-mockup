@@ -73,6 +73,7 @@
     couponInput: "",     // current text in the promo field (preserves on re-render)
     couponError: "",     // inline error message for a rejected code
     couponPending: false,
+    couponAutoApplied: false, // guards the one-shot auto-apply of a URL ?promo= code
     promoActive: false,  // true only while a coupon campaign is live (gates the promo UI)
     selectedDate: "",
     selectedTime: "",
@@ -87,6 +88,20 @@
   location.addons.forEach((addon) => {
     state.addons[addon.id] = getInitialAddonState(addon);
   });
+
+  // Pre-fill the promo field from the URL. Campaign emails link to
+  // /book-powdersville?promo=<CODE> (param `promo`, with `coupon`/`code` as
+  // aliases). Trim + uppercase (codes are uppercase) and stash into couponInput
+  // so the field renders pre-filled; auto-apply happens after a slot is picked
+  // (see the "select-time" handler). No-op when no param is present. Uses
+  // window.location because `location` is the booking-config object here.
+  try {
+    var promoParams = new URLSearchParams(window.location.search);
+    var promoFromUrl = promoParams.get("promo") || promoParams.get("coupon") || promoParams.get("code");
+    if (promoFromUrl) {
+      state.couponInput = promoFromUrl.trim().toUpperCase();
+    }
+  } catch (e) { /* URLSearchParams unsupported — silently skip pre-fill */ }
 
   // Promo campaign gate — only show the promo-code field when a campaign is
   // live for this location (server computes promoActive from the COUPONS env).
@@ -295,6 +310,15 @@
         state.selectedTime = actionTarget.dataset.time;
         trackEvent("time_selected", { location: location.slug, date: state.selectedDate, time: state.selectedTime });
         renderScheduleStep();
+        // Auto-apply a URL-prefilled promo code exactly once, now that a slot
+        // exists (applyCoupon needs selectedTime). The guard flag stops it from
+        // re-firing if the customer picks another time or edits the code.
+        // applyCoupon() handles its own success/error UI, so feedback matches
+        // a manual Apply. No-op if nothing was prefilled or a code is applied.
+        if (!state.couponAutoApplied && !state.coupon && !state.couponPending && (state.couponInput || "").trim()) {
+          state.couponAutoApplied = true;
+          applyCoupon();
+        }
         return;
       }
 
