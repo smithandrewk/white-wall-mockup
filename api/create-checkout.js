@@ -324,6 +324,21 @@ module.exports = async function handler(req, res) {
           // Clamp defensively — never discount more than the session, never below 0.
           if (couponDiscountCents > sessionAmount) couponDiscountCents = sessionAmount;
           if (couponDiscountCents < 0) couponDiscountCents = 0;
+          // Defensive floor (belt-and-suspenders): Square rejects a $0 charge,
+          // so the charged total must never drop below 1 cent. The 99% cap in
+          // coupons.js already prevents this in the realistic case (99% of a
+          // $130 session still leaves ~$1.30), but this guard means no future or
+          // misconfigured coupon can ever post a $0 charge. If the discount would
+          // zero/negative the total, clamp the DISCOUNT so totalCents stays >= 1.
+          if (couponDiscountCents >= totalCents) {
+            console.warn("create-checkout: coupon discount would zero the total — clamping to keep totalCents >= 1", {
+              code: couponResult.code,
+              totalCents: totalCents,
+              requestedDiscountCents: couponDiscountCents
+            });
+            couponDiscountCents = totalCents - 1;
+          }
+          if (couponDiscountCents < 0) couponDiscountCents = 0;
           if (couponDiscountCents > 0) {
             totalCents = totalCents - couponDiscountCents;
             appliedCoupon = {

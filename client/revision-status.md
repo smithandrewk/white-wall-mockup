@@ -525,3 +525,11 @@ Re-architects the coupon source from a real-time pull off the self-hosted dashbo
 - [x] `CLAUDE.md` — removed the three `WWS_DASHBOARD_*` env rows; added an `EDGE_CONFIG` row + a "Coupon Source: Vercel Edge Config" section with the Edge Config contract.
 - [x] Verified: `npm install` resolves `@vercel/edge-config`; `node --check` passes on all touched JS. Throwaway node test proved — with `EDGE_CONFIG` UNSET, `getActiveCoupons()` returns the parsed `COUPONS` env, `validateCoupon` === `validateCouponAgainst` across sampled inputs (semantics unchanged), `hasActiveCoupon` fallback works, no-source state rejects all codes without throwing, and `recordRedemption` is no longer exported. Also verified `EDGE_CONFIG` set-but-unreachable ⇒ `get()` throws ⇒ `getActiveCoupons` falls back to env without throwing.
 - **Dark launch:** no Edge Config store is connected yet (`EDGE_CONFIG` unset). Prod behavior is byte-identical to Round 24's fallback path until a store is connected and the dashboard populates the `coupons` key.
+
+## Feedback Round 26 (2026-06-15) — Coupon $0-charge safety fix (overnight review, #20)
+
+Overnight review found that a 100%-off coupon on an add-on-free (session-only) booking would drive the charged total to $0, which Square rejects → the booking fails. Two-layer fix.
+
+- [x] `api/_lib/coupons.js` — capped `percentOff` at **99** (was 1–100) in `validateCouponAgainst` and the `hasActiveCoupon` gate, so a 100% code never validates. Header doc updated to `1..99`. (Dashboard create-time cap lands in a parallel PR.)
+- [x] `api/create-checkout.js` — added a defensive floor after the coupon discount is subtracted from `totalCents`: if the discount would zero/negative the total, clamp the discount so `totalCents >= 1`. Belt-and-suspenders so no future/misconfigured coupon can post a $0 charge. Isolated + fail-open — no change to normal (no-coupon) bookings.
+- [x] Verified: `node --check` on both files. Throwaway node test — 100% code now invalid, 99% valid, 50% valid (unchanged), 99%-off $130 session-only keeps total at 130¢, floor holds total ≥ 1¢ even given a hypothetical 100% discount, no-coupon path unchanged. With `COUPONS`/`EDGE_CONFIG` unset (prod state) nothing changes.
