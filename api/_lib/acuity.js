@@ -413,7 +413,7 @@ const SQUARE_CATALOG_SANDBOX = {
   "89114444": "RVIEPZLDJ3YDLTIXZPIJA4CO",
   "89114517": "DO2VVO55EE5JIWVDVLDYEHME",
   "89114539": "CQUBMEHPZOXZMLIDO6CA5R4A",
-  "94823049": "<<PV8_SANDBOX_CATALOG_ID>>", // TODO(pip): fill sandbox catalog id from square-catalog-setup.js --create
+  "94823049": "KUWJ3TEUOQWIZTG46Q4TBX7D", // 8h session (V3 item 3). PROD catalog id still TODO — needs prod Square creds; only affects coupon targeting, not charging.
   "89114581": "CIHBY3IG7LAWHFCQZYFTICU7",
   "38342199": "HCML3FUK2CBN2YCA4WJEXRSW",
   "28312352": "3DGAVCMMITO2NFTZD6V6XQNY",
