@@ -27,7 +27,9 @@ const {
   buildAppointmentNotes,
   TYPE_TO_DURATION,
   CALENDAR_IDS,
-  ACUITY_ADDON_IDS
+  ACUITY_ADDON_IDS,
+  isStartBeforeEarliest,
+  SETUP_CREW_PLACEMENT_ITEMS
 } = require("./_lib/acuity");
 const {
   findOrCreateCustomer,
@@ -105,6 +107,27 @@ module.exports = async function handler(req, res) {
   }
   if (!consent || consent.cardOnFile !== true) {
     return res.status(400).json({ error: "Card-on-file authorization is required to book" });
+  }
+  // Earliest-start floor (e.g. 8h Flagship must start >= 12:30pm ET). Server is
+  // authoritative — reject a too-early start even if the client UI is bypassed.
+  if (isStartBeforeEarliest(appointmentTypeID, datetime)) {
+    return res.status(400).json({ error: "Selected start time is before the earliest allowed for this session" });
+  }
+  // Studio Setup Crew (V3 item 5): events-only, and every placement must be
+  // chosen. Guard server-side so a crafted POST can't bypass the event gate or
+  // omit the placement choices Drew relies on.
+  if (addons && addons["setup-crew"] && addons["setup-crew"].selected) {
+    if (eventIntent !== "yes") {
+      return res.status(400).json({ error: "Studio Setup Crew is only available for event bookings" });
+    }
+    var crewPlacements = addons["setup-crew"].placements || {};
+    for (var pi = 0; pi < SETUP_CREW_PLACEMENT_ITEMS.length; pi++) {
+      var pItem = SETUP_CREW_PLACEMENT_ITEMS[pi];
+      var chosen = crewPlacements[pItem.id];
+      if (!chosen || pItem.options.indexOf(chosen) === -1) {
+        return res.status(400).json({ error: "Studio Setup Crew requires a placement choice for each item" });
+      }
+    }
   }
 
   try {
