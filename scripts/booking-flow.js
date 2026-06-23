@@ -76,6 +76,10 @@
     // single-session behavior. Wired up by the cart UI + N-session checkout in
     // later phases; inert until then.
     cart: { sessions: [], universal: {} },
+    // V3 item 2/6: cart review-view flag + deposit/full payment mode. Deposit
+    // (pay 60% now) is offered only for event bookings; defaults to full.
+    _cartReviewing: false,
+    paymentMode: "full",
     coupon: null,        // applied promo: { code, percentOff, discountCents }
     couponInput: "",     // current text in the promo field (preserves on re-render)
     couponError: "",     // inline error message for a rejected code
@@ -110,6 +114,7 @@
       selectedTime: state.selectedTime,
       eventIntent: state.eventIntent,
       addons: JSON.parse(JSON.stringify(state.addons || {})),
+      foodDrinks: state.foodDrinks,
       perSessionIntake: {
         participants: state.intake.participants,
         business: state.intake.business,
@@ -139,12 +144,376 @@
     state.selectedTime = s.selectedTime;
     state.eventIntent = s.eventIntent;
     state.addons = JSON.parse(JSON.stringify(s.addons || {}));
+    if (s.foodDrinks !== undefined) state.foodDrinks = s.foodDrinks;
     state.intake.participants = (s.perSessionIntake && s.perSessionIntake.participants) || "";
     state.intake.business = (s.perSessionIntake && s.perSessionIntake.business) || "";
     state.eventDescription = (s.perSessionIntake && s.perSessionIntake.eventDescription) || "";
+    // Mirror per-session participants into the top-level count for events (the
+    // single-session validators/cleaning-fee read state.participants for events).
+    if (s.eventIntent === "yes") {
+      state.participants = (s.perSessionIntake && s.perSessionIntake.participants) || "";
+    }
   }
   // Expose for the cart UI phases (and to mark them intentionally-used to linters).
   state._cartHelpers = { snapshotActiveSession: snapshotActiveSession, commitActiveSessionToCart: commitActiveSessionToCart, resetActiveDraft: resetActiveDraft, loadCartSessionIntoDraft: loadCartSessionIntoDraft };
+
+  // --- V3 item 2: multi-session cart UI ------------------------------------
+  // "Cart is active" === at least one session already committed. With an empty
+  // cart the page behaves exactly like today's single-session flow, so the live
+  // single-session path stays byte-identical until "Add another session" is used.
+  function cartIsActive() {
+    return state.cart.sessions.length > 0;
+  }
+
+  // Total number of sessions in this booking = committed + the active draft
+  // (the draft becomes the last session at "Review cart" time). Used for labels.
+  function cartSessionCount() {
+    return state.cart.sessions.length + 1;
+  }
+
+  // Add-on subtotal (dollars) for an arbitrary add-on state object (not the
+  // global one). Mirrors getAddonSubtotal but reads the passed addonState so it
+  // works for committed cart sessions as well as the active draft.
+  function addonSubtotalFor(addon, addonState) {
+    if (!addonState) return 0;
+    if (addon.type === "toggle") return addonState.selected ? addon.price : 0;
+    if (addon.type === "quantity") return (addonState.quantity || 0) * addon.price;
+    if (addon.type === "tier") {
+      var sel = addon.options.find(function (o) { return o.id === addonState.selection; });
+      return sel ? sel.price : 0;
+    }
+    if (addon.type === "backdrops") {
+      if (addonState.mode === "all") return addon.allPrice;
+      return (addonState.colors || []).length * addon.singlePrice;
+    }
+    if (addon.type === "walls") {
+      if (addonState.mode === "all") return addon.allPrice;
+      return (addonState.walls || []).length * addon.singlePrice;
+    }
+    return 0;
+  }
+
+  // Build the normalized pricing-shared cart shape from committed sessions plus
+  // the active draft. dayIndex is assigned by chronological session order (the
+  // same rule the server uses), so the discount preview matches the server's
+  // authoritative recompute. Session price = the flat per-duration price (cents);
+  // each add-on line is the FULL (undiscounted) cents tagged with its addon id —
+  // pricing-shared applies the per-day discount internally.
+  function buildPricingCart(includeActiveDraft) {
+    var raw = state.cart.sessions.slice();
+    // Only include the active draft once it has a real slot (a fresh draft after
+    // "Add another session" has no time yet — it isn't a priced session).
+    if (includeActiveDraft && state.selectedTime) raw.push(snapshotActiveSession());
+
+    // Map each session to { sessionCents, addons:[{addonId,cents}], datetime } so
+    // we can sort chronologically and assign dayIndex deterministically.
+    var mapped = raw.map(function (s) {
+      var dur = location.durations.find(function (d) { return d.id === s.durationId; });
+      var sessionCents = Math.round((dur && dur.price ? dur.price : 0) * 100);
+      var addonLines = [];
+      location.addons.forEach(function (addon) {
+        var amt = addonSubtotalFor(addon, (s.addons || {})[addon.id]);
+        if (amt > 0) addonLines.push({ addonId: addon.id, cents: Math.round(amt * 100) });
+      });
+      return { sessionCents: sessionCents, addons: addonLines, datetime: s.selectedTime || "" };
+    });
+
+    // Chronological sort (sessions without a time sort last, stable).
+    mapped.sort(function (a, b) {
+      if (!a.datetime) return 1;
+      if (!b.datetime) return -1;
+      return a.datetime < b.datetime ? -1 : (a.datetime > b.datetime ? 1 : 0);
+    });
+    mapped.forEach(function (s, i) { s.dayIndex = i; });
+    return { sessions: mapped };
+  }
+
+  // Commit the active draft and start a fresh draft for another session. The
+  // universal fields (contact / waiver / terms / card) are collected once and
+  // are NOT reset — only the per-session draft (duration/date/time/add-ons).
+  function addAnotherSession() {
+    commitActiveSessionToCart();
+    resetActiveDraft();
+    state._cartReviewing = false;
+    // Send the customer back to pick the new session's timing.
+    setStep(1);
+    showToast("Session added to your cart. Pick the timing for the next session.");
+  }
+
+  // Edit a committed session: commit the current draft so it isn't lost, then
+  // pull the chosen session into the active draft, drop it from the committed
+  // list, and return to step 1 to re-edit. Leaves review mode.
+  function editCartSession(i) {
+    if (i < 0 || i >= state.cart.sessions.length) return;
+    // Preserve the in-progress draft (only if it has a real slot — an empty
+    // fresh draft after "Add another session" shouldn't be committed as junk).
+    if (state.selectedTime) {
+      commitActiveSessionToCart();
+      // The chosen index shifts by +1 only if the committed draft was inserted
+      // before it; we push to the end, so committed indices are unchanged.
+    }
+    loadCartSessionIntoDraft(i);
+    state.cart.sessions.splice(i, 1);
+    state._cartReviewing = false;
+    setStep(1);
+  }
+
+  function removeCartSession(i) {
+    if (i < 0 || i >= state.cart.sessions.length) return;
+    state.cart.sessions.splice(i, 1);
+    renderStepContent();
+    scrollToCart();
+  }
+
+  function scrollToCart() {
+    var el = document.querySelector("[data-cart-summary]");
+    if (el && !el.hidden) setTimeout(function () { el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50);
+  }
+
+  // Human label for one cart session (committed snapshot OR the active draft).
+  function describeSession(s) {
+    var dur = location.durations.find(function (d) { return d.id === s.durationId; });
+    var loc = locations.find(function (l) { return l.slug === s.location; }) || location;
+    var when = s.selectedTime
+      ? new Date(s.selectedTime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+      : (s.selectedDate || "Date not selected");
+    return {
+      durationLabel: dur ? dur.label : "Session",
+      locationName: loc.name,
+      when: when,
+      isEvent: s.eventIntent === "yes"
+    };
+  }
+
+  // Per-session add-on summary lines (label + amount) for an arbitrary session.
+  function sessionAddonLines(s) {
+    var lines = [];
+    location.addons.forEach(function (addon) {
+      var amt = addonSubtotalFor(addon, (s.addons || {})[addon.id]);
+      if (amt > 0) lines.push({ label: addon.name, amount: amt });
+    });
+    return lines;
+  }
+
+  // The "Add another session" / "Review cart" branch, rendered at the top of
+  // step 5. Always offered (Drew wants multi-day discovery), but never blocks
+  // the single-session pay flow: payment stays directly available below.
+  function renderCartBranch() {
+    var container = document.querySelector("[data-cart-branch]");
+    if (!container) return;
+
+    // Only meaningful once a slot is picked (otherwise there's no session yet),
+    // and hide it entirely while in the review view (the review owns the CTA).
+    if (!state.selectedTime || state._cartReviewing) {
+      container.hidden = true;
+      container.innerHTML = "";
+      return;
+    }
+    container.hidden = false;
+
+    var count = cartSessionCount();
+    var countLine = cartIsActive()
+      ? '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">You have <strong>' + count + ' sessions</strong> in this cart (this one plus ' + state.cart.sessions.length + ' already added). Add more days, or review and pay for everything together in one payment.</p>'
+      : '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">Booking more than one day? Add another session to this cart and pay for everything together. Multi-day add-on discounts apply automatically.</p>';
+
+    var reviewBtn = cartIsActive()
+      ? '<button type="button" class="booking-button booking-button-primary" data-action="review-cart">Review cart &amp; pay</button>'
+      : '';
+
+    container.innerHTML =
+      '<div class="booking-panel-soft p-5">' +
+        '<p class="ui-kicker" style="margin-bottom:0.75rem">Multi-day booking</p>' +
+        countLine +
+        '<div style="display:flex;flex-wrap:wrap;gap:0.75rem">' +
+          '<button type="button" class="booking-button booking-button-secondary" data-action="add-another-session">+ Add another session</button>' +
+          reviewBtn +
+        '</div>' +
+      '</div>';
+  }
+
+  // The cart-summary review: every session (date/time/location/duration + its
+  // add-ons) with per-session subtotals and the cart total, using
+  // window.WWSPricing for the day-discount math (parity with the server). Only
+  // shown in review mode (after "Review cart" with >1 session).
+  function renderCartSummary() {
+    var container = document.querySelector("[data-cart-summary]");
+    if (!container) return;
+
+    if (!state._cartReviewing || !cartIsActive()) {
+      container.hidden = true;
+      container.innerHTML = "";
+      return;
+    }
+    container.hidden = false;
+
+    // The review lists committed sessions PLUS the active draft as the final
+    // (still-editable) row, so going back to edit never double-commits. Build
+    // the priced cart over both, chronologically ordered with dayIndex set —
+    // matches the server's authoritative recompute exactly.
+    var priced = buildPricingCart(true);
+    var totals = (window.WWSPricing && window.WWSPricing.computeCartTotals)
+      ? window.WWSPricing.computeCartTotals(priced)
+      : null;
+
+    // Build display rows over committed sessions + the active draft. We display
+    // in chronological order to match the day-index/discount the totals use, so
+    // sort the source rows the same way buildPricingCart does.
+    var rows = state.cart.sessions.map(function (cs, i) { return { src: cs, committedIndex: i, isDraft: false }; });
+    // The active draft is a row only once it has a real slot (otherwise it's a
+    // not-yet-configured next session — don't show a $0 phantom row).
+    if (state.selectedTime) rows.push({ src: snapshotActiveSession(), committedIndex: -1, isDraft: true });
+    rows.sort(function (a, b) {
+      var at = a.src.selectedTime || "", bt = b.src.selectedTime || "";
+      if (!at) return 1;
+      if (!bt) return -1;
+      return at < bt ? -1 : (at > bt ? 1 : 0);
+    });
+
+    var cards = rows.map(function (row, idx) {
+      var src = row.src;
+      var d = describeSession(src);
+      var addonLines = sessionAddonLines(src);
+      var dur = location.durations.find(function (dd) { return dd.id === src.durationId; });
+      var sessionPrice = dur && dur.price ? dur.price : 0;
+
+      var addonHtml = addonLines.map(function (a) {
+        return '<div class="summary-line summary-line-muted"><span>' + escapeHtml(a.label) + '</span><span>' + currency.format(a.amount) + '</span></div>';
+      }).join("");
+
+      var multiplier = (window.WWSPricing && window.WWSPricing.dayDiscountMultiplier)
+        ? window.WWSPricing.dayDiscountMultiplier(idx) : 1;
+      var dayBadge = idx === 0
+        ? '<span class="summary-pill" style="border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)">Day 1</span>'
+        : '<span class="summary-pill" style="border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)">Day ' + (idx + 1) + ' · add-ons ' + Math.round(multiplier * 100) + '%</span>';
+
+      var actions;
+      if (row.isDraft) {
+        actions = '<button type="button" class="booking-button booking-button-secondary" data-action="back-to-cart-edit" style="padding:0.4rem 0.8rem;font-size:0.8rem">Edit this session</button>';
+      } else {
+        actions =
+          '<button type="button" class="booking-button booking-button-secondary" data-action="edit-cart-session" data-index="' + row.committedIndex + '" style="padding:0.4rem 0.8rem;font-size:0.8rem">Edit</button>' +
+          '<button type="button" class="booking-button booking-button-secondary" data-action="remove-cart-session" data-index="' + row.committedIndex + '" style="padding:0.4rem 0.8rem;font-size:0.8rem">Remove</button>';
+      }
+
+      return '<div class="booking-panel-soft p-5" style="margin-top:1rem">' +
+        '<div class="ui-row-start" style="margin-bottom:0.5rem">' +
+          '<div>' +
+            '<p class="ui-copy-strong">' + escapeHtml(d.durationLabel) + (d.isEvent ? ' · Event' : '') + (row.isDraft ? ' <span class="ui-copy-muted" style="font-size:0.8rem">(current)</span>' : '') + '</p>' +
+            '<p class="ui-copy-muted" style="font-size:0.85rem">' + escapeHtml(d.locationName) + ' · ' + escapeHtml(d.when) + '</p>' +
+          '</div>' +
+          dayBadge +
+        '</div>' +
+        '<div class="summary-list">' +
+          '<div class="summary-line"><span>Session</span><span>' + currency.format(sessionPrice) + '</span></div>' +
+          addonHtml +
+        '</div>' +
+        '<div style="display:flex;gap:0.75rem;margin-top:0.75rem">' + actions + '</div>' +
+      '</div>';
+    }).join("");
+
+    var totalsHtml = "";
+    if (totals) {
+      var discountLine = totals.addonDiscount > 0
+        ? '<div class="summary-line summary-line-muted"><span>Multi-day add-on discount</span><span>−' + currency.format(totals.addonDiscount / 100) + '</span></div>'
+        : '';
+      totalsHtml =
+        '<div class="booking-panel-soft p-5" style="margin-top:1rem">' +
+          '<p class="ui-kicker" style="margin-bottom:1rem">Cart total</p>' +
+          '<div class="summary-list">' +
+            '<div class="summary-line"><span>Sessions</span><span>' + currency.format(totals.sessionTotal / 100) + '</span></div>' +
+            '<div class="summary-line summary-line-muted"><span>Add-ons</span><span>' + currency.format(totals.addonTotalFull / 100) + '</span></div>' +
+            discountLine +
+            '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
+            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(totals.total / 100) + '</strong></span></div>' +
+          '</div>' +
+          renderCartDepositRow(totals) +
+        '</div>';
+      // Stash so updatePayButton can label the cart pay button.
+      state._grandTotal = (state.paymentMode === "deposit" && window.WWSPricing.depositSplit)
+        ? window.WWSPricing.depositSplit(totals.total).depositCents / 100
+        : totals.total / 100;
+    }
+
+    container.innerHTML =
+      '<div class="ui-row-start" style="margin-bottom:0.5rem">' +
+        '<p class="ui-kicker">Your cart · ' + cartSessionCount() + ' sessions</p>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="back-to-cart-edit" style="padding:0.4rem 0.8rem;font-size:0.8rem">+ Add / edit sessions</button>' +
+      '</div>' +
+      cards +
+      totalsHtml;
+
+    // The cart total just (re)set state._grandTotal — relabel the pay button.
+    updatePayButton();
+  }
+
+  // Map one session snapshot (committed or active-draft) to the server cart
+  // session payload shape: { appointmentTypeID, datetime, location, addons,
+  // eventIntent, intake, participants, eventDescription, foodDrinks }.
+  function snapshotToSessionPayload(s) {
+    var pi = s.perSessionIntake || {};
+    return {
+      appointmentTypeID: appointmentTypeIdFor(s.durationId, s.location),
+      datetime: s.selectedTime,
+      location: s.location,
+      addons: s.addons || {},
+      eventIntent: s.eventIntent === "yes" ? "yes" : "no",
+      intake: { business: pi.business || "", participants: pi.participants || "" },
+      participants: pi.participants || "",
+      eventDescription: pi.eventDescription || "",
+      foodDrinks: s.foodDrinks != null ? s.foodDrinks : (state.foodDrinks != null ? state.foodDrinks : false)
+    };
+  }
+
+  // Assemble the { sessions, universal, paymentMode } cart payload for
+  // create-checkout. Sessions come from the committed cart; when the cart is
+  // empty (single-session deposit) the active draft is the one session.
+  function buildCartCheckoutBody(squareToken) {
+    // Committed sessions PLUS the active draft (the draft is never committed
+    // until pay, so it must be appended here). For the single-session deposit
+    // path the committed list is empty and the draft is the only session.
+    var snapshots = state.cart.sessions.slice();
+    // Append the active draft only when it has a real slot (a fresh, un-slotted
+    // draft after "Add another session" is not a bookable session).
+    if (state.selectedTime) snapshots.push(snapshotActiveSession());
+    var sessions = snapshots.map(snapshotToSessionPayload);
+    return {
+      sessions: sessions,
+      paymentMode: state.paymentMode === "deposit" ? "deposit" : "full",
+      universal: {
+        contact: state.contact,
+        intake: state.intake,
+        waiverSigned: state.waiverSigned,
+        termsSignature: state.termsSignature,
+        emailAcknowledgment: state.emailAcknowledgment,
+        cardholderName: (state.nameOnCard || "").trim(),
+        squareToken: squareToken,
+        clientIdempotencyKey: state.bookingAttemptId,
+        consent: {
+          cardOnFile: true,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent
+        }
+      }
+    };
+  }
+
+  // Deposit option (V3 item 6) — pay 60% now — shown only when the cart contains
+  // an event booking (deposit is event-only, enforced server-side too).
+  function renderCartDepositRow(totals) {
+    var cartHasEvent = state.cart.sessions.some(function (s) { return s.eventIntent === "yes"; })
+      || state.eventIntent === "yes"; // include the active draft
+    if (!cartHasEvent || !window.WWSPricing || !window.WWSPricing.depositSplit) {
+      if (state.paymentMode === "deposit") state.paymentMode = "full"; // can't deposit a non-event cart
+      return "";
+    }
+    var split = window.WWSPricing.depositSplit(totals.total);
+    return '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
+      '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
+      '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(totals.total / 100) + '</span></label>' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (balance ' + currency.format(split.balanceDueCents / 100) + ' due 48h before)</span></label>' +
+      '</div>';
+  }
 
   // Pre-fill the promo field from the URL. Campaign emails link to
   // /book-powdersville?promo=<CODE> (param `promo`, with `coupon`/`code` as
@@ -393,6 +762,46 @@
 
       if (action === "pay-and-book") {
         handlePayAndBook();
+        return;
+      }
+
+      // --- V3 item 2: multi-session cart actions ---------------------------
+      if (action === "add-another-session") {
+        addAnotherSession();
+        return;
+      }
+
+      if (action === "review-cart") {
+        // Show the review. The active draft is NOT committed here — the review
+        // lists committed sessions PLUS the active draft as the final row, so
+        // there's no double-commit when the user goes back to edit.
+        state._cartReviewing = true;
+        renderStepContent();
+        scrollToCart();
+        return;
+      }
+
+      if (action === "edit-cart-session") {
+        editCartSession(Number(actionTarget.dataset.index));
+        return;
+      }
+
+      if (action === "remove-cart-session") {
+        removeCartSession(Number(actionTarget.dataset.index));
+        return;
+      }
+
+      if (action === "back-to-cart-edit") {
+        // Leave the review view and return to editing the active draft.
+        state._cartReviewing = false;
+        renderStepContent();
+        return;
+      }
+
+      if (action === "set-payment-mode") {
+        state.paymentMode = actionTarget.dataset.mode === "deposit" ? "deposit" : "full";
+        renderCheckoutPanel();
+        renderCartSummary();
         return;
       }
 
@@ -664,6 +1073,15 @@
         updateTermsGate();
       }
 
+      // V3 item 6: deposit/full radios (also handled in the click dispatcher;
+      // change fires for keyboard selection). Re-render the cart total + button.
+      if (target.matches("[data-action='set-payment-mode']")) {
+        state.paymentMode = target.dataset.mode === "deposit" ? "deposit" : "full";
+        renderCheckoutPanel();
+        renderCartSummary();
+        return;
+      }
+
       if (target.matches("[data-input='card-on-file-consent']")) {
         state.cardOnFileConsent = target.checked;
         var cofHint = document.querySelector("[data-hint='card-on-file-consent']");
@@ -685,6 +1103,8 @@
     renderCheckoutPanel();
     renderWaiver();
     renderSummary();
+    renderCartBranch();
+    renderCartSummary();
     renderStepVisibility();
     updateTermsGate();
     updateWaiverGate();
@@ -724,7 +1144,7 @@
       { index: 2, label: "Schedule" },
       { index: 3, label: "Details" },
       { index: 4, label: "Waiver" },
-      { index: 5, label: "Add-ons" }
+      { index: 5, label: "Review" }
     ];
 
     const maxStep = getMaxAccessibleStep();
@@ -800,10 +1220,16 @@
   function getAppointmentTypeID() {
     const selectedDuration = getSelectedDuration();
     if (!selectedDuration) return null;
-    const locationSlug = location.slug === "taylors-mill" ? "taylors-mill" : "powdersville";
+    return appointmentTypeIdFor(selectedDuration.id, location.slug);
+  }
+
+  // appointmentTypeID for an arbitrary duration + location slug (used by the
+  // cart path to resolve committed sessions, which store durationId/location).
+  function appointmentTypeIdFor(durationId, locationSlug) {
+    const slug = locationSlug === "taylors-mill" ? "taylors-mill" : "powdersville";
     const acuityLocations = config.integrations.acuity.locations || {};
-    const locConfig = acuityLocations[locationSlug] || {};
-    const durConfig = (locConfig.durations || {})[selectedDuration.id] || {};
+    const locConfig = acuityLocations[slug] || {};
+    const durConfig = (locConfig.durations || {})[durationId] || {};
     return durConfig.appointmentTypeId || null;
   }
 
@@ -1046,9 +1472,6 @@
       }
     }
 
-    // Stash the live total so updatePayButton() can label the button.
-    state._grandTotal = grandTotal;
-
     // Discount line — only when a code is applied and discounts the session.
     var couponLineHtml = '';
     if (state.coupon && couponDiscount > 0) {
@@ -1056,6 +1479,35 @@
         '<div class="summary-line summary-line-muted"><span>Promo · ' + escapeHtml(state.coupon.code) +
         ' (' + state.coupon.percentOff + '% off session)</span><span>−' + currency.format(couponDiscount) + '</span></div>';
     }
+
+    // V3 item 6: deposit option (pay 60% now) for EVENT bookings only. Offered
+    // in review mode is the cart's job; here it's the single-session event path.
+    // When deposit is selected the charge becomes 60% of the total (the rest is
+    // captured 48h before via the saved card, server-side). depositSplit lives
+    // in pricing-shared so the displayed amount matches the server recompute.
+    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive();
+    var depositHtml = '';
+    var chargeTotal = grandTotal;
+    if (isSingleEvent && window.WWSPricing && window.WWSPricing.depositSplit) {
+      var split = window.WWSPricing.depositSplit(Math.round(grandTotal * 100));
+      if (state.paymentMode === "deposit") {
+        chargeTotal = split.depositCents / 100;
+      }
+      depositHtml =
+        '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
+        '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
+        '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
+          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(grandTotal) + '</span></label>' +
+          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (balance ' + currency.format(split.balanceDueCents / 100) + ' due 48h before)</span></label>' +
+        '</div>';
+    } else if (state.paymentMode === "deposit") {
+      // Non-event single session can't deposit — fall back to full.
+      state.paymentMode = "full";
+    }
+
+    // Stash the live charge amount so updatePayButton() can label the button.
+    // (deposit charges 60%; full charges the grand total — both in dollars.)
+    state._grandTotal = chargeTotal;
 
     return '<div class="booking-panel-soft p-5 mt-5">' +
       '<p class="ui-kicker" style="margin-bottom:1rem">Order summary</p>' +
@@ -1067,6 +1519,7 @@
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
         '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
       '</div>' +
+      depositHtml +
       renderCouponRow() +
       '<p class="ui-copy-muted payment-note" style="margin-top:1rem">' + escapeHtml(timeLabel) + ' at ' + escapeHtml(location.name) + '</p>' +
     '</div>';
@@ -1112,7 +1565,14 @@
       return;
     }
 
-    container.innerHTML = renderOrderSummary();
+    // In cart review mode the cart-summary owns the totals + deposit option, so
+    // suppress the single-draft order summary (it would duplicate/confuse). The
+    // payment section stays visible — one pay button charges the whole cart.
+    if (state._cartReviewing && cartIsActive()) {
+      container.innerHTML = '';
+    } else {
+      container.innerHTML = renderOrderSummary();
+    }
     if (paySection) paySection.hidden = false;
 
     // Prefill "Name on card" from the Step-3 booker until the user edits it,
@@ -1204,13 +1664,18 @@
     var btn = document.querySelector("[data-pay-btn]");
     if (!btn) return;
     var total = state._grandTotal;
+    // A session exists to pay for when there's an active slot OR (cart mode) at
+    // least one committed session. The cart can be paid with the current draft
+    // un-slotted (the committed sessions are bookable on their own).
+    var hasSession = !!state.selectedTime || (state._cartReviewing && cartIsActive());
     var ready = state.squareCardReady && state.cardOnFileConsent &&
-      !state.isSubmitting && !!state.selectedTime;
+      !state.isSubmitting && hasSession;
     btn.disabled = !ready;
+    var depositMode = state.paymentMode === "deposit";
     if (state.isSubmitting) {
       btn.textContent = "Processing…";
     } else if (typeof total === "number") {
-      btn.textContent = "Pay & Book — " + currency.format(total);
+      btn.textContent = (depositMode ? "Pay deposit & Book — " : "Pay & Book — ") + currency.format(total);
     } else {
       btn.textContent = "Pay & Book";
     }
@@ -1330,24 +1795,34 @@
 
     var appointmentTypeID = getAppointmentTypeID();
 
+    // V3 item 2/6: this booking routes through the cart endpoint when more than
+    // one session is in play OR a deposit was chosen. The cart endpoint verifies
+    // every session's availability server-side, so the single-slot client
+    // pre-verify below is skipped for the cart path (and would be wrong when the
+    // active draft has no slot in review mode).
+    var willUseCart = cartIsActive() || (state.paymentMode === "deposit");
+
     try {
-      // Verify the slot is still available
-      var verifyRes = await fetch("/api/verify-availability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          appointmentTypeID: appointmentTypeID,
-          datetime: state.selectedTime
-        })
-      });
-      var verifyData = await verifyRes.json();
-      if (!verifyData.available) {
-        alert("Sorry, that time slot is no longer available. Please select a different time.");
-        state.selectedTime = "";
-        state.isSubmitting = false;
-        updatePayButton();
-        fetchAvailableTimes(appointmentTypeID, state.selectedDate);
-        return;
+      // Verify the (single-session) slot is still available. Cart path defers to
+      // the server's per-session verification.
+      if (!willUseCart) {
+        var verifyRes = await fetch("/api/verify-availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            appointmentTypeID: appointmentTypeID,
+            datetime: state.selectedTime
+          })
+        });
+        var verifyData = await verifyRes.json();
+        if (!verifyData.available) {
+          alert("Sorry, that time slot is no longer available. Please select a different time.");
+          state.selectedTime = "";
+          state.isSubmitting = false;
+          updatePayButton();
+          fetchAvailableTimes(appointmentTypeID, state.selectedDate);
+          return;
+        }
       }
 
       // Tokenize: CHARGE_AND_STORE = charge now + save card on file.
@@ -1383,10 +1858,16 @@
         return;
       }
 
-      var checkoutRes = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // V3 item 2/6: route to the multi-session cart payload when this booking
+      // is a cart (more than one session committed) OR when a single-session
+      // EVENT chose the 60% deposit (the cart endpoint owns deposit mode). The
+      // single-session FULL-pay payload below is byte-identical to before.
+      var useCartPayload = willUseCart;
+      var checkoutBody;
+      if (useCartPayload) {
+        checkoutBody = buildCartCheckoutBody(tok.token);
+      } else {
+        checkoutBody = {
           appointmentTypeID: appointmentTypeID,
           datetime: state.selectedTime,
           location: location.slug,
@@ -1412,7 +1893,13 @@
             timestamp: new Date().toISOString(),
             userAgent: navigator.userAgent
           }
-        })
+        };
+      }
+
+      var checkoutRes = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(checkoutBody)
       });
       var checkoutData = await checkoutRes.json();
 
@@ -1649,9 +2136,26 @@
   }
 
   function renderAddons() {
-    const container = document.querySelector("[data-addon-list]");
+    // V3 item 2: add-ons moved EARLY (Drew) — render into the step-3 container
+    // when it exists and hide the legacy step-5 list so the customer picks
+    // add-ons right after the photo/event intent choice. Falls back to the
+    // step-5 list if the early container isn't present (defensive — older HTML).
+    var earlyContainer = document.querySelector("[data-addon-list-early]");
+    var legacyContainer = document.querySelector("[data-addon-list]");
+    var container = earlyContainer || legacyContainer;
     if (!container) {
       return;
+    }
+    if (earlyContainer) {
+      // Show the early list only once an intent is chosen (the add-on set
+      // depends on event vs photo for PV's events-only add-ons), then hide the
+      // legacy step-5 list to avoid a duplicate render.
+      earlyContainer.hidden = !state.eventIntent;
+      earlyContainer.classList.add("choice-grid", "is-two-up");
+      if (legacyContainer && legacyContainer !== earlyContainer) {
+        legacyContainer.hidden = true;
+        legacyContainer.innerHTML = "";
+      }
     }
 
     var scrollPositions = {};
@@ -1937,7 +2441,7 @@
     });
   }
 
-  var STEP_NAMES = { 1: "Duration", 2: "Schedule", 3: "Details", 4: "Waiver", 5: "Add-ons & Pay" };
+  var STEP_NAMES = { 1: "Duration", 2: "Schedule", 3: "Details", 4: "Waiver", 5: "Review & Pay" };
 
   function setStep(step) {
     state.step = clamp(step, 1, 5);

@@ -43,6 +43,7 @@
     }
   </script>
   <script src="/scripts/booking-config.js" defer></script>
+  <script src="/scripts/pricing-shared.js" defer></script>
   <script src="/scripts/booking-flow.js" defer></script>
   <script src="/scripts/staging-banner.js"></script>
 </head>
@@ -116,6 +117,12 @@
           <h2 class="font-display text-4xl mt-3">Session details</h2>
 
           <div class="mt-8" data-event-step></div>
+
+          <!-- V3 item 2: add-ons moved EARLY (right after the photo/event intent
+               choice), per Drew. Populated by booking-flow when the cart UI is
+               active; the legacy step-5 add-on list stays in place but is hidden
+               in that mode so the single-session path is unaffected otherwise. -->
+          <div data-addon-list-early hidden></div>
 
           <div data-step3-details style="display:none">
           <div class="mt-8">
@@ -223,16 +230,28 @@
           <div class="mt-8" data-waiver-content></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="3">Back</button>
-            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="5" data-requires-waiver disabled>Continue to add-ons</button>
+            <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="5" data-requires-waiver disabled>Continue to review &amp; pay</button>
           </div>
           <p class="signature-hint" data-gate-hint="waiver" aria-live="polite"></p>
         </div>
 
         <div class="mt-8 booking-step" data-step-panel="5">
           <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 5</p>
-          <h2 class="font-display text-4xl mt-3">Optional add-ons</h2>
-          <p class="text-sm text-black/50 mt-4">Enhance your session with backdrops and lighting.</p>
+          <h2 class="font-display text-4xl mt-3">Review &amp; pay</h2>
+          <p class="text-sm text-black/50 mt-4">Review your booking, add another session if you need more days, then pay.</p>
+          <!-- Legacy step-5 add-on list. Add-ons moved EARLY (into Step 3) per
+               Drew; booking-flow hides this list and renders into the step-3
+               container instead. Kept for back-compat / no-JS-cart fallback. -->
           <div class="choice-grid is-two-up mt-8" data-addon-list></div>
+
+          <!-- V3 item 2: multi-session cart. The branch lets a customer add
+               another session to the same cart or proceed to review + pay; the
+               cart-summary lists every session with per-session + cart totals.
+               Both are populated by booking-flow only when the cart UI is active
+               (more than one session, or after "Add another session"). -->
+          <div class="mt-8" data-cart-branch hidden></div>
+          <div class="mt-8" data-cart-summary hidden></div>
+
           <div class="mt-8" data-checkout-summary></div>
 
           <div class="booking-panel-soft p-5 mt-6" data-payment-section hidden>
