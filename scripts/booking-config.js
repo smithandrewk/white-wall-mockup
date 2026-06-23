@@ -20,6 +20,7 @@ window.WWS_BOOKING_CONFIG = {
         { id: "pv-3", label: "3 hours", hours: 3, price: 270, description: "Larger set builds and multi-look shoots.", supportsEvents: true, acuityTypeKey: "powdersville_3hr" },
         { id: "pv-4", label: "4 hours", hours: 4, price: 350, description: "Small events start here.", supportsEvents: true, acuityTypeKey: "powdersville_4hr" },
         { id: "pv-6", label: "6 hours", hours: 6, price: 500, description: "Expanded events and productions.", supportsEvents: true, acuityTypeKey: "powdersville_6hr" },
+        { id: "pv-8", label: "8 hours", hours: 8, price: 750, description: "Full-length events and large productions. Earliest start 12:30pm.", supportsEvents: true, earliestStartMinutes: 750, acuityTypeKey: "powdersville_8hr" },
         { id: "pv-full", label: "Full day (5am–11pm access)", hours: 18, price: 980, description: "All-day productions and event builds.", supportsEvents: true, acuityTypeKey: "powdersville_full_day" }
       ],
       addons: [
@@ -107,6 +108,26 @@ window.WWS_BOOKING_CONFIG = {
           buttonImage: "images/gear-rentals/whitewall-powdersville_v2-33.jpg",
           price: 40,
           description: "Large speaker with aux cable to connect to any phone, with wired microphone and stand."
+        },
+        {
+          id: "setup-crew",
+          type: "toggle",
+          name: "Studio Setup Crew",
+          price: 750,
+          eventsOnly: true,
+          requiresPlacements: true,
+          description:
+            "WhiteWall is designed to be an affordable event space by giving clients the option to handle setup and reset themselves.\n\nWithout the Studio Setup Crew add-on, the studio will be arranged as it normally is for photo sessions, with furniture, rugs, mirrors, tables, and decor in their standard places, as shown in the gallery photos. If you want a custom event layout, you are welcome to move those items out of the way, retrieve any rented add-ons such as chairs or tables from storage, set them up for your event, and then return everything afterward.\n\nAt the end of your booking, all rented items must be packed back onto their dollies, strapped back down, and returned to storage, and all studio furniture and decor must be placed back exactly as it was when you arrived.\n\nIf you would rather not handle that setup and reset process yourself, our Studio Setup Crew can take care of it for you.\n\nOur crew tears down the existing studio floor plan, moves anything you do not want visible out of the way or into the storage building, places your rented event assets in the middle of the space before you arrive so everything is ready to use, and handles the full post-event reset. We will bring any included tables, chairs, PA system, TV, and other rented assets into the middle of the studio on the dollies and remove the straps so everything is completely ready to go. You can walk in and immediately grab the first chair off the top of the rack.\n\nThis does not include designing or placing your final floor plan. We are not physically taking chairs off the dolly and setting them up in your room layout. When your booking is finished, you can leave the chairs and items exactly where they are on the ground, and our crew will pack everything back up and reset the space.",
+          placementItems: [
+            { id: "utility-tables", label: "Utility tables and extension cords", options: ["Back garage corner", "Leave where it currently is"] },
+            { id: "white-boxes", label: "White boxes", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+            { id: "plants", label: "Plants", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+            { id: "living-room-rug", label: "Living room rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+            { id: "living-room-furniture", label: "Living room furniture", options: ["Back garage corner", "Leave where it currently is"] },
+            { id: "getting-ready-rug", label: "Getting-Ready area Rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+            { id: "getting-ready-furniture", label: "Getting-Ready area Furniture", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+            { id: "large-table-chairs", label: "Large table and chairs", options: ["Back garage corner", "Leave where it currently is"] }
+          ]
         }
       ]
     },
@@ -193,6 +214,10 @@ window.WWS_BOOKING_CONFIG = {
             "pv-6": {
               appointmentTypeId: "89114539",
               schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=89114539"
+            },
+            "pv-8": {
+              appointmentTypeId: "94823049",
+              schedulerUrl: "https://app.acuityscheduling.com/schedule.php?owner=24638772&appointmentType=94823049"
             },
             "pv-full": {
               appointmentTypeId: "89114581",

@@ -82,6 +82,7 @@ const VALID_APPOINTMENT_TYPE_IDS = new Set([
   "89114444", // 3hr  — $270
   "89114517", // 4hr  — $350
   "89114539", // 6hr  — $500
+  "94823049", // 8hr  — $750 (V3 item 3, earliest 12:30pm)
   "89114581", // Full — $980
   // Taylor's Mill (calendarID: 6252295)
   "38342199", // 1hr  — $110
@@ -131,6 +132,9 @@ const ACUITY_ADDON_IDS = {
   // Equipment (PV only)
   "tv": 6840276,                    // "86in Rolling TV" — $50
   "pa-system": 6840278,             // "PA System" — $40
+
+  // Studio Setup Crew (PV events only) — $750 (V3 item 5)
+  "setup-crew": 7088190,            // "Studio Setup, Tear down, and Reset Crew."
 
   // Cleaning fee (auto-applied at 35+ participants)
   "cleaning-fee": 6881547           // "Cleaning Fee" — $150
@@ -219,6 +223,11 @@ function buildAcuityAddonIDs(addons, location) {
     ids.push(ACUITY_ADDON_IDS["pa-system"]);
   }
 
+  // Studio Setup Crew (PV events only)
+  if (addons["setup-crew"] && addons["setup-crew"].selected) {
+    ids.push(ACUITY_ADDON_IDS["setup-crew"]);
+  }
+
   return ids;
 }
 
@@ -273,9 +282,21 @@ function buildAppointmentNotes(bookingState) {
   if (addons.tables && addons.tables.quantity > 0) addonLines.push("Tables: " + addons.tables.quantity);
   if (addons.tv && addons.tv.selected) addonLines.push("86in TV: Yes");
   if (addons["pa-system"] && addons["pa-system"].selected) addonLines.push("PA system: Yes");
+  if (addons["setup-crew"] && addons["setup-crew"].selected) addonLines.push("Studio Setup Crew: Yes");
 
   if (addonLines.length) {
     lines.push("", "Add-ons:", ...addonLines);
+  }
+
+  // Studio Setup Crew placement choices (where each item should go).
+  if (addons["setup-crew"] && addons["setup-crew"].selected && addons["setup-crew"].placements) {
+    const placements = addons["setup-crew"].placements;
+    const placementLines = SETUP_CREW_PLACEMENT_ITEMS
+      .filter(function (item) { return placements[item.id]; })
+      .map(function (item) { return item.label + " -> " + placements[item.id]; });
+    if (placementLines.length) {
+      lines.push("", "Setup Crew placements:", ...placementLines);
+    }
   }
 
   if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
@@ -311,7 +332,7 @@ const CALENDAR_IDS = {
 
 // Map appointment type ID to its calendar ID
 const TYPE_TO_CALENDAR = {};
-["89113040","89113116","89114444","89114517","89114539","89114581"].forEach(function(id) {
+["89113040","89113116","89114444","89114517","89114539","94823049","89114581"].forEach(function(id) {
   TYPE_TO_CALENDAR[id] = CALENDAR_IDS.powdersville;
 });
 ["38342199","28312352","28312534","28312549","36030598","28312569"].forEach(function(id) {
@@ -321,10 +342,44 @@ const TYPE_TO_CALENDAR = {};
 // Map appointment type ID to duration in minutes (for block end time)
 const TYPE_TO_DURATION = {
   "89113040": 60, "89113116": 120, "89114444": 180,
-  "89114517": 240, "89114539": 360, "89114581": 1080,
+  "89114517": 240, "89114539": 360, "94823049": 480, "89114581": 1080,
   "38342199": 60, "28312352": 120, "28312534": 180,
   "28312549": 240, "36030598": 360, "28312569": 720
 };
+
+// ---------------------------------------------------------------------------
+// Earliest-start floor — Eastern local minutes-since-midnight, keyed by type.
+// Acuity has no per-type "earliest time" setting, so we enforce it in code
+// across availability-times (filter), verify-availability + create-checkout
+// (reject). Single source of truth so the three sites can't drift.
+// ---------------------------------------------------------------------------
+const TYPE_EARLIEST_START_MINUTES = {
+  "94823049": 12 * 60 + 30  // 8h Flagship — earliest 12:30pm ET (V3 item 3)
+};
+
+// Eastern (America/New_York) local minutes-since-midnight for an ISO datetime.
+function easternMinutesFromISO(iso) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(new Date(iso));
+  let h = 0, m = 0;
+  for (const p of parts) {
+    if (p.type === "hour") h = parseInt(p.value, 10);
+    if (p.type === "minute") m = parseInt(p.value, 10);
+  }
+  if (h === 24) h = 0; // some runtimes emit "24" for midnight under hour12:false
+  return h * 60 + m;
+}
+
+// True when this type has an earliest-start floor and the given start is before it.
+function isStartBeforeEarliest(appointmentTypeID, iso) {
+  const floor = TYPE_EARLIEST_START_MINUTES[String(appointmentTypeID)];
+  if (floor == null) return false;
+  return easternMinutesFromISO(iso) < floor;
+}
 
 // ---------------------------------------------------------------------------
 // Session prices in cents — server-side source of truth for Square line items
@@ -336,6 +391,7 @@ const SESSION_PRICES = {
   "89114444": { label: "3 Hour Session", cents: 27000 },
   "89114517": { label: "4 Hour Session", cents: 35000 },
   "89114539": { label: "6 Hour Session", cents: 50000 },
+  "94823049": { label: "8 Hour Session", cents: 75000 },
   "89114581": { label: "Full Day Session", cents: 98000 },
   "38342199": { label: "1 Hour Session", cents: 11000 },
   "28312352": { label: "2 Hour Session", cents: 17000 },
@@ -357,6 +413,7 @@ const SQUARE_CATALOG_SANDBOX = {
   "89114444": "RVIEPZLDJ3YDLTIXZPIJA4CO",
   "89114517": "DO2VVO55EE5JIWVDVLDYEHME",
   "89114539": "CQUBMEHPZOXZMLIDO6CA5R4A",
+  "94823049": "KUWJ3TEUOQWIZTG46Q4TBX7D", // 8h session (V3 item 3). PROD catalog id still TODO — needs prod Square creds; only affects coupon targeting, not charging.
   "89114581": "CIHBY3IG7LAWHFCQZYFTICU7",
   "38342199": "HCML3FUK2CBN2YCA4WJEXRSW",
   "28312352": "3DGAVCMMITO2NFTZD6V6XQNY",
@@ -391,8 +448,25 @@ const ADDON_PRICES = {
   "chairs-100": { label: "100 Chairs", cents: 37000 },
   "table": { label: "8ft Folding Table", cents: 1500 },
   "tv": { label: "86in Rolling TV", cents: 5000 },
-  "pa-system": { label: "PA System", cents: 4000 }
+  "pa-system": { label: "PA System", cents: 4000 },
+  "setup-crew": { label: "Studio Setup Crew", cents: 75000 }
 };
+
+// ---------------------------------------------------------------------------
+// Studio Setup Crew placement items (V3 item 5) — server-side source of truth.
+// Each selected booking must specify where every item goes. Mirrors
+// placementItems in scripts/booking-config.js; used for notes + validation.
+// ---------------------------------------------------------------------------
+const SETUP_CREW_PLACEMENT_ITEMS = [
+  { id: "utility-tables", label: "Utility tables and extension cords", options: ["Back garage corner", "Leave where it currently is"] },
+  { id: "white-boxes", label: "White boxes", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+  { id: "plants", label: "Plants", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+  { id: "living-room-rug", label: "Living room rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+  { id: "living-room-furniture", label: "Living room furniture", options: ["Back garage corner", "Leave where it currently is"] },
+  { id: "getting-ready-rug", label: "Getting-Ready area Rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+  { id: "getting-ready-furniture", label: "Getting-Ready area Furniture", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+  { id: "large-table-chairs", label: "Large table and chairs", options: ["Back garage corner", "Leave where it currently is"] }
+];
 
 // Build Square line items array from booking state
 // Returns [{ name, amount (cents), quantity, catalogObjectId? }]
@@ -457,6 +531,11 @@ function buildSquareLineItems(appointmentTypeID, addons, location) {
     items.push({ name: ADDON_PRICES["pa-system"].label, amount: ADDON_PRICES["pa-system"].cents, quantity: 1 });
   }
 
+  // Studio Setup Crew (PV events only) — flat once-per-event
+  if (addons["setup-crew"] && addons["setup-crew"].selected) {
+    items.push({ name: ADDON_PRICES["setup-crew"].label, amount: ADDON_PRICES["setup-crew"].cents, quantity: 1 });
+  }
+
   return items;
 }
 
@@ -501,6 +580,10 @@ module.exports = {
   buildSquareLineItems,
   SESSION_PRICES,
   ADDON_PRICES,
+  SETUP_CREW_PLACEMENT_ITEMS,
+  TYPE_EARLIEST_START_MINUTES,
+  easternMinutesFromISO,
+  isStartBeforeEarliest,
   signState,
   verifyAndDecodeState
 };

@@ -533,3 +533,24 @@ Overnight review found that a 100%-off coupon on an add-on-free (session-only) b
 - [x] `api/_lib/coupons.js` — capped `percentOff` at **99** (was 1–100) in `validateCouponAgainst` and the `hasActiveCoupon` gate, so a 100% code never validates. Header doc updated to `1..99`. (Dashboard create-time cap lands in a parallel PR.)
 - [x] `api/create-checkout.js` — added a defensive floor after the coupon discount is subtracted from `totalCents`: if the discount would zero/negative the total, clamp the discount so `totalCents >= 1`. Belt-and-suspenders so no future/misconfigured coupon can post a $0 charge. Isolated + fail-open — no change to normal (no-coupon) bookings.
 - [x] Verified: `node --check` on both files. Throwaway node test — 100% code now invalid, 99% valid, 50% valid (unchanged), 99%-off $130 session-only keeps total at 130¢, floor holds total ≥ 1¢ even given a hypothetical 100% discount, no-coupon path unchanged. With `COUPONS`/`EDGE_CONFIG` unset (prod state) nothing changes.
+
+## Feedback Round 27 (2026-06-22) — Drew's email V3, ship-now slice (items 3 + 5)
+
+V3 is a 7-item doc; only items 3 and 5 ship inside the current single-session flow. The rest (multi-day cart, deposits/auto-charge, forced accounts) are a coordinated rebuild blocked on an Andrew architecture decision. Source logged verbatim at `client/comms/2026-06-22-drew-email-v3-answers.md`. Plan: pip task T018.
+
+**Item 3 — 8-hour Flagship/Powdersville session, $750, earliest 12:30pm**
+- [x] `scripts/booking-config.js` — new `pv-8` duration (8h, $750, `supportsEvents:true`, `earliestStartMinutes:750`) after `pv-6`; `"pv-8"` Acuity mapping → type `94823049`. Taylor's Mill untouched (spec: no 8h at TM). Event-eligible automatically (hours≥2).
+- [x] `api/_lib/acuity.js` — mirrored `94823049` into `VALID_APPOINTMENT_TYPE_IDS`, `TYPE_TO_CALENDAR` (6255578, Powdersville), `TYPE_TO_DURATION` (480), `SESSION_PRICES` (75000¢), `SQUARE_CATALOG_SANDBOX` (sandbox variation `KUWJ3TEUOQWIZTG46Q4TBX7D`).
+- [x] 12:30pm earliest-start enforced in **code**, not Acuity (Acuity has no per-type earliest-time field — why Drew couldn't set it). One shared constant `TYPE_EARLIEST_START_MINUTES` + `easternMinutesFromISO`/`isStartBeforeEarliest`; applied as a filter in `api/availability-times.js` + client `fetchAvailableTimes`, and a hard 400 reject in `api/verify-availability.js` + `api/create-checkout.js`. America/New_York, DST-safe.
+- Acuity type `94823049` was created by Drew; verified via API (8h / $750 / Powdersville+staging calendars / active).
+- [ ] **Deferred:** 5am day-after-a-full-day exception — needs item 2's cart linkage; not in this slice (as planned).
+- [ ] **Follow-up (needs prod Square creds, Andrew/Vercel):** create the production catalog item for the 8h session and add its variation id to the `SQUARE_CATALOG_SESSIONS` prod env. Non-blocking for charging (line item priced from `SESSION_PRICES`); only enables category-scoped coupons to target the 8h session.
+
+**Item 5 / 5a — Studio Setup Crew add-on, $750, events-only**
+- [x] `scripts/booking-config.js` — new `setup-crew` toggle add-on on Powdersville (`eventsOnly:true`, `requiresPlacements:true`, $750), with Drew's full descriptive copy and 8 `placementItems`. Per Drew's reply the free-text box was replaced with **structured placement dropdowns** (one per item, options per his list) and the **video was dropped** ("not quite yet"). Not added to Taylor's Mill.
+- [x] `api/_lib/acuity.js` — `setup-crew` in `ADDON_PRICES` (75000¢) and `ACUITY_ADDON_IDS` (`7088190`); Square line item + Acuity add-on id push; placement choices written into appointment notes (where Drew reads them); `SETUP_CREW_PLACEMENT_ITEMS` source of truth.
+- [x] `scripts/booking-flow.js` — events-only add-ons render only when `eventIntent === "yes"` and are deselected when intent flips off; placement `<select>`s (forced "Select..." default) under the toggle; `set-placement` handler; `placements:{}` init; placement completeness validation in the pay gate (`getValidationErrors`); multi-paragraph description rendering.
+- [x] `api/create-checkout.js` — server guards: reject `setup-crew` on a non-event booking, and reject if any placement is missing/invalid (mirrors the card-on-file 400 pattern; client is never trusted).
+- Acuity add-on `7088190` created by Drew; verified via API ($750).
+- [ ] **Excluded from item 4** per-day add-on discount (Drew: crew is once-per-event, flat). Item 4 isn't built yet, so this is automatically satisfied.
+- [x] Verified: `node --check` on all 6 touched JS files; price parity exact (client 750 ↔ server 75000¢ for both the 8h session and the crew; 8h event + crew = 150000¢ server-side); 12:00 ET rejected, 12:30/13:00 allowed, other types unaffected; calendarID passed (no staging misroute).

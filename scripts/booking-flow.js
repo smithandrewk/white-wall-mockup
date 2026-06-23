@@ -384,6 +384,14 @@
           state.acknowledgements.cleanup = false;
           state.acknowledgements.capacity = false;
           state.acknowledgements.selfService = false;
+          // Deselect events-only add-ons (e.g. Studio Setup Crew) so a non-event
+          // booking can't carry a selection that the server would reject.
+          location.addons.forEach(function (a) {
+            if (a.eventsOnly && state.addons[a.id]) {
+              state.addons[a.id].selected = false;
+              if (state.addons[a.id].placements) state.addons[a.id].placements = {};
+            }
+          });
         }
         renderStepContent();
       }
@@ -551,6 +559,15 @@
 
     document.addEventListener("change", (event) => {
       const target = event.target;
+
+      if (target.matches("[data-action='set-placement']")) {
+        var pAddon = state.addons[target.dataset.addonId];
+        if (pAddon) {
+          if (!pAddon.placements) pAddon.placements = {};
+          pAddon.placements[target.dataset.placementId] = target.value;
+        }
+        return;
+      }
 
       if (target.matches("[data-check='cleanup']")) {
         state.acknowledgements.cleanup = target.checked;
@@ -778,13 +795,40 @@
       const res = await fetch(`/api/availability-times?appointmentTypeID=${appointmentTypeID}&date=${date}`);
       if (!res.ok) throw new Error("Failed to load times");
       const data = await res.json();
-      state.availableTimes = (data.times || []).map(function (t) { return t.time; });
+      var times = (data.times || []).map(function (t) { return t.time; });
+      // Earliest-start floor (e.g. 8h Flagship is 12:30pm ET). Drop any slot
+      // before the duration's floor so the UI never offers a too-early start.
+      // The server (availability-times + verify + create-checkout) enforces the
+      // same floor authoritatively; this is just so the customer never sees it.
+      var floorMin = selectedDuration && selectedDuration.earliestStartMinutes;
+      if (floorMin != null) {
+        times = times.filter(function (t) { return easternMinutesFromTime(t) >= floorMin; });
+      }
+      state.availableTimes = times;
     } catch (err) {
       console.error(err);
       state.availableTimes = [];
     }
     state.isLoadingTimes = false;
     renderScheduleStep();
+  }
+
+  // Eastern (America/New_York) local minutes-since-midnight for an ISO time
+  // string. Mirrors easternMinutesFromISO in api/_lib/acuity.js.
+  function easternMinutesFromTime(iso) {
+    var parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).formatToParts(new Date(iso));
+    var h = 0, m = 0;
+    parts.forEach(function (p) {
+      if (p.type === "hour") h = parseInt(p.value, 10);
+      if (p.type === "minute") m = parseInt(p.value, 10);
+    });
+    if (h === 24) h = 0;
+    return h * 60 + m;
   }
 
   function renderScheduleStep() {
@@ -1558,7 +1602,13 @@
       }
     });
 
-    container.innerHTML = location.addons.map(renderAddonCard).join("");
+    // Events-only add-ons (e.g. Studio Setup Crew) render only when the booking
+    // is an event. eventIntent is PV-only ("yes"/"no"); TM is always non-event.
+    var visibleAddons = location.addons.filter(function (addon) {
+      return !addon.eventsOnly || state.eventIntent === "yes";
+    });
+
+    container.innerHTML = visibleAddons.map(renderAddonCard).join("");
 
     container.querySelectorAll(".backdrop-carousel").forEach(function (el) {
       var addonId = el.closest("[data-addon-card-id]");
@@ -1586,7 +1636,7 @@
               ${formatAddonSubtotal(addon)}
             </span>
           </div>
-          <p class="ui-copy" style="margin-top:1rem">${addon.description || addon.note || ""}</p>
+          <p class="ui-copy" style="margin-top:1rem">${formatAddonDescription(addon)}</p>
           <div style="margin-top:1.25rem">
             ${controls}
           </div>
@@ -1598,10 +1648,10 @@
   function renderAddonControls(addon, addonState) {
     if (addon.type === "toggle") {
       var toggleImg = addon.buttonImage || addon.image;
-      return `
+      var toggleHtml = `
         <div class="backdrop-carousel">
           <button type="button" class="backdrop-card ${addonState.selected ? "is-selected" : ""}" data-action="toggle-addon" data-addon-id="${addon.id}">
-            <img src="${toggleImg}" alt="${escapeHtml(addon.name)}">
+            ${toggleImg ? `<img src="${toggleImg}" alt="${escapeHtml(addon.name)}">` : ""}
             <div class="backdrop-card-body">
               <span class="backdrop-card-label">${addonState.selected ? "Added" : "Add to Booking"}</span>
               <span class="backdrop-card-price">${currency.format(addon.price)}</span>
@@ -1610,6 +1660,33 @@
           </button>
         </div>
       `;
+      // Placement dropdowns (e.g. Studio Setup Crew): when selected, the
+      // customer must say where each studio item should go. Required before pay.
+      if (addon.requiresPlacements && addonState.selected && Array.isArray(addon.placementItems)) {
+        var placements = addonState.placements || {};
+        var rows = addon.placementItems.map(function (item) {
+          var chosen = placements[item.id] || "";
+          var opts = ['<option value="" disabled ' + (chosen ? "" : "selected") + '>Select...</option>']
+            .concat(item.options.map(function (opt) {
+              return '<option value="' + escapeHtml(opt) + '"' + (chosen === opt ? " selected" : "") + ">" + escapeHtml(opt) + "</option>";
+            }))
+            .join("");
+          return `
+            <label class="ui-field" style="display:block;margin-top:0.75rem">
+              <span class="ui-copy-strong">${escapeHtml(item.label)}</span>
+              <select class="booking-input" data-action="set-placement" data-addon-id="${addon.id}" data-placement-id="${item.id}" style="margin-top:0.35rem">
+                ${opts}
+              </select>
+            </label>`;
+        }).join("");
+        toggleHtml += `
+          <div class="addon-placements" style="margin-top:1rem">
+            <p class="ui-copy-strong">Tell our crew where each item should go:</p>
+            ${rows}
+          </div>
+        `;
+      }
+      return toggleHtml;
     }
 
     if (addon.type === "quantity") {
@@ -2243,6 +2320,15 @@
     var tmCount = parseCount(state.intake.participants);
     if (location.slug === "taylors-mill" && tmCount > 50) errors.push("Taylor\u2019s Mill has a maximum capacity of 50 people.");
     if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 35+ participants.");
+    // Studio Setup Crew: every placement must be chosen before pay.
+    location.addons.forEach(function (addon) {
+      if (!addon.requiresPlacements || !Array.isArray(addon.placementItems)) return;
+      var s = state.addons[addon.id];
+      if (!s || !s.selected) return;
+      var placements = s.placements || {};
+      var missing = addon.placementItems.some(function (item) { return !placements[item.id]; });
+      if (missing) errors.push("Please tell our crew where each item should go for the " + addon.name + ".");
+    });
     return errors;
   }
 
@@ -2250,7 +2336,7 @@
 
   function getInitialAddonState(addon) {
     if (addon.type === "toggle") {
-      return { selected: false };
+      return addon.requiresPlacements ? { selected: false, placements: {} } : { selected: false };
     }
     if (addon.type === "quantity") {
       return { quantity: 0 };
@@ -2298,6 +2384,15 @@
   function formatAddonSubtotal(addon) {
     const subtotal = getAddonSubtotal(addon);
     return subtotal ? currency.format(subtotal) : "Optional";
+  }
+
+  // Add-on card description. Most add-ons are a single short line (kept verbatim
+  // as before). A multi-paragraph description (e.g. Studio Setup Crew) is escaped
+  // and its blank-line-separated paragraphs become <br><br> so it stays readable.
+  function formatAddonDescription(addon) {
+    var text = addon.description || addon.note || "";
+    if (text.indexOf("\n") === -1) return text;
+    return escapeHtml(text).replace(/\n{2,}/g, "<br><br>").replace(/\n/g, "<br>");
   }
 
   function getAddonSummary(addon) {

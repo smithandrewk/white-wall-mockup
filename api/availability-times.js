@@ -4,7 +4,7 @@
 // CORS — all API calls must go through a server-side proxy.
 // Docs: https://developers.acuityscheduling.com/reference/get-availability-times
 
-const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR } = require("./_lib/acuity");
+const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR, isStartBeforeEarliest } = require("./_lib/acuity");
 const { stagingCalendarID } = require("./_lib/env");
 
 module.exports = async function handler(req, res) {
@@ -34,7 +34,11 @@ module.exports = async function handler(req, res) {
     const data = await acuityGet("/availability/times", params);
 
     // Acuity returns [{ time: "2026-03-17T09:00:00-0400", slotsAvailable: 1 }, ...]
-    const times = (data || []).map((t) => ({ time: t.time }));
+    // Earliest-start floor (e.g. 8h Flagship is 12:30pm ET): Acuity can't enforce
+    // a per-type earliest time, so drop any slot before the floor here.
+    const times = (data || [])
+      .filter((t) => !isStartBeforeEarliest(appointmentTypeID, t.time))
+      .map((t) => ({ time: t.time }));
 
     // Shorter cache than dates — time slots are more volatile
     res.setHeader("Cache-Control", "s-maxage=30, stale-while-revalidate=60");

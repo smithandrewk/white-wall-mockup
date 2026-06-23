@@ -7,7 +7,7 @@
 // Uses the same Acuity GET /availability/times endpoint and checks if the
 // exact datetime is still in the list.
 
-const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR } = require("./_lib/acuity");
+const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR, isStartBeforeEarliest } = require("./_lib/acuity");
 const { stagingCalendarID } = require("./_lib/env");
 const { alertFailure } = require("./_lib/alert");
 
@@ -24,6 +24,12 @@ module.exports = async function handler(req, res) {
 
   if (!datetime) {
     return res.status(400).json({ error: "Missing datetime" });
+  }
+
+  // Earliest-start floor (e.g. 8h Flagship must start >= 12:30pm ET). Never trust
+  // the client — reject a start before the floor even if it slips past the UI.
+  if (isStartBeforeEarliest(appointmentTypeID, datetime)) {
+    return res.status(400).json({ error: "Selected start time is before the earliest allowed for this session" });
   }
 
   try {
