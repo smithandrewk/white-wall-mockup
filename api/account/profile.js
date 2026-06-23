@@ -9,6 +9,7 @@
 // lookup); the field is surfaced as null until that's wired.
 
 var sb = require("../_lib/supabase");
+var sq = require("../_lib/square");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -33,10 +34,21 @@ module.exports = async function handler(req, res) {
     var bookings = await sb.serviceSelect(
       "bookings",
       "customer_id=eq." + user.id +
-      "&select=id,status,event_intent,total_cents,payment_mode,deposit_cents,balance_due_cents,balance_charge_at,balance_status,created_at," +
+      "&select=id,status,event_intent,total_cents,payment_mode,deposit_cents,balance_due_cents,balance_charge_at,balance_status,square_card_id,created_at," +
       "booking_sessions(id,location,appointment_type_id,starts_at,duration_min,day_index,session_price_cents)" +
       "&order=created_at.desc"
     );
+
+    // Card on file: last 4 + brand from the most recent booking that saved a
+    // card. Best-effort — a Square hiccup just leaves it null, never 500s.
+    var cardOnFile = null;
+    try {
+      var withCard = (bookings || []).find(function (b) { return b.square_card_id; });
+      if (withCard) {
+        var card = await sq.retrieveCard(withCard.square_card_id);
+        if (card && card.last_4) cardOnFile = { last4: card.last_4, brand: card.card_brand || null };
+      }
+    } catch (e) { /* leave null */ }
 
     return res.status(200).json({
       customer: {
@@ -45,7 +57,7 @@ module.exports = async function handler(req, res) {
         fullName: customer.full_name || null,
         phone: customer.phone || null,
         instagram: customer.instagram || null,
-        cardOnFile: null // last4 wired when Square lookup lands
+        cardOnFile: cardOnFile
       },
       bookings: bookings || []
     });

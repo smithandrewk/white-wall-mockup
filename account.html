@@ -108,7 +108,10 @@
         set("[data-email]", c.email);
         set("[data-phone]", c.phone);
         set("[data-instagram]", c.instagram);
-        if (c.cardOnFile) document.querySelector("[data-card]").textContent = "Card ending in " + c.cardOnFile;
+        if (c.cardOnFile && c.cardOnFile.last4) {
+          document.querySelector("[data-card]").textContent =
+            (c.cardOnFile.brand ? c.cardOnFile.brand + " " : "") + "ending in " + c.cardOnFile.last4;
+        }
 
         var wrap = document.querySelector("[data-bookings]");
         var bookings = profile.bookings || [];
