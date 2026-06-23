@@ -9,6 +9,7 @@
 // Env-switched on SQUARE_ENVIRONMENT, mirroring api/_lib/square.js.
 
 var { hasActiveCoupon } = require("./_lib/coupons");
+var sb = require("./_lib/supabase");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -53,6 +54,10 @@ module.exports = async function handler(req, res) {
     squareSdkUrl: isProd
       ? "https://web.squarecdn.com/v1/square.js"
       : "https://sandbox.web.squarecdn.com/v1/square.js",
-    promoActive: promoActive
+    promoActive: promoActive,
+    // Supabase public config (anon key + URL are client-safe, gated by RLS).
+    // Empty when Supabase env is unset — the client skips account features.
+    supabaseUrl: sb.supabaseUrl(),
+    supabaseAnonKey: sb.anonKey()
   });
 };
