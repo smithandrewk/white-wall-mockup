@@ -1372,6 +1372,9 @@
       }
 
       trackEvent("booking_completed", { location: location.slug });
+      // Stash the booker email so the confirmation page can prefill the
+      // "create an account" prompt. Best-effort; never blocks the redirect.
+      try { sessionStorage.setItem("wws_booking_email", state.contact.email || ""); } catch (e) {}
       window.location.href = checkoutData.redirect;
     } catch (err) {
       console.error("Checkout error:", err);
