@@ -50,9 +50,15 @@ curl -s -X POST "https://api.supabase.com/v1/projects/phncotylbsmztfbfhwhi/datab
 
 - [x] Project provisioned, schema + RLS + auth trigger applied and verified (2026-06-22).
 - [x] Auth: email+password enabled; `site_url` + redirect allow-list set to the booking domains.
+- [x] Env wired into Vercel (staging custom env + preview + production): `SUPABASE_URL`,
+      `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Public-config endpoint serves URL + anon key.
+- [x] App surface: `/login` (sign in + create account), `/account` (profile: account info,
+      bookings/sessions, card-on-file slot), `scripts/account.js`, `api/account/{create,profile}`.
+- [x] **Smoke-tested end to end on staging (2026-06-22):** create account -> sign in (JWT) ->
+      profile returns enriched customer; RLS holds; test user cleaned up.
 - [ ] Google login: needs a Google Cloud OAuth client id+secret (Andrew). Email+password works without it.
-- [ ] Wire `SUPABASE_URL` + anon key (client, via a public-config endpoint) and `service_role`
-      (server functions only) into the booking-site Vercel env — done in the auth-code phase.
-- [ ] App: post-payment account creation, login page, customer profile (account info,
-      upcoming sessions, card on file).
-- [ ] Nightly pg_dump backup to the mini (free-tier safety net).
+- [ ] In-flow post-payment account prompt (the "set a password" step) in booking-flow.js +
+      a confirmation-page CTA — kept off the live payment path until reviewed.
+- [ ] Bookings populate the profile once checkout writes to Supabase (the cart build, item 2).
+- [ ] Card-on-file last4 (Square lookup); custom SMTP (Resend) for auth emails at volume.
+- [ ] Prod merge of PR #65 (after review) + nightly pg_dump backup (free-tier safety net).
