@@ -46,6 +46,7 @@ const { notifyOwnerSMS } = require("./_lib/notify-sms");
 const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
+const sbDB = require("./_lib/supabase");
 const crypto = require("crypto");
 
 module.exports = async function handler(req, res) {
@@ -544,6 +545,43 @@ module.exports = async function handler(req, res) {
       try { await notifyCleaner(bookingState, appointment.id); } catch (e) { console.error("notifyCleaner:", e.message); }
       try { await notifyOwnerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
       try { await notifyCustomerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyCustomerSMS:", e.message); }
+
+      // Persist the booking to Supabase so it shows in the customer's profile
+      // (V3 items 2/6/7). Best-effort + isolated: a failure here NEVER breaks a
+      // paid booking (same discipline as the notify-* calls). customer_id is
+      // null until the customer creates/links an account with this email; the
+      // session row carries the Acuity appointment id. Skipped in staging-mock.
+      if (sbDB.isConfigured() && !stagingMocked) {
+        try {
+          var bookingRows = await sbDB.serviceInsert("bookings", {
+            email: contact.email,
+            status: "confirmed",
+            event_intent: (eventIntent === "yes") ? "yes" : "no",
+            subtotal_cents: totalCents,
+            total_cents: totalCents,
+            payment_mode: "full",
+            square_customer_id: customerId,
+            square_card_id: cardOnFile.id,
+            square_payment_id: payment.id
+          });
+          var bookingRow = Array.isArray(bookingRows) ? bookingRows[0] : bookingRows;
+          if (bookingRow && bookingRow.id) {
+            var sessionCents = (lineItems[0] && lineItems[0].amount) ? lineItems[0].amount : totalCents;
+            await sbDB.serviceInsert("booking_sessions", {
+              booking_id: bookingRow.id,
+              acuity_appointment_id: String(appointment.id),
+              location: location,
+              appointment_type_id: String(appointmentTypeID),
+              starts_at: datetime,
+              duration_min: TYPE_TO_DURATION[String(appointmentTypeID)] || 60,
+              day_index: 0,
+              session_price_cents: sessionCents
+            });
+          }
+        } catch (e) {
+          console.error("supabase booking persist:", e.message);
+        }
+      }
 
       // Coupon redemptions are NOT reported from here. The "Promo code: X" line
       // written into the Acuity appointment notes above is the redemption

@@ -66,6 +66,14 @@ module.exports = async function handler(req, res) {
       // swallow — the row exists; profile fields can be filled later
     }
 
+    // Link any bookings this email made before creating the account (the
+    // post-payment flow: book first, set a password after). Best-effort.
+    try {
+      await sb.serviceUpdate("bookings", { email: "ilike." + email, customer_id: "is.null" }, { customer_id: user.id });
+    } catch (e) {
+      // non-fatal — bookings can be linked later
+    }
+
     return res.status(201).json({ ok: true, userId: user.id, email: email });
   } catch (err) {
     return res.status(500).json({ error: "Could not create account", detail: String(err && err.message || err) });
