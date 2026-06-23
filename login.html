@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in - WhiteWall Studios</title>
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518" },
+        fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+      } }
+    }
+  </script>
+  <script src="/scripts/staging-banner.js"></script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/powdersville" class="hover:text-black transition">Flagship Location</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill Location</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-16">
+    <div class="max-w-md mx-auto">
+      <h1 class="font-display text-4xl md:text-5xl leading-none text-center" data-title>Sign in</h1>
+      <p class="text-black/55 mt-4 text-center" data-subtitle>Access your bookings, sessions, and saved card.</p>
+
+      <div class="booking-panel p-6 md:p-8 mt-8">
+        <form data-auth-form class="space-y-4" autocomplete="on">
+          <label class="block">
+            <span class="text-xs tracking-[0.18em] uppercase text-black/45">Email</span>
+            <input type="email" name="email" autocomplete="email" required class="booking-input mt-1 w-full" placeholder="you@example.com">
+          </label>
+          <label class="block">
+            <span class="text-xs tracking-[0.18em] uppercase text-black/45">Password</span>
+            <input type="password" name="password" autocomplete="current-password" required minlength="8" class="booking-input mt-1 w-full" placeholder="••••••••">
+          </label>
+          <p data-error class="text-sm text-red-600 hidden"></p>
+          <p data-notice class="text-sm text-green-700 hidden"></p>
+          <button type="submit" data-submit class="booking-button w-full">Sign in</button>
+        </form>
+
+        <p class="text-sm text-black/55 mt-6 text-center" data-toggle-wrap>
+          <span data-toggle-text>New here?</span>
+          <button type="button" data-toggle class="underline hover:text-black">Create an account</button>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script src="/scripts/account.js"></script>
+  <script>
+    (function () {
+      var mode = "signin"; // or "signup"
+      var form = document.querySelector("[data-auth-form]");
+      var emailEl = form.querySelector('[name="email"]');
+      var passEl = form.querySelector('[name="password"]');
+      var submit = document.querySelector("[data-submit]");
+      var errorEl = document.querySelector("[data-error]");
+      var noticeEl = document.querySelector("[data-notice]");
+      var title = document.querySelector("[data-title]");
+      var subtitle = document.querySelector("[data-subtitle]");
+      var toggle = document.querySelector("[data-toggle]");
+      var toggleText = document.querySelector("[data-toggle-text]");
+
+      // Prefill email from ?email= (used by the post-booking prompt).
+      var params = new URLSearchParams(location.search);
+      if (params.get("email")) emailEl.value = params.get("email");
+      var redirectTo = params.get("next") || "/account";
+
+      function show(el, msg) { el.textContent = msg; el.classList.remove("hidden"); }
+      function hide(el) { el.classList.add("hidden"); }
+
+      function setMode(m) {
+        mode = m;
+        if (m === "signup") {
+          title.textContent = "Create your account";
+          subtitle.textContent = "Set a password to manage your bookings and saved card.";
+          submit.textContent = "Create account";
+          passEl.setAttribute("autocomplete", "new-password");
+          toggleText.textContent = "Already have an account?";
+          toggle.textContent = "Sign in";
+        } else {
+          title.textContent = "Sign in";
+          subtitle.textContent = "Access your bookings, sessions, and saved card.";
+          submit.textContent = "Sign in";
+          passEl.setAttribute("autocomplete", "current-password");
+          toggleText.textContent = "New here?";
+          toggle.textContent = "Create an account";
+        }
+        hide(errorEl); hide(noticeEl);
+      }
+      toggle.addEventListener("click", function () { setMode(mode === "signin" ? "signup" : "signin"); });
+
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        hide(errorEl); hide(noticeEl);
+        submit.disabled = true;
+        var prev = submit.textContent;
+        submit.textContent = "Please wait…";
+        try {
+          if (mode === "signup") {
+            await window.WWSAccount.signUp(emailEl.value, passEl.value);
+            show(noticeEl, "Check your email to confirm your account, then sign in.");
+            setMode("signin");
+          } else {
+            await window.WWSAccount.signInWithPassword(emailEl.value, passEl.value);
+            location.href = redirectTo;
+            return;
+          }
+        } catch (err) {
+          show(errorEl, (err && err.message) || "Something went wrong. Please try again.");
+        } finally {
+          submit.disabled = false;
+          submit.textContent = prev;
+        }
+      });
+
+      // If already signed in, go straight to the account page.
+      window.WWSAccount.getSession().then(function (s) { if (s) location.href = redirectTo; }).catch(function () {});
+
+      if (params.get("mode") === "signup") setMode("signup");
+    })();
+  </script>
+</body>
+</html>

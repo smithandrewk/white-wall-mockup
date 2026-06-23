@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your account - WhiteWall Studios</title>
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518" },
+        fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+      } }
+    }
+  </script>
+  <script src="/scripts/staging-banner.js"></script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+      </a>
+      <div class="flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition hidden md:inline">Home</a>
+        <a href="/book-powdersville" class="hover:text-black transition">Book</a>
+        <button type="button" data-signout class="hover:text-black transition uppercase tracking-[0.2em]">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-12">
+    <div class="max-w-3xl mx-auto">
+      <div data-loading class="text-center text-black/50 py-20">Loading your account…</div>
+
+      <div data-content class="hidden">
+        <h1 class="font-display text-4xl md:text-5xl leading-none">Your account</h1>
+
+        <!-- Account info -->
+        <div class="booking-panel p-6 md:p-8 mt-8">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Account</p>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-sm">
+            <div><dt class="text-black/45">Name</dt><dd data-name class="text-black/80">—</dd></div>
+            <div><dt class="text-black/45">Email</dt><dd data-email class="text-black/80">—</dd></div>
+            <div><dt class="text-black/45">Phone</dt><dd data-phone class="text-black/80">—</dd></div>
+            <div><dt class="text-black/45">Instagram</dt><dd data-instagram class="text-black/80">—</dd></div>
+          </dl>
+        </div>
+
+        <!-- Card on file -->
+        <div class="booking-panel p-6 md:p-8 mt-6">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Payment method</p>
+          <p data-card class="text-sm text-black/70">No card on file yet.</p>
+        </div>
+
+        <!-- Upcoming sessions -->
+        <div class="booking-panel p-6 md:p-8 mt-6">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Your sessions</p>
+          <div data-bookings class="space-y-4"></div>
+          <p data-no-bookings class="text-sm text-black/55 hidden">No bookings yet. <a href="/book-powdersville" class="underline hover:text-black">Book a session</a>.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/scripts/account.js"></script>
+  <script>
+    (function () {
+      var loading = document.querySelector("[data-loading]");
+      var content = document.querySelector("[data-content]");
+
+      function fmtMoney(cents) { return "$" + (Number(cents || 0) / 100).toFixed(2); }
+      function fmtDateTime(iso) {
+        try {
+          return new Date(iso).toLocaleString("en-US", {
+            timeZone: "America/New_York",
+            weekday: "short", month: "short", day: "numeric", year: "numeric",
+            hour: "numeric", minute: "2-digit"
+          });
+        } catch (e) { return iso; }
+      }
+      function locLabel(s) { return s === "powdersville" ? "Flagship (Powdersville)" : (s === "taylors-mill" ? "Taylor's Mill" : s); }
+      function set(sel, val) { var el = document.querySelector(sel); if (el) el.textContent = val || "—"; }
+
+      document.querySelector("[data-signout]").addEventListener("click", async function () {
+        try { await window.WWSAccount.signOut(); } catch (e) {}
+        location.href = "/login";
+      });
+
+      (async function () {
+        var profile;
+        try {
+          profile = await window.WWSAccount.fetchProfile();
+        } catch (e) { profile = null; }
+
+        if (!profile) {
+          location.href = "/login?next=/account";
+          return;
+        }
+
+        var c = profile.customer || {};
+        set("[data-name]", c.fullName);
+        set("[data-email]", c.email);
+        set("[data-phone]", c.phone);
+        set("[data-instagram]", c.instagram);
+        if (c.cardOnFile) document.querySelector("[data-card]").textContent = "Card ending in " + c.cardOnFile;
+
+        var wrap = document.querySelector("[data-bookings]");
+        var bookings = profile.bookings || [];
+        if (!bookings.length) {
+          document.querySelector("[data-no-bookings]").classList.remove("hidden");
+        } else {
+          bookings.forEach(function (b) {
+            var sessions = (b.booking_sessions || []).slice().sort(function (x, y) {
+              return new Date(x.starts_at) - new Date(y.starts_at);
+            });
+            var sessHtml = sessions.map(function (s) {
+              return '<div class="flex items-center justify-between text-sm py-1">' +
+                '<span class="text-black/70">' + fmtDateTime(s.starts_at) + ' · ' + locLabel(s.location) + ' · ' + Math.round(s.duration_min / 60) + 'h</span>' +
+                '<span class="text-black/55">' + fmtMoney(s.session_price_cents) + '</span></div>';
+            }).join("");
+            var balanceLine = (b.balance_status && b.balance_status !== "none")
+              ? '<p class="text-xs text-black/50 mt-2">Balance ' + fmtMoney(b.balance_due_cents) + ' · ' + b.balance_status + '</p>' : "";
+            var card = document.createElement("div");
+            card.className = "border border-black/10 rounded-lg p-4";
+            card.innerHTML =
+              '<div class="flex items-center justify-between mb-2">' +
+                '<span class="text-xs tracking-[0.18em] uppercase text-black/45">' + (b.event_intent === "yes" ? "Event" : "Session") + ' · ' + b.status + '</span>' +
+                '<span class="text-sm font-medium">' + fmtMoney(b.total_cents) + '</span>' +
+              '</div>' + (sessHtml || '<p class="text-sm text-black/55">Details pending.</p>') + balanceLine;
+            wrap.appendChild(card);
+          });
+        }
+
+        loading.classList.add("hidden");
+        content.classList.remove("hidden");
+      })();
+    })();
+  </script>
+</body>
+</html>
