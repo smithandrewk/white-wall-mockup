@@ -69,6 +69,13 @@
     tmHighTrafficAcknowledged: false,
     tmHighTrafficNote: "",
     addons: {},
+    // Multi-session cart (V3 item 2). The live single-session flow operates on
+    // the top-level draft fields above; `cart.sessions` accumulates committed
+    // sessions for the multi-session flow, and `cart.universal` holds the
+    // collected-once fields (contact/waiver/card). Empty cart === today's
+    // single-session behavior. Wired up by the cart UI + N-session checkout in
+    // later phases; inert until then.
+    cart: { sessions: [], universal: {} },
     coupon: null,        // applied promo: { code, percentOff, discountCents }
     couponInput: "",     // current text in the promo field (preserves on re-render)
     couponError: "",     // inline error message for a rejected code
@@ -88,6 +95,56 @@
   location.addons.forEach((addon) => {
     state.addons[addon.id] = getInitialAddonState(addon);
   });
+
+  // --- Multi-session cart scaffolding (V3 item 2) --------------------------
+  // A "session" is a snapshot of the active draft (duration/date/time/add-ons +
+  // per-session intake). These helpers accumulate sessions into state.cart for
+  // the multi-session flow. The single-session path never calls them, so its
+  // behavior is unchanged. The cart UI (add-another-session, review) and the
+  // N-session checkout wire these up in later phases.
+  function snapshotActiveSession() {
+    return {
+      location: location.slug,
+      durationId: state.durationId,
+      selectedDate: state.selectedDate,
+      selectedTime: state.selectedTime,
+      eventIntent: state.eventIntent,
+      addons: JSON.parse(JSON.stringify(state.addons || {})),
+      perSessionIntake: {
+        participants: state.intake.participants,
+        business: state.intake.business,
+        eventDescription: state.eventDescription
+      }
+    };
+  }
+  function commitActiveSessionToCart() {
+    state.cart.sessions.push(snapshotActiveSession());
+  }
+  function resetActiveDraft() {
+    state.durationId = location.durations[0] ? location.durations[0].id : "";
+    state.selectedDate = "";
+    state.selectedTime = "";
+    state.eventIntent = "";
+    state.eventDescription = "";
+    state.intake.participants = "";
+    state.intake.business = "";
+    state.addons = {};
+    location.addons.forEach(function (addon) { state.addons[addon.id] = getInitialAddonState(addon); });
+  }
+  function loadCartSessionIntoDraft(i) {
+    var s = state.cart.sessions[i];
+    if (!s) return;
+    state.durationId = s.durationId;
+    state.selectedDate = s.selectedDate;
+    state.selectedTime = s.selectedTime;
+    state.eventIntent = s.eventIntent;
+    state.addons = JSON.parse(JSON.stringify(s.addons || {}));
+    state.intake.participants = (s.perSessionIntake && s.perSessionIntake.participants) || "";
+    state.intake.business = (s.perSessionIntake && s.perSessionIntake.business) || "";
+    state.eventDescription = (s.perSessionIntake && s.perSessionIntake.eventDescription) || "";
+  }
+  // Expose for the cart UI phases (and to mark them intentionally-used to linters).
+  state._cartHelpers = { snapshotActiveSession: snapshotActiveSession, commitActiveSessionToCart: commitActiveSessionToCart, resetActiveDraft: resetActiveDraft, loadCartSessionIntoDraft: loadCartSessionIntoDraft };
 
   // Pre-fill the promo field from the URL. Campaign emails link to
   // /book-powdersville?promo=<CODE> (param `promo`, with `coupon`/`code` as
