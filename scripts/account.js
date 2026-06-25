@@ -121,6 +121,23 @@
     return { ok: res.ok, status: res.status, data: data };
   }
 
+  // Pay an outstanding 40% balance for one of the signed-in customer's bookings
+  // (V3 item 6 — the lockout pay path). Server charges the card on file; amount
+  // + ownership are authoritative server-side. Returns { ok, status, data } so
+  // the caller can handle the dark 503 ("not enabled yet") and the 402 (card
+  // declined) gracefully without a throw.
+  async function payBalance(bookingId) {
+    var token = await getAccessToken();
+    if (!token) { var e = new Error("Not signed in"); e.status = 401; throw e; }
+    var res = await fetch("/api/pay-balance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify({ bookingId: bookingId })
+    });
+    var data = await res.json().catch(function () { return {}; });
+    return { ok: res.ok, status: res.status, data: data };
+  }
+
   window.WWSAccount = {
     ensureClient: ensureClient,
     signInWithPassword: signInWithPassword,
@@ -133,6 +150,7 @@
     getUser: getUser,
     fetchProfile: fetchProfile,
     fetchAvailabilityTimes: fetchAvailabilityTimes,
-    submitBookingEdit: submitBookingEdit
+    submitBookingEdit: submitBookingEdit,
+    payBalance: payBalance
   };
 })();

@@ -3,7 +3,8 @@
   "trailingSlash": false,
   "functions": {
     "api/create-checkout.js": { "maxDuration": 30 },
-    "api/scheduler-run.js": { "maxDuration": 60 }
+    "api/scheduler-run.js": { "maxDuration": 60 },
+    "api/pay-balance.js": { "maxDuration": 30 }
   },
   "headers": [
     {
