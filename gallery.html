@@ -97,6 +97,7 @@
         <a href="/gallery" class="text-wws-black border-b border-wws-black pb-0.5">Gallery</a>
         <a href="/faq" class="hover:text-wws-dark transition">FAQ</a>
         <a href="/#contact" class="hover:text-wws-dark transition">Contact</a>
+        <a href="/account" class="hover:text-wws-dark transition" data-account-link>Account</a>
       </div>
       <button id="menu-toggle" class="md:hidden p-2" style="color:#4A90D9">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,6 +113,7 @@
         <a href="/gallery">Gallery</a>
         <a href="/faq">FAQ</a>
         <a href="/#contact">Contact</a>
+        <a href="/account" data-account-link>Account</a>
       </div>
     </div>
   </nav>
@@ -1119,5 +1121,6 @@
     function declineCookies(){localStorage.setItem("wws_cookie_consent","declined");document.getElementById("cookie-consent").style.display="none"}
     if(!localStorage.getItem("wws_cookie_consent")){document.getElementById("cookie-consent").style.display="block"}
   </script>
+  <script src="/scripts/nav-account.js"></script>
 </body>
 </html>

@@ -187,6 +187,7 @@
         <a href="/gallery" class="hover:text-white transition">Gallery</a>
         <a href="/faq" class="hover:text-white transition">FAQ</a>
         <a href="#events" class="hover:text-white transition">Events</a>
+        <a href="/account" class="hover:text-white transition" data-account-link>Account</a>
         <a href="/book-powdersville" class="hover:text-white transition">Book Now</a>
       </div>
       <button id="menu-toggle" class="md:hidden p-2 text-white">
@@ -203,6 +204,7 @@
         <a href="/gallery" class="hover:text-white transition">Gallery</a>
         <a href="/faq" class="hover:text-white transition">FAQ</a>
         <a href="#events" class="hover:text-white transition">Events</a>
+        <a href="/account" class="hover:text-white transition" data-account-link>Account</a>
         <a href="/book-powdersville" class="hover:text-white transition">Book Now</a>
       </div>
     </div>
@@ -767,5 +769,6 @@
     function declineCookies(){localStorage.setItem("wws_cookie_consent","declined");document.getElementById("cookie-consent").style.display="none"}
     if(!localStorage.getItem("wws_cookie_consent")){document.getElementById("cookie-consent").style.display="block"}
   </script>
+  <script src="/scripts/nav-account.js"></script>
 </body>
 </html>

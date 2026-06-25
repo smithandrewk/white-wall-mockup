@@ -302,6 +302,20 @@ async function chargeCardOnFile(opts) {
   return data.payment;
 }
 
+// Read a saved card's display details (last 4 + brand) for the customer's
+// profile (V3 item 7). Read-only; safe.
+async function retrieveCard(cardId) {
+  const res = await fetch(getBaseUrl() + "/v2/cards/" + cardId, {
+    headers: getHeaders()
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data.errors ? data.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
+    throw new Error("Square retrieveCard " + res.status + ": " + msg);
+  }
+  return data.card; // { last_4, card_brand, enabled, exp_month, exp_year, ... }
+}
+
 module.exports = {
   createPaymentLink,
   getOrder,
@@ -310,5 +324,6 @@ module.exports = {
   findOrCreateCustomer,
   createPayment,
   createCardOnFile,
-  chargeCardOnFile
+  chargeCardOnFile,
+  retrieveCard
 };

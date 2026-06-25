@@ -71,6 +71,22 @@ async function acuityPost(path, body) {
   return res.json();
 }
 
+async function acuityPut(path, body) {
+  const res = await fetch(`${ACUITY_BASE}${path}`, {
+    method: "PUT",
+    headers: {
+      Authorization: getAuthHeader(),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Acuity PUT ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 // Appointment type allowlist
 // Source: GET /appointment-types (verified 2026-03-17)
@@ -322,6 +338,29 @@ async function acuityDelete(path) {
 }
 
 // ---------------------------------------------------------------------------
+// Reschedule an existing appointment (V3 item-7 live profile edit).
+// Acuity: PUT /appointments/:id/reschedule with { datetime, calendarID }.
+//  - admin=true lets an authenticated account edit move the slot outside the
+//    normal client-facing window (we re-check availability ourselves first).
+//  - calendarID is REQUIRED here on purpose: the multi-calendar gotcha applies
+//    to writes too — an appointment type that belongs to multiple calendars
+//    (every prod type also has STAGING 14110701) misroutes without it. We throw
+//    rather than let Acuity silently pick the first calendar.
+//  - datetime is ISO 8601 with the America/New_York offset.
+// This is a dormant primitive: the edit endpoint is its only intended caller.
+// ---------------------------------------------------------------------------
+async function rescheduleAppointment(appointmentId, opts) {
+  opts = opts || {};
+  if (!appointmentId) throw new Error("rescheduleAppointment: appointmentId is required");
+  if (!opts.datetime) throw new Error("rescheduleAppointment: datetime is required");
+  if (!opts.calendarID) throw new Error("rescheduleAppointment: calendarID is required (multi-calendar gotcha)");
+  return acuityPut(
+    `/appointments/${encodeURIComponent(appointmentId)}/reschedule?admin=true`,
+    { datetime: opts.datetime, calendarID: opts.calendarID }
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Calendar IDs — needed for POST /blocks
 // Source: GET /appointment-types (verified 2026-03-17)
 // ---------------------------------------------------------------------------
@@ -476,7 +515,7 @@ function buildSquareLineItems(appointmentTypeID, addons, location) {
   const session = SESSION_PRICES[String(appointmentTypeID)];
   if (!session) throw new Error("Unknown appointment type: " + appointmentTypeID);
 
-  var sessionItem = { name: session.label, amount: session.cents, quantity: 1 };
+  var sessionItem = { name: session.label, amount: session.cents, quantity: 1, addonId: null };
   var variationId = getSquareCatalogVariationId(appointmentTypeID);
   if (variationId) sessionItem.catalogObjectId = variationId;
   items.push(sessionItem);
@@ -486,24 +525,24 @@ function buildSquareLineItems(appointmentTypeID, addons, location) {
   // Lighting
   if (addons.lighting && addons.lighting.selected) {
     var lk = location === "powdersville" ? "lighting-powdersville" : "lighting-taylors-mill";
-    items.push({ name: ADDON_PRICES[lk].label, amount: ADDON_PRICES[lk].cents, quantity: 1 });
+    items.push({ name: ADDON_PRICES[lk].label, amount: ADDON_PRICES[lk].cents, quantity: 1, addonId: lk });
   }
 
   // Backdrops
   if (addons.backdrops) {
     if (addons.backdrops.mode === "all") {
-      items.push({ name: ADDON_PRICES["backdrops-all"].label, amount: ADDON_PRICES["backdrops-all"].cents, quantity: 1 });
+      items.push({ name: ADDON_PRICES["backdrops-all"].label, amount: ADDON_PRICES["backdrops-all"].cents, quantity: 1, addonId: "backdrops-all" });
     } else if (addons.backdrops.colors && addons.backdrops.colors.length > 0) {
-      items.push({ name: ADDON_PRICES["backdrops-single"].label, amount: ADDON_PRICES["backdrops-single"].cents, quantity: addons.backdrops.colors.length });
+      items.push({ name: ADDON_PRICES["backdrops-single"].label, amount: ADDON_PRICES["backdrops-single"].cents, quantity: addons.backdrops.colors.length, addonId: "backdrops-single" });
     }
   }
 
   // Rolling walls
   if (addons["rolling-walls"]) {
     if (addons["rolling-walls"].mode === "all") {
-      items.push({ name: ADDON_PRICES["walls-all"].label, amount: ADDON_PRICES["walls-all"].cents, quantity: 1 });
+      items.push({ name: ADDON_PRICES["walls-all"].label, amount: ADDON_PRICES["walls-all"].cents, quantity: 1, addonId: "walls-all" });
     } else if (addons["rolling-walls"].walls && addons["rolling-walls"].walls.length > 0) {
-      items.push({ name: ADDON_PRICES["walls-single"].label, amount: ADDON_PRICES["walls-single"].cents, quantity: addons["rolling-walls"].walls.length });
+      items.push({ name: ADDON_PRICES["walls-single"].label, amount: ADDON_PRICES["walls-single"].cents, quantity: addons["rolling-walls"].walls.length, addonId: "walls-single" });
     }
   }
 
@@ -511,29 +550,29 @@ function buildSquareLineItems(appointmentTypeID, addons, location) {
   if (addons.chairs && addons.chairs.selection) {
     var ck = "chairs-" + addons.chairs.selection;
     if (ADDON_PRICES[ck]) {
-      items.push({ name: ADDON_PRICES[ck].label, amount: ADDON_PRICES[ck].cents, quantity: 1 });
+      items.push({ name: ADDON_PRICES[ck].label, amount: ADDON_PRICES[ck].cents, quantity: 1, addonId: ck });
     }
   }
 
   // Tables
   if (addons.tables && addons.tables.quantity > 0) {
     var tq = Math.min(addons.tables.quantity, 10);
-    items.push({ name: ADDON_PRICES["table"].label, amount: ADDON_PRICES["table"].cents, quantity: tq });
+    items.push({ name: ADDON_PRICES["table"].label, amount: ADDON_PRICES["table"].cents, quantity: tq, addonId: "table" });
   }
 
   // TV
   if (addons.tv && addons.tv.selected) {
-    items.push({ name: ADDON_PRICES["tv"].label, amount: ADDON_PRICES["tv"].cents, quantity: 1 });
+    items.push({ name: ADDON_PRICES["tv"].label, amount: ADDON_PRICES["tv"].cents, quantity: 1, addonId: "tv" });
   }
 
   // PA
   if (addons["pa-system"] && addons["pa-system"].selected) {
-    items.push({ name: ADDON_PRICES["pa-system"].label, amount: ADDON_PRICES["pa-system"].cents, quantity: 1 });
+    items.push({ name: ADDON_PRICES["pa-system"].label, amount: ADDON_PRICES["pa-system"].cents, quantity: 1, addonId: "pa-system" });
   }
 
   // Studio Setup Crew (PV events only) — flat once-per-event
   if (addons["setup-crew"] && addons["setup-crew"].selected) {
-    items.push({ name: ADDON_PRICES["setup-crew"].label, amount: ADDON_PRICES["setup-crew"].cents, quantity: 1 });
+    items.push({ name: ADDON_PRICES["setup-crew"].label, amount: ADDON_PRICES["setup-crew"].cents, quantity: 1, addonId: "setup-crew" });
   }
 
   return items;
@@ -567,7 +606,9 @@ function verifyAndDecodeState(encoded, sig) {
 module.exports = {
   acuityGet,
   acuityPost,
+  acuityPut,
   acuityDelete,
+  rescheduleAppointment,
   isValidAppointmentTypeID,
   CALENDAR_IDS,
   TYPE_TO_CALENDAR,

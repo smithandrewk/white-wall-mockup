@@ -73,6 +73,12 @@
         </ul>
       </div>
 
+      <div class="booking-panel p-6 md:p-8 mt-6 text-left">
+        <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-3">Manage your booking</p>
+        <p class="text-sm text-black/65 mb-5">Create an account to view your sessions, see the card you have on file, and add to your booking anytime.</p>
+        <a data-account-cta href="/login?mode=signup&next=/account" class="booking-button">Create your account</a>
+      </div>
+
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="/" class="booking-button booking-button-secondary">Back to home</a>
       </div>
@@ -101,6 +107,19 @@
         location: params.get("location") || "",
         appointment_id: params.get("id") || ""
       });
+    })();
+  </script>
+  <script>
+    // Prefill the "create account" link with the email used for the booking.
+    (function () {
+      try {
+        var email = sessionStorage.getItem("wws_booking_email");
+        var cta = document.querySelector("[data-account-cta]");
+        if (email && cta) {
+          cta.href = "/login?mode=signup&next=/account&email=" + encodeURIComponent(email);
+        }
+        sessionStorage.removeItem("wws_booking_email");
+      } catch (e) {}
     })();
   </script>
 </body>
