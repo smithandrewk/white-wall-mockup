@@ -554,3 +554,28 @@ V3 is a 7-item doc; only items 3 and 5 ship inside the current single-session fl
 - Acuity add-on `7088190` created by Drew; verified via API ($750).
 - [ ] **Excluded from item 4** per-day add-on discount (Drew: crew is once-per-event, flat). Item 4 isn't built yet, so this is automatically satisfied.
 - [x] Verified: `node --check` on all 6 touched JS files; price parity exact (client 750 ↔ server 75000¢ for both the 8h session and the crew; 8h event + crew = 150000¢ server-side); 12:00 ET rejected, 12:30/13:00 allowed, other types unaffected; calendarID passed (no staging misroute).
+## Feedback Round 28 (2026-06-25) — Drew's email 2026-06-24: cleaning-fee policy language (universal)
+
+First **Foreman** cycle. Source: `client/comms/2026-06-24-drew-email-cleaning-fee-language.md`. Copy-only — the 35+ cleaning-fee LOGIC is unchanged (Drew confirmed it already works). Make the policy language synonymous site-wide: events with 35 or more attendees have a mandatory $150 cleaning fee automatically added, with no team approval and no gray area. PR #66 (`worker/cleaning-fee-language`) **MERGED + LIVE 2026-06-25** (squash `dac71fb`, Vercel auto-deploy). Confirmation reply sent to Drew on thread `19ed2607` (msg `19eff5e2`).
+
+- [x] `scripts/booking-config.js` — Flagship `policies` "Good to know" line: "Events with 35+ attendees require confirmation from our team." → "Events with 35 or more attendees have a mandatory $150 cleaning fee automatically added to the booking." (renders in the booking pages' Good-to-know panel — the exact string Drew quoted).
+- [x] `powdersville.html` — events copy: dropped the gray-area "We will be in touch if your booking will not require a cleaning fee and refund you accordingly"; now "For events with 35 or more guests, a mandatory $150 cleaning fee is automatically added to your booking."
+- [x] `terms.html` — dropped "Our team may waive this fee based on your booking details"; now "A mandatory cleaning fee of $150 is automatically added for events with 35 or more attendees."
+- [x] Verified: grep confirms no remaining approval/gray-area language tied to the cleaning fee; the already-flat 35+ copy in `booking-flow.js` was left as-is (no discretion).
+- [x] **Flagged to Drew (separate policy):** the 50+ **event-approval** copy in `terms.html` + `faq.html` was left intact and queried. **Drew answered 2026-06-25** → resolved in **Round 29** (auto-approve by default, reserve-the-right-to-contact).
+- [x] **Asked Drew 2026-06-25:** whether to add the 35+ cleaning-fee line to `faq.html`. **Drew said yes** → added in **Round 29**.
+
+## Feedback Round 29 (2026-06-25) — Drew's email 2026-06-25: 50+ auto-approval + FAQ additions
+
+Foreman cycle #2. Source: `client/comms/2026-06-25-drew-email-50plus-approval-faq-accounts.md`. Copy/FAQ only, no booking logic change. PR #67 (`worker/50plus-and-faq`) **MERGED + LIVE 2026-06-25** (squash `5c511fd`, Vercel verified on prod). Confirmation reply to Drew pending Andrew's accounts input (see below).
+
+- [x] **50+ events auto-approved by default.** Drew: nothing in the booking process may be contingent on internal team approval or review; 50+ events are allowed by default, WhiteWall only reserves the right to contact for additional details.
+  - [x] `terms.html` — rewrote the Events 50+ clause (dropped "require prior approval" + "if not approved you will receive a full refund").
+  - [x] `faq.html` — aligned the capacity/approval answer to "automatically approved by default".
+  - [x] `scripts/booking-flow.js` — event intake prompt no longer says "if any additional details or approvals are needed".
+- [x] **FAQ: 35+ cleaning-fee Q&A** added (surfaces the flat mandatory $150 policy in the FAQ per Drew).
+- [x] **FAQ: Studio Setup Crew Q&A** added — teaches the add-on (self-service ethos, affordable base pricing, optional $750 crew handles setup + full reset/cleanup, does not place final layout). Distilled from the `setup-crew` policy in `booking-config.js`.
+- [x] Verified: `node --check scripts/booking-flow.js` passes; grep confirms zero remaining approval-contingency copy site-wide; live on prod (terms + FAQ).
+- [x] **Architecture decided (Andrew 2026-06-25): use Supabase** for the V3 customer/booking/balance datastore (consistent with the dashboard). This unblocks V3 items 2/6/7 (accounts + editable profile + deposits/auto-charge + new checkout). The `v3-foundation` draft (PR #65) is built against this; foundation is now locked.
+- [x] **Drew reply sent 2026-06-25** (msg `19eff8c0`): confirmed 50+ + FAQ live; on accounts said the foundation decision is locked, the build is ours to carry, and a short checklist of product-only decisions (deposit + auto-charge terms, reminder-campaign touches, editable profile fields) is coming next. Logged his checkout sequencing (add-ons after date/time/duration + session-type).
+- [ ] **NEXT (open loop):** send Drew the focused product-decision checklist (deposit/auto-charge terms, 4-touch campaign copy/cadence, editable profile fields) — cross-check against his V3 round-2 answers (`~/pip/plans/T018-whitewall-v3.md`) first so nothing already answered is re-asked. Then kick off the V3 foundation build on Supabase (PR #65 line).

@@ -2046,7 +2046,7 @@
     if (count >= 35) {
       borderClass = "event-textarea-warning";
       textareaLabel = "Tell Us About Your Event";
-      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. A team member will follow up if any additional details or approvals are needed. If you don\u2019t hear from us, you\u2019re all set. For events with 35+ attendees, a $150 cleaning fee is automatically applied.";
+      textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly. Our team may reach out for additional details about your event, but your booking is approved and confirmed by default. For events with 35+ attendees, a $150 cleaning fee is automatically applied.";
     } else {
       textareaLabel = "Tell Us About Your Event";
       textareaPrompt = "Please include as much detail as possible so we can fully understand your event. Be sure to book enough time for setup, your event, and returning the studio to its original, clean condition. Our calendar is often booked back-to-back, and it\u2019s common for another booking to be scheduled immediately after yours\u2014so please plan your timing accordingly.";
