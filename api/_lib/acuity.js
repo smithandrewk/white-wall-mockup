@@ -421,6 +421,46 @@ function isStartBeforeEarliest(appointmentTypeID, iso) {
 }
 
 // ---------------------------------------------------------------------------
+// Studio CLOSE-time cap — the upper bookend to the earliest-start floor above.
+// A session must not be schedulable to END after the studio closes; like the
+// floor, this is a duration-SELECTION rule (it bounds which start slots are
+// offerable for a given duration), NOT per-hour billing math. Enforced across
+// availability-times (filter) + verify-availability + create-checkout (reject),
+// single source of truth so the sites can't drift. (V3 item 2 multi-day cart.)
+//
+// Default close is 22:30 ET (10:30pm) for BOTH locations. The full-day types are
+// the documented exception: their product window is explicitly "5am-11pm access",
+// so they close at 23:00 — overridden below so the cap never rejects an otherwise
+// valid full day. (Taylors Mill's real close time is TBD with Drew; built on the
+// 22:30 default for now.)
+// ---------------------------------------------------------------------------
+const STUDIO_CLOSE_MINUTES = 22 * 60 + 30; // 1350 = 22:30 ET default close
+
+const TYPE_CLOSE_MINUTES = {
+  "89114581": 23 * 60, // PV Full Day — "5am-11pm access" window
+  "28312569": 23 * 60  // TM Full Day — full-day access window
+};
+
+// Latest END minute (Eastern, minutes-since-midnight) allowed for this type.
+function closeMinutesFor(appointmentTypeID) {
+  const override = TYPE_CLOSE_MINUTES[String(appointmentTypeID)];
+  return override != null ? override : STUDIO_CLOSE_MINUTES;
+}
+
+// True when this session's END (start + its full duration) falls after the close
+// cap. Mirrors isStartBeforeEarliest: pure, Eastern-local, DST-safe — because
+// easternMinutesFromISO reads the wall-clock hour in America/New_York, the EDT/EST
+// offset is already baked into the start minutes, so the same wall-clock start
+// yields the same result in summer and winter. Unknown-duration types are treated
+// as not-after-close (never a false reject).
+function isEndAfterClose(appointmentTypeID, iso) {
+  const durationMin = TYPE_TO_DURATION[String(appointmentTypeID)];
+  if (durationMin == null) return false;
+  const endMin = easternMinutesFromISO(iso) + durationMin;
+  return endMin > closeMinutesFor(appointmentTypeID);
+}
+
+// ---------------------------------------------------------------------------
 // Session prices in cents — server-side source of truth for Square line items
 // Must match Acuity appointment type prices
 // ---------------------------------------------------------------------------
@@ -625,6 +665,10 @@ module.exports = {
   TYPE_EARLIEST_START_MINUTES,
   easternMinutesFromISO,
   isStartBeforeEarliest,
+  STUDIO_CLOSE_MINUTES,
+  TYPE_CLOSE_MINUTES,
+  closeMinutesFor,
+  isEndAfterClose,
   signState,
   verifyAndDecodeState
 };
