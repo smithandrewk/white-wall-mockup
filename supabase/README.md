@@ -35,6 +35,33 @@ this is charging real customers at volume.
 customer's own rows. `scheduled_jobs` and `payment_events` have no client policies — the
 booking-site server functions touch them with the `service_role` key (bypasses RLS).
 
+## Schema (migrations 0003-0006, item 6 — AUTHORED, NOT YET APPLIED)
+
+These four migrations are version-controlled but **have NOT been applied to the live
+DB.** They are the dormant item-6 machinery (60/40 deposit auto-charge + 4-touch add-on
+campaign + every-6h payment reminders); every code path that reads/writes them sits behind
+an env flag that defaults OFF, so applying the schema changes no behavior on its own. Apply
+them (and only then) as part of the reviewed item-6 ship, via the curl/Management-API recipe
+below. They form one linear sequence after the foundation's 0001/0002:
+
+- `0003_campaign_scheduler.sql` — `bookings.access_token` (secure per-booking token for the
+  tokenized add-on email links); `campaign_enrollments` (per-booking 4-touch campaign state +
+  unsubscribe); `scheduled_jobs.idempotency_key` + the `idempotency_keys` ledger the unified
+  scheduler keys every Square charge / Resend send on (the double-fire guard). Reuses the
+  existing `scheduled_jobs` kinds (`balance_charge` / `campaign_touch` / `payment_reminder`) —
+  no new kind. New tables are server-only (RLS on, no client policies).
+- `0004_balance_autocharge_columns.sql` — adds `balance_attempts`, `balance_last_error`,
+  `balance_last_attempt_at` to `bookings` for the retry-x3-then-lock-out auto-charge rule.
+- `0005_balance_reminder_state.sql` — `balance_reminder_state`, the per-booking touch-state
+  for the every-6h payment-update reminders (stops when the balance is settled or the session
+  starts). Server-only.
+- `0006_pgcron_scheduler.sql` — **the dark arming step.** Contains NO executable SQL: the
+  single pg_cron schedule that POSTs `/api/scheduler-run` lives entirely inside a commented
+  `-- ARMING (do not apply) --` fence, so applying the file is a no-op. Arming the cron is a
+  separate manual step taken only after the deposit-policy legal sign-off + a staging dry-run +
+  flipping the booking-site env flags to `"1"`. There must be exactly ONE schedule — the
+  dispatcher handles all three job kinds; there is no second `/api/charge-balance` cron.
+
 ## Applying migrations
 
 The live DB is the source of truth; these files version-control it. Apply via the

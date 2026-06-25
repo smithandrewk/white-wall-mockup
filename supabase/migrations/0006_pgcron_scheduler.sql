@@ -1,0 +1,69 @@
+-- 0006 — pg_cron arming for the unified scheduler (item 6). THE DARK LEVER.
+--
+-- AUTHORED, NOT APPLIED, and DELIBERATELY INERT. This file contains NO
+-- executable SQL: the only operation it would ever perform — scheduling
+-- pg_cron to POST the booking site's /api/scheduler-run endpoint — lives
+-- entirely inside the "-- ARMING (do not apply) --" comment fence below, so
+-- running this file against the database does absolutely nothing. Arming the
+-- money machinery is a separate, manual, gated step taken ONLY after:
+--   1. the deposit-refund policy has a human/legal sign-off,
+--   2. a full staging dry-run of /api/scheduler-run has passed, and
+--   3. the per-behavior env flags on the booking site (DEPOSIT_AUTOCHARGE_ARMED,
+--      SCHEDULER_ARMED, CAMPAIGN_SEND_ENABLED, REMINDERS_ENABLED, PAY_BALANCE_ENABLED)
+--      are intentionally flipped to "1".
+-- Even if this cron were armed while those flags are OFF, /api/scheduler-run is
+-- a no-op/dry-run: it makes no Square charge and no Resend send. The cron is the
+-- CLOCK only; the booking site stays the SOLE charging authority.
+--
+-- NOTE ON SCOPE: there must be EXACTLY ONE pg_cron schedule for the whole item-6
+-- machine. /api/scheduler-run is the single dispatcher — on each tick it handles
+-- due balance_charge jobs, campaign_touch jobs, and payment_reminder jobs. There
+-- is no separate /api/charge-balance cron. Do not add a second schedule.
+--
+-- ===========================================================================
+-- -- ARMING (do not apply) --
+-- ---------------------------------------------------------------------------
+-- Everything from here to the matching "-- end ARMING --" is COMMENTED OUT on
+-- purpose. To arm (manually, post sign-off), an operator copies the statements
+-- below into a Supabase SQL session and runs them by hand — never by applying
+-- this migration file.
+--
+-- Prereqs (enable once, in the Supabase dashboard or by hand):
+--   create extension if not exists pg_cron;   -- the scheduler
+--   create extension if not exists pg_net;    -- outbound HTTP from Postgres
+--
+-- The shared secret that authenticates the cron caller to /api/scheduler-run is
+-- NOT stored in this file. Stash it in Supabase Vault and read it at call time,
+-- so no secret lands in git:
+--   -- select vault.create_secret('<random-hex>', 'wws_scheduler_secret');
+--
+-- Schedule: every 15 minutes, POST the dispatcher. It selects due scheduled_jobs
+-- rows (fire_at <= now(), status='pending') and dispatches each by kind, keyed
+-- through public.idempotency_keys so an overlapping tick cannot double-fire.
+--
+--   select cron.schedule(
+--     'wws-scheduler-run',
+--     '*/15 * * * *',
+--     $cron$
+--       select net.http_post(
+--         url     := 'https://whitewallstudios.co/api/scheduler-run',
+--         headers := jsonb_build_object(
+--                      'Content-Type', 'application/json',
+--                      'x-scheduler-secret',
+--                      (select decrypted_secret from vault.decrypted_secrets
+--                         where name = 'wws_scheduler_secret')
+--                    ),
+--         body    := jsonb_build_object('source', 'pg_cron', 'tick_at', now())
+--       );
+--     $cron$
+--   );
+--
+-- Staging variant (point at the staging deploy instead of prod):
+--   -- url := 'https://staging.whitewallstudios.co/api/scheduler-run'
+--
+-- DISARM / rollback (also manual):
+--   -- select cron.unschedule('wws-scheduler-run');
+--
+-- ---------------------------------------------------------------------------
+-- -- end ARMING (do not apply) --
+-- ===========================================================================
