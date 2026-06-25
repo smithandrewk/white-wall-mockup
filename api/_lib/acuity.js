@@ -71,6 +71,22 @@ async function acuityPost(path, body) {
   return res.json();
 }
 
+async function acuityPut(path, body) {
+  const res = await fetch(`${ACUITY_BASE}${path}`, {
+    method: "PUT",
+    headers: {
+      Authorization: getAuthHeader(),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Acuity PUT ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 // Appointment type allowlist
 // Source: GET /appointment-types (verified 2026-03-17)
@@ -322,6 +338,29 @@ async function acuityDelete(path) {
 }
 
 // ---------------------------------------------------------------------------
+// Reschedule an existing appointment (V3 item-7 live profile edit).
+// Acuity: PUT /appointments/:id/reschedule with { datetime, calendarID }.
+//  - admin=true lets an authenticated account edit move the slot outside the
+//    normal client-facing window (we re-check availability ourselves first).
+//  - calendarID is REQUIRED here on purpose: the multi-calendar gotcha applies
+//    to writes too — an appointment type that belongs to multiple calendars
+//    (every prod type also has STAGING 14110701) misroutes without it. We throw
+//    rather than let Acuity silently pick the first calendar.
+//  - datetime is ISO 8601 with the America/New_York offset.
+// This is a dormant primitive: the edit endpoint is its only intended caller.
+// ---------------------------------------------------------------------------
+async function rescheduleAppointment(appointmentId, opts) {
+  opts = opts || {};
+  if (!appointmentId) throw new Error("rescheduleAppointment: appointmentId is required");
+  if (!opts.datetime) throw new Error("rescheduleAppointment: datetime is required");
+  if (!opts.calendarID) throw new Error("rescheduleAppointment: calendarID is required (multi-calendar gotcha)");
+  return acuityPut(
+    `/appointments/${encodeURIComponent(appointmentId)}/reschedule?admin=true`,
+    { datetime: opts.datetime, calendarID: opts.calendarID }
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Calendar IDs — needed for POST /blocks
 // Source: GET /appointment-types (verified 2026-03-17)
 // ---------------------------------------------------------------------------
@@ -567,7 +606,9 @@ function verifyAndDecodeState(encoded, sig) {
 module.exports = {
   acuityGet,
   acuityPost,
+  acuityPut,
   acuityDelete,
+  rescheduleAppointment,
   isValidAppointmentTypeID,
   CALENDAR_IDS,
   TYPE_TO_CALENDAR,
