@@ -30,6 +30,17 @@ module.exports = async function handler(req, res) {
     var customers = await sb.serviceSelect("customers", "id=eq." + user.id + "&select=id,email,full_name,phone,instagram,square_customer_id,created_at");
     var customer = customers[0] || { id: user.id, email: user.email };
 
+    // Lazy-link any prior bookings made anonymously under this email. Password
+    // users get linked at /account/create, but GOOGLE sign-in skips that path —
+    // so this claim-on-load is what surfaces a Google user's existing bookings.
+    // Mirrors the create.js link query exactly. Non-fatal.
+    var linkEmail = (customer.email || user.email || "").trim().toLowerCase();
+    if (linkEmail) {
+      try {
+        await sb.serviceUpdate("bookings", { email: "ilike." + linkEmail, customer_id: "is.null" }, { customer_id: user.id });
+      } catch (e) { /* non-fatal — bookings can link on a later load */ }
+    }
+
     // Bookings + their sessions (nested via PostgREST resource embedding).
     var bookings = await sb.serviceSelect(
       "bookings",

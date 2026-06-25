@@ -39,6 +39,16 @@
     return r.data;
   }
 
+  // OAuth sign-in (Google). Redirects the browser to Google; on return Supabase
+  // sets the session and we land back on redirectPath (default /account).
+  async function signInWithGoogle(redirectPath) {
+    var c = await ensureClient();
+    var redirectTo = window.location.origin + (redirectPath || "/account");
+    var r = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo } });
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
   // Post-payment account creation: server makes a CONFIRMED user (no email
   // round-trip) + enriches the customers row, then we sign in right away.
   async function createAccountPostPayment(opts) {
@@ -88,6 +98,7 @@
   window.WWSAccount = {
     ensureClient: ensureClient,
     signInWithPassword: signInWithPassword,
+    signInWithGoogle: signInWithGoogle,
     signUp: signUp,
     createAccountPostPayment: createAccountPostPayment,
     signOut: signOut,
