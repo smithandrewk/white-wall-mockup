@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add to your booking - WhiteWall Studios</title>
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518" },
+        fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+      } }
+    }
+  </script>
+  <script src="/scripts/staging-banner.js"></script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
+        <a href="/account" class="hover:text-black transition">My Account</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-14">
+    <div class="max-w-2xl mx-auto">
+      <h1 class="font-display text-4xl md:text-5xl leading-none text-center">Add to your booking</h1>
+      <p class="text-black/55 mt-4 text-center" data-subtitle>Loading your session…</p>
+
+      <!-- session summary -->
+      <div class="booking-panel p-5 md:p-6 mt-8 hidden" data-session-card>
+        <p class="text-xs tracking-[0.18em] uppercase text-black/45">Your session</p>
+        <p class="font-display text-2xl mt-1" data-session-label>—</p>
+        <p class="text-black/55 text-sm mt-1" data-session-meta>—</p>
+      </div>
+
+      <!-- add-on menu -->
+      <div class="mt-8 hidden" data-menu>
+        <p class="text-xs tracking-[0.18em] uppercase text-black/45 mb-3">Available add-ons</p>
+        <div class="space-y-3" data-menu-list></div>
+        <p class="text-black/45 text-xs mt-4">
+          One click adds the item to your booking and charges the card you have on file for the exact amount.
+        </p>
+      </div>
+
+      <!-- states -->
+      <p data-loading class="text-center text-black/45 mt-10">Loading…</p>
+      <p data-error class="text-center text-red-600 mt-10 hidden"></p>
+      <div data-result class="booking-panel p-6 mt-8 text-center hidden"></div>
+    </div>
+  </main>
+
+  <!-- confirm modal -->
+  <div data-modal class="fixed inset-0 bg-black/50 hidden items-center justify-center px-6 z-50">
+    <div class="bg-white rounded-lg max-w-sm w-full p-6">
+      <h2 class="font-display text-2xl" data-modal-title>Add to booking?</h2>
+      <p class="text-black/60 text-sm mt-2" data-modal-body>—</p>
+      <p data-modal-error class="text-sm text-red-600 mt-3 hidden"></p>
+      <div class="flex gap-3 mt-6">
+        <button type="button" data-modal-cancel class="flex-1 rounded border border-black/15 bg-white py-2.5 text-sm font-medium hover:bg-black/[0.03] transition">Cancel</button>
+        <button type="button" data-modal-confirm class="booking-button flex-1">Add and charge</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/scripts/addon-menu.js"></script>
+</body>
+</html>

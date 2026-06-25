@@ -279,7 +279,10 @@ async function createCardOnFile(opts) {
 // page exists. Built here so the capability is ready and tested.
 async function chargeCardOnFile(opts) {
   const body = {
-    idempotency_key: crypto.randomUUID(),
+    // Honor a caller-supplied stable key (the balance auto-charge + the
+    // customer-initiated pay-balance both pass one, so Square dedupes a
+    // double-fire of the SAME balance); fall back to a fresh uuid otherwise.
+    idempotency_key: opts.idempotencyKey || crypto.randomUUID(),
     source_id: opts.cardId,
     customer_id: opts.customerId,
     location_id: getLocationId(),

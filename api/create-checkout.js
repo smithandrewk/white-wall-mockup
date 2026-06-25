@@ -50,6 +50,7 @@ const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 const sbDB = require("./_lib/supabase");
+const { enrollBooking } = require("./_lib/campaign-enroll");
 const crypto = require("crypto");
 
 module.exports = async function handler(req, res) {
@@ -594,6 +595,26 @@ module.exports = async function handler(req, res) {
               day_index: 0,
               session_price_cents: sessionCents
             });
+
+            // V3 item 6 — enqueue the 4-touch add-on campaign (this is a
+            // full-payment booking, so no balance auto-charge / reminders).
+            // DARK: only fires when CAMPAIGN_ENROLL_ENABLED === "1" (default off
+            // → this branch is never entered and the booking flow is unchanged).
+            // Best-effort + isolated: an enroll failure NEVER breaks a paid
+            // booking. enrollBooking is itself idempotent + flag-gated.
+            if (process.env.CAMPAIGN_ENROLL_ENABLED === "1") {
+              try {
+                await enrollBooking({
+                  id: bookingRow.id,
+                  created_at: bookingRow.created_at,
+                  first_session_start: datetime,
+                  payment_mode: "full",
+                  balance_due_cents: null
+                });
+              } catch (enrollErr) {
+                console.error("campaign enroll (single):", enrollErr.message);
+              }
+            }
           }
         } catch (e) {
           console.error("supabase booking persist:", e.message);
@@ -1064,6 +1085,28 @@ async function handleCartCheckout(req, res, body) {
                 };
               });
               await sbDB.serviceInsert("booking_session_addons", addonRows);
+            }
+          }
+
+          // V3 item 6 — enqueue the 4-touch add-on campaign, and (for a deposit
+          // cart) the 40% balance auto-charge wake-up + the every-6h payment
+          // reminders. fire-times come from the chronological first session.
+          // DARK: only fires when CAMPAIGN_ENROLL_ENABLED === "1" (default off →
+          // this branch is never entered and the cart flow is unchanged).
+          // Best-effort + isolated: an enroll failure NEVER breaks a paid+booked
+          // cart. enrollBooking is itself idempotent + flag-gated.
+          if (process.env.CAMPAIGN_ENROLL_ENABLED === "1") {
+            try {
+              await enrollBooking({
+                id: bookingRow.id,
+                created_at: bookingRow.created_at,
+                first_session_start: priced.sessions[0].datetime,
+                payment_mode: paymentMode,
+                balance_due_cents: balanceDueCents,
+                balance_charge_at: balanceChargeAt
+              });
+            } catch (enrollErr) {
+              console.error("campaign enroll (cart):", enrollErr.message);
             }
           }
         }
