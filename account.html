@@ -84,8 +84,41 @@
           });
         } catch (e) { return iso; }
       }
+      function fmtTime(iso) {
+        try {
+          return new Date(iso).toLocaleTimeString("en-US", {
+            timeZone: "America/New_York", hour: "numeric", minute: "2-digit"
+          });
+        } catch (e) { return iso; }
+      }
       function locLabel(s) { return s === "powdersville" ? "Flagship (Powdersville)" : (s === "taylors-mill" ? "Taylor's Mill" : s); }
       function set(sel, val) { var el = document.querySelector(sel); if (el) el.textContent = val || "—"; }
+      function clampQty(v, max) { var n = parseInt(v, 10); if (!Number.isInteger(n) || n < 1) n = 1; if (n > max) n = max; return n; }
+
+      // Addable add-ons per location, keyed by the server's ADDON_PRICES id
+      // (api/_lib/acuity.js). Prices here are display hints only — the server
+      // recomputes from its own tables and is the sole source of truth. Add-only:
+      // ones already on a session are filtered out before rendering. Variant
+      // pickers (single backdrops/walls) and the placement-driven Setup Crew are
+      // intentionally omitted from the profile editor.
+      var ADDON_CATALOG = {
+        "powdersville": [
+          { id: "lighting-powdersville", label: "Lighting rental", cents: 12500 },
+          { id: "backdrops-all", label: "All backdrops", cents: 5000 },
+          { id: "walls-all", label: "All rolling walls", cents: 7000 },
+          { id: "chairs-25", label: "25 chairs", cents: 10000 },
+          { id: "chairs-50", label: "50 chairs", cents: 19000 },
+          { id: "chairs-75", label: "75 chairs", cents: 28000 },
+          { id: "chairs-100", label: "100 chairs", cents: 37000 },
+          { id: "table", label: "8ft folding table", cents: 1500, quantity: true, max: 10 },
+          { id: "tv", label: "86in rolling TV", cents: 5000 },
+          { id: "pa-system", label: "PA system", cents: 4000 }
+        ],
+        "taylors-mill": [
+          { id: "lighting-taylors-mill", label: "Lighting rental", cents: 5000 },
+          { id: "backdrops-all", label: "All backdrops", cents: 5000 }
+        ]
+      };
 
       document.querySelector("[data-signout]").addEventListener("click", async function () {
         try { await window.WWSAccount.signOut(); } catch (e) {}
@@ -122,20 +155,31 @@
             var sessions = (b.booking_sessions || []).slice().sort(function (x, y) {
               return new Date(x.starts_at) - new Date(y.starts_at);
             });
-            var sessHtml = sessions.map(function (s) {
-              return '<div class="flex items-center justify-between text-sm py-1">' +
-                '<span class="text-black/70">' + fmtDateTime(s.starts_at) + ' · ' + locLabel(s.location) + ' · ' + Math.round(s.duration_min / 60) + 'h</span>' +
-                '<span class="text-black/55">' + fmtMoney(s.session_price_cents) + '</span></div>';
-            }).join("");
-            var balanceLine = (b.balance_status && b.balance_status !== "none")
-              ? '<p class="text-xs text-black/50 mt-2">Balance ' + fmtMoney(b.balance_due_cents) + ' · ' + b.balance_status + '</p>' : "";
             var card = document.createElement("div");
             card.className = "border border-black/10 rounded-lg p-4";
-            card.innerHTML =
-              '<div class="flex items-center justify-between mb-2">' +
-                '<span class="text-xs tracking-[0.18em] uppercase text-black/45">' + (b.event_intent === "yes" ? "Event" : "Session") + ' · ' + b.status + '</span>' +
-                '<span class="text-sm font-medium">' + fmtMoney(b.total_cents) + '</span>' +
-              '</div>' + (sessHtml || '<p class="text-sm text-black/55">Details pending.</p>') + balanceLine;
+
+            var header = document.createElement("div");
+            header.className = "flex items-center justify-between mb-2";
+            header.innerHTML =
+              '<span class="text-xs tracking-[0.18em] uppercase text-black/45">' + (b.event_intent === "yes" ? "Event" : "Session") + ' · ' + b.status + '</span>' +
+              '<span class="text-sm font-medium">' + fmtMoney(b.total_cents) + '</span>';
+            card.appendChild(header);
+
+            if (!sessions.length) {
+              var pending = document.createElement("p");
+              pending.className = "text-sm text-black/55";
+              pending.textContent = "Details pending.";
+              card.appendChild(pending);
+            } else {
+              sessions.forEach(function (s) { card.appendChild(renderSessionRow(s, b)); });
+            }
+
+            if (b.balance_status && b.balance_status !== "none") {
+              var bl = document.createElement("p");
+              bl.className = "text-xs text-black/50 mt-2";
+              bl.textContent = "Balance " + fmtMoney(b.balance_due_cents) + " · " + b.balance_status;
+              card.appendChild(bl);
+            }
             wrap.appendChild(card);
           });
         }
@@ -143,6 +187,254 @@
         loading.classList.add("hidden");
         content.classList.remove("hidden");
       })();
+
+      // One session line + an inline "Edit" affordance that toggles the editor.
+      function renderSessionRow(session, booking) {
+        var row = document.createElement("div");
+        row.className = "py-1";
+
+        var line = document.createElement("div");
+        line.className = "flex items-center justify-between text-sm";
+        var left = document.createElement("span");
+        left.className = "text-black/70";
+        left.textContent = fmtDateTime(session.starts_at) + " · " + locLabel(session.location) + " · " + Math.round(session.duration_min / 60) + "h";
+        var right = document.createElement("span");
+        right.className = "flex items-center gap-3 text-black/55";
+        var price = document.createElement("span");
+        price.textContent = fmtMoney(session.session_price_cents);
+        right.appendChild(price);
+        line.appendChild(left);
+        line.appendChild(right);
+        row.appendChild(line);
+
+        // Only editable sessions get an Edit button (need a known type to price/reschedule).
+        if (session.appointment_type_id) {
+          var host = document.createElement("div");
+          var editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "text-xs uppercase tracking-[0.15em] underline text-black/50 hover:text-black";
+          editBtn.textContent = "Edit";
+          right.appendChild(editBtn);
+          row.appendChild(host);
+          editBtn.addEventListener("click", function () {
+            if (host.firstChild) { host.innerHTML = ""; editBtn.textContent = "Edit"; return; }
+            editBtn.textContent = "Close";
+            host.appendChild(buildEditor(session, booking, function () {
+              host.innerHTML = ""; editBtn.textContent = "Edit";
+            }));
+          });
+        }
+        return row;
+      }
+
+      // The inline editor: reschedule (date -> availability slots) + add add-ons,
+      // with a live price-delta preview. Confirm POSTs to /api/account/booking-edit
+      // with the Supabase bearer token. The money-gate 409 ("not enabled yet") is
+      // handled gracefully: the customer is offered a free reschedule-only retry.
+      function buildEditor(session, booking, onClose) {
+        var typeId = String(session.appointment_type_id);
+        var savedIds = {};
+        (session.booking_session_addons || []).forEach(function (a) { savedIds[String(a.addon_id)] = true; });
+        var catalog = (ADDON_CATALOG[session.location] || []).filter(function (a) {
+          return !savedIds[a.id]; // add-only: hide what's already on the session
+        });
+
+        var state = { datetime: null, addons: {} }; // addons: id -> quantity
+        var includeAddonsOnSubmit = true;
+
+        var box = document.createElement("div");
+        box.className = "mt-3 border-t border-black/10 pt-3 space-y-4";
+
+        // --- Reschedule ---
+        var resWrap = document.createElement("div");
+        resWrap.innerHTML = '<p class="text-xs tracking-[0.18em] uppercase text-black/45 mb-2">Change date &amp; time</p>';
+        var dateRow = document.createElement("div");
+        dateRow.className = "flex items-center gap-2";
+        var dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.min = new Date().toISOString().slice(0, 10);
+        dateInput.className = "border border-black/15 rounded px-2 py-1 text-sm";
+        var findBtn = document.createElement("button");
+        findBtn.type = "button";
+        findBtn.className = "text-xs uppercase tracking-[0.15em] border border-black/20 rounded px-3 py-1 hover:bg-black hover:text-white transition";
+        findBtn.textContent = "Find times";
+        dateRow.appendChild(dateInput);
+        dateRow.appendChild(findBtn);
+        resWrap.appendChild(dateRow);
+        var timesWrap = document.createElement("div");
+        timesWrap.className = "flex flex-wrap gap-2 mt-2";
+        resWrap.appendChild(timesWrap);
+        box.appendChild(resWrap);
+
+        findBtn.addEventListener("click", async function () {
+          if (!dateInput.value) return;
+          state.datetime = null;
+          timesWrap.innerHTML = '<span class="text-xs text-black/45">Loading…</span>';
+          try {
+            var times = await window.WWSAccount.fetchAvailabilityTimes(typeId, dateInput.value);
+            timesWrap.innerHTML = "";
+            if (!times.length) {
+              timesWrap.innerHTML = '<span class="text-xs text-black/45">No open times that day.</span>';
+              updateDelta();
+              return;
+            }
+            times.forEach(function (t) {
+              var slot = document.createElement("button");
+              slot.type = "button";
+              slot.className = "text-xs border border-black/20 rounded px-2 py-1 hover:bg-black hover:text-white transition";
+              slot.textContent = fmtTime(t.time);
+              slot.addEventListener("click", function () {
+                state.datetime = t.time;
+                Array.prototype.forEach.call(timesWrap.children, function (c) { c.classList.remove("bg-black", "text-white"); });
+                slot.classList.add("bg-black", "text-white");
+                updateDelta();
+              });
+              timesWrap.appendChild(slot);
+            });
+          } catch (e) {
+            timesWrap.innerHTML = '<span class="text-xs text-red-600">Could not load times.</span>';
+          }
+        });
+
+        // --- Add add-ons (add-only) ---
+        if (catalog.length) {
+          var addWrap = document.createElement("div");
+          addWrap.innerHTML = '<p class="text-xs tracking-[0.18em] uppercase text-black/45 mb-2">Add add-ons</p>';
+          catalog.forEach(function (a) {
+            var lbl = document.createElement("label");
+            lbl.className = "flex items-center justify-between text-sm py-1 cursor-pointer";
+            var lft = document.createElement("span");
+            lft.className = "flex items-center gap-2 text-black/70";
+            var cb = document.createElement("input");
+            cb.type = "checkbox";
+            var nm = document.createElement("span");
+            nm.textContent = a.label;
+            lft.appendChild(cb);
+            lft.appendChild(nm);
+            var qtyInput = null;
+            if (a.quantity) {
+              qtyInput = document.createElement("input");
+              qtyInput.type = "number";
+              qtyInput.min = "1";
+              qtyInput.max = String(a.max || 10);
+              qtyInput.value = "1";
+              qtyInput.className = "w-14 border border-black/15 rounded px-1 py-0.5 text-sm ml-2 hidden";
+              qtyInput.addEventListener("input", function () {
+                if (cb.checked) { state.addons[a.id] = clampQty(qtyInput.value, a.max || 10); updateDelta(); }
+              });
+              lft.appendChild(qtyInput);
+            }
+            var rgt = document.createElement("span");
+            rgt.className = "text-black/55";
+            rgt.textContent = "+" + fmtMoney(a.cents);
+            lbl.appendChild(lft);
+            lbl.appendChild(rgt);
+            cb.addEventListener("change", function () {
+              if (cb.checked) {
+                state.addons[a.id] = a.quantity ? clampQty(qtyInput.value, a.max || 10) : 1;
+                if (qtyInput) qtyInput.classList.remove("hidden");
+              } else {
+                delete state.addons[a.id];
+                if (qtyInput) qtyInput.classList.add("hidden");
+              }
+              updateDelta();
+            });
+            addWrap.appendChild(lbl);
+          });
+          box.appendChild(addWrap);
+        }
+
+        // --- Delta preview + actions ---
+        var deltaP = document.createElement("p");
+        deltaP.className = "text-sm font-medium text-black/80";
+        box.appendChild(deltaP);
+
+        var msg = document.createElement("div");
+        msg.className = "text-sm";
+        box.appendChild(msg);
+
+        var actions = document.createElement("div");
+        actions.className = "flex items-center gap-3";
+        var confirmBtn = document.createElement("button");
+        confirmBtn.type = "button";
+        confirmBtn.className = "text-xs uppercase tracking-[0.18em] bg-black text-white rounded px-4 py-2 disabled:opacity-40";
+        confirmBtn.textContent = "Confirm changes";
+        var cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "text-xs uppercase tracking-[0.18em] text-black/50 hover:text-black";
+        cancelBtn.textContent = "Cancel";
+        actions.appendChild(confirmBtn);
+        actions.appendChild(cancelBtn);
+        box.appendChild(actions);
+        cancelBtn.addEventListener("click", function () { if (onClose) onClose(); });
+
+        function selectedAddonsArray() {
+          return Object.keys(state.addons).map(function (id) { return { addonId: id, quantity: state.addons[id] }; });
+        }
+        function computeDeltaCents() {
+          var sum = 0;
+          Object.keys(state.addons).forEach(function (id) {
+            var entry = catalog.find(function (c) { return c.id === id; });
+            if (entry) sum += entry.cents * state.addons[id];
+          });
+          return sum;
+        }
+        function hasChange() { return !!state.datetime || Object.keys(state.addons).length > 0; }
+        function updateDelta() {
+          var d = computeDeltaCents();
+          var parts = [];
+          if (state.datetime) parts.push("New time: " + fmtDateTime(state.datetime));
+          if (d > 0) parts.push("Adds " + fmtMoney(d) + " to your card on file");
+          deltaP.textContent = parts.length ? parts.join(" · ") : "No changes selected yet.";
+          confirmBtn.disabled = !hasChange();
+        }
+        function setMsg(text, kind) {
+          msg.textContent = text || "";
+          msg.className = "text-sm " + (kind === "error" ? "text-red-600" : kind === "ok" ? "text-green-700" : "text-black/60");
+        }
+
+        async function submit(includeAddons) {
+          confirmBtn.disabled = true;
+          setMsg("Saving…", "info");
+          var payload = { bookingId: booking.id, sessionId: session.id };
+          if (state.datetime) payload.newDatetime = state.datetime;
+          if (includeAddons) {
+            var arr = selectedAddonsArray();
+            if (arr.length) payload.addAddons = arr;
+          }
+          try {
+            var r = await window.WWSAccount.submitBookingEdit(payload);
+            if (r.ok) {
+              setMsg("Updated. Refreshing…", "ok");
+              setTimeout(function () { location.reload(); }, 1200);
+              return;
+            }
+            // Money gate OFF: paid add-ons can't be added yet. Offer a free reschedule.
+            if (r.status === 409 && /not enabled/i.test((r.data && r.data.error) || "")) {
+              if (state.datetime) {
+                setMsg(((r.data && r.data.error) || "Adding paid items isn't enabled yet.") +
+                  " You can still reschedule for free.", "info");
+                includeAddonsOnSubmit = false;
+                confirmBtn.textContent = "Reschedule only (no charge)";
+                confirmBtn.disabled = false;
+              } else {
+                setMsg((r.data && r.data.error) || "Adding paid items isn't enabled yet.", "info");
+                confirmBtn.disabled = false;
+              }
+              return;
+            }
+            setMsg((r.data && r.data.error) || "Could not apply changes.", "error");
+            confirmBtn.disabled = false;
+          } catch (e) {
+            setMsg("Could not apply changes.", "error");
+            confirmBtn.disabled = false;
+          }
+        }
+
+        confirmBtn.addEventListener("click", function () { submit(includeAddonsOnSubmit); });
+        updateDelta();
+        return box;
+      }
     })();
   </script>
 </body>

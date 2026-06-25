@@ -95,6 +95,32 @@
     return await res.json();
   }
 
+  // Open availability slots for a session's appointment type on a given date
+  // (YYYY-MM-DD). Public proxy — no auth needed. Returns [{ time }].
+  async function fetchAvailabilityTimes(appointmentTypeID, date) {
+    var url = "/api/availability-times?appointmentTypeID=" +
+      encodeURIComponent(appointmentTypeID) + "&date=" + encodeURIComponent(date);
+    var res = await fetch(url);
+    if (!res.ok) throw new Error("Could not load times");
+    var data = await res.json();
+    return (data && data.times) || [];
+  }
+
+  // Submit an item-7 live edit for one session (add-only / no-downgrade enforced
+  // server-side; client price is never trusted). Returns { ok, status, data } so
+  // the caller can handle the money-gate 409 ("not enabled yet") gracefully.
+  async function submitBookingEdit(payload) {
+    var token = await getAccessToken();
+    if (!token) { var e = new Error("Not signed in"); e.status = 401; throw e; }
+    var res = await fetch("/api/account/booking-edit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json().catch(function () { return {}; });
+    return { ok: res.ok, status: res.status, data: data };
+  }
+
   window.WWSAccount = {
     ensureClient: ensureClient,
     signInWithPassword: signInWithPassword,
@@ -105,6 +131,8 @@
     getSession: getSession,
     getAccessToken: getAccessToken,
     getUser: getUser,
-    fetchProfile: fetchProfile
+    fetchProfile: fetchProfile,
+    fetchAvailabilityTimes: fetchAvailabilityTimes,
+    submitBookingEdit: submitBookingEdit
   };
 })();
