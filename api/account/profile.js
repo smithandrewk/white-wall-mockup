@@ -41,12 +41,15 @@ module.exports = async function handler(req, res) {
       } catch (e) { /* non-fatal — bookings can link on a later load */ }
     }
 
-    // Bookings + their sessions (nested via PostgREST resource embedding).
+    // Bookings + their sessions + each session's saved add-ons (nested via
+    // PostgREST resource embedding) so the profile UI can show what's on each
+    // session.
     var bookings = await sb.serviceSelect(
       "bookings",
       "customer_id=eq." + user.id +
       "&select=id,status,event_intent,total_cents,payment_mode,deposit_cents,balance_due_cents,balance_charge_at,balance_status,square_card_id,created_at," +
-      "booking_sessions(id,location,appointment_type_id,starts_at,duration_min,day_index,session_price_cents)" +
+      "booking_sessions(id,location,appointment_type_id,starts_at,duration_min,day_index,session_price_cents," +
+      "booking_session_addons(id,addon_id,quantity,unit_cents,discount_cents,meta))" +
       "&order=created_at.desc"
     );
 
