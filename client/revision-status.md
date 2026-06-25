@@ -562,5 +562,18 @@ First **Foreman** cycle. Source: `client/comms/2026-06-24-drew-email-cleaning-fe
 - [x] `powdersville.html` — events copy: dropped the gray-area "We will be in touch if your booking will not require a cleaning fee and refund you accordingly"; now "For events with 35 or more guests, a mandatory $150 cleaning fee is automatically added to your booking."
 - [x] `terms.html` — dropped "Our team may waive this fee based on your booking details"; now "A mandatory cleaning fee of $150 is automatically added for events with 35 or more attendees."
 - [x] Verified: grep confirms no remaining approval/gray-area language tied to the cleaning fee; the already-flat 35+ copy in `booking-flow.js` was left as-is (no discretion).
-- [ ] **Flagged to Drew (separate policy):** the 50+ **event-approval** copy in `terms.html` + `faq.html` ("Events with 50 or more attendees require prior approval...") was left intact — Drew's email was about the cleaning fee, not event approval. **Asked Drew 2026-06-25** (in the confirmation reply) whether that 50+ approval rule is still accurate or should also go flat. Awaiting his answer.
-- [ ] **Asked Drew 2026-06-25:** `faq.html` does not currently state the 35+ cleaning fee at all — asked whether to add the same line there so the policy is truly everywhere. Awaiting his answer.
+- [x] **Flagged to Drew (separate policy):** the 50+ **event-approval** copy in `terms.html` + `faq.html` was left intact and queried. **Drew answered 2026-06-25** → resolved in **Round 29** (auto-approve by default, reserve-the-right-to-contact).
+- [x] **Asked Drew 2026-06-25:** whether to add the 35+ cleaning-fee line to `faq.html`. **Drew said yes** → added in **Round 29**.
+
+## Feedback Round 29 (2026-06-25) — Drew's email 2026-06-25: 50+ auto-approval + FAQ additions
+
+Foreman cycle #2. Source: `client/comms/2026-06-25-drew-email-50plus-approval-faq-accounts.md`. Copy/FAQ only, no booking logic change. PR #67 (`worker/50plus-and-faq`) **MERGED + LIVE 2026-06-25** (squash `5c511fd`, Vercel verified on prod). Confirmation reply to Drew pending Andrew's accounts input (see below).
+
+- [x] **50+ events auto-approved by default.** Drew: nothing in the booking process may be contingent on internal team approval or review; 50+ events are allowed by default, WhiteWall only reserves the right to contact for additional details.
+  - [x] `terms.html` — rewrote the Events 50+ clause (dropped "require prior approval" + "if not approved you will receive a full refund").
+  - [x] `faq.html` — aligned the capacity/approval answer to "automatically approved by default".
+  - [x] `scripts/booking-flow.js` — event intake prompt no longer says "if any additional details or approvals are needed".
+- [x] **FAQ: 35+ cleaning-fee Q&A** added (surfaces the flat mandatory $150 policy in the FAQ per Drew).
+- [x] **FAQ: Studio Setup Crew Q&A** added — teaches the add-on (self-service ethos, affordable base pricing, optional $750 crew handles setup + full reset/cleanup, does not place final layout). Distilled from the `setup-crew` policy in `booking-config.js`.
+- [x] Verified: `node --check scripts/booking-flow.js` passes; grep confirms zero remaining approval-contingency copy site-wide; live on prod (terms + FAQ).
+- [ ] **ESCALATED to Andrew (architecture):** Drew greenlit "full steam ahead" on the V3 login/accounts + new checkout and asked "what do you need from me?" That answer depends on the one datastore+scheduler architecture decision Andrew owns (V3 items 2/6/7). iMessaged Andrew 2026-06-25. Drew also specified checkout sequencing: **add-ons come right after date/time/duration + the event-vs-photo/video selection** (informs the V3 checkout flow). Drew reply on accounts held until Andrew responds.
