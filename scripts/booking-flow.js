@@ -285,12 +285,14 @@
     };
   }
 
-  // Per-session add-on summary lines (label + amount) for an arbitrary session.
+  // Per-session add-on summary lines (id + label + amount, dollars) for an
+  // arbitrary session. The id lets the cart summary apply the per-day discount
+  // (pricing-shared) to each line so later days show their discounted price.
   function sessionAddonLines(s) {
     var lines = [];
     location.addons.forEach(function (addon) {
       var amt = addonSubtotalFor(addon, (s.addons || {})[addon.id]);
-      if (amt > 0) lines.push({ label: addon.name, amount: amt });
+      if (amt > 0) lines.push({ id: addon.id, label: addon.name, amount: amt });
     });
     return lines;
   }
@@ -376,8 +378,19 @@
       var dur = location.durations.find(function (dd) { return dd.id === src.durationId; });
       var sessionPrice = dur && dur.price ? dur.price : 0;
 
+      // Each add-on line shows its per-day-discounted price (idx === the
+      // chronological dayIndex the totals use, so this matches the cart total
+      // and the server recompute). When a later day discounts a line, strike
+      // through the original so the saving is visible (Drew's upsell ask).
       var addonHtml = addonLines.map(function (a) {
-        return '<div class="summary-line summary-line-muted"><span>' + escapeHtml(a.label) + '</span><span>' + currency.format(a.amount) + '</span></div>';
+        var fullCents = Math.round(a.amount * 100);
+        var discCents = (window.WWSPricing && window.WWSPricing.discountedAddonCents)
+          ? window.WWSPricing.discountedAddonCents(fullCents, idx, a.id)
+          : fullCents;
+        var priceHtml = discCents < fullCents
+          ? '<span><s class="summary-strike">' + currency.format(fullCents / 100) + '</s> ' + currency.format(discCents / 100) + '</span>'
+          : '<span>' + currency.format(discCents / 100) + '</span>';
+        return '<div class="summary-line summary-line-muted"><span>' + escapeHtml(a.label) + '</span>' + priceHtml + '</div>';
       }).join("");
 
       var multiplier = (window.WWSPricing && window.WWSPricing.dayDiscountMultiplier)

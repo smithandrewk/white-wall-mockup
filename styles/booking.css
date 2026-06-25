@@ -531,6 +531,13 @@ body.booking-page {
   color: var(--wws-text-muted);
 }
 
+/* Struck-through original price on a per-day-discounted cart add-on line. */
+.summary-strike {
+  text-decoration: line-through;
+  opacity: 0.6;
+  margin-right: 0.15rem;
+}
+
 .summary-divider {
   height: 1px;
   background: rgba(0, 0, 0, 0.08);
