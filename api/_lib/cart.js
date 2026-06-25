@@ -18,9 +18,10 @@
 //    normalized { sessions:[{ sessionCents, dayIndex, addons:[{addonId,cents}] }] }
 //    shape. Session price is never discounted.
 //  - isStartBeforeEarliest is enforced PER SESSION (the 8h Flagship 12:30pm floor,
-//    V3 item 3) — a too-early start is rejected here, not silently priced. The
-//    studio close cap (isEndAfterClose, 22:30 ET, V3 item 2) is enforced the same
-//    way — a session that would END after close is rejected, not priced.
+//    V3 item 3) — a too-early start is rejected here, not silently priced.
+//    (No studio close cap: Drew 2026-06-25 clarified neither studio closes at
+//    10:30pm; a solo late booking is fine. The 10:30pm cap is ONLY a future
+//    multi-day pre-event-day BILLING window, not an availability rejection.)
 //
 // Returns:
 //   { sessions: [ { appointmentTypeID, datetime, dayIndex, sessionCents,
@@ -32,7 +33,6 @@
 const {
   buildSquareLineItems,
   isStartBeforeEarliest,
-  isEndAfterClose
 } = require("./acuity");
 
 const pricing = require("../../scripts/pricing-shared");
@@ -67,14 +67,6 @@ function computeCart(sessions, location) {
       throw new Error(
         "computeCart: session start " + s.datetime +
         " is before the earliest allowed start for type " + s.appointmentTypeID
-      );
-    }
-
-    // Enforce the studio close cap — a session must not END after 22:30 ET.
-    if (isEndAfterClose(s.appointmentTypeID, s.datetime)) {
-      throw new Error(
-        "computeCart: session start " + s.datetime +
-        " would end after the studio closes for type " + s.appointmentTypeID
       );
     }
 

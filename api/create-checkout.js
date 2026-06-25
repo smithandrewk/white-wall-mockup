@@ -29,7 +29,6 @@ const {
   CALENDAR_IDS,
   ACUITY_ADDON_IDS,
   isStartBeforeEarliest,
-  isEndAfterClose,
   SETUP_CREW_PLACEMENT_ITEMS
 } = require("./_lib/acuity");
 const { computeCart } = require("./_lib/cart");
@@ -126,11 +125,6 @@ module.exports = async function handler(req, res) {
   // authoritative — reject a too-early start even if the client UI is bypassed.
   if (isStartBeforeEarliest(appointmentTypeID, datetime)) {
     return res.status(400).json({ error: "Selected start time is before the earliest allowed for this session" });
-  }
-  // Studio close cap (V3 item 2): the session must not END after 22:30 ET. Server
-  // is authoritative — reject a too-late end even if the client UI is bypassed.
-  if (isEndAfterClose(appointmentTypeID, datetime)) {
-    return res.status(400).json({ error: "Selected start time would end after the studio closes" });
   }
   // Studio Setup Crew (V3 item 5): events-only, and every placement must be
   // chosen. Guard server-side so a crafted POST can't bypass the event gate or
@@ -764,9 +758,6 @@ async function handleCartCheckout(req, res, body) {
       }
       if (isStartBeforeEarliest(s.appointmentTypeID, s.datetime)) {
         throw new Error("session " + idx + ": start is before the earliest allowed for this session");
-      }
-      if (isEndAfterClose(s.appointmentTypeID, s.datetime)) {
-        throw new Error("session " + idx + ": session would end after the studio closes");
       }
       var addons = s.addons || {};
       var sEventIntent = (s.eventIntent === "yes") ? "yes" : "no";

@@ -4,7 +4,7 @@
 // CORS — all API calls must go through a server-side proxy.
 // Docs: https://developers.acuityscheduling.com/reference/get-availability-times
 
-const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR, isStartBeforeEarliest, isEndAfterClose } = require("./_lib/acuity");
+const { acuityGet, isValidAppointmentTypeID, TYPE_TO_CALENDAR, isStartBeforeEarliest } = require("./_lib/acuity");
 const { stagingCalendarID } = require("./_lib/env");
 
 module.exports = async function handler(req, res) {
@@ -35,11 +35,12 @@ module.exports = async function handler(req, res) {
 
     // Acuity returns [{ time: "2026-03-17T09:00:00-0400", slotsAvailable: 1 }, ...]
     // Earliest-start floor (e.g. 8h Flagship is 12:30pm ET): Acuity can't enforce
-    // a per-type earliest time, so drop any slot before the floor here. Same for
-    // the studio close cap — drop any start whose session would END after 22:30 ET.
+    // a per-type earliest time, so drop any slot before the floor here. (No studio
+    // close cap — Drew 2026-06-25: neither studio closes at 10:30pm; that cap is
+    // ONLY a multi-day pre-event-day BILLING rule, handled in the cart, not a
+    // global availability filter. A solo late booking is fine.)
     const times = (data || [])
       .filter((t) => !isStartBeforeEarliest(appointmentTypeID, t.time))
-      .filter((t) => !isEndAfterClose(appointmentTypeID, t.time))
       .map((t) => ({ time: t.time }));
 
     // Shorter cache than dates — time slots are more volatile
