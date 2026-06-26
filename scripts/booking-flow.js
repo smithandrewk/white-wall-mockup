@@ -567,11 +567,41 @@
   renderProgress();
   renderStepContent();
   bindEvents();
+  prefillFromAccount();
 
   trackEvent("booking_started", {
     location: location.slug,
     referrer: document.referrer
   });
+
+  // Drew round-4 item 5: when a signed-in customer starts a NEW booking,
+  // pre-fill their contact + intake fields from their account so they don't
+  // retype what we already have. window.WWSAccount is provided by
+  // /scripts/account.js (loaded on the booking page); for anonymous visitors the
+  // helper returns null without loading the auth SDK. Only fills BLANK fields, so
+  // anything the customer has already typed this session is never clobbered.
+  // The inputs are static HTML driven by input events, so we mirror each value
+  // into both `state` and the live input element.
+  function prefillFromAccount() {
+    if (!window.WWSAccount || typeof window.WWSAccount.getBookingPrefill !== "function") return;
+    window.WWSAccount.getBookingPrefill().then(function (p) {
+      if (!p) return;
+      function fill(target, key, value, selector) {
+        if (!value || target[key]) return; // don't overwrite what the customer typed
+        target[key] = value;
+        var el = document.querySelector(selector);
+        if (el && !el.value) el.value = value;
+      }
+      fill(state.contact, "firstName", p.firstName, "[data-input='contact-first-name']");
+      fill(state.contact, "lastName", p.lastName, "[data-input='contact-last-name']");
+      fill(state.contact, "email", p.email, "[data-input='contact-email']");
+      fill(state.contact, "phone", p.phone, "[data-input='contact-phone']");
+      fill(state.intake, "business", p.business, "[data-input='intake-business']");
+      fill(state.intake, "instagram", p.instagram, "[data-input='intake-instagram']");
+      // Re-render so gates (terms/pay button) reflect the now-filled contact info.
+      renderStepContent();
+    }).catch(function () { /* never block booking on a profile hiccup */ });
+  }
 
   window.addEventListener("resize", function() {
     var progress = document.querySelector("[data-progress]");
@@ -863,7 +893,7 @@
           state.acknowledgements.cleanup = false;
           state.acknowledgements.capacity = false;
           state.acknowledgements.selfService = false;
-          // Deselect events-only add-ons (e.g. Studio Setup Crew) so a non-event
+          // Deselect events-only add-ons (e.g. Event Setup and Reset Crew) so a non-event
           // booking can't carry a selection that the server would reject.
           location.addons.forEach(function (a) {
             if (a.eventsOnly && state.addons[a.id]) {
@@ -2093,11 +2123,11 @@
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="capacity" ${state.acknowledgements.capacity ? "checked" : ""}>
-            <span>I understand that bookings with 35+ guests include a $150 cleaning fee.</span>
+            <span>I understand that bookings with 35+ guests include a $150 cleaning fee. (Unless you select the Event Setup and Reset Crew add-on)</span>
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="self-service" ${state.acknowledgements.selfService ? "checked" : ""}>
-            <span>I understand this is a fully self-service event space with no team on site.</span>
+            <span>I understand this is a fully self-service event space with no team on site. (Unless you select the Event Setup and Reset Crew add-on)</span>
           </label>
         </div>
       </div>
@@ -2179,7 +2209,7 @@
       }
     });
 
-    // Events-only add-ons (e.g. Studio Setup Crew) render only when the booking
+    // Events-only add-ons (e.g. Event Setup and Reset Crew) render only when the booking
     // is an event. eventIntent is PV-only ("yes"/"no"); TM is always non-event.
     var visibleAddons = location.addons.filter(function (addon) {
       return !addon.eventsOnly || state.eventIntent === "yes";
@@ -2237,7 +2267,7 @@
           </button>
         </div>
       `;
-      // Placement dropdowns (e.g. Studio Setup Crew): when selected, the
+      // Placement dropdowns (e.g. Event Setup and Reset Crew): when selected, the
       // customer must say where each studio item should go. Required before pay.
       if (addon.requiresPlacements && addonState.selected && Array.isArray(addon.placementItems)) {
         var placements = addonState.placements || {};
@@ -2897,7 +2927,7 @@
     var tmCount = parseCount(state.intake.participants);
     if (location.slug === "taylors-mill" && tmCount > 50) errors.push("Taylor\u2019s Mill has a maximum capacity of 50 people.");
     if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 35+ participants.");
-    // Studio Setup Crew: every placement must be chosen before pay.
+    // Event Setup and Reset Crew: every placement must be chosen before pay.
     location.addons.forEach(function (addon) {
       if (!addon.requiresPlacements || !Array.isArray(addon.placementItems)) return;
       var s = state.addons[addon.id];
@@ -2964,7 +2994,7 @@
   }
 
   // Add-on card description. Most add-ons are a single short line (kept verbatim
-  // as before). A multi-paragraph description (e.g. Studio Setup Crew) is escaped
+  // as before). A multi-paragraph description (e.g. Event Setup and Reset Crew) is escaped
   // and its blank-line-separated paragraphs become <br><br> so it stays readable.
   function formatAddonDescription(addon) {
     var text = addon.description || addon.note || "";

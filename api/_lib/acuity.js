@@ -149,7 +149,7 @@ const ACUITY_ADDON_IDS = {
   "tv": 6840276,                    // "86in Rolling TV" — $50
   "pa-system": 6840278,             // "PA System" — $40
 
-  // Studio Setup Crew (PV events only) — $750 (V3 item 5)
+  // Event Setup and Reset Crew (PV events only) — $750 (V3 item 5)
   "setup-crew": 7088190,            // "Studio Setup, Tear down, and Reset Crew."
 
   // Cleaning fee (auto-applied at 35+ participants)
@@ -239,7 +239,7 @@ function buildAcuityAddonIDs(addons, location) {
     ids.push(ACUITY_ADDON_IDS["pa-system"]);
   }
 
-  // Studio Setup Crew (PV events only)
+  // Event Setup and Reset Crew (PV events only)
   if (addons["setup-crew"] && addons["setup-crew"].selected) {
     ids.push(ACUITY_ADDON_IDS["setup-crew"]);
   }
@@ -298,20 +298,20 @@ function buildAppointmentNotes(bookingState) {
   if (addons.tables && addons.tables.quantity > 0) addonLines.push("Tables: " + addons.tables.quantity);
   if (addons.tv && addons.tv.selected) addonLines.push("86in TV: Yes");
   if (addons["pa-system"] && addons["pa-system"].selected) addonLines.push("PA system: Yes");
-  if (addons["setup-crew"] && addons["setup-crew"].selected) addonLines.push("Studio Setup Crew: Yes");
+  if (addons["setup-crew"] && addons["setup-crew"].selected) addonLines.push("Event Setup and Reset Crew: Yes");
 
   if (addonLines.length) {
     lines.push("", "Add-ons:", ...addonLines);
   }
 
-  // Studio Setup Crew placement choices (where each item should go).
+  // Event Setup and Reset Crew placement choices (where each item should go).
   if (addons["setup-crew"] && addons["setup-crew"].selected && addons["setup-crew"].placements) {
     const placements = addons["setup-crew"].placements;
     const placementLines = SETUP_CREW_PLACEMENT_ITEMS
       .filter(function (item) { return placements[item.id]; })
       .map(function (item) { return item.label + " -> " + placements[item.id]; });
     if (placementLines.length) {
-      lines.push("", "Setup Crew placements:", ...placementLines);
+      lines.push("", "Event Setup and Reset Crew placements:", ...placementLines);
     }
   }
 
@@ -528,11 +528,11 @@ const ADDON_PRICES = {
   "table": { label: "8ft Folding Table", cents: 1500 },
   "tv": { label: "86in Rolling TV", cents: 5000 },
   "pa-system": { label: "PA System", cents: 4000 },
-  "setup-crew": { label: "Studio Setup Crew", cents: 75000 }
+  "setup-crew": { label: "Event Setup and Reset Crew", cents: 75000 }
 };
 
 // ---------------------------------------------------------------------------
-// Studio Setup Crew placement items (V3 item 5) — server-side source of truth.
+// Event Setup and Reset Crew placement items (V3 item 5) — server-side source of truth.
 // Each selected booking must specify where every item goes. Mirrors
 // placementItems in scripts/booking-config.js; used for notes + validation.
 // ---------------------------------------------------------------------------
@@ -610,7 +610,7 @@ function buildSquareLineItems(appointmentTypeID, addons, location) {
     items.push({ name: ADDON_PRICES["pa-system"].label, amount: ADDON_PRICES["pa-system"].cents, quantity: 1, addonId: "pa-system" });
   }
 
-  // Studio Setup Crew (PV events only) — flat once-per-event
+  // Event Setup and Reset Crew (PV events only) — flat once-per-event
   if (addons["setup-crew"] && addons["setup-crew"].selected) {
     items.push({ name: ADDON_PRICES["setup-crew"].label, amount: ADDON_PRICES["setup-crew"].cents, quantity: 1, addonId: "setup-crew" });
   }
