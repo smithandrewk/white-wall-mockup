@@ -126,19 +126,19 @@ module.exports = async function handler(req, res) {
   if (isStartBeforeEarliest(appointmentTypeID, datetime)) {
     return res.status(400).json({ error: "Selected start time is before the earliest allowed for this session" });
   }
-  // Studio Setup Crew (V3 item 5): events-only, and every placement must be
+  // Event Setup and Reset Crew (V3 item 5): events-only, and every placement must be
   // chosen. Guard server-side so a crafted POST can't bypass the event gate or
   // omit the placement choices Drew relies on.
   if (addons && addons["setup-crew"] && addons["setup-crew"].selected) {
     if (eventIntent !== "yes") {
-      return res.status(400).json({ error: "Studio Setup Crew is only available for event bookings" });
+      return res.status(400).json({ error: "Event Setup and Reset Crew is only available for event bookings" });
     }
     var crewPlacements = addons["setup-crew"].placements || {};
     for (var pi = 0; pi < SETUP_CREW_PLACEMENT_ITEMS.length; pi++) {
       var pItem = SETUP_CREW_PLACEMENT_ITEMS[pi];
       var chosen = crewPlacements[pItem.id];
       if (!chosen || pItem.options.indexOf(chosen) === -1) {
-        return res.status(400).json({ error: "Studio Setup Crew requires a placement choice for each item" });
+        return res.status(400).json({ error: "Event Setup and Reset Crew requires a placement choice for each item" });
       }
     }
   }
@@ -761,18 +761,18 @@ async function handleCartCheckout(req, res, body) {
       }
       var addons = s.addons || {};
       var sEventIntent = (s.eventIntent === "yes") ? "yes" : "no";
-      // Studio Setup Crew: events-only + every placement chosen (same guard as
+      // Event Setup and Reset Crew: events-only + every placement chosen (same guard as
       // the single-session path, applied per session).
       if (addons["setup-crew"] && addons["setup-crew"].selected) {
         if (sEventIntent !== "yes") {
-          throw new Error("session " + idx + ": Studio Setup Crew is only available for event bookings");
+          throw new Error("session " + idx + ": Event Setup and Reset Crew is only available for event bookings");
         }
         var crewPlacements = addons["setup-crew"].placements || {};
         for (var pi = 0; pi < SETUP_CREW_PLACEMENT_ITEMS.length; pi++) {
           var pItem = SETUP_CREW_PLACEMENT_ITEMS[pi];
           var chosen = crewPlacements[pItem.id];
           if (!chosen || pItem.options.indexOf(chosen) === -1) {
-            throw new Error("session " + idx + ": Studio Setup Crew requires a placement choice for each item");
+            throw new Error("session " + idx + ": Event Setup and Reset Crew requires a placement choice for each item");
           }
         }
       }

@@ -10,7 +10,7 @@
 //    NOT a per-hour billing formula — there is no custom hours math here.
 //  - Per-day add-on discount by chronological day index: Day1 100%, Day2 85%,
 //    Day3+ 70%. Applies ONLY to the five listed add-ons (rolling walls, chairs,
-//    tables, PA, TV). The Studio Setup Crew and any future add-ons are flat,
+//    tables, PA, TV). The Event Setup and Reset Crew and any future add-ons are flat,
 //    never discounted. Session price is never discounted.
 
 (function (root, factory) {

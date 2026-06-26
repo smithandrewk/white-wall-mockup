@@ -863,7 +863,7 @@
           state.acknowledgements.cleanup = false;
           state.acknowledgements.capacity = false;
           state.acknowledgements.selfService = false;
-          // Deselect events-only add-ons (e.g. Studio Setup Crew) so a non-event
+          // Deselect events-only add-ons (e.g. Event Setup and Reset Crew) so a non-event
           // booking can't carry a selection that the server would reject.
           location.addons.forEach(function (a) {
             if (a.eventsOnly && state.addons[a.id]) {
@@ -2179,7 +2179,7 @@
       }
     });
 
-    // Events-only add-ons (e.g. Studio Setup Crew) render only when the booking
+    // Events-only add-ons (e.g. Event Setup and Reset Crew) render only when the booking
     // is an event. eventIntent is PV-only ("yes"/"no"); TM is always non-event.
     var visibleAddons = location.addons.filter(function (addon) {
       return !addon.eventsOnly || state.eventIntent === "yes";
@@ -2237,7 +2237,7 @@
           </button>
         </div>
       `;
-      // Placement dropdowns (e.g. Studio Setup Crew): when selected, the
+      // Placement dropdowns (e.g. Event Setup and Reset Crew): when selected, the
       // customer must say where each studio item should go. Required before pay.
       if (addon.requiresPlacements && addonState.selected && Array.isArray(addon.placementItems)) {
         var placements = addonState.placements || {};
@@ -2897,7 +2897,7 @@
     var tmCount = parseCount(state.intake.participants);
     if (location.slug === "taylors-mill" && tmCount > 50) errors.push("Taylor\u2019s Mill has a maximum capacity of 50 people.");
     if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 35+ participants.");
-    // Studio Setup Crew: every placement must be chosen before pay.
+    // Event Setup and Reset Crew: every placement must be chosen before pay.
     location.addons.forEach(function (addon) {
       if (!addon.requiresPlacements || !Array.isArray(addon.placementItems)) return;
       var s = state.addons[addon.id];
@@ -2964,7 +2964,7 @@
   }
 
   // Add-on card description. Most add-ons are a single short line (kept verbatim
-  // as before). A multi-paragraph description (e.g. Studio Setup Crew) is escaped
+  // as before). A multi-paragraph description (e.g. Event Setup and Reset Crew) is escaped
   // and its blank-line-separated paragraphs become <br><br> so it stays readable.
   function formatAddonDescription(addon) {
     var text = addon.description || addon.note || "";
