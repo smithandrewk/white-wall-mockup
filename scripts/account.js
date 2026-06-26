@@ -121,6 +121,62 @@
     return { ok: res.ok, status: res.status, data: data };
   }
 
+  // Save the signed-in customer's editable profile (Drew round-4 item 6).
+  // Posts the FULL field set to /api/account/profile-update; the server requires
+  // phone and saves all fields at once, so the /account page sends everything
+  // regardless of which sub-section's Save was clicked. Email is the auth
+  // identity and is intentionally NOT part of the payload. Returns
+  // { ok, status, data } so the caller can surface validation details (400).
+  async function updateProfile(payload) {
+    var token = await getAccessToken();
+    if (!token) { var e = new Error("Not signed in"); e.status = 401; throw e; }
+    var res = await fetch("/api/account/profile-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json().catch(function () { return {}; });
+    return { ok: res.ok, status: res.status, data: data };
+  }
+
+  // Cheap check for a persisted Supabase session in localStorage (key shape
+  // `sb-<ref>-auth-token`). Lets callers (the booking flow) skip loading the
+  // Supabase SDK entirely for anonymous visitors — the common case.
+  function hasStoredSession() {
+    try {
+      for (var i = 0; i < window.localStorage.length; i++) {
+        var k = window.localStorage.key(i);
+        if (k && /^sb-.*-auth-token$/.test(k)) return true;
+      }
+    } catch (e) { /* localStorage blocked — treat as anonymous */ }
+    return false;
+  }
+
+  // Booking pre-fill (Drew round-4 item 5): return the signed-in customer's
+  // contact + intake fields so a NEW booking can pre-populate them, or null when
+  // nobody is signed in. Splits full_name into first/last and maps company_name
+  // to the booking flow's "business" field. Never throws — booking must work for
+  // anonymous visitors regardless.
+  async function getBookingPrefill() {
+    if (!hasStoredSession()) return null;
+    var profile;
+    try { profile = await fetchProfile(); } catch (e) { return null; }
+    if (!profile || !profile.customer) return null;
+    var c = profile.customer;
+    var full = (c.fullName || "").trim();
+    var firstName = full, lastName = "";
+    var sp = full.indexOf(" ");
+    if (sp > 0) { firstName = full.slice(0, sp); lastName = full.slice(sp + 1).trim(); }
+    return {
+      firstName: firstName,
+      lastName: lastName,
+      email: c.email || "",
+      phone: c.phone || "",
+      instagram: c.instagram || "",
+      business: c.companyName || ""
+    };
+  }
+
   // Pay an outstanding 40% balance for one of the signed-in customer's bookings
   // (V3 item 6 — the lockout pay path). Server charges the card on file; amount
   // + ownership are authoritative server-side. Returns { ok, status, data } so
@@ -149,6 +205,8 @@
     getAccessToken: getAccessToken,
     getUser: getUser,
     fetchProfile: fetchProfile,
+    updateProfile: updateProfile,
+    getBookingPrefill: getBookingPrefill,
     fetchAvailabilityTimes: fetchAvailabilityTimes,
     submitBookingEdit: submitBookingEdit,
     payBalance: payBalance

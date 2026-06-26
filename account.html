@@ -41,29 +41,71 @@
       <div data-content class="hidden">
         <h1 class="font-display text-4xl md:text-5xl leading-none">Your account</h1>
 
-        <!-- Account info -->
-        <div class="booking-panel p-6 md:p-8 mt-8">
-          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Account</p>
-          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-sm">
-            <div><dt class="text-black/45">Name</dt><dd data-name class="text-black/80">—</dd></div>
-            <div><dt class="text-black/45">Email</dt><dd data-email class="text-black/80">—</dd></div>
-            <div><dt class="text-black/45">Phone</dt><dd data-phone class="text-black/80">—</dd></div>
-            <div><dt class="text-black/45">Instagram</dt><dd data-instagram class="text-black/80">—</dd></div>
-          </dl>
-        </div>
+        <!-- Account Info (editable) -->
+        <section class="booking-panel p-6 md:p-8 mt-8">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Account Info</p>
+          <form data-profile-form="account" class="space-y-4">
+            <div>
+              <label class="block text-xs uppercase tracking-[0.15em] text-black/45 mb-1">Full name</label>
+              <input type="text" data-field="fullName" class="booking-input" placeholder="Your full name">
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-[0.15em] text-black/45 mb-1">Company name</label>
+              <input type="text" data-field="companyName" class="booking-input" placeholder="Company name">
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-[0.15em] text-black/45 mb-1">Company website <span class="normal-case tracking-normal text-black/35">(optional)</span></label>
+              <input type="url" data-field="companyWebsite" class="booking-input" placeholder="https://example.com">
+            </div>
+            <div class="flex items-center gap-3 pt-1">
+              <button type="submit" class="text-xs uppercase tracking-[0.18em] bg-black text-white rounded px-4 py-2 disabled:opacity-40">Save account info</button>
+              <span data-msg class="text-sm"></span>
+            </div>
+          </form>
+        </section>
 
-        <!-- Card on file -->
-        <div class="booking-panel p-6 md:p-8 mt-6">
-          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Payment method</p>
+        <!-- Contact Info (editable, all required) -->
+        <section class="booking-panel p-6 md:p-8 mt-6">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-5">Contact Info</p>
+          <form data-profile-form="contact" class="space-y-4">
+            <div>
+              <label class="block text-xs uppercase tracking-[0.15em] text-black/45 mb-1">Email <span class="normal-case tracking-normal text-black/35">(your login — cannot be changed here)</span></label>
+              <input type="email" data-field="email" class="booking-input bg-black/5" readonly>
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-[0.15em] text-black/45 mb-1">Phone</label>
+              <input type="tel" data-field="phone" class="booking-input" placeholder="(555) 555-5555" required>
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-[0.15em] text-black/45 mb-1">Instagram</label>
+              <input type="text" data-field="instagram" class="booking-input" placeholder="@yourstudio" required>
+            </div>
+            <div class="flex items-center gap-3 pt-1">
+              <button type="submit" class="text-xs uppercase tracking-[0.18em] bg-black text-white rounded px-4 py-2 disabled:opacity-40">Save contact info</button>
+              <span data-msg class="text-sm"></span>
+            </div>
+          </form>
+        </section>
+
+        <!-- Card On File -->
+        <section class="booking-panel p-6 md:p-8 mt-6">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Card On File</p>
           <p data-card class="text-sm text-black/70">No card on file yet.</p>
-        </div>
+        </section>
 
-        <!-- Upcoming sessions -->
-        <div class="booking-panel p-6 md:p-8 mt-6">
-          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Your sessions</p>
-          <div data-bookings class="space-y-4"></div>
-          <p data-no-bookings class="text-sm text-black/55 hidden">No bookings yet. <a href="/book-powdersville" class="underline hover:text-black">Book a session</a>.</p>
-        </div>
+        <!-- Your Upcoming Sessions -->
+        <section class="booking-panel p-6 md:p-8 mt-6">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Your Upcoming Sessions</p>
+          <div data-upcoming class="space-y-4"></div>
+          <p data-no-upcoming class="text-sm text-black/55 hidden">No upcoming sessions. <a href="/book-powdersville" class="underline hover:text-black">Book a session</a>.</p>
+        </section>
+
+        <!-- Completed Sessions -->
+        <section class="booking-panel p-6 md:p-8 mt-6">
+          <p class="text-xs tracking-[0.2em] uppercase text-black/45 mb-4">Completed Sessions</p>
+          <div data-completed class="space-y-4"></div>
+          <p data-no-completed class="text-sm text-black/55 hidden">No completed sessions yet.</p>
+        </section>
       </div>
     </div>
   </main>
@@ -94,6 +136,31 @@
       function locLabel(s) { return s === "powdersville" ? "Flagship (Powdersville)" : (s === "taylors-mill" ? "Taylor's Mill" : s); }
       function set(sel, val) { var el = document.querySelector(sel); if (el) el.textContent = val || "—"; }
       function clampQty(v, max) { var n = parseInt(v, 10); if (!Number.isInteger(n) || n < 1) n = 1; if (n > max) n = max; return n; }
+
+      // Display labels for saved add-ons (keyed by the server's ADDON_PRICES id,
+      // api/_lib/acuity.js) — used to render the read-only Completed Sessions
+      // history. Falls back to the raw id for any future add-on not listed.
+      var ADDON_LABELS = {
+        "lighting-powdersville": "Lighting Rental",
+        "lighting-taylors-mill": "Lighting Rental",
+        "backdrops-all": "All Backdrops",
+        "backdrops-single": "Single Backdrop",
+        "walls-all": "All Rolling Walls",
+        "walls-single": "Single Rolling Wall",
+        "chairs-25": "25 Chairs",
+        "chairs-50": "50 Chairs",
+        "chairs-75": "75 Chairs",
+        "chairs-100": "100 Chairs",
+        "table": "8ft Folding Table",
+        "tv": "86in Rolling TV",
+        "pa-system": "PA System",
+        "setup-crew": "Event Setup and Reset Crew",
+        "cleaning-fee": "Cleaning Fee"
+      };
+      function addonLabel(a) { return ADDON_LABELS[a.addon_id] || String(a.addon_id || "Add-on"); }
+      function addonLineCents(a) {
+        return (Number(a.unit_cents) || 0) * (Number(a.quantity) || 1) - (Number(a.discount_cents) || 0);
+      }
 
       // Addable add-ons per location, keyed by the server's ADDON_PRICES id
       // (api/_lib/acuity.js). Prices here are display hints only — the server
@@ -137,66 +204,222 @@
         }
 
         var c = profile.customer || {};
-        set("[data-name]", c.fullName);
-        set("[data-email]", c.email);
-        set("[data-phone]", c.phone);
-        set("[data-instagram]", c.instagram);
+
+        // --- Account Info + Contact Info forms ---
+        function field(sel) { return document.querySelector(sel); }
+        function setVal(name, val) {
+          var el = document.querySelector("[data-field='" + name + "']");
+          if (el) el.value = val == null ? "" : val;
+        }
+        setVal("fullName", c.fullName);
+        setVal("companyName", c.companyName);
+        setVal("companyWebsite", c.companyWebsite);
+        setVal("email", c.email);
+        setVal("phone", c.phone);
+        setVal("instagram", c.instagram);
+
         if (c.cardOnFile && c.cardOnFile.last4) {
           document.querySelector("[data-card]").textContent =
             (c.cardOnFile.brand ? c.cardOnFile.brand + " " : "") + "ending in " + c.cardOnFile.last4;
         }
 
-        var wrap = document.querySelector("[data-bookings]");
-        var bookings = profile.bookings || [];
-        if (!bookings.length) {
-          document.querySelector("[data-no-bookings]").classList.remove("hidden");
+        wireProfileForms();
+
+        // --- Sessions ---
+        var upcoming = profile.upcomingSessions || [];
+        var completed = profile.completedSessions || [];
+
+        var upWrap = document.querySelector("[data-upcoming]");
+        if (!upcoming.length) {
+          document.querySelector("[data-no-upcoming]").classList.remove("hidden");
         } else {
-          bookings.forEach(function (b) {
-            var sessions = (b.booking_sessions || []).slice().sort(function (x, y) {
-              return new Date(x.starts_at) - new Date(y.starts_at);
-            });
-            var card = document.createElement("div");
-            card.className = "border border-black/10 rounded-lg p-4";
+          upcoming.forEach(function (b) { upWrap.appendChild(renderUpcomingCard(b)); });
+        }
 
-            var header = document.createElement("div");
-            header.className = "flex items-center justify-between mb-2";
-            header.innerHTML =
-              '<span class="text-xs tracking-[0.18em] uppercase text-black/45">' + (b.event_intent === "yes" ? "Event" : "Session") + ' · ' + b.status + '</span>' +
-              '<span class="text-sm font-medium">' + fmtMoney(b.total_cents) + '</span>';
-            card.appendChild(header);
-
-            if (!sessions.length) {
-              var pending = document.createElement("p");
-              pending.className = "text-sm text-black/55";
-              pending.textContent = "Details pending.";
-              card.appendChild(pending);
-            } else {
-              sessions.forEach(function (s) { card.appendChild(renderSessionRow(s, b)); });
-            }
-
-            if (b.balance_status && b.balance_status !== "none") {
-              var bl = document.createElement("p");
-              bl.className = "text-xs text-black/50 mt-2";
-              bl.textContent = "Balance " + fmtMoney(b.balance_due_cents) + " · " + b.balance_status;
-              card.appendChild(bl);
-
-              // "Pay remaining balance" — only when a balance is actually OWED
-              // (scheduled or locked-out 'failed'), there's a positive amount,
-              // and it's a deposit booking. Server re-authorizes + reprices.
-              var owed = b.payment_mode === "deposit" &&
-                (b.balance_status === "scheduled" || b.balance_status === "failed") &&
-                Number(b.balance_due_cents) > 0;
-              if (owed) {
-                card.appendChild(renderPayBalance(b));
-              }
-            }
-            wrap.appendChild(card);
-          });
+        var compWrap = document.querySelector("[data-completed]");
+        if (!completed.length) {
+          document.querySelector("[data-no-completed]").classList.remove("hidden");
+        } else {
+          completed.forEach(function (b) { compWrap.appendChild(renderCompletedCard(b)); });
         }
 
         loading.classList.add("hidden");
         content.classList.remove("hidden");
       })();
+
+      // The profile editor (Drew round 4, item 6). Both Save buttons POST the
+      // FULL field set to /api/account/profile-update (the server requires phone
+      // and saves all fields at once), so saving from either section never nulls
+      // out the other. Email is read-only (the auth identity) and is never sent.
+      function wireProfileForms() {
+        var forms = document.querySelectorAll("[data-profile-form]");
+        Array.prototype.forEach.call(forms, function (form) {
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            saveProfile(form);
+          });
+        });
+      }
+
+      function readField(name) {
+        var el = document.querySelector("[data-field='" + name + "']");
+        return el ? el.value.trim() : "";
+      }
+
+      async function saveProfile(form) {
+        var msg = form.querySelector("[data-msg]");
+        var btn = form.querySelector("button[type='submit']");
+        function setMsg(text, kind) {
+          if (!msg) return;
+          msg.textContent = text || "";
+          msg.className = "text-sm " + (kind === "error" ? "text-red-600" : kind === "ok" ? "text-green-700" : "text-black/55");
+        }
+
+        var phone = readField("phone");
+        var instagram = readField("instagram");
+        // Contact Info is mandatory (Drew round 4).
+        if (!phone || phone.replace(/\D/g, "").length < 10) {
+          setMsg("Enter a valid phone number in Contact Info.", "error");
+          return;
+        }
+        if (!instagram) {
+          setMsg("Instagram is required in Contact Info.", "error");
+          return;
+        }
+
+        var payload = {
+          fullName: readField("fullName"),
+          companyName: readField("companyName"),
+          companyWebsite: readField("companyWebsite"),
+          phone: phone,
+          instagram: instagram
+        };
+
+        if (btn) btn.disabled = true;
+        setMsg("Saving…", "info");
+        try {
+          var r = await window.WWSAccount.updateProfile(payload);
+          if (r.ok) {
+            setMsg("Saved.", "ok");
+          } else {
+            var detail = r.data && (r.data.details && r.data.details.join(", ") || r.data.error);
+            setMsg(detail || "Could not save your profile.", "error");
+          }
+        } catch (e) {
+          setMsg("Could not save your profile.", "error");
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      // Sort a booking's sessions chronologically.
+      function sortedSessions(b) {
+        return (b.booking_sessions || []).slice().sort(function (x, y) {
+          return new Date(x.starts_at) - new Date(y.starts_at);
+        });
+      }
+
+      // An upcoming booking: header + per-session rows (each with the inline
+      // item-7 editor) + balance / pay-remaining affordance.
+      function renderUpcomingCard(b) {
+        var sessions = sortedSessions(b);
+        var card = document.createElement("div");
+        card.className = "border border-black/10 rounded-lg p-4";
+
+        var header = document.createElement("div");
+        header.className = "flex items-center justify-between mb-2";
+        header.innerHTML =
+          '<span class="text-xs tracking-[0.18em] uppercase text-black/45">' + (b.event_intent === "yes" ? "Event" : "Session") + ' · ' + b.status + '</span>' +
+          '<span class="text-sm font-medium">' + fmtMoney(b.total_cents) + '</span>';
+        card.appendChild(header);
+
+        if (!sessions.length) {
+          var pending = document.createElement("p");
+          pending.className = "text-sm text-black/55";
+          pending.textContent = "Details pending.";
+          card.appendChild(pending);
+        } else {
+          sessions.forEach(function (s) { card.appendChild(renderSessionRow(s, b)); });
+        }
+
+        if (b.balance_status && b.balance_status !== "none") {
+          var bl = document.createElement("p");
+          bl.className = "text-xs text-black/50 mt-2";
+          bl.textContent = "Balance " + fmtMoney(b.balance_due_cents) + " · " + b.balance_status;
+          card.appendChild(bl);
+
+          // "Pay remaining balance" — only when a balance is actually OWED
+          // (scheduled or locked-out 'failed'), there's a positive amount,
+          // and it's a deposit booking. Server re-authorizes + reprices.
+          var owed = b.payment_mode === "deposit" &&
+            (b.balance_status === "scheduled" || b.balance_status === "failed") &&
+            Number(b.balance_due_cents) > 0;
+          if (owed) {
+            card.appendChild(renderPayBalance(b));
+          }
+        }
+        return card;
+      }
+
+      // A completed booking (Drew round 4, item 6): read-only history showing each
+      // past session's date, what was booked, the spend, and the add-ons tied to it.
+      function renderCompletedCard(b) {
+        var sessions = sortedSessions(b);
+        var card = document.createElement("div");
+        card.className = "border border-black/10 rounded-lg p-4";
+
+        var header = document.createElement("div");
+        header.className = "flex items-center justify-between mb-3";
+        header.innerHTML =
+          '<span class="text-xs tracking-[0.18em] uppercase text-black/45">' + (b.event_intent === "yes" ? "Event" : "Session") + ' · ' + b.status + '</span>' +
+          '<span class="text-sm font-medium">' + fmtMoney(b.total_cents) + '</span>';
+        card.appendChild(header);
+
+        if (!sessions.length) {
+          var none = document.createElement("p");
+          none.className = "text-sm text-black/55";
+          none.textContent = "No session details on record.";
+          card.appendChild(none);
+          return card;
+        }
+
+        sessions.forEach(function (s) {
+          var block = document.createElement("div");
+          block.className = "py-2 border-t border-black/5 first:border-t-0";
+
+          var line = document.createElement("div");
+          line.className = "flex items-center justify-between text-sm";
+          var left = document.createElement("span");
+          left.className = "text-black/70";
+          left.textContent = fmtDateTime(s.starts_at) + " · " + locLabel(s.location) + " · " + Math.round(s.duration_min / 60) + "h";
+          var right = document.createElement("span");
+          right.className = "text-black/55";
+          right.textContent = fmtMoney(s.session_price_cents);
+          line.appendChild(left);
+          line.appendChild(right);
+          block.appendChild(line);
+
+          var addons = s.booking_session_addons || [];
+          if (addons.length) {
+            var list = document.createElement("ul");
+            list.className = "mt-1 ml-3 space-y-0.5";
+            addons.forEach(function (a) {
+              var li = document.createElement("li");
+              li.className = "flex items-center justify-between text-xs text-black/50";
+              var nm = document.createElement("span");
+              nm.textContent = addonLabel(a) + ((Number(a.quantity) || 1) > 1 ? " ×" + a.quantity : "");
+              var amt = document.createElement("span");
+              amt.textContent = fmtMoney(addonLineCents(a));
+              li.appendChild(nm);
+              li.appendChild(amt);
+              list.appendChild(li);
+            });
+            block.appendChild(list);
+          }
+          card.appendChild(block);
+        });
+        return card;
+      }
 
       // "Pay remaining balance" affordance (V3 item 6 — the lockout pay path).
       // Charges the card on file via /api/pay-balance. When the feature is dark

@@ -567,11 +567,41 @@
   renderProgress();
   renderStepContent();
   bindEvents();
+  prefillFromAccount();
 
   trackEvent("booking_started", {
     location: location.slug,
     referrer: document.referrer
   });
+
+  // Drew round-4 item 5: when a signed-in customer starts a NEW booking,
+  // pre-fill their contact + intake fields from their account so they don't
+  // retype what we already have. window.WWSAccount is provided by
+  // /scripts/account.js (loaded on the booking page); for anonymous visitors the
+  // helper returns null without loading the auth SDK. Only fills BLANK fields, so
+  // anything the customer has already typed this session is never clobbered.
+  // The inputs are static HTML driven by input events, so we mirror each value
+  // into both `state` and the live input element.
+  function prefillFromAccount() {
+    if (!window.WWSAccount || typeof window.WWSAccount.getBookingPrefill !== "function") return;
+    window.WWSAccount.getBookingPrefill().then(function (p) {
+      if (!p) return;
+      function fill(target, key, value, selector) {
+        if (!value || target[key]) return; // don't overwrite what the customer typed
+        target[key] = value;
+        var el = document.querySelector(selector);
+        if (el && !el.value) el.value = value;
+      }
+      fill(state.contact, "firstName", p.firstName, "[data-input='contact-first-name']");
+      fill(state.contact, "lastName", p.lastName, "[data-input='contact-last-name']");
+      fill(state.contact, "email", p.email, "[data-input='contact-email']");
+      fill(state.contact, "phone", p.phone, "[data-input='contact-phone']");
+      fill(state.intake, "business", p.business, "[data-input='intake-business']");
+      fill(state.intake, "instagram", p.instagram, "[data-input='intake-instagram']");
+      // Re-render so gates (terms/pay button) reflect the now-filled contact info.
+      renderStepContent();
+    }).catch(function () { /* never block booking on a profile hiccup */ });
+  }
 
   window.addEventListener("resize", function() {
     var progress = document.querySelector("[data-progress]");
