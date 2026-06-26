@@ -1,7 +1,11 @@
-// scripts/nav-account.js — flips nav "Account" links to "My Account" when a
-// customer is signed in (V3 item 7 polish). Dependency-light + fail-silent:
-// reuses WWSAccount.getSession from /scripts/account.js (loaded on demand), and
-// stays quiet when signed out or when accounts aren't configured.
+// scripts/nav-account.js — sets nav account links to "My Account" when a
+// customer is signed in, else "Login/Create Account" (V3 round-4 item 4). The
+// static markup already reads "Login/Create Account" when signed out, so this
+// only needs to flip to "My Account" on a live session — but it normalizes the
+// signed-out label too, so it's correct even if it runs on stale markup.
+// Dependency-light + fail-silent: reuses WWSAccount.getSession from
+// /scripts/account.js (loaded on demand), and stays quiet when signed out or
+// when accounts aren't configured.
 
 (function () {
   function loadAccountModule() {
@@ -22,22 +26,22 @@
     });
   }
 
-  function flipLabels() {
+  function setLabels(text) {
     var links = document.querySelectorAll("[data-account-link]");
     for (var i = 0; i < links.length; i++) {
-      if (links[i].textContent.trim() === "Account") {
-        links[i].textContent = "My Account";
+      if (links[i].textContent.trim() !== text) {
+        links[i].textContent = text;
       }
     }
   }
 
   loadAccountModule()
     .then(function (acct) {
-      if (!acct || !acct.getSession) return;
+      if (!acct || !acct.getSession) return null;
       return acct.getSession();
     })
     .then(function (session) {
-      if (session) flipLabels();
+      setLabels(session ? "My Account" : "Login/Create Account");
     })
     .catch(function () { /* fail silent — signed out or accounts not configured */ });
 })();
