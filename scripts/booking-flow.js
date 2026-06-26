@@ -2093,11 +2093,11 @@
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="capacity" ${state.acknowledgements.capacity ? "checked" : ""}>
-            <span>I understand that bookings with 35+ guests include a $150 cleaning fee.</span>
+            <span>I understand that bookings with 35+ guests include a $150 cleaning fee. (Unless you select the Event Setup and Reset Crew add-on)</span>
           </label>
           <label class="helper-item" style="margin-top:1rem">
             <input type="checkbox" data-check="self-service" ${state.acknowledgements.selfService ? "checked" : ""}>
-            <span>I understand this is a fully self-service event space with no team on site.</span>
+            <span>I understand this is a fully self-service event space with no team on site. (Unless you select the Event Setup and Reset Crew add-on)</span>
           </label>
         </div>
       </div>
