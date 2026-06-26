@@ -11,6 +11,26 @@
 var sb = require("../_lib/supabase");
 var sq = require("../_lib/square");
 
+// Split a customer's bookings into upcoming vs completed by session timing.
+// Rule (Drew round 4, item 6): a booking with ANY future session is upcoming;
+// a booking whose sessions are ALL in the past (or has none) is completed, so
+// the UI can show finances + add-ons per past session. `now` is injected for
+// testability. Returns full booking objects (spend = total_cents per booking,
+// session_price_cents per session; add-ons stay embedded).
+function splitBookingsByTiming(bookings, now) {
+  var nowMs = (now instanceof Date ? now : new Date(now)).getTime();
+  var upcoming = [];
+  var completed = [];
+  (bookings || []).forEach(function (b) {
+    var hasFuture = (b.booking_sessions || []).some(function (s) {
+      var t = s && s.starts_at ? new Date(s.starts_at).getTime() : NaN;
+      return !isNaN(t) && t > nowMs;
+    });
+    (hasFuture ? upcoming : completed).push(b);
+  });
+  return { upcomingSessions: upcoming, completedSessions: completed };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -27,7 +47,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    var customers = await sb.serviceSelect("customers", "id=eq." + user.id + "&select=id,email,full_name,phone,instagram,square_customer_id,created_at");
+    var customers = await sb.serviceSelect("customers", "id=eq." + user.id + "&select=id,email,full_name,phone,instagram,company_name,company_website,square_customer_id,created_at");
     var customer = customers[0] || { id: user.id, email: user.email };
 
     // Lazy-link any prior bookings made anonymously under this email. Password
@@ -64,6 +84,10 @@ module.exports = async function handler(req, res) {
       }
     } catch (e) { /* leave null */ }
 
+    // Split into upcoming vs completed so the profile can show finances +
+    // add-ons on past sessions and editable upcoming ones (item 6).
+    var split = splitBookingsByTiming(bookings, new Date());
+
     return res.status(200).json({
       customer: {
         id: customer.id,
@@ -71,9 +95,13 @@ module.exports = async function handler(req, res) {
         fullName: customer.full_name || null,
         phone: customer.phone || null,
         instagram: customer.instagram || null,
+        companyName: customer.company_name || null,
+        companyWebsite: customer.company_website || null,
         cardOnFile: cardOnFile
       },
-      bookings: bookings || []
+      bookings: bookings || [],
+      upcomingSessions: split.upcomingSessions,
+      completedSessions: split.completedSessions
     });
   } catch (err) {
     return res.status(500).json({ error: "Could not load profile", detail: String(err && err.message || err) });
