@@ -50,11 +50,13 @@ var sb = require("../_lib/supabase");
   }, "values are trimmed + snake_cased");
   assert.ok(!("email" in good.values), "email is never in the PATCH values");
 
-  // Empty optionals normalize to null (so a customer can clear them).
-  var cleared = v({ phone: "8038738153" });
+  // Instagram is required too (Drew: all contact fields mandatory).
+  assert.strictEqual(v({ phone: "8038738153" }).ok, false, "missing instagram must fail");
+  // Empty OPTIONAL fields (company, name) normalize to null so a customer can clear them.
+  var cleared = v({ phone: "8038738153", instagram: "@whitewall" });
+  assert.strictEqual(cleared.ok, true, "phone + instagram present -> ok");
   assert.strictEqual(cleared.values.company_name, null, "empty company -> null");
   assert.strictEqual(cleared.values.full_name, null, "empty name -> null");
-  assert.strictEqual(cleared.values.instagram, null, "empty instagram -> null");
 })();
 
 // ---- helpers: mock req/res -------------------------------------------------
@@ -130,7 +132,7 @@ function makeRes() {
     var req = {
       method: "POST",
       headers: { authorization: "Bearer ok" },
-      body: { fullName: "Drew Shahoud", companyName: "White Wall", phone: "8038738153", email: "evil@hacker.com" }
+      body: { fullName: "Drew Shahoud", companyName: "White Wall", phone: "8038738153", instagram: "@whitewall", email: "evil@hacker.com" }
     };
     await handler(req, res);
     try {

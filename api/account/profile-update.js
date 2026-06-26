@@ -33,11 +33,15 @@ function validateProfileUpdate(body) {
   var phone = str(body.phone);
   var instagram = str(body.instagram);
 
-  // Required Contact field: a reachable phone number (>= 10 digits).
+  // Required Contact fields (Drew: email, phone, instagram all mandatory). Email
+  // is the auth identity (not editable here); phone + instagram are required.
   if (!phone) {
     errors.push("Phone is required");
   } else if (phone.replace(/\D/g, "").length < 10) {
     errors.push("Enter a valid phone number");
+  }
+  if (!instagram) {
+    errors.push("Instagram is required");
   }
 
   return {
