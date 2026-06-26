@@ -248,12 +248,15 @@ async function createPayment(opts) {
   return data.payment;
 }
 
-// Save the just-charged card on file. Square performs a $0 verification
-// on CreateCard. source_id is the payment.id from createPayment().
+// Save a card on file. Square performs a $0 verification on CreateCard.
+// source_id is EITHER a payment.id from createPayment() (the booking checkout's
+// charge-then-store path) OR a single-use card token from the Web Payments SDK
+// tokenized with intent:"STORE" (the /account "add card" path — no charge).
+// Pass `sourceId` for the token form, or `paymentId` for the payment form.
 async function createCardOnFile(opts) {
   const body = {
     idempotency_key: crypto.randomUUID(),
-    source_id: opts.paymentId,
+    source_id: opts.sourceId || opts.paymentId,
     card: {
       customer_id: opts.customerId
     }

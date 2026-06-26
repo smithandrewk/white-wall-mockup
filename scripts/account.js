@@ -139,6 +139,24 @@
     return { ok: res.ok, status: res.status, data: data };
   }
 
+  // Save a NEW card on file for the signed-in customer (Drew V3 item 1). The
+  // caller tokenizes a card with the Square Web Payments SDK (intent:"STORE" —
+  // no charge) and passes the single-use token here. Server resolves/creates the
+  // Square customer for this account, stores the card, and returns the new
+  // last4/brand. Never trusts the client with anything but the token. Returns
+  // { ok, status, data } so the caller can surface a 402 (bad card) gracefully.
+  async function saveCard(payload) {
+    var token = await getAccessToken();
+    if (!token) { var e = new Error("Not signed in"); e.status = 401; throw e; }
+    var res = await fetch("/api/account/save-card", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json().catch(function () { return {}; });
+    return { ok: res.ok, status: res.status, data: data };
+  }
+
   // Cheap check for a persisted Supabase session in localStorage (key shape
   // `sb-<ref>-auth-token`). Lets callers (the booking flow) skip loading the
   // Supabase SDK entirely for anonymous visitors — the common case.
@@ -209,6 +227,7 @@
     getBookingPrefill: getBookingPrefill,
     fetchAvailabilityTimes: fetchAvailabilityTimes,
     submitBookingEdit: submitBookingEdit,
-    payBalance: payBalance
+    payBalance: payBalance,
+    saveCard: saveCard
   };
 })();

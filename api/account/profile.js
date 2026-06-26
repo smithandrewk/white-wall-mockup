@@ -47,7 +47,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    var customers = await sb.serviceSelect("customers", "id=eq." + user.id + "&select=id,email,full_name,phone,instagram,company_name,company_website,square_customer_id,created_at");
+    var customers = await sb.serviceSelect("customers", "id=eq." + user.id + "&select=id,email,full_name,phone,instagram,company_name,company_website,square_customer_id,square_card_id,created_at");
     var customer = customers[0] || { id: user.id, email: user.email };
 
     // Lazy-link any prior bookings made anonymously under this email. Password
@@ -77,9 +77,13 @@ module.exports = async function handler(req, res) {
     // card. Best-effort — a Square hiccup just leaves it null, never 500s.
     var cardOnFile = null;
     try {
-      var withCard = (bookings || []).find(function (b) { return b.square_card_id; });
-      if (withCard) {
-        var card = await sq.retrieveCard(withCard.square_card_id);
+      // Prefer the customer-level handle (set by /api/account/save-card, covers
+      // accounts with zero bookings); else fall back to the newest booking that
+      // carries a saved card.
+      var withCardBooking = (bookings || []).find(function (b) { return b.square_card_id; });
+      var cardHandle = customer.square_card_id || (withCardBooking && withCardBooking.square_card_id);
+      if (cardHandle) {
+        var card = await sq.retrieveCard(cardHandle);
         if (card && card.last_4) cardOnFile = { last4: card.last_4, brand: card.card_brand || null };
       }
     } catch (e) { /* leave null */ }
