@@ -124,10 +124,13 @@ module.exports = async function handler(req, res) {
     // in the dashboard/profile. A failure here NEVER fails the save (same
     // discipline as create-checkout's post-charge persistence).
     try {
-      // (a) customers.square_customer_id — keeps the account's Square identity
-      //     in sync (also written at account creation).
+      // (a) customers.square_customer_id + square_card_id — keeps the account's
+      //     Square identity in sync AND gives a customer-level card handle so
+      //     profile.js can surface the card even for an account with zero
+      //     bookings (e.g. a fresh Google sign-in). Covers "all account holders".
       await sb.serviceUpdate("customers", { id: "eq." + user.id }, {
-        square_customer_id: squareCustomerId
+        square_customer_id: squareCustomerId,
+        square_card_id: card.id
       });
     } catch (e) {
       console.error("save-card: customers update:", e && e.message);
