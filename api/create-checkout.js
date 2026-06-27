@@ -44,7 +44,7 @@ const { isStaging, stagingSinkEmail, stagingCalendarID } = require("./_lib/env")
 const { buildWaiverText } = require("./_lib/waiver-text");
 const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
-const { notifyOwnerSMS } = require("./_lib/notify-sms");
+const { notifyOwnerSMS, notifyOwnerCompSMS } = require("./_lib/notify-sms");
 const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
@@ -115,11 +115,38 @@ module.exports = async function handler(req, res) {
   if (!waiverSigned) {
     return res.status(400).json({ error: "Waiver must be signed" });
   }
-  if (!squareToken) {
-    return res.status(400).json({ error: "Missing payment token" });
+
+  // FREE-COMP determination (Drew round 7). A comp coupon (WWSHUNDRED) wipes the
+  // ENTIRE booking to $0 and takes a PAYMENT-FREE path: no card, no Square calls.
+  // We MUST resolve comp-ness BEFORE the squareToken/consent guards, because a
+  // comp booking legitimately has no card. The server is authoritative — this is
+  // the ONLY way a $0/payment-skipped booking can happen, and ONLY when the
+  // server itself validated the exact comp coupon (compCoupon set below). Every
+  // NON-comp booking still requires a card + charges exactly as today.
+  // Fail-safe: any error here leaves compCoupon null → the normal paid path runs.
+  var compCoupon = null;
+  if (couponCode && String(couponCode).trim()) {
+    try {
+      var compCheck = await validateCoupon(couponCode, { location: location });
+      if (compCheck && compCheck.valid && compCheck.comp === true) {
+        compCoupon = compCheck;
+      }
+    } catch (compPreErr) {
+      console.error("create-checkout: comp pre-check failed (treating as non-comp):", compPreErr.message);
+      compCoupon = null;
+    }
   }
-  if (!consent || consent.cardOnFile !== true) {
-    return res.status(400).json({ error: "Card-on-file authorization is required to book" });
+
+  // squareToken + card-on-file consent are required for EVERY non-comp booking.
+  // A comp booking skips them (there is no card). Gated strictly on the
+  // server-validated compCoupon — a client cannot bypass these guards.
+  if (!compCoupon) {
+    if (!squareToken) {
+      return res.status(400).json({ error: "Missing payment token" });
+    }
+    if (!consent || consent.cardOnFile !== true) {
+      return res.status(400).json({ error: "Card-on-file authorization is required to book" });
+    }
   }
   // Earliest-start floor (e.g. 8h Flagship must start >= 12:30pm ET). Server is
   // authoritative — reject a too-early start even if the client UI is bypassed.
@@ -140,6 +167,189 @@ module.exports = async function handler(req, res) {
       if (!chosen || pItem.options.indexOf(chosen) === -1) {
         return res.status(400).json({ error: "Event Setup and Reset Crew requires a placement choice for each item" });
       }
+    }
+  }
+
+  // =========================================================================
+  // FREE-COMP path (server-validated comp coupon, e.g. WWSHUNDRED).
+  // The ENTIRE booking (session + every add-on + any fee) is comped to $0. This
+  // path makes ZERO Square calls — no findOrCreateCustomer, no createPayment, no
+  // createCardOnFile — and requires NO squareToken / consent. It goes straight to
+  // the Acuity appointment + the usual notifications, persists the booking at $0,
+  // fires a Watson owner alert, and returns the SAME success/redirect shape the
+  // paid path returns. Reached ONLY when the server validated the comp coupon
+  // above (compCoupon set). Every non-comp booking falls through to the unchanged
+  // paid flow below, which still requires a card + charges exactly as today.
+  // =========================================================================
+  if (compCoupon) {
+    try {
+      // Server-recomputed cleaning fee (same 35+ rule as the paid path) so the
+      // Acuity appointment still reflects a large-event cleaning add-on even
+      // though nothing is charged.
+      var parseCompCount = function (v) {
+        if (v == null) return 0;
+        var m = String(v).match(/\d+/);
+        return m ? parseInt(m[0], 10) : 0;
+      };
+      var compIntakeParticipants = (intake && intake.participants) || "";
+      var compEffectiveCount = Math.max(parseCompCount(participants), parseCompCount(compIntakeParticipants));
+      var compCleaningFee = compEffectiveCount >= 35 ? { label: "Cleaning fee", amount: 150, note: "" } : null;
+
+      var compBookingState = {
+        appointmentTypeID: appointmentTypeID,
+        datetime: datetime,
+        location: location,
+        contact: contact,
+        intake: intake || {},
+        addons: addons || {},
+        eventIntent: eventIntent || "no",
+        participants: participants || "",
+        eventDescription: eventDescription || "",
+        foodDrinks: foodDrinks != null ? foodDrinks : false,
+        highTrafficNote: highTrafficNote || "",
+        tmHighTrafficNote: tmHighTrafficNote || "",
+        emailAcknowledgment: emailAcknowledgment || "",
+        termsSignature: termsSignature || "",
+        waiverSigned: true,
+        cleaningFee: compCleaningFee || null
+      };
+
+      var compAddonIDs = buildAcuityAddonIDs(compBookingState.addons, compBookingState.location);
+      if (compCleaningFee && compCleaningFee.amount > 0) {
+        compAddonIDs.push(ACUITY_ADDON_IDS["cleaning-fee"]);
+      }
+      var compFields = buildAcuityFields(compBookingState.intake || {}, compBookingState.location);
+      var compNotes = buildAppointmentNotes(compBookingState);
+      if (compEffectiveCount >= 50) {
+        compNotes += "\n\n[CAPACITY ALERT: " + compEffectiveCount + " participants — follow-up required]";
+      } else if (compEffectiveCount >= 25) {
+        compNotes += "\n\n[HIGH TRAFFIC: " + compEffectiveCount + " participants]";
+      }
+      if (highTrafficNote) compNotes += "\nCustomer note: " + highTrafficNote;
+      if (tmHighTrafficNote) compNotes += "\nTM high-traffic note: " + tmHighTrafficNote;
+      // No card-on-file consent block — there is no card and no charge to record.
+      compNotes += "\n\nPromo code: " + compCoupon.code +
+        " (FULL COMP — entire booking $0.00, no payment collected)";
+
+      var compApptFirstName = contact.firstName;
+      var compApptEmail = contact.email;
+      var compStagingCalID = stagingCalendarID();
+      var compStagingMocked = isStaging() && !compStagingCalID;
+      if (isStaging()) {
+        compApptFirstName = "[STAGING] " + compApptFirstName;
+        compApptEmail = stagingSinkEmail();
+        compNotes = "*** STAGING BOOKING — DO NOT FULFILL ***\n" + compNotes;
+      }
+
+      var compAppointment;
+      if (compStagingMocked) {
+        compAppointment = { id: "staging-mock-" + Date.now() };
+        console.warn("create-checkout(comp): ACUITY_STAGING_CALENDAR_ID unset — mocking Acuity write");
+      } else {
+        compAppointment = await acuityPost("/appointments?admin=true", {
+          appointmentTypeID: appointmentTypeID,
+          datetime: datetime,
+          firstName: compApptFirstName,
+          lastName: contact.lastName || "",
+          email: compApptEmail,
+          phone: contact.phone || "",
+          calendarID: compStagingCalID || CALENDAR_IDS[location],
+          addonIDs: compAddonIDs,
+          fields: compFields,
+          notes: compNotes,
+          noPayment: true
+        });
+      }
+
+      captureServerEvent(contact.email, "booking_completed_server", {
+        appointment_id: compAppointment.id,
+        location: location,
+        appointment_type_id: appointmentTypeID,
+        datetime: datetime,
+        comp: true,
+        coupon_code: compCoupon.code,
+        total_cents: 0,
+        participants: participants || "",
+        addon_count: compAddonIDs.length,
+        has_cleaning_fee: !!(compCleaningFee && compCleaningFee.amount > 0)
+      });
+
+      // Cleaning fee → 2.5h cleaner buffer block (same as the paid path).
+      if (compCleaningFee && compCleaningFee.amount > 0 && !compStagingMocked) {
+        try {
+          var compDurMin = TYPE_TO_DURATION[String(appointmentTypeID)] || 60;
+          var compSEnd = new Date(new Date(datetime).getTime() + compDurMin * 60000);
+          var compBEnd = new Date(compSEnd.getTime() + 150 * 60000);
+          await acuityPost("/blocks", {
+            start: compSEnd.toISOString(),
+            end: compBEnd.toISOString(),
+            calendarID: compStagingCalID || CALENDAR_IDS[location],
+            notes: (isStaging() ? "[STAGING] " : "") + "Cleaning buffer (auto-created for booking #" + compAppointment.id + ")"
+          });
+        } catch (e) {
+          console.error("buffer block failed (comp):", e.message);
+        }
+      }
+
+      // Notifications — isolated so one failure can't break the comp booking.
+      try { await notifyOwner(compBookingState, compAppointment.id); } catch (e) { console.error("notifyOwner:", e.message); }
+      try { await notifyCleaner(compBookingState, compAppointment.id); } catch (e) { console.error("notifyCleaner:", e.message); }
+      try { await notifyOwnerSMS(compBookingState, compAppointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
+      try { await notifyCustomerSMS(compBookingState, compAppointment.id); } catch (e) { console.error("notifyCustomerSMS:", e.message); }
+      // Watson comp alert — a 100% off code was used (best-effort, never blocks).
+      try { await notifyOwnerCompSMS(compBookingState, compAppointment.id); } catch (e) { console.error("notifyOwnerCompSMS:", e.message); }
+
+      // Persist the $0 booking (best-effort + isolated, same discipline as paid).
+      if (sbDB.isConfigured() && !compStagingMocked) {
+        try {
+          var compBookingRows = await sbDB.serviceInsert("bookings", {
+            email: contact.email,
+            status: "confirmed",
+            event_intent: (eventIntent === "yes") ? "yes" : "no",
+            subtotal_cents: 0,
+            total_cents: 0,
+            payment_mode: "comp",
+            square_customer_id: null,
+            square_card_id: null,
+            square_payment_id: null
+          });
+          var compBookingRow = Array.isArray(compBookingRows) ? compBookingRows[0] : compBookingRows;
+          if (compBookingRow && compBookingRow.id) {
+            await sbDB.serviceInsert("booking_sessions", {
+              booking_id: compBookingRow.id,
+              acuity_appointment_id: String(compAppointment.id),
+              location: location,
+              appointment_type_id: String(appointmentTypeID),
+              starts_at: datetime,
+              duration_min: TYPE_TO_DURATION[String(appointmentTypeID)] || 60,
+              day_index: 0,
+              session_price_cents: 0
+            });
+          }
+        } catch (e) {
+          console.error("supabase comp persist:", e.message);
+        }
+      }
+
+      await flushPostHog();
+
+      var compFn = encodeURIComponent(contact.firstName);
+      var compLn = encodeURIComponent(contact.lastName || "");
+      return res.status(200).json({
+        success: true,
+        redirect: "/booking-confirmation?id=" + compAppointment.id + "&location=" + location + "&fn=" + compFn + "&ln=" + compLn
+      });
+    } catch (compErr) {
+      console.error("create-checkout comp booking failed:", compErr.message);
+      await alertFailure("critical", "Comp booking failed in create-checkout", {
+        customer: (contact.firstName || "") + " " + (contact.lastName || ""),
+        email: contact.email,
+        location: location,
+        datetime: datetime,
+        coupon: compCoupon.code,
+        error: compErr.message
+      });
+      return res.status(500).json({ error: "We couldn't finalize your booking. Please try again or contact us." });
     }
   }
 
@@ -714,9 +924,12 @@ async function handleCartCheckout(req, res, body) {
   const squareToken = universal.squareToken || body.squareToken;
   const clientIdempotencyKey = universal.clientIdempotencyKey || body.clientIdempotencyKey;
   const paymentMode = (body.paymentMode === "deposit") ? "deposit" : "full";
-  // NOTE: promo codes are intentionally NOT applied on the cart path in v1 (the
-  // single-session path handles coupons; multi-day discount math already runs
-  // via computeCart). Wire coupons into the cart in a later reviewed step.
+  const couponCode = universal.couponCode || body.couponCode;
+  // NOTE: PERCENTAGE promo codes are intentionally NOT applied on the cart path
+  // in v1 (the single-session path handles them; multi-day discount math already
+  // runs via computeCart). The ONE exception is a FULL-COMP code (comp:true),
+  // which wipes the ENTIRE cart to $0 and takes a payment-free path (handled
+  // below) — comp is all-or-nothing so it doesn't touch the per-line math.
 
   var cardLabelName =
     (typeof cardholderName === "string" && cardholderName.trim()) ||
@@ -729,11 +942,31 @@ async function handleCartCheckout(req, res, body) {
   if (!waiverSigned) {
     return res.status(400).json({ error: "Waiver must be signed" });
   }
-  if (!squareToken) {
-    return res.status(400).json({ error: "Missing payment token" });
+
+  // FREE-COMP determination for the cart (Drew round 7). A comp coupon wipes the
+  // WHOLE cart to $0 and takes a payment-free path (no card, no Square calls).
+  // Resolve comp-ness BEFORE the squareToken/consent guards. Server-authoritative;
+  // a client cannot bypass these guards. Fail-safe: any error → normal paid path.
+  var compCoupon = null;
+  if (couponCode && String(couponCode).trim()) {
+    try {
+      var cartCompCheck = await validateCoupon(couponCode, {});
+      if (cartCompCheck && cartCompCheck.valid && cartCompCheck.comp === true) {
+        compCoupon = cartCompCheck;
+      }
+    } catch (cartCompErr) {
+      console.error("create-checkout(cart): comp pre-check failed (treating as non-comp):", cartCompErr.message);
+      compCoupon = null;
+    }
   }
-  if (!consent || consent.cardOnFile !== true) {
-    return res.status(400).json({ error: "Card-on-file authorization is required to book" });
+
+  if (!compCoupon) {
+    if (!squareToken) {
+      return res.status(400).json({ error: "Missing payment token" });
+    }
+    if (!consent || consent.cardOnFile !== true) {
+      return res.status(400).json({ error: "Card-on-file authorization is required to book" });
+    }
   }
 
   // Normalize + validate each session. computeCart re-validates the
@@ -826,6 +1059,29 @@ async function handleCartCheckout(req, res, body) {
     );
 
     var totalCents = priced.totals.total;
+
+    // =====================================================================
+    // FREE-COMP cart path (server-validated comp coupon). The WHOLE cart is
+    // comped to $0: ZERO Square calls (no customer / charge / saved card), N
+    // Acuity appointments (one per session, EACH passing calendarID to dodge
+    // the multi-calendar misroute), ONE $0 bookings row + N booking_sessions,
+    // a Watson comp alert, and the same success/redirect shape the paid cart
+    // returns. paymentMode is forced to "comp" — a deposit makes no sense when
+    // the total is $0.
+    // =====================================================================
+    if (compCoupon) {
+      return await handleCartComp(req, res, {
+        priced: priced,
+        normalized: normalized,
+        cartLocation: cartLocation,
+        cartIsEvent: cartIsEvent,
+        contact: contact,
+        termsSignature: termsSignature,
+        consent: consent,
+        compCoupon: compCoupon
+      });
+    }
+
     // Charge amount: full cart total, or the 60% deposit in deposit mode.
     var chargeCents = (paymentMode === "deposit") ? priced.deposit.depositCents : totalCents;
     var balanceDueCents = (paymentMode === "deposit") ? priced.deposit.balanceDueCents : null;
@@ -1148,4 +1404,211 @@ async function handleCartCheckout(req, res, body) {
       error: isClientErr ? err.message : "Failed to start checkout. Please try again."
     });
   }
+}
+
+// ===========================================================================
+// FREE-COMP cart handler — the WHOLE cart is comped to $0. Makes ZERO Square
+// calls, creates N Acuity appointments (one per priced session, EACH passing
+// calendarID), persists ONE $0 bookings row + N booking_sessions, fires the
+// usual notifications + a Watson comp alert, and returns the same success shape
+// the paid cart returns. Reached ONLY when the server validated the comp coupon.
+// Partial-failure contract mirrors the paid cart: if an appointment fails, alert
+// + 500 (no money to refund), and persist a failed-booking audit row.
+// ===========================================================================
+async function handleCartComp(req, res, ctx) {
+  var priced = ctx.priced;
+  var normalized = ctx.normalized;
+  var cartLocation = ctx.cartLocation;
+  var cartIsEvent = ctx.cartIsEvent;
+  var contact = ctx.contact;
+  var termsSignature = ctx.termsSignature || "";
+  var consent = ctx.consent;
+  var compCoupon = ctx.compCoupon;
+
+  var createdAppointments = [];
+  try {
+    var stagingCalID = stagingCalendarID();
+    var stagingMocked = isStaging() && !stagingCalID;
+
+    for (var si = 0; si < priced.sessions.length; si++) {
+      var ps = priced.sessions[si];
+      var src = normalized.find(function (n) {
+        return n.appointmentTypeID === ps.appointmentTypeID && n.datetime === ps.datetime;
+      }) || normalized[si];
+
+      var sessionState = {
+        appointmentTypeID: src.appointmentTypeID,
+        datetime: src.datetime,
+        location: src.location,
+        contact: contact,
+        intake: src.intake || {},
+        addons: src.addons || {},
+        eventIntent: src.eventIntent,
+        participants: src.participants || "",
+        eventDescription: src.eventDescription || "",
+        foodDrinks: src.foodDrinks,
+        waiverSigned: true
+      };
+
+      var addonIDs = buildAcuityAddonIDs(sessionState.addons, sessionState.location);
+      var fields = buildAcuityFields(sessionState.intake || {}, sessionState.location);
+      var notes = buildAppointmentNotes(sessionState);
+
+      notes += "\n\n[MULTI-SESSION CART: session " + (si + 1) + " of "
+        + priced.sessions.length + ", day index " + ps.dayIndex + ", FULL COMP]";
+      notes += "\n\nPromo code: " + compCoupon.code +
+        " (FULL COMP — entire cart $0.00, no payment collected)";
+
+      var apptFirstName = contact.firstName;
+      var apptEmail = contact.email;
+      if (isStaging()) {
+        apptFirstName = "[STAGING] " + apptFirstName;
+        apptEmail = stagingSinkEmail();
+        notes = "*** STAGING BOOKING — DO NOT FULFILL ***\n" + notes;
+      }
+
+      if (stagingMocked) {
+        createdAppointments.push({ id: "staging-mock-" + Date.now() + "-" + si, sessionIndex: si });
+        console.warn("create-checkout(cart-comp): ACUITY_STAGING_CALENDAR_ID unset — mocking Acuity write for session " + si);
+      } else {
+        var appt = await acuityPost("/appointments?admin=true", {
+          appointmentTypeID: src.appointmentTypeID,
+          datetime: src.datetime,
+          firstName: apptFirstName,
+          lastName: contact.lastName || "",
+          email: apptEmail,
+          phone: contact.phone || "",
+          calendarID: stagingCalID || CALENDAR_IDS[src.location],
+          addonIDs: addonIDs,
+          fields: fields,
+          notes: notes,
+          noPayment: true
+        });
+        createdAppointments.push({ id: appt.id, sessionIndex: si });
+      }
+    }
+  } catch (apptErr) {
+    console.error("create-checkout(cart-comp) failed:", apptErr.message);
+    await alertFailure("critical", "Comp cart booking failed in create-checkout", {
+      customer: (contact.firstName || "") + " " + (contact.lastName || ""),
+      email: contact.email,
+      location: cartLocation,
+      sessions: priced.sessions.length,
+      appointments_created: createdAppointments.map(function (a) { return a.id; }),
+      coupon: compCoupon.code,
+      error: apptErr.message
+    });
+    if (sbDB.isConfigured() && createdAppointments.length > 0) {
+      try {
+        await sbDB.serviceInsert("bookings", {
+          email: contact.email,
+          status: "failed",
+          event_intent: cartIsEvent ? "yes" : "no",
+          subtotal_cents: 0,
+          total_cents: 0,
+          payment_mode: "comp",
+          square_customer_id: null,
+          square_card_id: null,
+          square_payment_id: null,
+          notes: "Comp cart booking failed: " + apptErr.message
+            + " | orphan Acuity appts: " + createdAppointments.map(function (a) { return a.id; }).join(", ")
+        });
+      } catch (e) {
+        console.error("supabase failed-comp-booking persist:", e.message);
+      }
+    }
+    // No money moved (comp) → nothing to refund.
+    return res.status(500).json({ error: "We couldn't finalize your booking. Please try again or contact us." });
+  }
+
+  // Persist ONE $0 bookings row + N booking_sessions (best-effort + isolated).
+  var stagingMockedFinal = isStaging() && !stagingCalendarID();
+  if (sbDB.isConfigured() && !stagingMockedFinal) {
+    try {
+      var bookingRows = await sbDB.serviceInsert("bookings", {
+        email: contact.email,
+        status: "confirmed",
+        event_intent: cartIsEvent ? "yes" : "no",
+        subtotal_cents: 0,
+        total_cents: 0,
+        payment_mode: "comp",
+        deposit_cents: null,
+        balance_due_cents: null,
+        balance_charge_at: null,
+        balance_status: "none",
+        square_customer_id: null,
+        square_card_id: null,
+        square_payment_id: null
+      });
+      var bookingRow = Array.isArray(bookingRows) ? bookingRows[0] : bookingRows;
+      if (bookingRow && bookingRow.id) {
+        for (var wi = 0; wi < priced.sessions.length; wi++) {
+          var wps = priced.sessions[wi];
+          var apptId = (createdAppointments[wi] && createdAppointments[wi].id) || null;
+          await sbDB.serviceInsert("booking_sessions", {
+            booking_id: bookingRow.id,
+            acuity_appointment_id: apptId != null ? String(apptId) : null,
+            location: cartLocation,
+            appointment_type_id: String(wps.appointmentTypeID),
+            starts_at: wps.datetime,
+            duration_min: TYPE_TO_DURATION[String(wps.appointmentTypeID)] || 60,
+            day_index: wps.dayIndex,
+            session_price_cents: 0
+          });
+        }
+      }
+    } catch (e) {
+      console.error("supabase comp cart persist:", e.message);
+    }
+  }
+
+  // Notifications — per first/representative session state. Isolated, best-effort.
+  var firstSrc = normalized.find(function (n) {
+    return n.appointmentTypeID === priced.sessions[0].appointmentTypeID && n.datetime === priced.sessions[0].datetime;
+  }) || normalized[0];
+  var alertState = {
+    appointmentTypeID: firstSrc.appointmentTypeID,
+    datetime: firstSrc.datetime,
+    location: firstSrc.location,
+    contact: contact,
+    intake: firstSrc.intake || {},
+    addons: firstSrc.addons || {},
+    eventIntent: firstSrc.eventIntent,
+    participants: firstSrc.participants || "",
+    eventDescription: firstSrc.eventDescription || "",
+    foodDrinks: firstSrc.foodDrinks,
+    waiverSigned: true
+  };
+  var firstApptId = (createdAppointments[0] && createdAppointments[0].id) || "";
+  try { await notifyOwner(alertState, firstApptId); } catch (e) { console.error("notifyOwner:", e.message); }
+  try { await notifyOwnerSMS(alertState, firstApptId); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
+  // Watson comp alert — a 100% off code was used (best-effort, never blocks).
+  try { await notifyOwnerCompSMS(alertState, firstApptId); } catch (e) { console.error("notifyOwnerCompSMS:", e.message); }
+
+  captureServerEvent(contact.email, "cart_booking_completed_server", {
+    location: cartLocation,
+    session_count: priced.sessions.length,
+    appointment_ids: createdAppointments.map(function (a) { return a.id; }),
+    comp: true,
+    coupon_code: compCoupon.code,
+    payment_mode: "comp",
+    total_cents: 0,
+    charged_cents: 0,
+    balance_due_cents: 0
+  });
+  await flushPostHog();
+
+  var fn = encodeURIComponent(contact.firstName);
+  var ln = encodeURIComponent(contact.lastName || "");
+  return res.status(200).json({
+    success: true,
+    sessionCount: priced.sessions.length,
+    appointmentIds: createdAppointments.map(function (a) { return a.id; }),
+    paymentMode: "comp",
+    totalCents: 0,
+    chargedCents: 0,
+    balanceDueCents: 0,
+    redirect: "/booking-confirmation?id=" + firstApptId + "&location=" + cartLocation
+      + "&fn=" + fn + "&ln=" + ln + "&sessions=" + priced.sessions.length
+  });
 }

@@ -19,12 +19,21 @@
 //
 // Coupon definitions (whether from Edge Config or the env var) are a JSON
 // array of
-//   { code, percentOff, location, validFrom, validUntil }
+//   { code, percentOff?, comp?, location, validFrom, validUntil }
 // where:
 //   - code        string, customer-typed (normalized: trim + uppercase)
 //   - percentOff  number 1..99 (whole-number percent off the session). Capped
 //                 at 99, never 100: a 100%-off code on an add-on-free session
-//                 would post a $0 charge to Square, which Square rejects.
+//                 would post a $0 charge to Square, which Square rejects. A
+//                 partial discount ALWAYS still charges a card.
+//   - comp        boolean. When true, the code is a FULL-COMP code (e.g.
+//                 WWSHUNDRED): it wipes the ENTIRE booking (session + add-ons +
+//                 fees) to $0 and takes a payment-free path in create-checkout
+//                 (no card, no Square charge). A comp code BYPASSES the 1..99
+//                 percentOff cap (percentOff is ignored when comp===true) but
+//                 still honors location scope + the validity window. This is the
+//                 ONLY way a $0 / payment-skipped booking is ever allowed, and
+//                 it only happens when the SERVER validates the comp coupon.
 //   - location    "powdersville" | "taylors-mill" | "any"
 //   - validFrom   ISO date "YYYY-MM-DD" (or full ISO) or null = no lower bound
 //   - validUntil  ISO date "YYYY-MM-DD" (or full ISO) or null = no upper bound
@@ -174,7 +183,8 @@ function withinValidity(coupon, now) {
 // from the matching rules. Semantics are UNCHANGED.
 //
 // Returns:
-//   { valid: true,  code, percentOff, label }
+//   { valid: true,  code, percentOff, label }   (non-comp percentage coupon)
+//   { valid: true,  code, comp: true, label }    (full-comp coupon)
 //   { valid: false, reason }
 function validateCouponAgainst(code, coupons, opts) {
   opts = opts || {};
@@ -201,19 +211,29 @@ function validateCouponAgainst(code, coupons, opts) {
     return { valid: false, reason: "That promo code isn’t valid." };
   }
 
-  // percentOff must be a sane whole-ish number 1..99. The upper bound is 99 (not
-  // 100) on purpose: a 100%-off code would drive a session-only (add-on-free)
-  // booking's charged total to $0, which Square rejects → the booking fails.
-  // Capping at 99% guarantees a charge of at least ~1% of the session, so the
-  // floor in create-checkout.js never has to engage in the realistic case.
+  // A full-comp coupon (comp === true) BYPASSES the 1..99 percentOff cap — it is
+  // the ONE code allowed to zero the booking. percentOff is ignored for comp
+  // codes. Comp codes still honor location scope + validity (checked below).
+  var isComp = (match.comp === true);
+
+  // For NON-comp coupons, percentOff must be a sane whole-ish number 1..99. The
+  // upper bound is 99 (not 100) on purpose: a 100%-off NON-comp code would drive
+  // a session-only (add-on-free) booking's charged total to $0, which Square
+  // rejects → the booking fails. Capping at 99% guarantees a charge of at least
+  // ~1% of the session, so the floor in create-checkout.js never has to engage
+  // in the realistic case. (A true $0 booking only happens via a comp code.)
   var pct = Number(match.percentOff);
-  if (!isFinite(pct) || pct <= 0 || pct > 99) {
-    console.error("coupons: coupon " + normalized + " has invalid percentOff", match.percentOff);
-    return { valid: false, reason: "That promo code isn’t valid." };
+  if (!isComp) {
+    if (!isFinite(pct) || pct <= 0 || pct > 99) {
+      console.error("coupons: coupon " + normalized + " has invalid percentOff", match.percentOff);
+      return { valid: false, reason: "That promo code isn’t valid." };
+    }
   }
 
-  // Location scope.
+  // Location scope (applies to comp and non-comp alike). A null OR "all"
+  // location means company-wide (valid at either studio).
   var scope = (match.location == null ? "any" : String(match.location).trim().toLowerCase());
+  if (scope === "all") scope = "any";
   if (scope !== "any") {
     var loc = (opts.location == null ? "" : String(opts.location).trim().toLowerCase());
     if (scope !== loc) {
@@ -221,9 +241,18 @@ function validateCouponAgainst(code, coupons, opts) {
     }
   }
 
-  // Validity window (America/New_York).
+  // Validity window (America/New_York) — applies to comp and non-comp alike.
   if (!withinValidity(match, now)) {
     return { valid: false, reason: "That promo code has expired or isn’t active yet." };
+  }
+
+  if (isComp) {
+    return {
+      valid: true,
+      code: normalized,
+      comp: true,
+      label: "Full comp (" + normalized + ")"
+    };
   }
 
   return {
@@ -272,9 +301,14 @@ async function hasActiveCoupon(location, nowISO) {
   for (var i = 0; i < coupons.length; i++) {
     var c = coupons[i];
     if (!c) continue;
-    var pct = Number(c.percentOff);
-    if (!isFinite(pct) || pct <= 0 || pct > 99) continue;
+    // A comp code is "active" regardless of percentOff (it has none); a non-comp
+    // code needs a sane 1..99 percentOff to count.
+    if (c.comp !== true) {
+      var pct = Number(c.percentOff);
+      if (!isFinite(pct) || pct <= 0 || pct > 99) continue;
+    }
     var scope = (c.location == null ? "any" : String(c.location).trim().toLowerCase());
+    if (scope === "all") scope = "any";
     if (scope !== "any" && scope !== loc) continue;
     if (!withinValidity(c, now)) continue;
     return true;

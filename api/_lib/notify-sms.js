@@ -86,7 +86,74 @@ function buildSmsText(bookingState, appointmentId) {
   return lines.join("\n");
 }
 
-async function notifyOwnerSMS(bookingState, appointmentId) {
+// Full-comp alert (Drew round 7): when a 100%-off code (WWSHUNDRED) is used, text
+// Drew unconditionally — there is no threshold gate, because a comped booking is
+// always notable. Built from the booking state. Best-effort (never throws).
+//
+//   "Yo, WhiteWall just had a 100% off code used. Client name <name>, <photo or
+//    event> booking, <duration> shoot starting <time> on <date>. Add-ons: <list
+//    or 'none'>."
+function fmtCompDateTime(iso) {
+  if (!iso) return "(unknown time) on (unknown date)";
+  try {
+    const d = new Date(iso);
+    const time = d.toLocaleTimeString("en-US", {
+      timeZone: "America/New_York", hour: "numeric", minute: "2-digit"
+    });
+    const date = d.toLocaleDateString("en-US", {
+      timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric"
+    });
+    return time + " on " + date;
+  } catch (e) { return iso; }
+}
+
+function fmtDurationLabel(durationMin) {
+  const m = Number(durationMin) || 0;
+  if (m <= 0) return "session";
+  if (m % 60 === 0) return (m / 60) + "hr";
+  return m + "min";
+}
+
+// Compact, human add-on list for the comp alert. Mirrors the labels in
+// acuity.buildAppointmentNotes but kept short for a text message.
+function compAddonSummary(addons) {
+  addons = addons || {};
+  const parts = [];
+  if (addons.backdrops) {
+    if (addons.backdrops.mode === "all") parts.push("All backdrops");
+    else if (addons.backdrops.colors && addons.backdrops.colors.length) parts.push("Backdrops (" + addons.backdrops.colors.length + ")");
+  }
+  if (addons.lighting && addons.lighting.selected) parts.push("Lighting");
+  if (addons["rolling-walls"]) {
+    if (addons["rolling-walls"].mode === "all") parts.push("All walls");
+    else if (addons["rolling-walls"].walls && addons["rolling-walls"].walls.length) parts.push("Walls (" + addons["rolling-walls"].walls.length + ")");
+  }
+  if (addons.chairs && addons.chairs.selection) parts.push("Chairs (" + addons.chairs.selection + ")");
+  if (addons.tables && addons.tables.quantity > 0) parts.push(addons.tables.quantity + "x table");
+  if (addons.tv && addons.tv.selected) parts.push("TV");
+  if (addons["pa-system"] && addons["pa-system"].selected) parts.push("PA");
+  if (addons["setup-crew"] && addons["setup-crew"].selected) parts.push("Setup crew");
+  return parts.length ? parts.join(", ") : "none";
+}
+
+function buildCompSmsText(bookingState) {
+  const contact = bookingState.contact || {};
+  const fullName = ((contact.firstName || "") + " " + (contact.lastName || "")).trim() || "(no name)";
+  const kind = bookingState.eventIntent === "yes" ? "event" : "photo";
+  const durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 0;
+  const duration = fmtDurationLabel(durationMin);
+  const when = fmtCompDateTime(bookingState.datetime);
+  const addons = compAddonSummary(bookingState.addons);
+
+  return "Yo, WhiteWall just had a 100% off code used. Client name " + fullName
+    + ", " + kind + " booking, " + duration + " shoot starting " + when
+    + ". Add-ons: " + addons + ".";
+}
+
+// sendOwnerSMS(body, appointmentId) — the raw Watson/Blue Bubbles transport,
+// shared by the threshold-gated owner alert and the comp alert. Env-gated and
+// best-effort: missing env or a transport error logs and returns (never throws).
+async function sendOwnerSMS(body, appointmentId) {
   const url = process.env.WATSON_SMS_URL;
   const cfId = process.env.WATSON_CF_ACCESS_CLIENT_ID;
   const cfSecret = process.env.WATSON_CF_ACCESS_CLIENT_SECRET;
@@ -98,10 +165,6 @@ async function notifyOwnerSMS(bookingState, appointmentId) {
       { url: !!url, cfId: !!cfId, cfSecret: !!cfSecret, bbPassword: !!bbPassword, ownerPhone: !!ownerPhone });
     return;
   }
-
-  if (!shouldNotifyOwnerSMS(bookingState)) return;
-
-  const body = buildSmsText(bookingState, appointmentId);
 
   // Blue Bubbles API: POST /api/v1/message/text?guid=<password>
   // chatGuid format for iMessage to a phone number: "iMessage;-;<+phone>"
@@ -147,4 +210,26 @@ async function notifyOwnerSMS(bookingState, appointmentId) {
   }
 }
 
-module.exports = { notifyOwnerSMS, shouldNotifyOwnerSMS, buildSmsText };
+// Threshold-gated owner alert (long shoot / large event). Unchanged behavior:
+// env-gated + threshold-gated, then sends the standard booking summary.
+async function notifyOwnerSMS(bookingState, appointmentId) {
+  if (!shouldNotifyOwnerSMS(bookingState)) return;
+  const body = buildSmsText(bookingState, appointmentId);
+  return sendOwnerSMS(body, appointmentId);
+}
+
+// Comp alert — fired ONLY for a successful 100%-off (comp) booking. No threshold
+// gate. Best-effort: must never block or fail the booking.
+async function notifyOwnerCompSMS(bookingState, appointmentId) {
+  const body = buildCompSmsText(bookingState);
+  return sendOwnerSMS(body, appointmentId);
+}
+
+module.exports = {
+  notifyOwnerSMS,
+  notifyOwnerCompSMS,
+  shouldNotifyOwnerSMS,
+  buildSmsText,
+  buildCompSmsText,
+  sendOwnerSMS
+};
