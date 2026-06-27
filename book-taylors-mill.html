@@ -273,6 +273,18 @@
             <p class="ui-copy-muted payment-note" style="margin-top:0.75rem;font-size:0.8rem">Your card is processed securely by Square. WhiteWall never sees or stores your card number.</p>
           </div>
 
+          <!-- Full-comp ($0) booking — shown in place of the payment section when a
+               full-comp promo code (e.g. WWSHUNDRED) is applied. No card needed. -->
+          <div class="booking-panel-soft p-5 mt-6" data-comp-section hidden>
+            <p class="ui-kicker" style="margin-bottom:1rem">Payment</p>
+            <p class="ui-copy-strong">Free booking — no payment required</p>
+            <p class="ui-copy-muted payment-note" style="margin-top:0.5rem;font-size:0.85rem">Your promo code covers this booking in full. No card is needed — just confirm your booking below.</p>
+            <div style="margin-top:1.5rem">
+              <button type="button" class="booking-button booking-button-primary" data-action="comp-book" data-comp-btn disabled>Book now</button>
+            </div>
+            <p class="ui-copy-muted payment-note" data-comp-status role="status" aria-live="polite" style="margin-top:0.75rem;font-size:0.8rem;display:none"></p>
+          </div>
+
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="4">Back</button>
           </div>

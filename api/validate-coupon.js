@@ -36,6 +36,19 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ valid: false, reason: result.reason });
     }
 
+    // Full-comp code (e.g. WWSHUNDRED): the ENTIRE booking is comped to $0, so
+    // there is no per-line percentage to preview. Surface comp:true so the UI
+    // can zero the whole total and skip the card step. The authoritative $0 is
+    // still recomputed (and re-gated on the validated comp coupon) at pay time.
+    if (result.comp === true) {
+      return res.status(200).json({
+        valid: true,
+        code: result.code,
+        comp: true,
+        label: result.label
+      });
+    }
+
     // Preview discount off the session price, if we can resolve it.
     let discountCents = 0;
     let sessionCents = 0;
