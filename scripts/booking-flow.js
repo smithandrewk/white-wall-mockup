@@ -80,7 +80,7 @@
     // (pay 60% now) is offered only for event bookings; defaults to full.
     _cartReviewing: false,
     paymentMode: "full",
-    coupon: null,        // applied promo: { code, percentOff, discountCents }
+    coupon: null,        // applied promo: { code, comp, percentOff, discountCents } — comp:true = full-comp ($0, no card)
     couponInput: "",     // current text in the promo field (preserves on re-render)
     couponError: "",     // inline error message for a rejected code
     couponPending: false,
@@ -499,6 +499,10 @@
         termsSignature: state.termsSignature,
         emailAcknowledgment: state.emailAcknowledgment,
         cardholderName: (state.nameOnCard || "").trim(),
+        // Carries a full-comp code (e.g. WWSHUNDRED) so the cart endpoint can
+        // re-validate it and take the payment-free path. Non-comp codes are a
+        // no-op on the cart path (cart pricing has no per-session discount).
+        couponCode: state.coupon ? state.coupon.code : "",
         squareToken: squareToken,
         clientIdempotencyKey: state.bookingAttemptId,
         consent: {
@@ -804,6 +808,12 @@
       }
 
       if (action === "pay-and-book") {
+        handlePayAndBook();
+        return;
+      }
+
+      // Free-comp booking — same handler, takes the no-card branch internally.
+      if (action === "comp-book") {
         handlePayAndBook();
         return;
       }
@@ -1491,11 +1501,18 @@
     // If the session price changed since the code was applied (duration swap),
     // re-derive the discount from the live session price so the preview stays
     // honest. The displayed dollars come from percentOff (whole-cent floor).
+    // A full-comp code (comp:true) wipes the ENTIRE booking (session + add-ons +
+    // fees) to $0 — not just a session percentage. The server re-validates and
+    // recomputes the $0 at pay time; this is the matching preview.
+    var isComp = !!(state.coupon && state.coupon.comp);
+    var subtotal = sessionPrice + addonTotal + cleaningFeeAmount;
     var couponDiscount = 0;
-    if (state.coupon && state.coupon.percentOff > 0 && sessionPrice > 0) {
+    if (isComp) {
+      couponDiscount = subtotal;
+    } else if (state.coupon && state.coupon.percentOff > 0 && sessionPrice > 0) {
       couponDiscount = Math.floor(sessionPrice * state.coupon.percentOff) / 100;
     }
-    var grandTotal = sessionPrice + addonTotal + cleaningFeeAmount - couponDiscount;
+    var grandTotal = subtotal - couponDiscount;
     if (grandTotal < 0) grandTotal = 0;
     var timeLabel = new Date(state.selectedTime).toLocaleString("en-US", {
       weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
@@ -1515,9 +1532,13 @@
       }
     }
 
-    // Discount line — only when a code is applied and discounts the session.
+    // Discount line — comp shows the full-booking comp; otherwise the session %.
     var couponLineHtml = '';
-    if (state.coupon && couponDiscount > 0) {
+    if (isComp) {
+      couponLineHtml =
+        '<div class="summary-line summary-line-muted"><span>Promo · ' + escapeHtml(state.coupon.code) +
+        ' (free booking)</span><span>−' + currency.format(couponDiscount) + '</span></div>';
+    } else if (state.coupon && couponDiscount > 0) {
       couponLineHtml =
         '<div class="summary-line summary-line-muted"><span>Promo · ' + escapeHtml(state.coupon.code) +
         ' (' + state.coupon.percentOff + '% off session)</span><span>−' + currency.format(couponDiscount) + '</span></div>';
@@ -1528,7 +1549,7 @@
     // When deposit is selected the charge becomes 60% of the total (the rest is
     // captured 48h before via the saved card, server-side). depositSplit lives
     // in pricing-shared so the displayed amount matches the server recompute.
-    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive();
+    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive() && !isComp;
     var depositHtml = '';
     var chargeTotal = grandTotal;
     if (isSingleEvent && window.WWSPricing && window.WWSPricing.depositSplit) {
@@ -1601,12 +1622,19 @@
     if (!container) return;
 
     var paySection = document.querySelector("[data-payment-section]");
+    var compSection = document.querySelector("[data-comp-section]");
 
     if (!state.selectedTime) {
       container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a date and time in Step 2 to see your order summary.</p></div>';
       if (paySection) paySection.hidden = true;
+      if (compSection) compSection.hidden = true;
       return;
     }
+
+    // Full-comp booking ($0): swap the card form for the payment-free "Book now"
+    // panel. The free path POSTs without a Square token; the server re-validates
+    // the comp coupon and re-gates the $0. Every other booking keeps the card form.
+    var isComp = !!(state.coupon && state.coupon.comp);
 
     // In cart review mode the cart-summary owns the totals + deposit option, so
     // suppress the single-draft order summary (it would duplicate/confuse). The
@@ -1616,7 +1644,8 @@
     } else {
       container.innerHTML = renderOrderSummary();
     }
-    if (paySection) paySection.hidden = false;
+    if (paySection) paySection.hidden = isComp;
+    if (compSection) compSection.hidden = !isComp;
 
     // Prefill "Name on card" from the Step-3 booker until the user edits it,
     // so the saved card-on-file label matches whoever's card is used (which
@@ -1628,8 +1657,29 @@
       state.nameOnCard = bookerName;
     }
 
-    initSquareCard();
+    // Comp bookings need no card. Don't mount Square; if the user later removes
+    // the comp code, the next render re-shows paySection and mounts it (idempotent).
+    if (!isComp) initSquareCard();
     updatePayButton();
+    updateCompButton();
+  }
+
+  // Free-comp "Book now" button — mirrors updatePayButton for the payment-free
+  // path. Enabled once a session/slot exists and no submit is in flight.
+  function updateCompButton() {
+    var btn = document.querySelector("[data-comp-btn]");
+    if (!btn) return;
+    var hasSession = !!state.selectedTime || (state._cartReviewing && cartIsActive());
+    btn.disabled = state.isSubmitting || !hasSession;
+    btn.textContent = state.isSubmitting ? "Processing…" : "Book now";
+  }
+
+  function setCompStatus(msg, isError) {
+    var el = document.querySelector("[data-comp-status]");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.style.display = msg ? "" : "none";
+    el.classList.toggle("card-status-error", !!(msg && isError));
   }
 
   // --- Square Web Payments SDK (card-on-file) ---------------------------
@@ -1755,14 +1805,18 @@
       state.couponPending = false;
 
       if (res.ok && data && data.valid) {
+        // comp:true is a FULL-COMP code (e.g. WWSHUNDRED) — the whole booking is
+        // $0 and the final step skips the card form (see renderCheckoutPanel /
+        // handlePayAndBook). The server re-validates + re-gates the $0 at pay time.
         state.coupon = {
           code: data.code,
-          percentOff: data.percentOff,
+          comp: data.comp === true,
+          percentOff: data.percentOff || 0,
           discountCents: data.discountCents || 0
         };
         state.couponInput = "";
         state.couponError = "";
-        trackEvent("coupon_applied", { location: location.slug, code: data.code, percent_off: data.percentOff });
+        trackEvent("coupon_applied", { location: location.slug, code: data.code, percent_off: data.percentOff || 0, comp: data.comp === true });
         renderCheckoutPanel();
       } else {
         state.coupon = null;
@@ -1786,6 +1840,11 @@
   async function handlePayAndBook() {
     if (state.isSubmitting) return;
 
+    // Full-comp ($0) booking takes the payment-free branch: no card gates, no
+    // tokenize, POST with NO Square token. The server re-validates the comp
+    // coupon and re-gates the $0 — the client signal alone never skips payment.
+    var isComp = !!(state.coupon && state.coupon.comp);
+
     // Client-side validation safety net — prevents checkout if steps were skipped
     var errors = getValidationErrors();
     if (errors.length > 0) {
@@ -1799,15 +1858,17 @@
       return;
     }
 
-    // Card-on-file gates
-    if (!state.squareCardReady) {
-      setCardStatus("The secure card field is still loading. One moment…");
-      return;
-    }
-    if (!state.cardOnFileConsent) {
-      var cofHint = document.querySelector("[data-hint='card-on-file-consent']");
-      if (cofHint) cofHint.textContent = "Please authorize the card-on-file policy to continue.";
-      return;
+    // Card-on-file gates — skipped for a comp booking (there is no card).
+    if (!isComp) {
+      if (!state.squareCardReady) {
+        setCardStatus("The secure card field is still loading. One moment…");
+        return;
+      }
+      if (!state.cardOnFileConsent) {
+        var cofHint = document.querySelector("[data-hint='card-on-file-consent']");
+        if (cofHint) cofHint.textContent = "Please authorize the card-on-file policy to continue.";
+        return;
+      }
     }
 
     var payDuration = getSelectedDuration();
@@ -1834,7 +1895,9 @@
 
     state.isSubmitting = true;
     updatePayButton();
+    updateCompButton();
     setCardStatus("");
+    setCompStatus("");
 
     var appointmentTypeID = getAppointmentTypeID();
 
@@ -1863,6 +1926,7 @@
           state.selectedTime = "";
           state.isSubmitting = false;
           updatePayButton();
+          updateCompButton();
           fetchAvailableTimes(appointmentTypeID, state.selectedDate);
           return;
         }
@@ -1870,35 +1934,40 @@
 
       // Tokenize: CHARGE_AND_STORE = charge now + save card on file.
       // Any SCA/3DS challenge the issuer requires happens inside tokenize().
-      var tok;
-      try {
-        tok = await state.squareCard.tokenize({
-          intent: "CHARGE_AND_STORE",
-          customerInitiated: true,
-          sellerKeyedIn: false,
-          amount: (typeof state._grandTotal === "number" ? state._grandTotal : 0).toFixed(2),
-          currencyCode: "USD",
-          billingContact: {
-            // Single free-text name field — pass the cardholder name verbatim
-            // as givenName (no split: "WHITEWALL VENTURES LLC" / middle names
-            // would mangle). Falls back to the booker name when blank.
-            givenName: (state.nameOnCard || "").trim() ||
-              ((state.contact.firstName || "") + " " + (state.contact.lastName || "")).trim(),
-            familyName: "",
-            email: state.contact.email || "",
-            countryCode: "US"
-          }
-        });
-      } catch (tokErr) {
-        throw new Error("We couldn't read your card. Please re-enter it and try again.");
-      }
-      if (!tok || tok.status !== "OK" || !tok.token) {
-        var tdetail = tok && tok.errors && tok.errors[0] && tok.errors[0].detail;
-        state.isSubmitting = false;
-        updatePayButton();
-        setCardStatus(tdetail || "Your card could not be verified. Please check the details and try again.", true);
-        trackEvent("checkout_error", { location: location.slug, error_message: "tokenize:" + (tok && tok.status) });
-        return;
+      // A comp booking has no card — skip tokenize entirely and POST no token.
+      var squareToken = null;
+      if (!isComp) {
+        var tok;
+        try {
+          tok = await state.squareCard.tokenize({
+            intent: "CHARGE_AND_STORE",
+            customerInitiated: true,
+            sellerKeyedIn: false,
+            amount: (typeof state._grandTotal === "number" ? state._grandTotal : 0).toFixed(2),
+            currencyCode: "USD",
+            billingContact: {
+              // Single free-text name field — pass the cardholder name verbatim
+              // as givenName (no split: "WHITEWALL VENTURES LLC" / middle names
+              // would mangle). Falls back to the booker name when blank.
+              givenName: (state.nameOnCard || "").trim() ||
+                ((state.contact.firstName || "") + " " + (state.contact.lastName || "")).trim(),
+              familyName: "",
+              email: state.contact.email || "",
+              countryCode: "US"
+            }
+          });
+        } catch (tokErr) {
+          throw new Error("We couldn't read your card. Please re-enter it and try again.");
+        }
+        if (!tok || tok.status !== "OK" || !tok.token) {
+          var tdetail = tok && tok.errors && tok.errors[0] && tok.errors[0].detail;
+          state.isSubmitting = false;
+          updatePayButton();
+          setCardStatus(tdetail || "Your card could not be verified. Please check the details and try again.", true);
+          trackEvent("checkout_error", { location: location.slug, error_message: "tokenize:" + (tok && tok.status) });
+          return;
+        }
+        squareToken = tok.token;
       }
 
       // V3 item 2/6: route to the multi-session cart payload when this booking
@@ -1908,7 +1977,9 @@
       var useCartPayload = willUseCart;
       var checkoutBody;
       if (useCartPayload) {
-        checkoutBody = buildCartCheckoutBody(tok.token);
+        // squareToken is null for a comp cart — the server re-validates the comp
+        // coupon (carried in universal.couponCode) and takes the payment-free path.
+        checkoutBody = buildCartCheckoutBody(squareToken);
       } else {
         checkoutBody = {
           appointmentTypeID: appointmentTypeID,
@@ -1929,7 +2000,7 @@
           cleaningFee: getCleaningFee(),
           cardholderName: (state.nameOnCard || "").trim(),
           couponCode: state.coupon ? state.coupon.code : "",
-          squareToken: tok.token,
+          squareToken: squareToken,
           clientIdempotencyKey: state.bookingAttemptId,
           consent: {
             cardOnFile: true,
@@ -1950,6 +2021,7 @@
       if (checkoutData.error === "buffer-conflict") {
         state.isSubmitting = false;
         updatePayButton();
+        updateCompButton();
         showBufferConflictModal(checkoutData.message, checkoutData.options || []);
         return;
       }
@@ -1968,7 +2040,13 @@
       trackEvent("checkout_error", { location: location.slug, error_message: err.message });
       state.isSubmitting = false;
       updatePayButton();
-      setCardStatus(err.message || "Something went wrong. Please try again.", true);
+      updateCompButton();
+      // Route the message to whichever panel the user is looking at.
+      if (isComp) {
+        setCompStatus(err.message || "Something went wrong. Please try again.", true);
+      } else {
+        setCardStatus(err.message || "Something went wrong. Please try again.", true);
+      }
     }
   }
 
