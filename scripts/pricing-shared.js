@@ -18,7 +18,9 @@
   else root.WWSPricing = factory();
 })(typeof self !== "undefined" ? self : this, function () {
 
-  // Add-on ids eligible for the per-day multi-day discount (Drew's five).
+  // Add-on ids eligible for the per-day multi-day discount. Backdrops added
+  // 2026-07-10 per Drew: mirror chairs/tables (full price day 1, then the same
+  // progressive discount on continuous days). Setup Crew stays flat (per booking).
   var DISCOUNT_ELIGIBLE_ADDONS = {
     "rolling-walls": true,
     "walls-all": true,
@@ -27,7 +29,8 @@
     "chairs-25": true, "chairs-50": true, "chairs-75": true, "chairs-100": true,
     "table": true, "tables": true,
     "pa-system": true,
-    "tv": true
+    "tv": true,
+    "backdrops": true
   };
 
   // Day index -> multiplier. Day1 (0) full, Day2 (1) -15%, Day3+ (>=2) -30%.
