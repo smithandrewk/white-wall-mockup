@@ -195,6 +195,15 @@
     return state.cart.sessions.length > 0;
   }
 
+  // A bookable slot exists when there's an active single slot OR every session in
+  // a built cart has its locked start time (a range/multi-day event has no single
+  // active slot — the cart carries each day's datetime). Used by the pay-time
+  // validators so a range event isn't wrongly bounced back to Step 2.
+  function hasBookableSlot() {
+    if (state.selectedTime) return true;
+    return cartIsActive() && state.cart.sessions.every(function (s) { return !!s.selectedTime; });
+  }
+
   // Total number of sessions in this booking = committed + the active draft
   // (the draft becomes the last session at "Review cart" time). Used for labels.
   function cartSessionCount() {
@@ -2564,7 +2573,7 @@
       alert(errors[0]); // Show first error
       // Navigate to the earliest incomplete step
       if (!state.durationId) { setStep(1); return; }
-      if (!state.selectedTime) { setStep(2); return; }
+      if (!hasBookableSlot()) { setStep(2); return; }
       if (!state.contact.firstName || !state.contact.email || !isTermsAccepted()) { setStep(3); return; }
       if (!state.waiverSigned) { setStep(4); return; }
       return;
@@ -3666,7 +3675,7 @@
   // Step 5 (Add-ons & Pay): add-ons are optional, Pay & Book button here
   function isStepComplete(step) {
     if (step === 1) return Boolean(state.durationId);
-    if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
+    if (step === 2) return Boolean((state.selectedDate && state.selectedTime) || hasBookableSlot());
     if (step === 3) {
       if (!state.eventIntent) return false;
       var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.leadSource && isTermsAccepted() && state.intake.readEmail);
@@ -3702,7 +3711,7 @@
   function getValidationErrors() {
     var errors = [];
     if (!state.durationId) errors.push("Please select a duration.");
-    if (!state.selectedTime) errors.push("Please select a date and time.");
+    if (!hasBookableSlot()) errors.push("Please select a date and time.");
     if (!state.eventIntent) errors.push("Please select photo/video session or event booking.");
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");
