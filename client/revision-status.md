@@ -661,3 +661,15 @@ Foreman cycle. Drew: the live event summary should show EACH add-on as its own l
 - [x] **Round 34 re-verified end-to-end (staging booking dry-run WITH add-ons):** a 2-day event + 50 chairs + Setup Crew booked to `/booking-confirmation`; the two Acuity appts confirm the flat-once fix — day 1 (`1736105259`) carries chairs + Setup Crew (`7088190`) + cleaning fee (`6881547`), day 2 (`1736105260`) carries chairs ONLY. Square charge $2,581.50 (day-2 chair discount applied); Acuity stores full add-on prices, the $28.50 delta = the day-2 discount. Test appts canceled after. No regression.
 
 - [x] **Pay-amount display consistency (follow-through on Round 34):** the sidebar summary showed exact cents but the Pay & Book button + cart/deposit totals still rounded to whole dollars (button read $2,582 vs the $2,581.50 charge). Added `fmtMoney` (whole → clean $350, fractional → $1,831.50) on the pay button, cart total, single-session total, and the 60/40 deposit + balance lines. Verified on staging: multi-day button "$1,831.50" exact; single photo session still "$350" (no .00).
+
+## Feedback Round 35 (2026-07-11) — Drew's email 2026-07-11 18:24 (msg 19f53489dcca8270): backend verification
+
+Drew: "verify everything works on the back end… setup crew window, cleaner time, auto-contact April, payment auto-charge… official thumbs up." Ran a read-only backend audit (see `client/comms/2026-07-11-backend-audit-multiday.md`). Gave Drew an HONEST itemized status (NO thumbs up) — msg `19f5352095101ca2`.
+
+- **Root cause:** multi-day events route through `handleCartCheckout`; the single-session path's notifications + cleaning buffer were never ported to the cart path.
+- [x] Appointment creation + scheduling: WORKS (verified via 2 dry-runs). 60% deposit collection + card-on-file: WORKS.
+- [ ] **Owner + customer notifications** on a paid multi-day booking: NOT wired (books silently; customer gets only Acuity's N per-day emails). → BUILD (port to cart path).
+- [ ] **Auto-contact April the cleaner** (.ics): NOT wired for cart path; notify-cleaner is single-session-shaped. → BUILD (key to event end).
+- [ ] **Cleaning buffer block** after the event: NOT wired for cart path. → BUILD.
+- [ ] **Setup/reset crew time window**: NOT built. → needs Drew's spec (asked).
+- [ ] **40% auto-charge at T−48h**: card + charge-time saved but the charge engine is dark by design (enroll/pgcron/scheduler/autocharge all off) = item-6, **Andrew-gated**. Told Drew "finalizing."
