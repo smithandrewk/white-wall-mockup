@@ -43,6 +43,8 @@
     bookingType: "",
     eventMode: "",
     _gateChoosingEventMode: false,
+    _dayRole: "", // multi-day event: role of the day being configured ("middle"|"last"); "first" is derived from an empty cart
+    _multidayFixedTime: "", // locked start (first/middle) or start-of-access (last) time label for the confirmation line
     durationId: location.durations[0] ? location.durations[0].id : "",
     eventIntent: "",
     participants: "",
@@ -325,16 +327,21 @@
     el.hidden = false;
     var dayNum = state.cart.sessions.length + 1;
     var body;
-    if (isMultidayFirstDay()) {
+    var role = currentDayRole();
+    if (role === "first") {
       // Drew's first-day framing (2026-07-11): access is continuous from the start
       // time they pick on Day 1 through the end of the event.
       body =
         'You get access on <strong>Day one</strong> of your event, starting at the time you select here, ' +
         'and it goes continuously until you get to the end of your event.';
+    } else if (role === "last") {
+      body =
+        'This is the <strong>last day</strong> of your event. Access carries through to when you leave — ' +
+        'pick your leave time below. This is when you leave with everything completely reset and cleaned up.';
     } else {
       body =
-        'Setting up <strong>Day ' + dayNum + '</strong>. Add-ons and pricing adjust per day, and you pay for ' +
-        'the whole event together at the end.';
+        'Adding a <strong>full day</strong> to your event (5:00 AM to 10:30 PM). Add-ons and pricing adjust ' +
+        'per day, and you pay for the whole event together at the end.';
     }
     el.innerHTML =
       '<div class="booking-panel-soft p-5" style="margin-top:1.5rem">' +
@@ -842,6 +849,15 @@
         var date = actionTarget.dataset.date;
         state.selectedDate = date;
         state.selectedTime = "";
+        // Multi-day event day: the start time is fixed by the day role + option,
+        // so we skip the time-slot picker and lock the slot, then show the
+        // confirmation + next-step buttons.
+        if (currentDayRole()) {
+          lockMultidaySlot();
+          trackEvent("date_selected", { location: location.slug, date: date });
+          renderStepContent();
+          return;
+        }
         var aptId = getAppointmentTypeID();
         if (aptId) fetchAvailableTimes(aptId, date);
         trackEvent("date_selected", { location: location.slug, date: date });
@@ -902,6 +918,46 @@
         // Show the review. The active draft is NOT committed here — the review
         // lists committed sessions PLUS the active draft as the final row, so
         // there's no double-commit when the user goes back to edit.
+        state._cartReviewing = true;
+        renderStepContent();
+        scrollToCart();
+        return;
+      }
+
+      // --- Multi-day event day-builder branch buttons (Drew 2026-07-11) --------
+      if (action === "md-add-multiple") {
+        // Commit the current day, then set up a MIDDLE full day ($980, 5 AM–10:30 PM).
+        commitActiveSessionToCart();
+        resetActiveDraft();
+        state._dayRole = "middle";
+        state.durationId = "pv-full";
+        state.selectedDate = "";
+        state.selectedTime = "";
+        state._multidayFixedTime = "";
+        state._cartReviewing = false;
+        setStep(2); // middle days have no length choice — go straight to the date
+        showToast("Day added. Pick the date for the next full day.");
+        return;
+      }
+      if (action === "md-add-last") {
+        // Commit the current day, then set up the LAST day (leave-time picker).
+        commitActiveSessionToCart();
+        resetActiveDraft();
+        state._dayRole = "last";
+        state.durationId = "";
+        state.selectedDate = "";
+        state.selectedTime = "";
+        state._multidayFixedTime = "";
+        state._cartReviewing = false;
+        setStep(1); // last day: pick the leave time first
+        showToast("Now set up your last day.");
+        return;
+      }
+      if (action === "md-review") {
+        // Commit the last day, then review the whole event.
+        commitActiveSessionToCart();
+        resetActiveDraft();
+        state._dayRole = "";
         state._cartReviewing = true;
         renderStepContent();
         scrollToCart();
@@ -1400,9 +1456,35 @@
     "pv-1": "9:00 PM", "pv-2": "8:00 PM", "pv-3": "7:00 PM", "pv-4": "6:00 PM",
     "pv-6": "4:00 PM", "pv-8": "2:00 PM", "pv-full": "5:00 AM"
   };
+  // 24h start time per first-day option (for locking the slot; access ends 10:30 PM).
+  var FIRST_DAY_START_24 = {
+    "pv-1": "21:00", "pv-2": "20:00", "pv-3": "19:00", "pv-4": "18:00",
+    "pv-6": "16:00", "pv-8": "14:00", "pv-full": "05:00"
+  };
+  // LAST day (Drew 2026-07-11): access starts 5 AM, pick a LEAVE time = first-day
+  // prices mirrored. Leave time = 5 AM + the duration the price implies.
+  var LAST_DAY_LEAVE_LABEL = {
+    "pv-1": "6:30 AM", "pv-2": "7:30 AM", "pv-3": "8:30 AM", "pv-4": "9:30 AM",
+    "pv-6": "11:30 AM", "pv-8": "1:30 PM", "pv-full": "10:30 PM"
+  };
+  var LAST_DAY_LEAVE_24 = {
+    "pv-1": "06:30", "pv-2": "07:30", "pv-3": "08:30", "pv-4": "09:30",
+    "pv-6": "11:30", "pv-8": "13:30", "pv-full": "22:30"
+  };
+  var LAST_DAY_START_24 = "05:00";
+
+  // Which day of a multi-day event is being configured: "first" (cart empty),
+  // else state._dayRole ("middle" | "last") set when a day is added.
+  function currentDayRole() {
+    if (state.eventMode !== "multi") return null;
+    if (!cartIsActive()) return "first";
+    // _dayRole is set explicitly when a day is added; "" (e.g. after review)
+    // means we are no longer configuring a day → not a day-builder screen.
+    return state._dayRole || null;
+  }
   // True while configuring the FIRST day of a multi-day event (cart still empty).
   function isMultidayFirstDay() {
-    return state.eventMode === "multi" && !cartIsActive();
+    return currentDayRole() === "first";
   }
 
   function renderDurations() {
@@ -1411,21 +1493,31 @@
       return;
     }
 
-    // Multi-day event, first day: show START-TIME options (ending 10:30 PM)
-    // instead of raw durations. Same select-duration action under the hood.
-    if (isMultidayFirstDay()) {
+    // Multi-day event: render a day-role-specific picker instead of raw durations.
+    var mdRole = currentDayRole();
+    if (mdRole === "middle") {
+      // Middle days are always a full day, $980 (Drew). No choice to make.
+      var full = location.durations.find(function (d) { return d.id === "pv-full"; });
+      container.innerHTML =
+        '<div class="booking-choice duration-pill is-active" style="cursor:default">' +
+          '<span class="duration-pill-label">Full day &mdash; 5:00 AM to 10:30 PM' + (full ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + currency.format(full.price) + '</span>' : '') + '</span>' +
+        '</div>';
+      return;
+    }
+    if (mdRole === "first" || mdRole === "last") {
+      var isLast = mdRole === "last";
+      var labelMap = isLast ? LAST_DAY_LEAVE_LABEL : FIRST_DAY_START_LABEL;
+      var suffix = isLast ? ' &mdash; Leave Time' : ' &mdash; Day 1 Access Time';
       container.innerHTML = location.durations
-        .filter(function (d) { return FIRST_DAY_START_LABEL[d.id]; })
+        .filter(function (d) { return labelMap[d.id]; })
         .map(function (duration) {
           var isActive = duration.id === state.durationId;
-          var start = FIRST_DAY_START_LABEL[duration.id];
+          var lbl = labelMap[duration.id];
           var priceTag = duration.price ? currency.format(duration.price) : "";
-          return '' +
-            '<button type="button" class="booking-choice duration-pill ' + (isActive ? "is-active" : "") + '" data-action="select-duration" data-duration-id="' + duration.id + '" aria-pressed="' + isActive + '">' +
-              '<span class="duration-pill-label">' + start + ' &mdash; Day 1 Access Time' + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
-            '</button>';
-        })
-        .join("");
+          return '<button type="button" class="booking-choice duration-pill ' + (isActive ? "is-active" : "") + '" data-action="select-duration" data-duration-id="' + duration.id + '" aria-pressed="' + isActive + '">' +
+            '<span class="duration-pill-label">' + lbl + suffix + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
+          '</button>';
+        }).join("");
       return;
     }
 
@@ -1549,15 +1641,102 @@
     var container = document.querySelector("[data-schedule-step]");
     if (!container) return;
 
+    var mdRole = currentDayRole();
+
+    // Step-2 heading — Drew's multi-day copy per day role; restored otherwise.
+    var title = document.querySelector("[data-step2-title]");
+    var sub = document.querySelector("[data-step2-sub]");
+    if (title && sub) {
+      if (mdRole === "first") {
+        title.textContent = "Choose the First Day Of Your Event";
+        sub.textContent = "Pick the day your event begins. Your access time is already set from the last step.";
+      } else if (mdRole === "last") {
+        title.textContent = "Choose the Last Day Of Your Event";
+        sub.textContent = "Pick the final day. Access starts at 5:00 AM and you leave at the time you selected.";
+      } else if (mdRole === "middle") {
+        title.textContent = "Add a Full Day To Your Event";
+        sub.textContent = "Pick the date for this full day (5:00 AM to 10:30 PM).";
+      } else {
+        title.innerHTML = "Pick a date &amp; time";
+        sub.textContent = "Select an available date and time for your session.";
+      }
+    }
+
+    // Multi-day days navigate via the confirmation buttons, not the static
+    // "Continue to session details" nav — hide it (the whole event goes to
+    // details/pay once, at review).
+    var nav = document.querySelector("[data-step2-nav]");
+    if (nav) nav.style.display = mdRole ? "none" : "";
+
     var appointmentTypeID = getAppointmentTypeID();
     if (!appointmentTypeID) {
       container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a duration first to see availability.</p></div>';
       return;
     }
 
+    // Multi-day: date only (start time is locked from the day picker), then a
+    // confirmation line + the day-role-appropriate next-step buttons (Drew).
+    if (mdRole) {
+      container.innerHTML = renderCalendar() + renderMultidayConfirm(mdRole);
+      return;
+    }
+
     container.innerHTML =
       renderCalendar() +
       renderTimeSlots();
+  }
+
+  // Multi-day: the "Confirming: …" line + the next-step buttons, shown once a
+  // date is picked (Drew 2026-07-11).
+  function renderMultidayConfirm(role) {
+    if (!state.selectedDate) return '';
+    var dp = state.selectedDate.split("-");
+    var human = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
+      .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    var t = state._multidayFixedTime || "";
+    var line, buttons;
+    if (role === "first") {
+      line = 'Confirming: your event session starts on <strong>' + escapeHtml(human) +
+        '</strong>, and you have initial access to the venue starting at <strong>' + escapeHtml(t) + '</strong>.';
+      buttons =
+        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Book multiple more days</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">Book the last day</button>';
+    } else if (role === "middle") {
+      line = 'Confirming: a full day on <strong>' + escapeHtml(human) + '</strong> (5:00 AM to 10:30 PM).';
+      buttons =
+        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Add another day</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">This is the last day</button>';
+    } else { // last
+      line = 'Confirming: your last day is <strong>' + escapeHtml(human) +
+        '</strong> — access starts at 5:00 AM and you leave at <strong>' + escapeHtml(t) +
+        '</strong>, with everything completely reset and cleaned up.';
+      buttons =
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-review">Review your event</button>';
+    }
+    return '<div class="booking-panel-soft p-5 mt-5">' +
+      '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.75)">' + line + '</p>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:0.75rem">' + buttons + '</div>' +
+    '</div>';
+  }
+
+  // Lock the booking slot for a multi-day day: start time is fixed by the day
+  // role + picked option (not a free time-slot pick). Sets selectedTime (booking
+  // start datetime) + the label shown in the confirmation line.
+  function lockMultidaySlot() {
+    var role = currentDayRole();
+    if (!role || !state.selectedDate) return;
+    var start24, label;
+    if (role === "first") {
+      start24 = FIRST_DAY_START_24[state.durationId] || "12:00";
+      label = FIRST_DAY_START_LABEL[state.durationId] || "";
+    } else if (role === "middle") {
+      start24 = "05:00"; label = "5:00 AM";
+    } else { // last: access starts 5 AM, they leave at the picked time
+      start24 = LAST_DAY_START_24;
+      label = LAST_DAY_LEAVE_LABEL[state.durationId] || "";
+    }
+    state.selectedTime = state.selectedDate + "T" + start24 + ":00";
+    state._multidayFixedTime = label;
   }
 
   function renderCalendar() {
