@@ -618,3 +618,10 @@ Foreman cycle. Drew tested the range flow ("I freaking love it... absolutely fla
 - [x] **35+ cleaning-fee disclaimer** (`updateParticipantNotices` capacity notice) suppressed on the MULTI-day path (fee is baked in regardless); kept on single-day. Gated on `state.eventMode !== "multi"`.
 - [x] **Deposit balance copy** (both cart + single rows) → "(Balance $X will be auto-charged to the card on file 48 hours before session start)". ⚠️ Promises the item-6 40% auto-charge — **staging-only display**; the auto-charge machinery is the **Andrew-gated prod-merge prerequisite** (do not ship this copy to prod until item-6 is armed).
 - [x] Verified on staging (Playwright, 3 paths, zero errors) + confirmed to Drew (msg `19f52c62c1ce8aa4`).
+
+## Feedback Round 32 (2026-07-11) — Drew's email 2026-07-11 15:59 (msg 19f52c36d21a0bc3): public Add-Ons menu page
+
+Foreman cycle. Drew: a standalone informational "Add-ons" page so anyone can see add-on prices without going through booking. On `staging.whitewallstudios.co/add-ons` (branch `worker/multiday-event-flow`), Playwright-verified, confirmed to Drew (`19f52d3bfa1e8525`).
+
+- [x] New **`add-ons.html`** → served at `/add-ons`: full-width, display-only menu of every Powdersville add-on (photo, name, price, full description; chairs/walls/backdrops list each option with price) in the booking order chairs → setup-crew. Reads `window.WWS_BOOKING_CONFIG` so it stays in sync with the booking flow. No interactive controls / CTAs per Drew. "Book your session with us" pill at top + bottom → `/book-powdersville`.
+- [x] Verified on staging (Playwright): HTTP 200, 8 cards in order with photos + prices + descriptions + option lists, 2 book pills → /book-powdersville, 0 interactive controls, no page errors; layout eyeballed via screenshot.
