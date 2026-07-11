@@ -127,8 +127,8 @@ window.WWS_BOOKING_CONFIG = {
             { id: "plants", label: "Plants", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
             { id: "living-room-rug", label: "Living room rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
             { id: "living-room-furniture", label: "Living room furniture", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
-            { id: "getting-ready-rug", label: "Getting-Ready area Rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
-            { id: "getting-ready-furniture", label: "Getting-Ready area Furniture", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+            { id: "getting-ready-rug", label: "Hair and Makeup Area Rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
+            { id: "getting-ready-furniture", label: "Hair and Makeup Area Furniture", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
             { id: "large-table-chairs", label: "Large table and chairs", options: ["Back garage corner", "Leave where it currently is"] }
           ]
         }
