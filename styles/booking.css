@@ -691,6 +691,13 @@ body.booking-page {
   border-color: var(--wws-text);
 }
 
+/* Multi-day event RANGE flow: days between the picked start/end endpoints. */
+.calendar-day.is-in-range {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--wws-text);
+  border-color: rgba(0, 0, 0, 0.14);
+}
+
 .calendar-day.is-today {
   box-shadow: inset 0 0 0 1px var(--wws-text-muted);
 }

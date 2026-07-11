@@ -816,6 +816,19 @@
 
       if (action === "select-duration") {
         state.durationId = actionTarget.dataset.durationId;
+        // Multi-day RANGE flow: the pick is the DAY-ONE access time. Store it,
+        // rebuild the event if a range is already chosen, and go to the range
+        // calendar. Availability for this type loads on entering Step 2 (setStep).
+        if (state.eventMode === "multi") {
+          state._eventDurationId = state.durationId;
+          state.availableDates = [];
+          state.availableTimes = [];
+          state.selectedDate = "";
+          state.selectedTime = ""; // range flow never uses the single-slot fields
+          if (state._eventStartDate && state._eventEndDate) buildEventRangeCart();
+          setStep(2);
+          return;
+        }
         if (!currentDurationSupportsEvents()) {
           resetEventState();
         }
@@ -938,6 +951,24 @@
 
       if (action === "select-date") {
         var date = actionTarget.dataset.date;
+        // Multi-day RANGE flow: first click sets the START, second sets the END
+        // (must be >= start) and auto-builds the event; an earlier second click
+        // restarts the range from there; a third click starts a fresh range.
+        if (state.eventMode === "multi") {
+          if (!state._eventStartDate || state._eventEndDate) {
+            state._eventStartDate = date;
+            state._eventEndDate = "";
+            state.cart.sessions = [];
+          } else if (date < state._eventStartDate) {
+            state._eventStartDate = date;
+          } else {
+            state._eventEndDate = date;
+            buildEventRangeCart();
+          }
+          trackEvent("date_selected", { location: location.slug, date: date, event_range: "multi" });
+          renderStepContent();
+          return;
+        }
         state.selectedDate = date;
         state.selectedTime = "";
         // Multi-day event day: the start time is fixed by the day role + option,
@@ -1044,6 +1075,24 @@
         showToast("Now set up your last day.");
         return;
       }
+      // Multi-day RANGE flow (Drew 2026-07-11): dates are picked as a start→end
+      // range; the cart is already auto-built by buildEventRangeCart, so review
+      // goes STRAIGHT to details (no active-draft commit — there is no draft).
+      if (action === "range-reset") {
+        state._eventStartDate = "";
+        state._eventEndDate = "";
+        state.cart.sessions = [];
+        renderStepContent();
+        return;
+      }
+      if (action === "range-review") {
+        if (!cartIsActive()) return; // both dates must be picked (cart built)
+        state._cartReviewing = false;
+        setStep(3); // Details (collect attendees once) → Waiver → Pay
+        showToast("Your event days are set. Now your details and payment.");
+        return;
+      }
+
       if (action === "md-review") {
         // Commit the last day, then send the customer through details → waiver →
         // pay to collect the UNIVERSAL fields ONCE for the whole event (contact,
@@ -1312,6 +1361,15 @@
         return;
       }
 
+      // Multi-day RANGE flow: last-day early-checkout departure. Default pv-full
+      // (10:30 PM). Picking a shorter leave time rebuilds the event's last day.
+      if (target.matches("[data-action='set-last-day-leave']")) {
+        state._lastDayDurationId = target.value || "pv-full";
+        buildEventRangeCart();
+        renderStepContent();
+        return;
+      }
+
       if (target.matches("[data-check='cleanup']")) {
         state.acknowledgements.cleanup = target.checked;
         return;
@@ -1371,7 +1429,19 @@
     });
   }
 
+  // Range event: add-ons are picked once in Step 4 and apply to EVERY event day
+  // (equipment stays up across days; the per-day discount tapers automatically in
+  // pricing-shared). Mirror the global picker onto each auto-built day so the live
+  // summary, pricing, and checkout all see the same add-ons.
+  function syncRangeAddons() {
+    if (state.eventMode !== "multi" || !state.cart.sessions.length) return;
+    state.cart.sessions.forEach(function (s) {
+      s.addons = JSON.parse(JSON.stringify(state.addons || {}));
+    });
+  }
+
   function renderStepContent() {
+    syncRangeAddons();
     renderProgress();
     renderMultidayIntro();
     renderDurations();
@@ -1588,6 +1658,23 @@
       return;
     }
 
+    // Multi-day event (Airbnb-style RANGE flow, Drew 2026-07-11): Step 1 is the
+    // DAY-ONE access-time picker. Middle days ($980 full) and the last day are
+    // auto-built from the date range in Step 2 — no per-day duration choice.
+    if (state.eventMode === "multi") {
+      container.innerHTML = location.durations
+        .filter(function (d) { return FIRST_DAY_START_LABEL[d.id]; })
+        .map(function (duration) {
+          var isActive = duration.id === state._eventDurationId;
+          var lbl = FIRST_DAY_START_LABEL[duration.id];
+          var priceTag = duration.price ? currency.format(duration.price) : "";
+          return '<button type="button" class="booking-choice duration-pill ' + (isActive ? "is-active" : "") + '" data-action="select-duration" data-duration-id="' + duration.id + '" aria-pressed="' + isActive + '">' +
+            '<span class="duration-pill-label">' + lbl + ' &mdash; Day 1 Access Time' + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
+          '</button>';
+        }).join("");
+      return;
+    }
+
     // Multi-day event: render a day-role-specific picker instead of raw durations.
     var mdRole = currentDayRole();
     if (mdRole === "middle") {
@@ -1735,6 +1822,26 @@
   function renderScheduleStep() {
     var container = document.querySelector("[data-schedule-step]");
     if (!container) return;
+
+    // Multi-day RANGE flow (Drew 2026-07-11): one calendar for the whole event —
+    // pick the start date then the end date; the days auto-build. Bypasses the
+    // per-day builder entirely.
+    if (state.eventMode === "multi") {
+      var rTitle = document.querySelector("[data-step2-title]");
+      var rSub = document.querySelector("[data-step2-sub]");
+      if (rTitle && rSub) {
+        rTitle.textContent = "Choose Your Event Dates";
+        rSub.textContent = "Pick the day your event starts, then the day it ends. Access begins at your Day 1 time and runs continuously through the last day.";
+      }
+      var rNav = document.querySelector("[data-step2-nav]");
+      if (rNav) rNav.style.display = "none";
+      if (!getAppointmentTypeID()) {
+        container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Choose your Day 1 access time first to see available dates.</p></div>';
+        return;
+      }
+      container.innerHTML = renderCalendar() + renderRangeControls();
+      return;
+    }
 
     var mdRole = currentDayRole();
 
@@ -1896,6 +2003,70 @@
     state.cart.sessions = sessions;
   }
 
+  // The panel below the range calendar: prompts through start→end selection, then
+  // the day breakdown + last-day early-checkout + the "review & pay" CTA (Drew).
+  function renderRangeControls() {
+    function human(ymd) {
+      if (!ymd) return "";
+      var p = ymd.split("-");
+      return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+        .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    }
+    var s = state._eventStartDate, e = state._eventEndDate;
+    if (!s) {
+      return '<div class="booking-panel-soft p-5 mt-5"><p class="ui-copy" style="color:rgba(0,0,0,0.75)">Tap the day your event <strong>starts</strong>. Then tap the day it <strong>ends</strong> to set the full range.</p></div>';
+    }
+    if (!e) {
+      return '<div class="booking-panel-soft p-5 mt-5">' +
+        '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.75)">Event starts <strong>' + escapeHtml(human(s)) + '</strong>. Now tap the day your event <strong>ends</strong> (a later date on the calendar).</p>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="range-reset">Start over</button>' +
+      '</div>';
+    }
+    // Both endpoints picked — the event is auto-built. Show the breakdown.
+    var days = datesInRange(s, e);
+    var n = days.length;
+    var accessLabel = FIRST_DAY_START_LABEL[state._eventDurationId] || "";
+    var lastId = state._lastDayDurationId || "pv-full";
+    var leaveLabel = lastId === "pv-full" ? "10:30 PM" : (LAST_DAY_LEAVE_LABEL[lastId] || "10:30 PM");
+
+    var lines;
+    if (n === 1) {
+      lines = '<li><strong>' + escapeHtml(human(s)) + '</strong> — access from <strong>' + escapeHtml(accessLabel) + '</strong> to 10:30 PM</li>';
+    } else {
+      lines = '<li>Day 1 (<strong>' + escapeHtml(human(s)) + '</strong>) — access from <strong>' + escapeHtml(accessLabel) + '</strong> through the evening</li>';
+      if (n > 2) lines += '<li>' + (n - 2) + ' full day' + (n - 2 === 1 ? '' : 's') + ' in between — continuous 24-hour access</li>';
+      lines += '<li>Last day (<strong>' + escapeHtml(human(e)) + '</strong>) — access from 5:00 AM, leave by <strong>' + escapeHtml(leaveLabel) + '</strong></li>';
+    }
+
+    var earlyCheckout = "";
+    if (n >= 2) {
+      var leaveOpts = ["pv-full", "pv-8", "pv-6", "pv-4", "pv-3", "pv-2", "pv-1"].map(function (id) {
+        var dur = location.durations.find(function (x) { return x.id === id; });
+        var price = dur && dur.price ? currency.format(dur.price) : "";
+        var lbl = id === "pv-full" ? "Stay all day — leave 10:30 PM" : "Early checkout — leave " + LAST_DAY_LEAVE_LABEL[id];
+        return '<option value="' + id + '"' + (id === lastId ? " selected" : "") + '>' + lbl + (price ? " (" + price + ")" : "") + '</option>';
+      }).join("");
+      earlyCheckout =
+        '<label class="ui-copy-strong" style="display:block;margin-bottom:0.35rem">Last day departure</label>' +
+        '<select class="booking-input" data-action="set-last-day-leave" style="margin-bottom:1rem;width:100%">' + leaveOpts + '</select>';
+    }
+
+    var cleaningNote = n >= 2
+      ? '<p class="ui-copy-muted" style="margin-bottom:1rem;font-size:0.85rem">Because this is a multi-day event, there is a mandatory $150 cleaning fee automatically added to the booking.</p>'
+      : '';
+
+    return '<div class="booking-panel-soft p-5 mt-5">' +
+      '<p class="ui-kicker" style="margin-bottom:0.75rem">Your event &mdash; ' + n + ' day' + (n === 1 ? '' : 's') + '</p>' +
+      '<ul class="ui-copy" style="margin:0 0 1rem 1.1rem;color:rgba(0,0,0,0.75);list-style:disc">' + lines + '</ul>' +
+      earlyCheckout +
+      cleaningNote +
+      '<div style="display:flex;flex-wrap:wrap;gap:0.75rem">' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="range-reset">Change dates</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="range-review">Review your event &amp; add details</button>' +
+      '</div>' +
+    '</div>';
+  }
+
   function renderCalendar() {
     var parts = state.calendarMonth.split("-");
     var year = Number(parts[0]);
@@ -1909,6 +2080,12 @@
       .map(function (d) { return '<span class="calendar-day-header">' + d + '</span>'; })
       .join("");
 
+    // RANGE mode (multi-day event): highlight the picked start→end span. Endpoints
+    // read as selected; in-between days get a lighter in-range highlight even when
+    // they have no standalone Acuity slot (the event is one continuous hold).
+    var rangeMode = state.eventMode === "multi";
+    var rStart = state._eventStartDate, rEnd = state._eventEndDate;
+
     var cells = "";
     for (var i = 0; i < firstDay; i++) {
       cells += '<span class="calendar-day is-empty"></span>';
@@ -1916,10 +2093,13 @@
     for (var d = 1; d <= daysInMonth; d++) {
       var dateStr = state.calendarMonth + "-" + String(d).padStart(2, "0");
       var isAvailable = state.availableDates.indexOf(dateStr) !== -1;
-      var isSelected = dateStr === state.selectedDate;
       var isPast = dateStr < today;
+      var isEndpoint = rangeMode && (dateStr === rStart || (rEnd && dateStr === rEnd));
+      var inRange = rangeMode && rStart && rEnd && dateStr > rStart && dateStr < rEnd;
+      var isSelected = rangeMode ? isEndpoint : (dateStr === state.selectedDate);
       var cls = "calendar-day";
       if (isSelected) cls += " is-selected";
+      else if (inRange) cls += " is-in-range";
       else if (isAvailable && !isPast) cls += " is-available";
       else cls += " is-unavailable";
       if (dateStr === today) cls += " is-today";
