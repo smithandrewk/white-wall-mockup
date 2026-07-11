@@ -583,6 +583,22 @@
       var discountLine = totals.addonDiscount > 0
         ? '<div class="summary-line summary-line-muted"><span>Multi-day add-on discount</span><span>−' + currency.format(totals.addonDiscount / 100) + '</span></div>'
         : '';
+      // Cleaning fee — MIRROR the server (create-checkout.js): $150 once when the
+      // cart is a multi-day event (an event with 2+ sessions) OR any session has
+      // 35+ attendees. Without this the on-site total ($X) would understate the
+      // Square charge ($X + $150) and the deposit would be computed too low.
+      var cartIsEventForFee = state.cart.sessions.some(function (s) { return s.eventIntent === "yes"; }) || state.eventIntent === "yes";
+      var feeSessionCount = priced.sessions.length;
+      var feeMaxAtt = parseCount(state.participants);
+      state.cart.sessions.forEach(function (s) {
+        var c = parseCount(s.perSessionIntake && s.perSessionIntake.participants);
+        if (c > feeMaxAtt) feeMaxAtt = c;
+      });
+      var cleaningCents = ((cartIsEventForFee && feeSessionCount >= 2) || feeMaxAtt >= 35) ? 15000 : 0;
+      var cleaningLine = cleaningCents > 0
+        ? '<div class="summary-line summary-line-muted"><span>Cleaning fee' + (cartIsEventForFee && feeSessionCount >= 2 ? ' (multi-day event)' : '') + '</span><span>' + currency.format(cleaningCents / 100) + '</span></div>'
+        : '';
+      var feeInclusiveTotal = totals.total + cleaningCents;
       totalsHtml =
         '<div class="booking-panel-soft p-5" style="margin-top:1rem">' +
           '<p class="ui-kicker" style="margin-bottom:1rem">Cart total</p>' +
@@ -590,15 +606,16 @@
             '<div class="summary-line"><span>Sessions</span><span>' + currency.format(totals.sessionTotal / 100) + '</span></div>' +
             '<div class="summary-line summary-line-muted"><span>Add-ons</span><span>' + currency.format(totals.addonTotalFull / 100) + '</span></div>' +
             discountLine +
+            cleaningLine +
             '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(totals.total / 100) + '</strong></span></div>' +
+            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(feeInclusiveTotal / 100) + '</strong></span></div>' +
           '</div>' +
-          renderCartDepositRow(totals) +
+          renderCartDepositRow(feeInclusiveTotal) +
         '</div>';
-      // Stash so updatePayButton can label the cart pay button.
+      // Stash so updatePayButton can label the cart pay button (fee-inclusive).
       state._grandTotal = (state.paymentMode === "deposit" && window.WWSPricing.depositSplit)
-        ? window.WWSPricing.depositSplit(totals.total).depositCents / 100
-        : totals.total / 100;
+        ? window.WWSPricing.depositSplit(feeInclusiveTotal).depositCents / 100
+        : feeInclusiveTotal / 100;
     }
 
     container.innerHTML =
@@ -670,18 +687,20 @@
 
   // Deposit option (V3 item 6) — pay 60% now — shown only when the cart contains
   // an event booking (deposit is event-only, enforced server-side too).
-  function renderCartDepositRow(totals) {
+  function renderCartDepositRow(totalCents) {
     var cartHasEvent = state.cart.sessions.some(function (s) { return s.eventIntent === "yes"; })
       || state.eventIntent === "yes"; // include the active draft
     if (!cartHasEvent || !window.WWSPricing || !window.WWSPricing.depositSplit) {
       if (state.paymentMode === "deposit") state.paymentMode = "full"; // can't deposit a non-event cart
       return "";
     }
-    var split = window.WWSPricing.depositSplit(totals.total);
+    // totalCents is the fee-inclusive cart total, so the 60/40 split matches the
+    // server (which computes the deposit on session + add-ons + cleaning fee).
+    var split = window.WWSPricing.depositSplit(totalCents);
     return '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
       '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
       '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
-        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(totals.total / 100) + '</span></label>' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(totalCents / 100) + '</span></label>' +
         '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (balance ' + currency.format(split.balanceDueCents / 100) + ' due 48h before)</span></label>' +
       '</div>';
   }
