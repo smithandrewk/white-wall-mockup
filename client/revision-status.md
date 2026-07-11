@@ -625,3 +625,9 @@ Foreman cycle. Drew: a standalone informational "Add-ons" page so anyone can see
 
 - [x] New **`add-ons.html`** → served at `/add-ons`: full-width, display-only menu of every Powdersville add-on (photo, name, price, full description; chairs/walls/backdrops list each option with price) in the booking order chairs → setup-crew. Reads `window.WWS_BOOKING_CONFIG` so it stays in sync with the booking flow. No interactive controls / CTAs per Drew. "Book your session with us" pill at top + bottom → `/book-powdersville`.
 - [x] Verified on staging (Playwright): HTTP 200, 8 cards in order with photos + prices + descriptions + option lists, 2 book pills → /book-powdersville, 0 interactive controls, no page errors; layout eyeballed via screenshot.
+
+### Round 32 addendum (2026-07-11) — Add-Ons nav tab + Hair and Makeup Area rename (msgs 19f52d7bd7687434 / 19f52d96298f09af)
+
+- [x] **Add-Ons nav tab** added to the top menu site-wide (index, powdersville, taylors-mill, gallery, faq desktop + mobile menus, and both booking pages) → `/add-ons`. Playwright-verified the link exists on home/powdersville/faq/gallery/booking and navigates to the page.
+- [x] **Renamed** the two "Getting-Ready area" setup-crew placement items → "Hair and Makeup Area Rug" / "Hair and Makeup Area Furniture" (booking-config.js). Verified in the deployed config (no "Getting-Ready area" left).
+- [x] Confirmed to Drew (msg `19f52e2948d24359`).
