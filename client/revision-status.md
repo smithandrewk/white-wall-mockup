@@ -678,3 +678,6 @@ Drew: "verify everything works on the back end… setup crew window, cleaner tim
 - [x] **Gap #2 — cleaning buffer block (multi-day):** added a 2.5h `POST /blocks` after the event's last session end in `handleCartCheckout` (passes calendarID). Verified on staging: a 2-day event booking created a block 2026-07-13 11:00 PM → 07-14 1:30 AM tied to both appts. Test data cleaned up. Commit on branch.
 - [ ] Gaps #3 (cleaner .ics to April) + #5 (owner email/SMS + customer SMS): need the single-session-shaped notifiers made multi-day-aware (event-level state, fire once, cleaner keyed to last day, add cleaningFee to cart sessionState). NEXT.
 - [ ] Gap #1 (crew time window): awaiting Drew's spec. Gap #4 (40% auto-charge): Andrew-gated item-6.
+
+### Round 35 → Drew's full backend spec (msg 19f535e0d7e0e8bb, 2026-07-11 18:48)
+Drew replied to the audit with a detailed spec (customer recap, owner Watson SMS + a crew-only second SMS, April email 4h/1.5h-delay when crew added, 4h back-end buffer + 2h front-end crew block when crew added, and "just run" the 40% auto-charge). Full verbatim + itemized build plan: **`client/comms/2026-07-11-drew-backend-spec.md`**. Acknowledged to Drew (`19f536b8677858d0`); item-7 auto-charge kept honest ("finalizing" + Watson manual-reminder fallback; item-6 is Andrew's arming gate). Build in progress: gap #2 done; items 1-6 next.
