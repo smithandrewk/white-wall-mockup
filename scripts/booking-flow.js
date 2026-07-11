@@ -1719,9 +1719,22 @@
     '</div>';
   }
 
+  // America/New_York UTC offset ("-04:00" EDT / "-05:00" EST) for a YYYY-MM-DD
+  // date. Acuity requires ISO 8601 WITH the ET offset (see api/_lib/acuity.js) —
+  // a naive datetime would be read as UTC on the server and misbook the time.
+  function etOffsetForDate(dateStr) {
+    var noonUTC = new Date(dateStr + "T12:00:00Z");
+    var etD = new Date(noonUTC.toLocaleString("en-US", { timeZone: "America/New_York", hour12: false }));
+    var utcD = new Date(noonUTC.toLocaleString("en-US", { timeZone: "UTC", hour12: false }));
+    var offMin = Math.round((etD - utcD) / 60000);
+    var sign = offMin < 0 ? "-" : "+";
+    var abs = Math.abs(offMin);
+    return sign + String(Math.floor(abs / 60)).padStart(2, "0") + ":" + String(abs % 60).padStart(2, "0");
+  }
+
   // Lock the booking slot for a multi-day day: start time is fixed by the day
   // role + picked option (not a free time-slot pick). Sets selectedTime (booking
-  // start datetime) + the label shown in the confirmation line.
+  // start datetime, ISO 8601 + ET offset) + the label shown in the confirmation.
   function lockMultidaySlot() {
     var role = currentDayRole();
     if (!role || !state.selectedDate) return;
@@ -1735,7 +1748,7 @@
       start24 = LAST_DAY_START_24;
       label = LAST_DAY_LEAVE_LABEL[state.durationId] || "";
     }
-    state.selectedTime = state.selectedDate + "T" + start24 + ":00";
+    state.selectedTime = state.selectedDate + "T" + start24 + ":00" + etOffsetForDate(state.selectedDate);
     state._multidayFixedTime = label;
   }
 
