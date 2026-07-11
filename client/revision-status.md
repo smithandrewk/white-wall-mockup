@@ -649,3 +649,11 @@ Foreman cycle (triage=question). Drew sent 4 to-scale floor-plan PDFs and asked 
 ### Round 33 addendum 2 (2026-07-11) — 2 more floor plans (msg 19f5304eadd351d8)
 
 - [x] Added Ceremony Seating (163 chairs facing altar, 6ft aisle) + Maximum Standing (281 guests, full space) to /floor-plans (converted PDFs → PNG). Now 6 plans. Playwright-verified all 6 render, no errors. Confirmed to Drew.
+
+## Feedback Round 34 (2026-07-11) — Drew's email 2026-07-11 17:20 (msg 19f530d6fed9587b): per-add-on live line items
+
+Foreman cycle. Drew: the live event summary should show EACH add-on as its own line with the per-day math adding up, not one lumped total. On staging, Playwright-verified, confirmed to Drew (`19f531d2d543d74a`).
+
+- [x] `renderMultidaySummary` add-on section rebuilt: each selected add-on is its own line with per-day math (Day 1 full + Day 2/3 tapered) → subtotal, then an "Add-ons total", then the estimated total. E.g. 50 chairs on a 3-day event = "Day 1 $190.00 + Day 2 $161.50 + Day 3 $133.00" = $484.50. Added `currencyExact` (2-decimal) so half-dollar discounts display exactly.
+- [x] **Overcharge fix (caught while building this):** `syncRangeAddons` was mirroring every add-on onto every day, so flat add-ons (Event Setup and Reset Crew $750, lighting) were charged once PER DAY (3-day event billed the crew 3×=$2,250). Now discount-eligible gear goes on every day (tapered) and flat add-ons go on day 1 ONLY (charged once). Corrects the summary, the Step-5 cart total, AND the server charge (all read the session add-ons). Verified: crew shows "$750.00 once for the event", total $3,694.50 for the 3-day + chairs + crew example.
+- [ ] **Flagged to Drew:** lighting is currently counted once for the event (like the crew); asked whether it should instead bill per day.
