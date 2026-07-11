@@ -631,3 +631,13 @@ Foreman cycle. Drew: a standalone informational "Add-ons" page so anyone can see
 - [x] **Add-Ons nav tab** added to the top menu site-wide (index, powdersville, taylors-mill, gallery, faq desktop + mobile menus, and both booking pages) → `/add-ons`. Playwright-verified the link exists on home/powdersville/faq/gallery/booking and navigates to the page.
 - [x] **Renamed** the two "Getting-Ready area" setup-crew placement items → "Hair and Makeup Area Rug" / "Hair and Makeup Area Furniture" (booking-config.js). Verified in the deployed config (no "Getting-Ready area" left).
 - [x] Confirmed to Drew (msg `19f52e2948d24359`).
+
+## Feedback Round 33 (2026-07-11) — Drew's email 2026-07-11 16:38 (msg 19f52e735e36cdc2): floor-plan assets
+
+Foreman cycle (triage=question). Drew sent 4 to-scale floor-plan PDFs and asked how to leverage them. Response: built a page + nav tab; on `staging.whitewallstudios.co/floor-plans`, Playwright-verified, confirmed to Drew (`19f52eeeb39cb520`).
+
+- [x] Converted the 4 PDFs → PNG (`pdftoppm` 150dpi) into `images/floor-plans/` (default-layout, empty-dimensions, event-seated, event-standing).
+- [x] New **`floor-plans.html`** → `/floor-plans`: full-size, to-scale display of all 4 plans (The Full Space + dimensions, Default Studio Layout, Event Mockup Seated, Event Mockup Standing) each with a caption, "Book your session with us" pills top + bottom. Same menu style as the add-ons page.
+- [x] **"Floor Plans" nav tab** added site-wide (index, powdersville, taylors-mill, gallery, faq desktop + mobile, both booking pages, add-ons page), after the Add-Ons tab.
+- [x] Verified on staging (Playwright): HTTP 200, 4 cards with all images loaded (naturalW 1913), book pills → /book-powdersville, nav tab present on home/powdersville, no page errors.
+- [ ] **Offered (awaiting Drew):** a contextual "See the floor plans" link inside the event booking flow near chairs/tables.
