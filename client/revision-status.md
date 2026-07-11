@@ -610,3 +610,11 @@ Foreman cycle. Drew tested the range flow ("I freaking love it... absolutely fla
 ### Round 31 addendum (2026-07-11) — featured crew card restructured to a large square (msg 19f52b2139b717e7)
 
 - [x] Drew: the featured Event Setup and Reset Crew card should be **one large square** split on the HORIZONTAL axis (not photo-left/content-right). New `renderFeaturedAddonCard`: header (title, bold-italic subtitle, "Optional" + "$750" pills) → **full-width photo** → full-width description → a **large plain pill button** "Add the Setup/Reset Crew to your booking" (no photo inside). Extracted `renderPlacementRows` so the 8 placement dropdowns still appear once added. Staging Playwright-verified (vertical order head<photo<button, full-width photo+button, bold-italic tagline, toggle+placements work, no errors) + screenshot eyeballed. Confirmed to Drew (`19f52b7b847020cb`).
+
+### Round 31 addendum 2 (2026-07-11) — crew placements, multi-day disclaimer, deposit copy (msgs 19f52bccee3d674d / 19f52be7ed1b3688 / 19f52c0b87f46793)
+
+- [x] Setup crew placements: added "Storage Building" as an option for **Utility tables and extension cords** and for **Living room furniture** (booking-config.js).
+- [x] Featured crew card layout confirmed **universal** for event bookings — shows on single-day AND multi-day events (same one-large-square), and never on photo/video (eventsOnly + featured). Playwright-verified on all three paths.
+- [x] **35+ cleaning-fee disclaimer** (`updateParticipantNotices` capacity notice) suppressed on the MULTI-day path (fee is baked in regardless); kept on single-day. Gated on `state.eventMode !== "multi"`.
+- [x] **Deposit balance copy** (both cart + single rows) → "(Balance $X will be auto-charged to the card on file 48 hours before session start)". ⚠️ Promises the item-6 40% auto-charge — **staging-only display**; the auto-charge machinery is the **Andrew-gated prod-merge prerequisite** (do not ship this copy to prod until item-6 is armed).
+- [x] Verified on staging (Playwright, 3 paths, zero errors) + confirmed to Drew (msg `19f52c62c1ce8aa4`).
