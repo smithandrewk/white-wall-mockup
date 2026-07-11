@@ -45,6 +45,14 @@
     _gateChoosingEventMode: false,
     _dayRole: "", // multi-day event: role of the day being configured ("middle"|"last"); "first" is derived from an empty cart
     _multidayFixedTime: "", // locked start (first/middle) or start-of-access (last) time label for the confirmation line
+    // Airbnb-style multi-day RANGE flow (Drew 2026-07-11): the customer picks a
+    // day-one access time (durationId), then a start date + end date; the days
+    // between are auto-built as full days. _eventDurationId holds the day-one
+    // access-time pick; _eventStartDate/_eventEndDate are the picked range.
+    _eventDurationId: "",
+    _eventStartDate: "",
+    _eventEndDate: "",
+    _lastDayDurationId: "pv-full", // last day defaults to a full day (10:30 PM departure); early-checkout can shorten it
     durationId: location.durations[0] ? location.durations[0].id : "",
     eventIntent: "",
     participants: "",
@@ -1837,6 +1845,55 @@
     }
     state.selectedTime = state.selectedDate + "T" + start24 + ":00" + etOffsetForDate(state.selectedDate);
     state._multidayFixedTime = label;
+  }
+
+  // --- Airbnb-style multi-day RANGE flow (Drew 2026-07-11) ------------------
+  // Inclusive list of "YYYY-MM-DD" from start to end.
+  function datesInRange(startYmd, endYmd) {
+    var out = [];
+    if (!startYmd || !endYmd) return out;
+    var d = new Date(startYmd + "T12:00:00Z");
+    var e = new Date(endYmd + "T12:00:00Z");
+    while (d <= e) { out.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); }
+    return out;
+  }
+  function makeRangeSession(ymd, durationId, start24, timeLabel, role, prevAddons) {
+    return {
+      location: location.slug,
+      durationId: durationId,
+      selectedDate: ymd,
+      selectedTime: ymd + "T" + start24 + ":00" + etOffsetForDate(ymd),
+      eventIntent: "yes",
+      addons: prevAddons ? JSON.parse(JSON.stringify(prevAddons)) : {},
+      foodDrinks: null,
+      perSessionIntake: { participants: "", business: "", eventDescription: "" },
+      _mdRole: role,
+      _mdTimeLabel: timeLabel
+    };
+  }
+  // Auto-build the whole event from the day-one access time + the picked date
+  // range: day 1 = access time, middle days = full ($980), last day = full by
+  // default (10:30 PM departure) unless early-checkout shortened it. Preserves any
+  // per-day add-ons already chosen (matched by date) on a rebuild.
+  function buildEventRangeCart() {
+    if (!state._eventStartDate || !state._eventEndDate || !state._eventDurationId) return;
+    var prevByDate = {};
+    state.cart.sessions.forEach(function (s) { prevByDate[s.selectedDate] = s.addons; });
+    var dates = datesInRange(state._eventStartDate, state._eventEndDate);
+    var sessions = dates.map(function (ymd, i) {
+      if (i === 0) {
+        return makeRangeSession(ymd, state._eventDurationId,
+          FIRST_DAY_START_24[state._eventDurationId] || "12:00",
+          FIRST_DAY_START_LABEL[state._eventDurationId] || "", "first", prevByDate[ymd]);
+      }
+      if (i === dates.length - 1) {
+        var lastId = state._lastDayDurationId || "pv-full";
+        var leaveLabel = lastId === "pv-full" ? "10:30 PM" : (LAST_DAY_LEAVE_LABEL[lastId] || "10:30 PM");
+        return makeRangeSession(ymd, lastId, LAST_DAY_START_24, leaveLabel, "last", prevByDate[ymd]);
+      }
+      return makeRangeSession(ymd, "pv-full", "05:00", "5:00 AM", "middle", prevByDate[ymd]);
+    });
+    state.cart.sessions = sessions;
   }
 
   function renderCalendar() {
