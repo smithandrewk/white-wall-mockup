@@ -324,12 +324,25 @@
     if (state.eventMode !== "multi") { el.hidden = true; el.innerHTML = ""; return; }
     el.hidden = false;
     var dayNum = state.cart.sessions.length + 1;
+    var body;
+    if (isMultidayFirstDay()) {
+      // Drew's first-day framing: pick the day + when you come in; access runs to
+      // 10:30 PM and INCLUDES setup time; this day FEEDS INTO the next day.
+      body =
+        'You are building your event one day at a time, starting with <strong>your first day</strong>. ' +
+        'Pick when you want to come in below. Your access runs until <strong>10:30 PM</strong> that night and ' +
+        '<strong>includes your setup time</strong> for the event. ' +
+        '<span style="color:#1a1a1a;font-weight:600">This first day feeds into the next day of your event</span> — ' +
+        'you will add the following days after this.';
+    } else {
+      body =
+        'Setting up <strong>Day ' + dayNum + '</strong>. Add-ons and pricing adjust per day, and you pay for ' +
+        'the whole event together at the end.';
+    }
     el.innerHTML =
       '<div class="booking-panel-soft p-5" style="margin-top:1.5rem">' +
         '<p class="ui-kicker" style="margin-bottom:0.5rem">Multi-day event builder</p>' +
-        '<p class="ui-copy" style="color:rgba(0,0,0,0.65)">You are building your event one day at a time. ' +
-        'Set up <strong>Day ' + dayNum + '</strong> below (choose its length, then its date and start time), ' +
-        'then add the next day. Add-ons and pricing adjust per day, and you pay for the whole event together at the end.</p>' +
+        '<p class="ui-copy" style="color:rgba(0,0,0,0.65)">' + body + '</p>' +
       '</div>';
   }
 
@@ -1381,9 +1394,42 @@
     fill.style.width = fillPct + "%";
   }
 
+  // Multi-day event FIRST-DAY start-time options (Drew 2026-07-11). The first day
+  // of a multi-day event ends at 10:30 PM; the customer picks how early they come
+  // in (which sets the duration + price). These start times map 1:1 to the
+  // existing PV durations by price, so selecting one is still a normal duration
+  // selection under the hood ($130=1hr … $980=full). Includes their setup time.
+  var FIRST_DAY_START_LABEL = {
+    "pv-1": "9:00 PM", "pv-2": "8:00 PM", "pv-3": "7:00 PM", "pv-4": "6:00 PM",
+    "pv-6": "4:00 PM", "pv-8": "2:00 PM", "pv-full": "5:00 AM"
+  };
+  // True while configuring the FIRST day of a multi-day event (cart still empty).
+  function isMultidayFirstDay() {
+    return state.eventMode === "multi" && !cartIsActive();
+  }
+
   function renderDurations() {
     const container = document.querySelector("[data-duration-options]");
     if (!container) {
+      return;
+    }
+
+    // Multi-day event, first day: show START-TIME options (ending 10:30 PM)
+    // instead of raw durations. Same select-duration action under the hood.
+    if (isMultidayFirstDay()) {
+      container.innerHTML = location.durations
+        .filter(function (d) { return FIRST_DAY_START_LABEL[d.id]; })
+        .map(function (duration) {
+          var isActive = duration.id === state.durationId;
+          var start = FIRST_DAY_START_LABEL[duration.id];
+          var priceTag = duration.price ? currency.format(duration.price) : "";
+          return '' +
+            '<button type="button" class="booking-choice duration-pill ' + (isActive ? "is-active" : "") + '" data-action="select-duration" data-duration-id="' + duration.id + '" aria-pressed="' + isActive + '">' +
+              '<span class="duration-pill-label">Come in at ' + start + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
+              '<span class="duration-pill-badge">Access until 10:30 PM</span>' +
+            '</button>';
+        })
+        .join("");
       return;
     }
 
