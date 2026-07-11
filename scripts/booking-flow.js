@@ -3055,20 +3055,80 @@
     });
   }
 
-  function renderAddonCard(addon) {
-    const addonState = state.addons[addon.id];
-    const priceLine = getAddonPriceLine(addon);
-    const controls = renderAddonControls(addon, addonState);
+  // Placement dropdowns for an add-on that requires them (Event Setup and Reset
+  // Crew): shown once selected. Extracted so both the standard toggle control and
+  // the featured card can render them. Returns "" when not applicable.
+  function renderPlacementRows(addon, addonState) {
+    if (!addon.requiresPlacements || !addonState.selected || !Array.isArray(addon.placementItems)) return "";
+    var placements = addonState.placements || {};
+    var rows = addon.placementItems.map(function (item) {
+      var chosen = placements[item.id] || "";
+      var opts = ['<option value="" disabled ' + (chosen ? "" : "selected") + '>Select...</option>']
+        .concat(item.options.map(function (opt) {
+          return '<option value="' + escapeHtml(opt) + '"' + (chosen === opt ? " selected" : "") + ">" + escapeHtml(opt) + "</option>";
+        }))
+        .join("");
+      return `
+        <label class="ui-field" style="display:block;margin-top:0.75rem">
+          <span class="ui-copy-strong">${escapeHtml(item.label)}</span>
+          <select class="booking-input" data-action="set-placement" data-addon-id="${addon.id}" data-placement-id="${item.id}" style="margin-top:0.35rem">
+            ${opts}
+          </select>
+        </label>`;
+    }).join("");
+    return `
+      <div class="addon-placements" style="margin-top:1rem">
+        <p class="ui-copy-strong">Tell our crew where each item should go:</p>
+        ${rows}
+      </div>
+    `;
+  }
 
-    // Featured add-on (Event Setup and Reset Crew, Drew 2026-07-11): a full-width
-    // card with a bigger photo and a bold-italic tagline above the description.
-    const featured = addon.featured ? " addon-card-featured" : "";
+  // Featured add-on card (Event Setup and Reset Crew, Drew 2026-07-11): one large
+  // square, stacked on the HORIZONTAL axis — header (title, subtitle, optional +
+  // price pills) on top, then a full-width photo, then the full-width description,
+  // ending in a large plain pill button (no photo inside it). Placement dropdowns
+  // appear under the button once added.
+  function renderFeaturedAddonCard(addon, addonState) {
     const tagline = addon.tagline
       ? '<p class="addon-card-tagline">' + escapeHtml(addon.tagline) + '</p>'
       : '';
+    const added = addonState.selected;
+    return `
+      <article class="addon-card addon-card-featured" data-addon-card-id="${addon.id}">
+        <div class="addon-card-content addon-featured-head">
+          <div>
+            <h3 class="ui-display-sm">${addon.name}</h3>
+            ${tagline}
+          </div>
+          <div class="addon-featured-pills">
+            <span class="summary-pill" style="border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)">Optional</span>
+            <span class="summary-pill" style="border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)">${currency.format(addon.price)}</span>
+          </div>
+        </div>
+        <img class="addon-featured-photo" src="${addon.image}" alt="${escapeHtml(addon.name)}">
+        <div class="addon-card-content">
+          <p class="ui-copy">${formatAddonDescription(addon)}</p>
+          <button type="button" class="booking-button ${added ? "booking-button-secondary" : "booking-button-primary"} addon-featured-btn" data-action="toggle-addon" data-addon-id="${addon.id}">
+            ${added ? "Added to your booking &#10003; — tap to remove" : "Add the Setup/Reset Crew to your booking"}
+          </button>
+          ${renderPlacementRows(addon, addonState)}
+        </div>
+      </article>
+    `;
+  }
+
+  function renderAddonCard(addon) {
+    const addonState = state.addons[addon.id];
+
+    // Featured add-on gets a bespoke full-width, vertically-stacked layout.
+    if (addon.featured) return renderFeaturedAddonCard(addon, addonState);
+
+    const priceLine = getAddonPriceLine(addon);
+    const controls = renderAddonControls(addon, addonState);
 
     return `
-      <article class="addon-card${featured}" data-addon-card-id="${addon.id}">
+      <article class="addon-card" data-addon-card-id="${addon.id}">
         <img src="${addon.image}" alt="${escapeHtml(addon.name)}">
         <div class="addon-card-content">
           <div class="ui-row-start">
@@ -3080,7 +3140,6 @@
               ${formatAddonSubtotal(addon)}
             </span>
           </div>
-          ${tagline}
           <p class="ui-copy" style="margin-top:1rem">${formatAddonDescription(addon)}</p>
           <div style="margin-top:1.25rem">
             ${controls}
@@ -3107,30 +3166,7 @@
       `;
       // Placement dropdowns (e.g. Event Setup and Reset Crew): when selected, the
       // customer must say where each studio item should go. Required before pay.
-      if (addon.requiresPlacements && addonState.selected && Array.isArray(addon.placementItems)) {
-        var placements = addonState.placements || {};
-        var rows = addon.placementItems.map(function (item) {
-          var chosen = placements[item.id] || "";
-          var opts = ['<option value="" disabled ' + (chosen ? "" : "selected") + '>Select...</option>']
-            .concat(item.options.map(function (opt) {
-              return '<option value="' + escapeHtml(opt) + '"' + (chosen === opt ? " selected" : "") + ">" + escapeHtml(opt) + "</option>";
-            }))
-            .join("");
-          return `
-            <label class="ui-field" style="display:block;margin-top:0.75rem">
-              <span class="ui-copy-strong">${escapeHtml(item.label)}</span>
-              <select class="booking-input" data-action="set-placement" data-addon-id="${addon.id}" data-placement-id="${item.id}" style="margin-top:0.35rem">
-                ${opts}
-              </select>
-            </label>`;
-        }).join("");
-        toggleHtml += `
-          <div class="addon-placements" style="margin-top:1rem">
-            <p class="ui-copy-strong">Tell our crew where each item should go:</p>
-            ${rows}
-          </div>
-        `;
-      }
+      toggleHtml += renderPlacementRows(addon, addonState);
       return toggleHtml;
     }
 

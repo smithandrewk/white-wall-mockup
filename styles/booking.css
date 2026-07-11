@@ -404,37 +404,52 @@ body.booking-page {
   padding: 1rem;
 }
 
-/* Featured add-on (Event Setup and Reset Crew, Drew 2026-07-11): spans the full
-   width of the add-on grid with a bigger photo, and goes horizontal on wide
-   screens so the title and description spread across the whole intake width. */
+/* Featured add-on (Event Setup and Reset Crew, Drew 2026-07-11): one large square
+   that spans the full add-on grid width, stacked on the HORIZONTAL axis — header
+   (title + subtitle + optional/price pills) on top, a full-width photo in the
+   middle, the full-width description below, ending in a large plain pill button. */
 .addon-card-featured {
   grid-column: 1 / -1;
 }
-.addon-card-featured img {
-  height: 16rem;
-}
 .addon-card-tagline {
-  margin-top: 0.85rem;
+  margin-top: 0.6rem;
   font-weight: 700;
   font-style: italic;
   color: var(--wws-text);
 }
+.addon-featured-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.5rem 1.75rem 1rem;
+}
+.addon-featured-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.addon-featured-photo {
+  width: 100%;
+  height: 20rem;
+  object-fit: cover;
+  border-radius: 0;
+}
+.addon-card-featured .addon-card-content:last-child {
+  padding: 1.5rem 1.75rem;
+}
+.addon-featured-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+}
 @media (min-width: 768px) {
-  .addon-card-featured {
-    display: flex;
-    align-items: stretch;
-  }
-  .addon-card-featured img {
-    width: 42%;
-    max-width: 460px;
-    height: auto;
-    min-height: 22rem;
-    border-top-right-radius: 0;
-    border-bottom-left-radius: 1.2rem;
-  }
-  .addon-card-featured .addon-card-content {
-    flex: 1;
-    padding: 1.75rem 2rem;
+  .addon-featured-photo {
+    height: 26rem;
   }
 }
 
