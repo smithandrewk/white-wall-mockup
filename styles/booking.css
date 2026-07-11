@@ -404,6 +404,40 @@ body.booking-page {
   padding: 1rem;
 }
 
+/* Featured add-on (Event Setup and Reset Crew, Drew 2026-07-11): spans the full
+   width of the add-on grid with a bigger photo, and goes horizontal on wide
+   screens so the title and description spread across the whole intake width. */
+.addon-card-featured {
+  grid-column: 1 / -1;
+}
+.addon-card-featured img {
+  height: 16rem;
+}
+.addon-card-tagline {
+  margin-top: 0.85rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--wws-text);
+}
+@media (min-width: 768px) {
+  .addon-card-featured {
+    display: flex;
+    align-items: stretch;
+  }
+  .addon-card-featured img {
+    width: 42%;
+    max-width: 460px;
+    height: auto;
+    min-height: 22rem;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 1.2rem;
+  }
+  .addon-card-featured .addon-card-content {
+    flex: 1;
+    padding: 1.75rem 2rem;
+  }
+}
+
 .addon-chip {
   padding: 0.55rem 0.8rem;
   border: 1px solid var(--wws-border);

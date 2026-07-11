@@ -113,6 +113,8 @@ window.WWS_BOOKING_CONFIG = {
           id: "setup-crew",
           type: "toggle",
           name: "Event Setup and Reset Crew",
+          tagline: "By no means necessary, but certainly makes your event more enjoyable.",
+          featured: true,
           image: "images/gear-rentals/event-setup-reset-crew.jpeg",
           price: 750,
           eventsOnly: true,

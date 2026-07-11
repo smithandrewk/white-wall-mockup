@@ -2078,7 +2078,7 @@
     } else {
       lines = '<li>Day 1 (<strong>' + escapeHtml(human(s)) + '</strong>) — access from <strong>' + escapeHtml(accessLabel) + '</strong> through the evening</li>';
       if (n > 2) lines += '<li>' + (n - 2) + ' full day' + (n - 2 === 1 ? '' : 's') + ' in between — continuous 24-hour access</li>';
-      lines += '<li>Last day (<strong>' + escapeHtml(human(e)) + '</strong>) — access from 5:00 AM, leave by <strong>' + escapeHtml(leaveLabel) + '</strong></li>';
+      lines += '<li>Last day (<strong>' + escapeHtml(human(e)) + '</strong>) — access all day, leave by <strong>' + escapeHtml(leaveLabel) + '</strong> with studio fully reset</li>';
     }
 
     var earlyCheckout = "";
@@ -3035,6 +3035,16 @@
       return !addon.eventsOnly || state.eventIntent === "yes";
     });
 
+    // Display order (Drew 2026-07-11): chairs, tables, TV, PA, walls, backdrops,
+    // lighting, then the Event Setup and Reset Crew last. Ids not listed keep their
+    // config order after these. Order is display-only (logic keys off addon.id).
+    var ADDON_ORDER = ["chairs", "tables", "tv", "pa-system", "rolling-walls", "backdrops", "lighting", "setup-crew"];
+    visibleAddons.sort(function (a, b) {
+      var ia = ADDON_ORDER.indexOf(a.id); if (ia === -1) ia = ADDON_ORDER.length;
+      var ib = ADDON_ORDER.indexOf(b.id); if (ib === -1) ib = ADDON_ORDER.length;
+      return ia - ib;
+    });
+
     container.innerHTML = visibleAddons.map(renderAddonCard).join("");
 
     container.querySelectorAll(".backdrop-carousel").forEach(function (el) {
@@ -3050,8 +3060,15 @@
     const priceLine = getAddonPriceLine(addon);
     const controls = renderAddonControls(addon, addonState);
 
+    // Featured add-on (Event Setup and Reset Crew, Drew 2026-07-11): a full-width
+    // card with a bigger photo and a bold-italic tagline above the description.
+    const featured = addon.featured ? " addon-card-featured" : "";
+    const tagline = addon.tagline
+      ? '<p class="addon-card-tagline">' + escapeHtml(addon.tagline) + '</p>'
+      : '';
+
     return `
-      <article class="addon-card" data-addon-card-id="${addon.id}">
+      <article class="addon-card${featured}" data-addon-card-id="${addon.id}">
         <img src="${addon.image}" alt="${escapeHtml(addon.name)}">
         <div class="addon-card-content">
           <div class="ui-row-start">
@@ -3063,6 +3080,7 @@
               ${formatAddonSubtotal(addon)}
             </span>
           </div>
+          ${tagline}
           <p class="ui-copy" style="margin-top:1rem">${formatAddonDescription(addon)}</p>
           <div style="margin-top:1.25rem">
             ${controls}
