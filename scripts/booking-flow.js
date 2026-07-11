@@ -139,7 +139,12 @@
     state.durationId = location.durations[0] ? location.durations[0].id : "";
     state.selectedDate = "";
     state.selectedTime = "";
-    state.eventIntent = "";
+    // Preserve the Step-1 gate's booking-type choice across days/sessions: every
+    // day of a gated booking is the same type (all event days, or all photo), and
+    // the mid-flow type selector is hidden once gated, so re-blanking eventIntent
+    // would strand a new event day with no way to mark it. Falls back to "" (the
+    // pre-gate single-session behavior) when the gate wasn't used.
+    state.eventIntent = state.bookingType === "event" ? "yes" : (state.bookingType === "photo" ? "no" : "");
     state.eventDescription = "";
     state.intake.participants = "";
     state.intake.business = "";
@@ -310,6 +315,24 @@
   // The "Add another session" / "Review cart" branch, rendered at the top of
   // step 5. Always offered (Drew wants multi-day discovery), but never blocks
   // the single-session pay flow: payment stays directly available below.
+  // Multi-day event builder intro (Drew 2026-07-11): when eventMode === "multi",
+  // frame Step 1 as a day-by-day builder so it does not read like the normal
+  // single-session duration picker. Reflects which day they're setting up.
+  function renderMultidayIntro() {
+    var el = document.querySelector("[data-multiday-intro]");
+    if (!el) return;
+    if (state.eventMode !== "multi") { el.hidden = true; el.innerHTML = ""; return; }
+    el.hidden = false;
+    var dayNum = state.cart.sessions.length + 1;
+    el.innerHTML =
+      '<div class="booking-panel-soft p-5" style="margin-top:1.5rem">' +
+        '<p class="ui-kicker" style="margin-bottom:0.5rem">Multi-day event builder</p>' +
+        '<p class="ui-copy" style="color:rgba(0,0,0,0.65)">You are building your event one day at a time. ' +
+        'Set up <strong>Day ' + dayNum + '</strong> below (choose its length, then its date and start time), ' +
+        'then add the next day. Add-ons and pricing adjust per day, and you pay for the whole event together at the end.</p>' +
+      '</div>';
+  }
+
   function renderCartBranch() {
     var container = document.querySelector("[data-cart-branch]");
     if (!container) return;
@@ -323,21 +346,25 @@
     }
     container.hidden = false;
 
+    // "day" language for events (Drew's multi-day event builder); "session" for
+    // photo/video multi-session carts.
+    var isEvt = state.eventMode === "multi" || state.eventIntent === "yes";
+    var unit = isEvt ? "day" : "session";
     var count = cartSessionCount();
     var countLine = cartIsActive()
-      ? '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">You have <strong>' + count + ' sessions</strong> in this cart (this one plus ' + state.cart.sessions.length + ' already added). Add more days, or review and pay for everything together in one payment.</p>'
-      : '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">Booking more than one day? Add another session to this cart and pay for everything together. Multi-day add-on discounts apply automatically.</p>';
+      ? '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">You have <strong>' + count + ' ' + unit + 's</strong> in this ' + (isEvt ? 'event' : 'cart') + ' (this one plus ' + state.cart.sessions.length + ' already added). Add more ' + unit + 's, or review and pay for everything together in one payment.</p>'
+      : '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">' + (isEvt ? 'Your event runs across multiple days? Add another day and pay for the whole event together.' : 'Booking more than one day? Add another session to this cart and pay for everything together.') + ' Multi-day add-on discounts apply automatically.</p>';
 
     var reviewBtn = cartIsActive()
-      ? '<button type="button" class="booking-button booking-button-primary" data-action="review-cart">Review cart &amp; pay</button>'
+      ? '<button type="button" class="booking-button booking-button-primary" data-action="review-cart">Review ' + (isEvt ? 'event' : 'cart') + ' &amp; pay</button>'
       : '';
 
     container.innerHTML =
       '<div class="booking-panel-soft p-5">' +
-        '<p class="ui-kicker" style="margin-bottom:0.75rem">Multi-day booking</p>' +
+        '<p class="ui-kicker" style="margin-bottom:0.75rem">' + (isEvt ? 'Multi-day event' : 'Multi-day booking') + '</p>' +
         countLine +
         '<div style="display:flex;flex-wrap:wrap;gap:0.75rem">' +
-          '<button type="button" class="booking-button booking-button-secondary" data-action="add-another-session">+ Add another session</button>' +
+          '<button type="button" class="booking-button booking-button-secondary" data-action="add-another-session">+ Add another ' + unit + '</button>' +
           reviewBtn +
         '</div>' +
       '</div>';
@@ -1186,6 +1213,7 @@
 
   function renderStepContent() {
     renderProgress();
+    renderMultidayIntro();
     renderDurations();
     renderEventStep();
     renderAddons();
