@@ -641,3 +641,7 @@ Foreman cycle (triage=question). Drew sent 4 to-scale floor-plan PDFs and asked 
 - [x] **"Floor Plans" nav tab** added site-wide (index, powdersville, taylors-mill, gallery, faq desktop + mobile, both booking pages, add-ons page), after the Add-Ons tab.
 - [x] Verified on staging (Playwright): HTTP 200, 4 cards with all images loaded (naturalW 1913), book pills → /book-powdersville, nav tab present on home/powdersville, no page errors.
 - [ ] **Offered (awaiting Drew):** a contextual "See the floor plans" link inside the event booking flow near chairs/tables.
+
+### Round 33 addendum (2026-07-11) — floor-plan 4th card retitled (msg 19f52f7fc9085ec4)
+
+- [x] Drew: the 4th plan (A2.1) is a combined seated + max-standing layout, not just standing. Retitled "Event Mockup — Standing" → "Event Mockup — Standing and Seated" and rewrote the caption (seated + up to 112 standing with DJ booth, open room on the right wall for a food and beverage station). Image unchanged (his attachment was a phone screenshot pointing at the card, not a replacement). Verified on staging + confirmed to Drew (`19f5...` reply).
