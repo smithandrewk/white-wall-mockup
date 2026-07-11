@@ -411,8 +411,9 @@
       ? window.WWSPricing.computeCartTotals(buildPricingCart(true))
       : { addonTotal: 0 };
     var addonCents = totals.addonTotal || 0;
-    // Cleaning fee: baked into every multi-day event (Drew), once, from 2+ days.
-    var cleaningCents = days.length >= 2 ? 15000 : 0;
+    // Cleaning fee: baked into every multi-day event (Drew) — mandatory + known
+    // upfront, so show it immediately (this fn only runs for a multi-day event).
+    var cleaningCents = 15000;
     var grand = sessionSum * 100 + addonCents + cleaningCents;
 
     var html =
