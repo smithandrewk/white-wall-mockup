@@ -315,9 +315,13 @@
 
           <p class="text-sm text-black/60 mt-4" data-location-address></p>
 
-          <div class="summary-divider my-6"></div>
+          <!-- Live multi-day event summary (Drew 2026-07-11): the days, times, and
+               finances build up here as you add each day. Hidden otherwise. -->
+          <div data-summary-multiday hidden></div>
 
-          <div class="summary-list">
+          <div class="summary-divider my-6" data-summary-single></div>
+
+          <div class="summary-list" data-summary-single>
             <div class="summary-line">
               <span>Selected timing</span>
               <span data-summary-duration></span>
@@ -328,9 +332,9 @@
             </div>
           </div>
 
-          <div class="summary-divider my-6"></div>
+          <div class="summary-divider my-6" data-summary-single></div>
 
-          <div>
+          <div data-summary-single>
             <div class="summary-list">
               <div class="summary-line">
                 <span>Session</span>

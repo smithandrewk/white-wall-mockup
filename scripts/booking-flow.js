@@ -125,6 +125,11 @@
       selectedDate: state.selectedDate,
       selectedTime: state.selectedTime,
       eventIntent: state.eventIntent,
+      // Multi-day event display metadata (Drew 2026-07-11 live summary): the day's
+      // role (first/middle/last) + its access/leave time label, so the running
+      // summary can show each day with the right wording as it's built.
+      _mdRole: currentDayRole(),
+      _mdTimeLabel: state._multidayFixedTime || "",
       addons: JSON.parse(JSON.stringify(state.addons || {})),
       foodDrinks: state.foodDrinks,
       perSessionIntake: {
@@ -348,6 +353,83 @@
         '<p class="ui-kicker" style="margin-bottom:0.5rem">Multi-day event builder</p>' +
         '<p class="ui-copy" style="color:rgba(0,0,0,0.65)">' + body + '</p>' +
       '</div>';
+  }
+
+  // Live multi-day event summary (Drew 2026-07-11): as each day is committed, show
+  // it here with its date, access/leave time, and price, plus the running total +
+  // the $150 cleaning fee (baked into every multi-day event). Replaces the
+  // single-session summary block while building a multi-day event.
+  function renderMultidaySummary() {
+    var el = document.querySelector("[data-summary-multiday]");
+    var singles = document.querySelectorAll("[data-summary-single]");
+    if (!el) return;
+    if (state.eventMode !== "multi") {
+      el.hidden = true; el.innerHTML = "";
+      singles.forEach(function (s) { s.style.display = ""; });
+      return;
+    }
+    singles.forEach(function (s) { s.style.display = "none"; });
+    el.hidden = false;
+
+    // Days = committed sessions + the active draft (only once it has a slot).
+    var days = state.cart.sessions.slice();
+    if (state.selectedTime) days.push(snapshotActiveSession());
+    // Display in event order: first day, then middle full days (by date), then the
+    // last day — the logical event order, robust to dates picked out of sequence.
+    var roleRank = { first: 0, middle: 1, last: 2 };
+    days.sort(function (a, b) {
+      var ra = roleRank[a._mdRole] != null ? roleRank[a._mdRole] : 1;
+      var rb = roleRank[b._mdRole] != null ? roleRank[b._mdRole] : 1;
+      if (ra !== rb) return ra - rb;
+      var at = a.selectedTime || "", bt = b.selectedTime || "";
+      return at < bt ? -1 : (at > bt ? 1 : 0);
+    });
+
+    var sessionSum = 0;
+    var rows = days.map(function (s, i) {
+      var dur = location.durations.find(function (d) { return d.id === s.durationId; });
+      var price = dur && dur.price ? dur.price : 0;
+      sessionSum += price;
+      var dateLabel = "";
+      if (s.selectedDate) {
+        var dp = s.selectedDate.split("-");
+        dateLabel = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
+          .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      }
+      var role = s._mdRole || (i === 0 ? "first" : (i === days.length - 1 ? "last" : "middle"));
+      var tl = s._mdTimeLabel || "";
+      var timeText = role === "first" ? ("access " + tl) : (role === "last" ? ("leave " + tl) : "full day");
+      var dayName = role === "first" ? "First day" : (role === "last" ? "Last day" : "Full day");
+      return '<div class="summary-line"><span>' + escapeHtml(dayName) +
+        (dateLabel ? ' &middot; ' + escapeHtml(dateLabel) : '') +
+        ' <span class="ui-copy-muted" style="font-size:0.8rem">(' + escapeHtml(timeText) + ')</span></span>' +
+        '<span>' + currency.format(price) + '</span></div>';
+    }).join("");
+
+    // Add-on total via pricing-shared (per-day discount) — matches the cart/server.
+    var totals = (window.WWSPricing && window.WWSPricing.computeCartTotals)
+      ? window.WWSPricing.computeCartTotals(buildPricingCart(true))
+      : { addonTotal: 0 };
+    var addonCents = totals.addonTotal || 0;
+    // Cleaning fee: baked into every multi-day event (Drew), once, from 2+ days.
+    var cleaningCents = days.length >= 2 ? 15000 : 0;
+    var grand = sessionSum * 100 + addonCents + cleaningCents;
+
+    var html =
+      '<div class="summary-divider my-6"></div>' +
+      '<p class="text-xs tracking-[0.2em] uppercase text-black/40">Your event so far</p>' +
+      '<div class="mt-4 summary-list">' +
+        (rows || '<div class="summary-line summary-line-muted"><span>No days added yet</span><span></span></div>') +
+      '</div>';
+    if (addonCents > 0) {
+      html += '<div class="summary-list" style="margin-top:0.5rem"><div class="summary-line summary-line-muted"><span>Add-ons (per-day discount applied)</span><span>' + currency.format(addonCents / 100) + '</span></div></div>';
+    }
+    if (cleaningCents > 0) {
+      html += '<div class="summary-list"><div class="summary-line summary-line-muted"><span>Cleaning fee (baked into every event)</span><span>' + currency.format(cleaningCents / 100) + '</span></div></div>';
+    }
+    html += '<div class="summary-divider my-6"></div>' +
+      '<div class="summary-line summary-total"><span>Estimated total</span><strong>' + currency.format(grand / 100) + '</strong></div>';
+    el.innerHTML = html;
   }
 
   function renderCartBranch() {
@@ -1290,6 +1372,7 @@
     renderCheckoutPanel();
     renderWaiver();
     renderSummary();
+    renderMultidaySummary();
     renderCartBranch();
     renderCartSummary();
     renderStepVisibility();
