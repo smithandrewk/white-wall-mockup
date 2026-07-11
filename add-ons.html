@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add-Ons Menu — WhiteWall Studios</title>
+  <meta name="description" content="Browse every WhiteWall Studios add-on with photos and pricing: banquet chairs, tables, TV, PA system, rolling walls, backdrops, lighting, and the Event Setup and Reset Crew.">
+  <link rel="canonical" href="https://whitewallstudios.co/add-ons">
+  <meta property="og:title" content="Add-Ons Menu — WhiteWall Studios">
+  <meta property="og:description" content="Browse every WhiteWall Studios add-on with photos and pricing.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518" },
+        fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+      } }
+    }
+  </script>
+  <style>
+    .menu-addon { border: 1px solid var(--wws-border); border-radius: 1.5rem; background: #fff; overflow: hidden; }
+    .menu-addon img.menu-photo { width: 100%; height: 22rem; object-fit: cover; display: block; }
+    @media (min-width: 768px) { .menu-addon img.menu-photo { height: 30rem; } }
+    .menu-body { padding: 1.75rem 2rem 2.25rem; }
+    .menu-tagline { font-weight: 700; font-style: italic; margin-top: 0.6rem; }
+    .menu-desc p { margin-top: 1rem; color: rgba(0,0,0,0.72); line-height: 1.7; }
+    .menu-optlist { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+    .menu-optlist li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; border: 1px solid var(--wws-border); border-radius: 0.75rem; }
+    .menu-price-pill { display: inline-block; border: 1px solid rgba(0,0,0,0.14); border-radius: 999px; padding: 0.4rem 1rem; font-size: 0.9rem; font-weight: 500; }
+    .book-pill { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--wws-text, #000); color: #fff; border-radius: 999px; padding: 0.9rem 2rem; font-size: 0.95rem; letter-spacing: 0.02em; text-decoration: none; transition: opacity .15s; }
+    .book-pill:hover { opacity: 0.85; }
+  </style>
+  <script src="/scripts/booking-config.js" defer></script>
+  <script src="/scripts/staging-banner.js"></script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/powdersville" class="hover:text-black transition">Flagship Location</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill Location</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
+        <a href="/faq" class="hover:text-black transition">FAQ</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-12 md:py-16">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center">
+        <a href="/book-powdersville" class="book-pill">Book your session with us</a>
+      </div>
+      <header class="text-center mt-10 md:mt-14">
+        <p class="text-xs tracking-[0.28em] uppercase text-black/40">WhiteWall Studios</p>
+        <h1 class="font-display text-5xl md:text-6xl leading-none mt-4">Add-Ons</h1>
+        <p class="text-black/55 mt-5 max-w-2xl mx-auto">Everything you can add to a booking, with photos and pricing. Browse at your own pace — no booking required.</p>
+      </header>
+
+      <div data-addon-menu class="mt-12 md:mt-16" style="display:grid;gap:2.5rem"></div>
+
+      <div class="text-center mt-16">
+        <a href="/book-powdersville" class="book-pill">Book your session with us</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="px-6 pb-10 mt-10">
+    <div class="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs tracking-[0.18em] uppercase text-black/38">
+      <span>WhiteWall Studios</span>
+      <div class="flex flex-wrap gap-4">
+        <a href="/powdersville" class="hover:text-black transition">Flagship Location page</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill page</a>
+        <a href="/faq" class="hover:text-black transition">FAQ</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var ORDER = ["chairs", "tables", "tv", "pa-system", "rolling-walls", "backdrops", "lighting", "setup-crew"];
+      function money(n) { return "$" + Number(n).toLocaleString("en-US"); }
+      function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+      function priceLabel(a) {
+        if (a.type === "toggle") return money(a.price);
+        if (a.type === "quantity") return money(a.price) + " each";
+        if (a.type === "tier") { var lo = Math.min.apply(null, (a.options || []).map(function (o) { return o.price; })); return "From " + money(lo); }
+        if (a.type === "backdrops" || a.type === "walls") return money(a.allPrice) + " all · " + money(a.singlePrice) + " each";
+        return "";
+      }
+      function descHtml(a) {
+        if (!a.description) return "";
+        return a.description.split(/\n{2,}/).map(function (para) { return "<p>" + esc(para.trim()) + "</p>"; }).join("");
+      }
+      function optionList(a) {
+        var items = [];
+        if (a.type === "tier") items = (a.options || []).map(function (o) { return { label: o.label, price: money(o.price) }; });
+        else if (a.type === "backdrops") items = (a.colors || []).map(function (c) { return { label: c.label, price: money(a.singlePrice) }; });
+        else if (a.type === "walls") items = (a.walls || []).map(function (w) { return { label: w.label, price: money(a.singlePrice) }; });
+        if (!items.length) return "";
+        return '<ul class="menu-optlist">' + items.map(function (it) {
+          return '<li><span>' + esc(it.label) + '</span><span class="ui-copy-strong">' + esc(it.price) + '</span></li>';
+        }).join("") + "</ul>";
+      }
+      function card(a) {
+        var photo = a.image || a.allImage || (a.options && a.options[0] && a.options[0].image) || "";
+        if (photo && photo.charAt(0) !== "/") photo = "/" + photo;
+        var tagline = a.tagline ? '<p class="menu-tagline">' + esc(a.tagline) + "</p>" : "";
+        return '<article class="menu-addon">' +
+          (photo ? '<img class="menu-photo" src="' + esc(photo) + '" alt="' + esc(a.name) + '">' : "") +
+          '<div class="menu-body">' +
+            '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">' +
+              '<h2 class="font-display" style="font-size:2rem;line-height:1.1">' + esc(a.name) + "</h2>" +
+              '<span class="menu-price-pill">' + esc(priceLabel(a)) + "</span>" +
+            "</div>" +
+            tagline +
+            '<div class="menu-desc">' + descHtml(a) + "</div>" +
+            optionList(a) +
+          "</div>" +
+        "</article>";
+      }
+      function render() {
+        var cfg = window.WWS_BOOKING_CONFIG;
+        var mount = document.querySelector("[data-addon-menu]");
+        if (!cfg || !mount) return;
+        var pv = (cfg.locations || []).filter(function (l) { return l.slug === "powdersville"; })[0];
+        if (!pv || !pv.addons) return;
+        var addons = pv.addons.slice().sort(function (x, y) {
+          var ix = ORDER.indexOf(x.id); if (ix === -1) ix = ORDER.length;
+          var iy = ORDER.indexOf(y.id); if (iy === -1) iy = ORDER.length;
+          return ix - iy;
+        });
+        mount.innerHTML = addons.map(card).join("");
+      }
+      if (window.WWS_BOOKING_CONFIG) render();
+      else document.addEventListener("DOMContentLoaded", render);
+      // config script is deferred; ensure render runs after it loads
+      window.addEventListener("load", render);
+    })();
+  </script>
+</body>
+</html>
