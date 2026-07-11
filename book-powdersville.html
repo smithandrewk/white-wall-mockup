@@ -86,12 +86,16 @@
   -->
 
   <main class="px-6 pb-20">
-    <div class="progress-track-wrapper">
+    <!-- Step 1: "What are you booking?" gate (Drew 2026-07-10). Rendered by
+         booking-flow.js renderGate(); shown until a booking type is chosen, then
+         the normal progress + step flow below is revealed. -->
+    <div class="max-w-3xl mx-auto" data-booking-gate></div>
+    <div class="progress-track-wrapper" data-flow-region>
       <div class="max-w-7xl mx-auto">
         <div class="progress-track" data-progress></div>
       </div>
     </div>
-    <div class="max-w-7xl mx-auto booking-grid">
+    <div class="max-w-7xl mx-auto booking-grid" data-flow-region>
       <section class="booking-panel p-6 md:p-8">
 
         <div class="mt-8 booking-step is-active" data-step-panel="1">

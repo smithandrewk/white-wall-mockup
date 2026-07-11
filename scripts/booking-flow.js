@@ -33,6 +33,16 @@
 
   const state = {
     step: 1,
+    // Step-1 "What are you booking?" gate (Drew 2026-07-10). bookingType is set
+    // by the gate before the numbered flow is revealed: "" = gate not answered,
+    // "photo" = photo/video session, "event" = event booking. eventMode applies
+    // to events: "single" (one day, today's normal flow) or "multi" (day-by-day
+    // builder on the multi-session cart). _gateChoosingEventMode is a transient
+    // UI flag = the gate is showing the single/multi sub-choice. On PV only; TM
+    // is photo-only so its gate auto-resolves to "photo".
+    bookingType: "",
+    eventMode: "",
+    _gateChoosingEventMode: false,
     durationId: location.durations[0] ? location.durations[0].id : "",
     eventIntent: "",
     participants: "",
@@ -571,6 +581,7 @@
   renderProgress();
   renderStepContent();
   bindEvents();
+  showGateOrFlow(); // Step-1 gate: show "What are you booking?" until a type is chosen (PV); TM auto-resolves.
   prefillFromAccount();
 
   trackEvent("booking_started", {
@@ -641,6 +652,32 @@
       }
 
       const action = actionTarget.dataset.action;
+
+      // Step-1 "What are you booking?" gate (Drew 2026-07-10).
+      if (action === "gate-choose") {
+        if (actionTarget.dataset.type === "photo") {
+          state.bookingType = "photo";
+          state.eventIntent = "no";
+          enterFlow();
+        } else if (actionTarget.dataset.type === "event") {
+          state._gateChoosingEventMode = true;
+          renderGate();
+        }
+        return;
+      }
+      if (action === "gate-event-mode") {
+        state.bookingType = "event";
+        state.eventMode = actionTarget.dataset.mode === "multi" ? "multi" : "single";
+        state.eventIntent = "yes";
+        state._gateChoosingEventMode = false;
+        enterFlow();
+        return;
+      }
+      if (action === "gate-back") {
+        state._gateChoosingEventMode = false;
+        renderGate();
+        return;
+      }
 
       if (action === "select-duration") {
         state.durationId = actionTarget.dataset.durationId;
@@ -1161,6 +1198,77 @@
     renderStepVisibility();
     updateTermsGate();
     updateWaiverGate();
+  }
+
+  // Step-1 "What are you booking?" gate (Drew 2026-07-10). Rendered into
+  // [data-booking-gate]; two stages on PV: (A) Photo/Video vs Event, then for
+  // Event (B) Single-day vs Multi-day. TM is photo-only so it never gates.
+  function renderGate() {
+    var gate = document.querySelector("[data-booking-gate]");
+    if (!gate) return;
+    if (location.slug !== "powdersville" || state.bookingType) { gate.innerHTML = ""; return; }
+
+    if (state._gateChoosingEventMode) {
+      gate.innerHTML =
+        '<div class="booking-panel p-6 md:p-8">' +
+          '<p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 1</p>' +
+          '<h2 class="font-display text-4xl mt-3">Single-day or multi-day event?</h2>' +
+          '<div class="choice-grid is-two-up mt-8">' +
+            '<button type="button" class="booking-choice" data-action="gate-event-mode" data-mode="single">' +
+              '<h3 class="ui-display-sm">Single-day event</h3>' +
+              '<p class="ui-copy" style="margin-top:1rem">If your event will be started and completed on the same day for a set duration, select this option.</p>' +
+            '</button>' +
+            '<button type="button" class="booking-choice" data-action="gate-event-mode" data-mode="multi">' +
+              '<h3 class="ui-display-sm">Multi-day event</h3>' +
+              '<p class="ui-copy" style="margin-top:1rem">If your event is going to go overnight into the next day, select this option.</p>' +
+            '</button>' +
+          '</div>' +
+          '<div class="mt-8"><button type="button" class="booking-button booking-button-secondary" data-action="gate-back">Back</button></div>' +
+        '</div>';
+      return;
+    }
+
+    gate.innerHTML =
+      '<div class="booking-panel p-6 md:p-8">' +
+        '<p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 1</p>' +
+        '<h2 class="font-display text-4xl mt-3">What are you booking?</h2>' +
+        '<div class="choice-grid is-two-up mt-8">' +
+          '<button type="button" class="booking-choice" data-action="gate-choose" data-type="photo">' +
+            '<h3 class="ui-display-sm">Photo / video session</h3>' +
+            '<p class="ui-copy" style="margin-top:1rem">Standard photo, video, or production session.</p>' +
+            '<p class="ui-copy" style="margin-top:0.75rem;color:rgba(0,0,0,0.55);font-size:0.85rem">If you will be booking a multi-day photo/video session, please select Event.</p>' +
+          '</button>' +
+          '<button type="button" class="booking-choice" data-action="gate-choose" data-type="event">' +
+            '<h3 class="ui-display-sm">Event</h3>' +
+            '<p class="ui-copy" style="margin-top:1rem">Parties, receptions, workshops, and gatherings, on a single day or across multiple days.</p>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // Toggle between the gate and the numbered flow based on state.bookingType.
+  // TM (photo-only) auto-resolves to "photo" so it never sees the gate.
+  function showGateOrFlow() {
+    if (location.slug !== "powdersville" && !state.bookingType) {
+      state.bookingType = "photo";
+      state.eventIntent = "no";
+    }
+    var gated = !state.bookingType;
+    var gate = document.querySelector("[data-booking-gate]");
+    if (gate) gate.style.display = gated ? "" : "none";
+    document.querySelectorAll("[data-flow-region]").forEach(function (el) {
+      el.style.display = gated ? "none" : "";
+    });
+    if (gated) renderGate();
+  }
+
+  // Commit a gate choice and reveal the numbered flow at step 1.
+  function enterFlow() {
+    showGateOrFlow();
+    trackEvent("booking_type_chosen", {
+      location: location.slug, bookingType: state.bookingType, eventMode: state.eventMode
+    });
+    setStep(1);
   }
 
   function renderLocationSwitcher() {
@@ -2101,6 +2209,7 @@
       : 'Event? How many people will you have? <strong>If this is a photo/video session, leave this blank.</strong>';
 
     container.innerHTML = `
+      ${!state.bookingType ? `
       <p class="ui-copy" style="margin-bottom:1.5rem;color:rgba(0,0,0,0.55)">Events are allowed for 2-hour sessions and longer.</p>
       <div class="choice-grid is-two-up">
         <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no" aria-pressed="${state.eventIntent === "no"}">
@@ -2115,6 +2224,7 @@
           ${isOneHour ? '<p class="ui-copy" style="margin-top:0.5rem;color:rgba(0,0,0,0.6);font-size:0.8rem">(Not eligible for events)</p>' : ""}
         </button>
       </div>
+      ` : ""}
 
       ${state.eventIntent === "yes" ? `
       <div style="margin-top:1.5rem">
