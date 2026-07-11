@@ -27,6 +27,12 @@
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+  // Whole dollars show clean ($350); fractional amounts show exact cents
+  // ($2,581.50). Used for the pay button + cart totals so what the customer sees
+  // matches the exact amount charged when the multi-day discount lands half-dollars.
+  function fmtMoney(dollars) {
+    return Number.isInteger(dollars) ? currency.format(dollars) : currencyExact.format(dollars);
+  }
 
   // Robust int parse for participant counts. Customers occasionally type
   // "35 +", "35+", "~35", "35-50", etc. Number() returns NaN for those and
@@ -647,7 +653,7 @@
             discountLine +
             cleaningLine +
             '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(feeInclusiveTotal / 100) + '</strong></span></div>' +
+            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(feeInclusiveTotal / 100) + '</strong></span></div>' +
           '</div>' +
           renderCartDepositRow(feeInclusiveTotal) +
         '</div>';
@@ -739,8 +745,8 @@
     return '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
       '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
       '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
-        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(totalCents / 100) + '</span></label>' +
-        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (Balance ' + currency.format(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + fmtMoney(totalCents / 100) + '</span></label>' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + fmtMoney(split.depositCents / 100) + ' (Balance ' + fmtMoney(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
       '</div>';
   }
 
@@ -2347,8 +2353,8 @@
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
         '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
         '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
-          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(grandTotal) + '</span></label>' +
-          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (Balance ' + currency.format(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
+          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + fmtMoney(grandTotal) + '</span></label>' +
+          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + fmtMoney(split.depositCents / 100) + ' (Balance ' + fmtMoney(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
         '</div>';
     } else if (state.paymentMode === "deposit") {
       // Non-event single session can't deposit — fall back to full.
@@ -2367,7 +2373,7 @@
         cleaningFeeHtml +
         couponLineHtml +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-        '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
+        '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(grandTotal) + '</strong></span></div>' +
       '</div>' +
       depositHtml +
       renderCouponRow() +
@@ -2557,7 +2563,7 @@
     if (state.isSubmitting) {
       btn.textContent = "Processing…";
     } else if (typeof total === "number") {
-      btn.textContent = (depositMode ? "Pay deposit & Book — " : "Pay & Book — ") + currency.format(total);
+      btn.textContent = (depositMode ? "Pay deposit & Book — " : "Pay & Book — ") + fmtMoney(total);
     } else {
       btn.textContent = "Pay & Book";
     }
@@ -3401,7 +3407,7 @@
     const cleaningFeeAmount = cleaningFee ? cleaningFee.amount : 0;
     const sessionPrice = selectedDuration && selectedDuration.price ? selectedDuration.price : 0;
     const grandTotal = sessionPrice + addonTotal + cleaningFeeAmount;
-    total.textContent = currency.format(grandTotal);
+    total.textContent = fmtMoney(grandTotal);
   }
 
   function renderStepVisibility() {
