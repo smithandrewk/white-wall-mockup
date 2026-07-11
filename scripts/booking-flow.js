@@ -326,14 +326,11 @@
     var dayNum = state.cart.sessions.length + 1;
     var body;
     if (isMultidayFirstDay()) {
-      // Drew's first-day framing: pick the day + when you come in; access runs to
-      // 10:30 PM and INCLUDES setup time; this day FEEDS INTO the next day.
+      // Drew's first-day framing (2026-07-11): access is continuous from the start
+      // time they pick on Day 1 through the end of the event.
       body =
-        'You are building your event one day at a time, starting with <strong>your first day</strong>. ' +
-        'Pick when you want to come in below. Your access runs until <strong>10:30 PM</strong> that night and ' +
-        '<strong>includes your setup time</strong> for the event. ' +
-        '<span style="color:#1a1a1a;font-weight:600">This first day feeds into the next day of your event</span> — ' +
-        'you will add the following days after this.';
+        'You get access on <strong>Day one</strong> of your event, starting at the time you select here, ' +
+        'and it goes continuously until you get to the end of your event.';
     } else {
       body =
         'Setting up <strong>Day ' + dayNum + '</strong>. Add-ons and pricing adjust per day, and you pay for ' +
@@ -1425,8 +1422,7 @@
           var priceTag = duration.price ? currency.format(duration.price) : "";
           return '' +
             '<button type="button" class="booking-choice duration-pill ' + (isActive ? "is-active" : "") + '" data-action="select-duration" data-duration-id="' + duration.id + '" aria-pressed="' + isActive + '">' +
-              '<span class="duration-pill-label">Come in at ' + start + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
-              '<span class="duration-pill-badge">Access until 10:30 PM</span>' +
+              '<span class="duration-pill-label">' + start + ' &mdash; Day 1 Access Time' + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
             '</button>';
         })
         .join("");
