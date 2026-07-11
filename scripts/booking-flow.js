@@ -323,11 +323,11 @@
   function renderMultidayIntro() {
     var el = document.querySelector("[data-multiday-intro]");
     if (!el) return;
-    if (state.eventMode !== "multi") { el.hidden = true; el.innerHTML = ""; return; }
+    var role = currentDayRole();
+    if (state.eventMode !== "multi" || !role) { el.hidden = true; el.innerHTML = ""; return; }
     el.hidden = false;
     var dayNum = state.cart.sessions.length + 1;
     var body;
-    var role = currentDayRole();
     if (role === "first") {
       // Drew's first-day framing (2026-07-11): access is continuous from the start
       // time they pick on Day 1 through the end of the event.
@@ -954,13 +954,16 @@
         return;
       }
       if (action === "md-review") {
-        // Commit the last day, then review the whole event.
+        // Commit the last day, then send the customer through details → waiver →
+        // pay to collect the UNIVERSAL fields ONCE for the whole event (contact,
+        // attendees, waiver e-sign, card). The per-day builder only did Steps 1–2,
+        // so without this the flow dead-ends at review with a disabled pay button.
         commitActiveSessionToCart();
         resetActiveDraft();
         state._dayRole = "";
-        state._cartReviewing = true;
-        renderStepContent();
-        scrollToCart();
+        state._cartReviewing = false;
+        setStep(3); // Details (collect attendees once) → Waiver → Pay
+        showToast("Your event days are set. Now your details and payment.");
         return;
       }
 
