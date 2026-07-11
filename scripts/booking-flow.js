@@ -701,7 +701,7 @@
       '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
       '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
         '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(totalCents / 100) + '</span></label>' +
-        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (balance ' + currency.format(split.balanceDueCents / 100) + ' due 48h before)</span></label>' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (Balance ' + currency.format(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
       '</div>';
   }
 
@@ -2299,7 +2299,7 @@
         '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
         '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
           '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(grandTotal) + '</span></label>' +
-          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (balance ' + currency.format(split.balanceDueCents / 100) + ' due 48h before)</span></label>' +
+          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (Balance ' + currency.format(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
         '</div>';
     } else if (state.paymentMode === "deposit") {
       // Non-event single session can't deposit — fall back to full.
@@ -2990,8 +2990,11 @@
       state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
         ? '<div class="warning-card" style="margin-top:1rem">Looks like you have attendees — did you mean to select "Event booking" above? If this is a photo/video session, leave this blank.</div>'
         : "";
+    // The 35+ cleaning-fee disclaimer is only relevant on the SINGLE-day path,
+    // where headcount triggers it. A multi-day event always has the $150 fee baked
+    // in regardless of attendees, so the disclaimer is redundant there (Drew 2026-07-11).
     var capacityNotice =
-      /^\d+$/.test(state.participants.trim()) && count >= 35
+      state.eventMode !== "multi" && /^\d+$/.test(state.participants.trim()) && count >= 35
         ? '<div class="warning-card" style="margin-top:1rem">For events with 35+ attendees, a $150 cleaning fee is automatically included.</div>'
         : "";
 
