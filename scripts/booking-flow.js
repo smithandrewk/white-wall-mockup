@@ -764,19 +764,30 @@
     setText("[data-location-description]", location.description);
     setText("[data-location-address]", location.address);
 
+    renderLocationPolicies();
+  }
+
+  // "Good to know" sidebar list. For a MULTI-DAY event the attendee-based cleaning
+  // clause is replaced by the multi-day one (Drew 2026-07-11: "It doesn't matter
+  // the total number of attendees anymore"). Re-rendered from renderStepContent so
+  // it updates the moment the customer chooses Multi-day event.
+  function renderLocationPolicies() {
     const policyList = document.querySelector("[data-location-policies]");
-    if (policyList) {
-      policyList.innerHTML = location.policies
-        .map(
-          (item) => `
-            <li class="helper-item">
-              <span class="helper-dot" style="background:${location.accent}"></span>
-              <span>${item}</span>
-            </li>
-          `
-        )
-        .join("");
-    }
+    if (!policyList) return;
+    var items = location.policies.map(function (item) {
+      if (state.eventMode === "multi" && /35 or more attendees/i.test(item)) {
+        return "Because this is a multi-day event, there is a mandatory $150 cleaning fee automatically added to the booking.";
+      }
+      return item;
+    });
+    policyList.innerHTML = items
+      .map(function (item) {
+        return '<li class="helper-item">' +
+          '<span class="helper-dot" style="background:' + location.accent + '"></span>' +
+          '<span>' + item + '</span>' +
+        '</li>';
+      })
+      .join("");
   }
 
   function bindEvents() {
@@ -1442,6 +1453,7 @@
 
   function renderStepContent() {
     syncRangeAddons();
+    renderLocationPolicies();
     renderProgress();
     renderMultidayIntro();
     renderDurations();
