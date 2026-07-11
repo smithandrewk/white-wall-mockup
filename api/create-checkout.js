@@ -1304,6 +1304,30 @@ async function handleCartCheckout(req, res, body) {
       });
     }
 
+    // ---- 6b. Cleaning buffer for the whole event ------------------------
+    // A 2.5h block after the LAST session's end holds the calendar for cleanup
+    // once the event finishes (mirrors the single-session path). A multi-day
+    // event always carries the mandatory $150 fee, so this fires whenever the fee
+    // applies. Isolated + skipped in staging-mock (no real appointments to buffer).
+    if (cleaningFeeCents > 0 && !stagingMocked) {
+      try {
+        var lastPs = priced.sessions[priced.sessions.length - 1];
+        var lastDurMin = TYPE_TO_DURATION[String(lastPs.appointmentTypeID)] || 60;
+        var evEnd = new Date(new Date(lastPs.datetime).getTime() + lastDurMin * 60000);
+        var evBufEnd = new Date(evEnd.getTime() + 150 * 60000);
+        await acuityPost("/blocks", {
+          start: evEnd.toISOString(),
+          end: evBufEnd.toISOString(),
+          calendarID: stagingCalID || CALENDAR_IDS[cartLocation],
+          notes: (isStaging() ? "[STAGING] " : "") + "Cleaning buffer (auto-created for event booking, "
+            + priced.sessions.length + " day" + (priced.sessions.length > 1 ? "s" : "") + ", appts "
+            + createdAppointments.map(function (a) { return a.id; }).join("/") + ")"
+        });
+      } catch (e) {
+        console.error("cart cleaning buffer block failed:", e.message);
+      }
+    }
+
     // ---- 7. Persist ONE bookings row + N sessions (+ addons) -------------
     // Best-effort + isolated, same discipline as the single-session path: a
     // Supabase failure NEVER unwinds a paid+booked cart. Skipped in staging-mock.
