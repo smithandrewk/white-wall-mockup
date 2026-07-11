@@ -645,3 +645,7 @@ Foreman cycle (triage=question). Drew sent 4 to-scale floor-plan PDFs and asked 
 ### Round 33 addendum (2026-07-11) — floor-plan 4th card retitled (msg 19f52f7fc9085ec4)
 
 - [x] Drew: the 4th plan (A2.1) is a combined seated + max-standing layout, not just standing. Retitled "Event Mockup — Standing" → "Event Mockup — Standing and Seated" and rewrote the caption (seated + up to 112 standing with DJ booth, open room on the right wall for a food and beverage station). Image unchanged (his attachment was a phone screenshot pointing at the card, not a replacement). Verified on staging + confirmed to Drew (`19f5...` reply).
+
+### Round 33 addendum 2 (2026-07-11) — 2 more floor plans (msg 19f5304eadd351d8)
+
+- [x] Added Ceremony Seating (163 chairs facing altar, 6ft aisle) + Maximum Standing (281 guests, full space) to /floor-plans (converted PDFs → PNG). Now 6 plans. Playwright-verified all 6 render, no errors. Confirmed to Drew.
