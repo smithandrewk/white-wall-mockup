@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floor Plans & Measurements — WhiteWall Studios</title>
+  <meta name="description" content="To-scale floor plans and measurements of the WhiteWall Studios flagship space: full dimensions, the default studio layout, and event mockups showing seating, table capacity, and open dance-floor room.">
+  <link rel="canonical" href="https://whitewallstudios.co/floor-plans">
+  <meta property="og:title" content="Floor Plans & Measurements — WhiteWall Studios">
+  <meta property="og:description" content="To-scale floor plans of the WhiteWall flagship space: dimensions, default layout, and event mockups.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518" },
+        fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+      } }
+    }
+  </script>
+  <style>
+    .plan-card { border: 1px solid var(--wws-border); border-radius: 1.5rem; background: #fff; overflow: hidden; }
+    .plan-card img { width: 100%; height: auto; display: block; background: #fbfaf7; }
+    .plan-body { padding: 1.5rem 1.75rem 2rem; }
+    .book-pill { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--wws-text, #000); color: #fff; border-radius: 999px; padding: 0.9rem 2rem; font-size: 0.95rem; letter-spacing: 0.02em; text-decoration: none; transition: opacity .15s; }
+    .book-pill:hover { opacity: 0.85; }
+  </style>
+  <script src="/scripts/staging-banner.js"></script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/powdersville" class="hover:text-black transition">Flagship Location</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill Location</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
+        <a href="/add-ons" class="hover:text-black transition">Add-Ons</a>
+        <a href="/floor-plans" class="hover:text-black transition">Floor Plans</a>
+        <a href="/faq" class="hover:text-black transition">FAQ</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-12 md:py-16">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center">
+        <a href="/book-powdersville" class="book-pill">Book your session with us</a>
+      </div>
+      <header class="text-center mt-10 md:mt-14">
+        <p class="text-xs tracking-[0.28em] uppercase text-black/40">WhiteWall Studios · Flagship</p>
+        <h1 class="font-display text-5xl md:text-6xl leading-none mt-4">Floor Plans &amp; Measurements</h1>
+        <p class="text-black/55 mt-5 max-w-2xl mx-auto">Every plan below is drawn true to scale. See the full footprint, exactly how the studio is set up day to day, and event mockups showing how many tables and chairs fit and how much open room you have for a dance floor.</p>
+      </header>
+
+      <div class="mt-12 md:mt-16" style="display:grid;gap:2.5rem">
+
+        <article class="plan-card">
+          <img src="/images/floor-plans/empty-dimensions.png" alt="Empty studio floor plan with full dimensions">
+          <div class="plan-body">
+            <h2 class="font-display" style="font-size:2rem;line-height:1.1">The Full Space</h2>
+            <p class="ui-copy" style="margin-top:0.75rem;color:rgba(0,0,0,0.72);line-height:1.7">The complete flagship footprint drawn to scale, with every measurement. This is the raw, empty space so you can plan any layout you like.</p>
+          </div>
+        </article>
+
+        <article class="plan-card">
+          <img src="/images/floor-plans/default-layout.png" alt="Default WhiteWall studio layout">
+          <div class="plan-body">
+            <h2 class="font-display" style="font-size:2rem;line-height:1.1">Default Studio Layout</h2>
+            <p class="ui-copy" style="margin-top:0.75rem;color:rgba(0,0,0,0.72);line-height:1.7">Exactly how the studio is arranged day to day for photo and video sessions. This is what you walk into, and what you reset it to when you leave (unless you add the Event Setup and Reset Crew).</p>
+          </div>
+        </article>
+
+        <article class="plan-card">
+          <img src="/images/floor-plans/event-seated.png" alt="Event mockup with banquet seating and dance floor">
+          <div class="plan-body">
+            <h2 class="font-display" style="font-size:2rem;line-height:1.1">Event Mockup — Seated</h2>
+            <p class="ui-copy" style="margin-top:0.75rem;color:rgba(0,0,0,0.72);line-height:1.7">A true-to-scale seated event: 10 banquet tables and 80 guests, with a 680 SF open dance floor along the window wall. A quick way to picture table and chair capacity.</p>
+          </div>
+        </article>
+
+        <article class="plan-card">
+          <img src="/images/floor-plans/event-standing.png" alt="Event mockup for a standing reception layout">
+          <div class="plan-body">
+            <h2 class="font-display" style="font-size:2rem;line-height:1.1">Event Mockup — Standing</h2>
+            <p class="ui-copy" style="margin-top:0.75rem;color:rgba(0,0,0,0.72);line-height:1.7">A standing or reception setup, showing how much open standing and dance-floor room the space gives you when you skip full banquet seating.</p>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="text-center mt-16">
+        <a href="/book-powdersville" class="book-pill">Book your session with us</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="px-6 pb-10 mt-10">
+    <div class="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs tracking-[0.18em] uppercase text-black/38">
+      <span>WhiteWall Studios</span>
+      <div class="flex flex-wrap gap-4">
+        <a href="/powdersville" class="hover:text-black transition">Flagship Location page</a>
+        <a href="/add-ons" class="hover:text-black transition">Add-Ons</a>
+        <a href="/faq" class="hover:text-black transition">FAQ</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
