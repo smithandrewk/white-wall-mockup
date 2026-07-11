@@ -673,3 +673,8 @@ Drew: "verify everything works on the back end… setup crew window, cleaner tim
 - [ ] **Cleaning buffer block** after the event: NOT wired for cart path. → BUILD.
 - [ ] **Setup/reset crew time window**: NOT built. → needs Drew's spec (asked).
 - [ ] **40% auto-charge at T−48h**: card + charge-time saved but the charge engine is dark by design (enroll/pgcron/scheduler/autocharge all off) = item-6, **Andrew-gated**. Told Drew "finalizing."
+
+### Round 35 build progress (2026-07-11)
+- [x] **Gap #2 — cleaning buffer block (multi-day):** added a 2.5h `POST /blocks` after the event's last session end in `handleCartCheckout` (passes calendarID). Verified on staging: a 2-day event booking created a block 2026-07-13 11:00 PM → 07-14 1:30 AM tied to both appts. Test data cleaned up. Commit on branch.
+- [ ] Gaps #3 (cleaner .ics to April) + #5 (owner email/SMS + customer SMS): need the single-session-shaped notifiers made multi-day-aware (event-level state, fire once, cleaner keyed to last day, add cleaningFee to cart sessionState). NEXT.
+- [ ] Gap #1 (crew time window): awaiting Drew's spec. Gap #4 (40% auto-charge): Andrew-gated item-6.
