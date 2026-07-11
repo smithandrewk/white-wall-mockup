@@ -340,8 +340,8 @@
         'pick your leave time below. This is when you leave with everything completely reset and cleaned up.';
     } else {
       body =
-        'Adding a <strong>full day</strong> to your event (5:00 AM to 10:30 PM). Add-ons and pricing adjust ' +
-        'per day, and you pay for the whole event together at the end.';
+        'Adding a <strong>full day</strong> to your event — access carries through continuously into the ' +
+        'next day. Add-ons and pricing adjust per day, and you pay for the whole event together at the end.';
     }
     el.innerHTML =
       '<div class="booking-panel-soft p-5" style="margin-top:1.5rem">' +
@@ -1500,7 +1500,7 @@
       var full = location.durations.find(function (d) { return d.id === "pv-full"; });
       container.innerHTML =
         '<div class="booking-choice duration-pill is-active" style="cursor:default">' +
-          '<span class="duration-pill-label">Full day &mdash; 5:00 AM to 10:30 PM' + (full ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + currency.format(full.price) + '</span>' : '') + '</span>' +
+          '<span class="duration-pill-label">Full day' + (full ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + currency.format(full.price) + '</span>' : '') + '</span>' +
         '</div>';
       return;
     }
@@ -1655,7 +1655,7 @@
         sub.textContent = "Pick the final day. Access starts at 5:00 AM and you leave at the time you selected.";
       } else if (mdRole === "middle") {
         title.textContent = "Add a Full Day To Your Event";
-        sub.textContent = "Pick the date for this full day (5:00 AM to 10:30 PM).";
+        sub.textContent = "Pick the date for this full day. Your access carries through continuously into the next day.";
       } else {
         title.innerHTML = "Pick a date &amp; time";
         sub.textContent = "Select an available date and time for your session.";
@@ -1699,13 +1699,13 @@
       line = 'Confirming: your event session starts on <strong>' + escapeHtml(human) +
         '</strong>, and you have initial access to the venue starting at <strong>' + escapeHtml(t) + '</strong>.';
       buttons =
-        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Book multiple more days</button>' +
-        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">Book the last day</button>';
+        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Choose multiple more days</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">Choose the last day</button>';
     } else if (role === "middle") {
-      line = 'Confirming: a full day on <strong>' + escapeHtml(human) + '</strong> (5:00 AM to 10:30 PM).';
+      line = 'Confirming: a full day on <strong>' + escapeHtml(human) + '</strong>, going into the next day continuously.';
       buttons =
-        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Add another day</button>' +
-        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">This is the last day</button>';
+        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Choose more additional days</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">Move forward to the last day</button>';
     } else { // last
       line = 'Confirming: your last day is <strong>' + escapeHtml(human) +
         '</strong> — access starts at 5:00 AM and you leave at <strong>' + escapeHtml(t) +
