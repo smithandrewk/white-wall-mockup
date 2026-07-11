@@ -18,6 +18,15 @@
     currency: "USD",
     maximumFractionDigits: 0
   });
+  // Cents-precise variant: shows cents only when the amount is not a whole dollar
+  // ($190, but $161.50). Used where the multi-day discount produces half-dollars so
+  // the per-add-on math adds up exactly (Drew 2026-07-11).
+  const currencyExact = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
 
   // Robust int parse for participant counts. Customers occasionally type
   // "35 +", "35+", "~35", "35-50", etc. Number() returns NaN for those and
@@ -456,27 +465,27 @@
           for (var i = 0; i < nDays; i++) {
             var c = dAddon(fullCents, i, addon.id);
             lineSub += c;
-            mathParts.push("Day " + (i + 1) + " " + currency.format(c / 100));
+            mathParts.push("Day " + (i + 1) + " " + currencyExact.format(c / 100));
           }
         } else {
           lineSub = fullCents;
           if (!elig(addon.id) && nDays > 1) mathParts.push("once for the event");
         }
         addonRows +=
-          '<div class="summary-line summary-line-muted"><span>' + escapeHtml(addon.name) + '</span><span>' + currency.format(lineSub / 100) + '</span></div>' +
+          '<div class="summary-line summary-line-muted"><span>' + escapeHtml(addon.name) + '</span><span>' + currencyExact.format(lineSub / 100) + '</span></div>' +
           (mathParts.length ? '<div class="ui-copy-muted" style="font-size:0.72rem;margin:-0.2rem 0 0.4rem;line-height:1.4">' + escapeHtml(mathParts.join("  +  ")) + '</div>' : '');
       });
       html += '<div class="summary-list" style="margin-top:0.5rem">' +
         '<p class="text-xs tracking-[0.2em] uppercase text-black/40" style="margin-bottom:0.35rem">Add-ons</p>' +
         addonRows +
-        '<div class="summary-line"><span class="ui-copy-strong">Add-ons total</span><span class="ui-copy-strong">' + currency.format(addonCents / 100) + '</span></div>' +
+        '<div class="summary-line"><span class="ui-copy-strong">Add-ons total</span><span class="ui-copy-strong">' + currencyExact.format(addonCents / 100) + '</span></div>' +
       '</div>';
     }
     if (cleaningCents > 0) {
       html += '<div class="summary-list"><div class="summary-line summary-line-muted"><span>Cleaning fee (baked into every event)</span><span>' + currency.format(cleaningCents / 100) + '</span></div></div>';
     }
     html += '<div class="summary-divider my-6"></div>' +
-      '<div class="summary-line summary-total"><span>Estimated total</span><strong>' + currency.format(grand / 100) + '</strong></div>';
+      '<div class="summary-line summary-total"><span>Estimated total</span><strong>' + currencyExact.format(grand / 100) + '</strong></div>';
     el.innerHTML = html;
   }
 
