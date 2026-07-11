@@ -1058,7 +1058,19 @@ async function handleCartCheckout(req, res, body) {
       cartLocation
     );
 
-    var totalCents = priced.totals.total;
+    // Cleaning fee (Drew 2026-07-11): $150 ONCE per event booking (NOT per day).
+    // A MULTI-DAY event (>=2 sessions, event) is mandatory at any headcount; a
+    // single-day event or a photo cart keeps the existing 35+ rule. Applied to the
+    // authoritative charge here so the server matches the client display.
+    // cartIsEvent is defined above (any session is an event).
+    var cartMaxAttendees = normalized.reduce(function (m, n) {
+      var mm = String(n.participants || "").match(/\d+/);
+      return Math.max(m, mm ? parseInt(mm[0], 10) : 0);
+    }, 0);
+    var cartIsMultiDayEvent = cartIsEvent && priced.sessions.length >= 2;
+    var cleaningFeeCents = (cartIsMultiDayEvent || cartMaxAttendees >= 35) ? 15000 : 0;
+
+    var totalCents = priced.totals.total + cleaningFeeCents;
 
     // =====================================================================
     // FREE-COMP cart path (server-validated comp coupon). The WHOLE cart is
@@ -1082,9 +1094,11 @@ async function handleCartCheckout(req, res, body) {
       });
     }
 
-    // Charge amount: full cart total, or the 60% deposit in deposit mode.
-    var chargeCents = (paymentMode === "deposit") ? priced.deposit.depositCents : totalCents;
-    var balanceDueCents = (paymentMode === "deposit") ? priced.deposit.balanceDueCents : null;
+    // Charge amount: full cart total (incl. cleaning fee), or the 60% deposit.
+    // Recompute the deposit on the fee-inclusive total — priced.deposit is pre-fee.
+    var depositCents = Math.round(totalCents * 0.60);
+    var chargeCents = (paymentMode === "deposit") ? depositCents : totalCents;
+    var balanceDueCents = (paymentMode === "deposit") ? (totalCents - depositCents) : null;
 
     // Earliest session start (chronological) → balance fires 48h before it.
     // priced.sessions is already chronologically ordered by computeCart.
@@ -1175,8 +1189,17 @@ async function handleCartCheckout(req, res, body) {
         };
 
         var addonIDs = buildAcuityAddonIDs(sessionState.addons, sessionState.location);
+        // Cleaning fee: attach the Acuity add-on to the FIRST session only so the
+        // $150 shows once on the order (matches the single charge). (Drew 2026-07-11)
+        if (cleaningFeeCents > 0 && si === 0 && ACUITY_ADDON_IDS["cleaning-fee"]) {
+          addonIDs.push(ACUITY_ADDON_IDS["cleaning-fee"]);
+        }
         var fields = buildAcuityFields(sessionState.intake || {}, sessionState.location);
         var notes = buildAppointmentNotes(sessionState);
+        if (cleaningFeeCents > 0 && si === 0) {
+          notes += "\n\nCleaning fee: $150 (" +
+            (cartIsMultiDayEvent ? "mandatory for multi-day event" : "35+ attendees") + ")";
+        }
 
         // Cart context so Drew sees this is one session of a multi-session order.
         notes += "\n\n[MULTI-SESSION CART: session " + (si + 1) + " of "
@@ -1294,7 +1317,7 @@ async function handleCartCheckout(req, res, body) {
           subtotal_cents: totalCents,
           total_cents: totalCents,
           payment_mode: paymentMode,
-          deposit_cents: (paymentMode === "deposit") ? priced.deposit.depositCents : null,
+          deposit_cents: (paymentMode === "deposit") ? depositCents : null,
           balance_due_cents: balanceDueCents,
           balance_charge_at: balanceChargeAt,
           balance_status: (paymentMode === "deposit") ? "scheduled" : "none",
