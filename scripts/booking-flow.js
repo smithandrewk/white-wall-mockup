@@ -440,7 +440,37 @@
         (rows || '<div class="summary-line summary-line-muted"><span>No days added yet</span><span></span></div>') +
       '</div>';
     if (addonCents > 0) {
-      html += '<div class="summary-list" style="margin-top:0.5rem"><div class="summary-line summary-line-muted"><span>Add-ons (per-day discount applied)</span><span>' + currency.format(addonCents / 100) + '</span></div></div>';
+      // Per-add-on, per-day breakdown (Drew 2026-07-11): each add-on is its own
+      // line showing how each day's amount adds up (Day 1 full, later days tapered
+      // for the discountable gear; flat add-ons counted once). Sums to addonCents.
+      var nDays = days.length;
+      var elig = (window.WWSPricing && window.WWSPricing.isDiscountEligible) ? window.WWSPricing.isDiscountEligible : function () { return true; };
+      var dAddon = (window.WWSPricing && window.WWSPricing.discountedAddonCents) ? window.WWSPricing.discountedAddonCents : function (c) { return c; };
+      var addonRows = "";
+      location.addons.forEach(function (addon) {
+        var full = addonSubtotalFor(addon, state.addons[addon.id]);
+        if (!full) return;
+        var fullCents = Math.round(full * 100);
+        var lineSub = 0, mathParts = [];
+        if (elig(addon.id) && nDays > 1) {
+          for (var i = 0; i < nDays; i++) {
+            var c = dAddon(fullCents, i, addon.id);
+            lineSub += c;
+            mathParts.push("Day " + (i + 1) + " " + currency.format(c / 100));
+          }
+        } else {
+          lineSub = fullCents;
+          if (!elig(addon.id) && nDays > 1) mathParts.push("once for the event");
+        }
+        addonRows +=
+          '<div class="summary-line summary-line-muted"><span>' + escapeHtml(addon.name) + '</span><span>' + currency.format(lineSub / 100) + '</span></div>' +
+          (mathParts.length ? '<div class="ui-copy-muted" style="font-size:0.72rem;margin:-0.2rem 0 0.4rem;line-height:1.4">' + escapeHtml(mathParts.join("  +  ")) + '</div>' : '');
+      });
+      html += '<div class="summary-list" style="margin-top:0.5rem">' +
+        '<p class="text-xs tracking-[0.2em] uppercase text-black/40" style="margin-bottom:0.35rem">Add-ons</p>' +
+        addonRows +
+        '<div class="summary-line"><span class="ui-copy-strong">Add-ons total</span><span class="ui-copy-strong">' + currency.format(addonCents / 100) + '</span></div>' +
+      '</div>';
     }
     if (cleaningCents > 0) {
       html += '<div class="summary-list"><div class="summary-line summary-line-muted"><span>Cleaning fee (baked into every event)</span><span>' + currency.format(cleaningCents / 100) + '</span></div></div>';
@@ -1471,14 +1501,24 @@
     });
   }
 
-  // Range event: add-ons are picked once in Step 4 and apply to EVERY event day
-  // (equipment stays up across days; the per-day discount tapers automatically in
-  // pricing-shared). Mirror the global picker onto each auto-built day so the live
-  // summary, pricing, and checkout all see the same add-ons.
+  // Range event: add-ons are picked once in Step 4 and mirrored onto the event's
+  // days. Discount-eligible gear (chairs, tables, walls, PA, TV, backdrops) stays
+  // up every day and tapers per the multi-day discount, so it goes on EVERY day.
+  // Flat add-ons that are once-per-event (Event Setup and Reset Crew, lighting)
+  // go on DAY 1 ONLY so they are charged once, not once per day.
   function syncRangeAddons() {
     if (state.eventMode !== "multi" || !state.cart.sessions.length) return;
-    state.cart.sessions.forEach(function (s) {
-      s.addons = JSON.parse(JSON.stringify(state.addons || {}));
+    var eligible = (window.WWSPricing && window.WWSPricing.isDiscountEligible)
+      ? window.WWSPricing.isDiscountEligible
+      : function () { return true; };
+    var src = state.addons || {};
+    state.cart.sessions.forEach(function (s, idx) {
+      var out = {};
+      Object.keys(src).forEach(function (id) {
+        // Day 1 carries every add-on; later days carry only the per-day gear.
+        if (idx === 0 || eligible(id)) out[id] = JSON.parse(JSON.stringify(src[id]));
+      });
+      s.addons = out;
     });
   }
 
