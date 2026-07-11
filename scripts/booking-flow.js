@@ -1098,7 +1098,10 @@
       }
       if (action === "range-review") {
         if (!cartIsActive()) return; // both dates must be picked (cart built)
-        state._cartReviewing = false;
+        // Treat the built event as a cart in review: the checkout panel, cart
+        // summary, and pay button all key off (_cartReviewing && cartIsActive())
+        // since a range event has no single active slot (selectedTime stays "").
+        state._cartReviewing = true;
         setStep(3); // Details (collect attendees once) → Waiver → Pay
         showToast("Your event days are set. Now your details and payment.");
         return;
@@ -2330,7 +2333,10 @@
     var paySection = document.querySelector("[data-payment-section]");
     var compSection = document.querySelector("[data-comp-section]");
 
-    if (!state.selectedTime) {
+    // Payable when there's an active slot OR we're reviewing a built cart/event
+    // (a multi-day range event has no single active slot — the cart IS the order).
+    var payableCart = state._cartReviewing && cartIsActive();
+    if (!state.selectedTime && !payableCart) {
       container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a date and time in Step 2 to see your order summary.</p></div>';
       if (paySection) paySection.hidden = true;
       if (compSection) compSection.hidden = true;
