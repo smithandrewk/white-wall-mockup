@@ -730,13 +730,25 @@
     };
   }
 
+  // V3 item-6 (60/40 deposit + 40% auto-charge) is DARK on PRODUCTION until the
+  // auto-charge scheduler is armed (Andrew's money gate). The deposit UI promises
+  // the 40% balance is auto-charged 48h before the session, so it must not appear
+  // to real customers until that promise can actually be kept. Until then the
+  // deposit toggle renders on STAGING only; prod is full-payment. The server
+  // enforces the same rule (create-checkout forces paymentMode to full off-staging
+  // unless WWS_ITEM6_DEPOSIT_ARMED is set), so there is no way to reach the
+  // uncollectable-balance state on prod. Remove this gate when item-6 is armed.
+  function depositUiEnabled() {
+    try { return window.location.hostname.indexOf("staging.") === 0; } catch (e) { return false; }
+  }
+
   // Deposit option (V3 item 6) — pay 60% now — shown only when the cart contains
   // an event booking (deposit is event-only, enforced server-side too).
   function renderCartDepositRow(totalCents) {
     var cartHasEvent = state.cart.sessions.some(function (s) { return s.eventIntent === "yes"; })
       || state.eventIntent === "yes"; // include the active draft
-    if (!cartHasEvent || !window.WWSPricing || !window.WWSPricing.depositSplit) {
-      if (state.paymentMode === "deposit") state.paymentMode = "full"; // can't deposit a non-event cart
+    if (!depositUiEnabled() || !cartHasEvent || !window.WWSPricing || !window.WWSPricing.depositSplit) {
+      if (state.paymentMode === "deposit") state.paymentMode = "full"; // can't deposit a non-event cart (or deposit UI is dark on prod)
       return "";
     }
     // totalCents is the fee-inclusive cart total, so the 60/40 split matches the
@@ -2341,7 +2353,8 @@
     // When deposit is selected the charge becomes 60% of the total (the rest is
     // captured 48h before via the saved card, server-side). depositSplit lives
     // in pricing-shared so the displayed amount matches the server recompute.
-    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive() && !isComp;
+    // Deposit UI is dark on prod until item-6 is armed (see depositUiEnabled).
+    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive() && !isComp && depositUiEnabled();
     var depositHtml = '';
     var chargeTotal = grandTotal;
     if (isSingleEvent && window.WWSPricing && window.WWSPricing.depositSplit) {

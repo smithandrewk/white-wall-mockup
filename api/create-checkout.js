@@ -924,7 +924,17 @@ async function handleCartCheckout(req, res, body) {
   const cardholderName = universal.cardholderName || body.cardholderName || "";
   const squareToken = universal.squareToken || body.squareToken;
   const clientIdempotencyKey = universal.clientIdempotencyKey || body.clientIdempotencyKey;
-  const paymentMode = (body.paymentMode === "deposit") ? "deposit" : "full";
+  // V3 item-6 (60/40 deposit + 40% auto-charge) is DARK on production until the
+  // auto-charge scheduler is armed (Andrew's money gate). A deposit collects only
+  // 60% now and relies on the (currently dark) scheduler to auto-charge the 40%
+  // later, so allowing it on prod would leave an uncollectable balance. Force
+  // full payment off-staging unless WWS_ITEM6_DEPOSIT_ARMED is explicitly set.
+  // The client hides the deposit toggle under the same rule; this is the
+  // server-side backstop against a crafted/stale deposit request.
+  var paymentMode = (body.paymentMode === "deposit") ? "deposit" : "full";
+  if (paymentMode === "deposit" && !isStaging() && process.env.WWS_ITEM6_DEPOSIT_ARMED !== "1") {
+    paymentMode = "full";
+  }
   const couponCode = universal.couponCode || body.couponCode;
   // NOTE: PERCENTAGE promo codes are intentionally NOT applied on the cart path
   // in v1 (the single-session path handles them; multi-day discount math already
