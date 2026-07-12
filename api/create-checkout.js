@@ -46,6 +46,7 @@ const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
 const { notifyOwnerSMS, notifyOwnerCompSMS } = require("./_lib/notify-sms");
 const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
+const { notifyMultidayEvent } = require("./_lib/notify-multiday");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 const sbDB = require("./_lib/supabase");
@@ -1304,9 +1305,24 @@ async function handleCartCheckout(req, res, body) {
       });
     }
 
-    // ---- 6b. Cleaning buffer for the whole event ------------------------
-    // A 2.5h block after the LAST session's end holds the calendar for cleanup
-    // once the event finishes (mirrors the single-session path). A multi-day
+    // ---- 6b. Crew-aware buffers + blocks for the whole event ------------
+    // Setup crew (event-only add-on) changes the calendar footprint: it needs a
+    // 2h FRONT-END block before day 1 (crew sets up) and extends the BACK-END
+    // buffer to 4h (crew resets + April cleans). Without crew, keep the existing
+    // 2.5h back-end cleaning buffer. (Drew spec 2026-07-11.)
+    var crewAdded = normalized.some(function (s) {
+      return s.addons && s.addons["setup-crew"] && s.addons["setup-crew"].selected;
+    });
+    var crewPlacements = null;
+    if (crewAdded) {
+      var crewSession = normalized.find(function (s) {
+        return s.addons && s.addons["setup-crew"] && s.addons["setup-crew"].selected;
+      });
+      crewPlacements = (crewSession && crewSession.addons["setup-crew"].placements) || null;
+    }
+    var backBufferMin = crewAdded ? 240 : 150;
+
+    // Back-end cleaning/reset buffer after the LAST session's end. A multi-day
     // event always carries the mandatory $150 fee, so this fires whenever the fee
     // applies. Isolated + skipped in staging-mock (no real appointments to buffer).
     if (cleaningFeeCents > 0 && !stagingMocked) {
@@ -1314,17 +1330,79 @@ async function handleCartCheckout(req, res, body) {
         var lastPs = priced.sessions[priced.sessions.length - 1];
         var lastDurMin = TYPE_TO_DURATION[String(lastPs.appointmentTypeID)] || 60;
         var evEnd = new Date(new Date(lastPs.datetime).getTime() + lastDurMin * 60000);
-        var evBufEnd = new Date(evEnd.getTime() + 150 * 60000);
+        var evBufEnd = new Date(evEnd.getTime() + backBufferMin * 60000);
         await acuityPost("/blocks", {
           start: evEnd.toISOString(),
           end: evBufEnd.toISOString(),
           calendarID: stagingCalID || CALENDAR_IDS[cartLocation],
-          notes: (isStaging() ? "[STAGING] " : "") + "Cleaning buffer (auto-created for event booking, "
+          notes: (isStaging() ? "[STAGING] " : "") + "Cleaning/reset buffer (auto-created for event booking, "
+            + (backBufferMin / 60) + "h" + (crewAdded ? " incl. setup crew reset" : "") + ", "
             + priced.sessions.length + " day" + (priced.sessions.length > 1 ? "s" : "") + ", appts "
             + createdAppointments.map(function (a) { return a.id; }).join("/") + ")"
         });
       } catch (e) {
         console.error("cart cleaning buffer block failed:", e.message);
+      }
+    }
+
+    // Front-end setup block — 2h before day-1 start, ONLY when the crew was added,
+    // so the crew has the studio to set up before the event begins.
+    if (crewAdded && !stagingMocked) {
+      try {
+        var firstPs = priced.sessions[0];
+        var day1Start = new Date(firstPs.datetime);
+        var crewBlockStart = new Date(day1Start.getTime() - 120 * 60000);
+        await acuityPost("/blocks", {
+          start: crewBlockStart.toISOString(),
+          end: day1Start.toISOString(),
+          calendarID: stagingCalID || CALENDAR_IDS[cartLocation],
+          notes: (isStaging() ? "[STAGING] " : "") + "Event setup crew (auto-created, 2h front-end, appt "
+            + ((createdAppointments[0] && createdAppointments[0].id) || "") + ")"
+        });
+      } catch (e) {
+        console.error("cart crew front-end block failed:", e.message);
+      }
+    }
+
+    // ---- 6c. Event-level notifications (owner + customer + cleaner) ------
+    // The cart path previously sent NONE of these (gap #5 / backend audit). Fire
+    // ONCE per event, event-shaped, for EVENT carts only. Best-effort + isolated:
+    // a notification failure never unwinds a paid+booked cart. On staging the
+    // transports self-suppress AND recipients are sinked (verifies wiring only).
+    if (cartIsEvent) {
+      try {
+        var mdDays = priced.sessions.map(function (ps, i) {
+          var srcN = normalized.find(function (n) {
+            return n.appointmentTypeID === ps.appointmentTypeID && n.datetime === ps.datetime;
+          }) || normalized[i];
+          return {
+            typeId: ps.appointmentTypeID,
+            datetime: ps.datetime,
+            sessionCents: ps.sessionCents,
+            addons: (srcN && srcN.addons) || {},
+            appointmentId: (createdAppointments[i] && createdAppointments[i].id) || null
+          };
+        });
+        await notifyMultidayEvent({
+          contact: contact,
+          location: cartLocation,
+          days: mdDays,
+          totalCents: totalCents,
+          cleaningFeeCents: cleaningFeeCents,
+          paymentMode: paymentMode,
+          chargeCents: chargeCents,
+          depositCents: (paymentMode === "deposit") ? depositCents : null,
+          balanceDueCents: balanceDueCents,
+          balanceChargeAt: balanceChargeAt,
+          square: { customerId: customerId, cardId: cardOnFile.id, paymentId: payment.id },
+          crewAdded: crewAdded,
+          crewPlacements: crewPlacements,
+          headcount: cartMaxAttendees || null,
+          eventDescription: (normalized.find(function (n) { return n.eventDescription; }) || {}).eventDescription || "",
+          foodDrinks: normalized.some(function (n) { return n.foodDrinks; })
+        });
+      } catch (e) {
+        console.error("cart event notifications failed:", e.message);
       }
     }
 
