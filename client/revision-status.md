@@ -579,3 +579,111 @@ Foreman cycle #2. Source: `client/comms/2026-06-25-drew-email-50plus-approval-fa
 - [x] **Architecture decided (Andrew 2026-06-25): use Supabase** for the V3 customer/booking/balance datastore (consistent with the dashboard). This unblocks V3 items 2/6/7 (accounts + editable profile + deposits/auto-charge + new checkout). The `v3-foundation` draft (PR #65) is built against this; foundation is now locked.
 - [x] **Drew reply sent 2026-06-25** (msg `19eff8c0`): confirmed 50+ + FAQ live; on accounts said the foundation decision is locked, the build is ours to carry, and a short checklist of product-only decisions (deposit + auto-charge terms, reminder-campaign touches, editable profile fields) is coming next. Logged his checkout sequencing (add-ons after date/time/duration + session-type).
 - [ ] **NEXT (open loop):** send Drew the focused product-decision checklist (deposit/auto-charge terms, 4-touch campaign copy/cadence, editable profile fields) — cross-check against his V3 round-2 answers (`~/pip/plans/T018-whitewall-v3.md`) first so nothing already answered is re-asked. Then kick off the V3 foundation build on Supabase (PR #65 line).
+
+## Feedback Round 30 (2026-07-11) — Drew's email 2026-07-11: multi-day flow restructured to an Airbnb-style date RANGE
+
+Foreman cycle. Source: `client/comms/2026-07-11-drew-email-multiday-builder-redesign.md` (Drew msgs `19f5259090432b36`, `19f52673a1b12c7c`: "Absolutely flawless scope. Let's do it. Let me know when there's an update to test."). Replaces the add-days-one-at-a-time builder with a single start to end date-range picker. **On `staging.whitewallstudios.co` (branch `worker/multiday-event-flow`, commits `f4d0778` + Good-to-know `+ ` clause), Playwright-verified end to end, awaiting Drew's test. NOT yet a prod PR** (prod PR only after the full staging booking dry-run).
+
+- [x] `scripts/booking-flow.js` — Step 1 = Day-1 access-time picker (once); Step 2 = one calendar, pick start date then end date (span highlights via `.is-in-range`); event auto-builds (`buildEventRangeCart`: day1 access time, middles full $980, last full/10:30 PM); last-day **Early checkout** select shortens the final day; live breakdown + $150 cleaning note + Review your event → details → pay (reuses the cart-checkout path, no active draft). Add-ons picked in Step 4 mirror onto every event day (`syncRangeAddons`) so the per-day discount tapers. Old per-day `md-add-*` builder kept but unreachable for multi.
+- [x] `styles/booking.css` — `.calendar-day.is-in-range` highlight for the picked span.
+- [x] **Good to know clause** (`renderLocationPolicies`): on a multi-day event the "35 or more attendees" cleaning line is swapped for "Because this is a multi-day event, there is a mandatory $150 cleaning fee automatically added to the booking" (Drew: attendee count no longer relevant). Single-day/photo keep the attendee clause.
+- [x] Verified on staging (Playwright): full flow gate → range → auto-build → review → Step 3, zero console errors; pricing exact (3-day = 350 + 980 + 980 + 150 = **$2,460**; early-checkout last day pv-8 → **$2,230**); Good-to-know clause flips on Multi-day and reverts otherwise.
+- [ ] **Staging note (not a code bug):** `pv-full`/`pv-8` have 0 availability on the staging calendar `14110701` (prod 27/30), so the 5am full-day Day-1 option shows an empty calendar on staging only. Test with an evening access time.
+- [ ] **NEXT:** the real staging BOOKING DRY-RUN (sandbox card → confirm N Acuity appts + one charge incl the $150 fee); then the prod PR + confirm to Drew.
+- [ ] **Back pocket (Drew `19f52673a1b12c7c`):** payment default = full, with a toggle to pay 60% up front non refundable + the 40% auto-charging 2 days before the event start. Ship the copy + toggle; the 40% auto-charge ties into the item-6 deposit engine (Andrew-gated arming) — FYI Andrew when wiring.
+
+### Round 30 addendum (2026-07-11) — pay reachability + staging booking dry-run
+
+- [x] **Fixed 4 pay-blocking bugs** the range flow exposed (a multi-day event has no single active slot, so `selectedTime` is empty): (1) `renderCheckoutPanel` dead-ended at "Select a date in Step 2" — now allows `_cartReviewing && cartIsActive()`; (2) `range-review` sets `_cartReviewing=true`; (3) new `hasBookableSlot()` used in `isStepComplete(2)`, `getValidationErrors`, and the pay-time bounce so a range event isn't kicked back to Step 2; (4) the Step-5 cart total + Pay button + 60/40 deposit now include the $150 cleaning fee (mirrors the server; was showing $1,330 vs the $1,480 Square would charge). Commits `f8f40d4`, `9c0ffcf`, `5c448fc`.
+- [x] **Staging booking DRY-RUN PASSED** (Playwright): a 2-day event booked end to end → `/booking-confirmation` → **2 Acuity appts on staging calendar `14110701`** (`1736056866` Fri 6pm "Four Hours + Cleaning Fee" + `1736056870` Sat 5am "Full Day", ET offset -0400, `[STAGING]` name), total **$1,480** incl the $150 fee. `create-checkout` received the correct 2 sessions (types 89114517 + 89114581). Test appts canceled after; staging calendar clean.
+- [ ] **NEXT:** prod PR after Drew signs off on the flow; then the back-pocket 60/40 payment toggle (copy + toggle; the 40% auto-charge is the Andrew-gated item-6 deposit engine).
+
+## Feedback Round 31 (2026-07-11) — Drew's email 2026-07-11 15:17 (msg 19f529d48026d3f8): range-flow polish
+
+Foreman cycle. Drew tested the range flow ("I freaking love it... absolutely flawless") and asked for three tweaks. All fast-path, Drew-directed, on `staging.whitewallstudios.co` (branch `worker/multiday-event-flow`), Playwright-verified, **confirmed to Drew** (msg `19f52ab4479e4d29`).
+
+- [x] **Last-day summary verbiage** — dropped "access from 5:00 AM"; the last-day bullet now reads "Last day (X) — access all day, leave by Y with studio fully reset." (`renderRangeControls`).
+- [x] **Add-on display order** — chairs, tables, 86in TV, PA system, rolling walls, backdrops, lighting, then Event Setup and Reset Crew last (`renderAddons` sort by `ADDON_ORDER`; display-only, logic keys off id).
+- [x] **Event Setup and Reset Crew = featured full-width card** — bigger photo + horizontal layout on wide screens (709px vs 347px normal card), title spans the width, bold-italic tagline "By no means necessary, but certainly makes your event more enjoyable." above the existing description (`tagline`/`featured` config flags; `renderAddonCard` + `.addon-card-featured`/`.addon-card-tagline` CSS).
+- [x] Verified on staging (Playwright): last-day copy present + no "5:00 AM"; add-on order exact; featured card + tagline render full-width; zero page errors.
+
+### Round 31 addendum (2026-07-11) — featured crew card restructured to a large square (msg 19f52b2139b717e7)
+
+- [x] Drew: the featured Event Setup and Reset Crew card should be **one large square** split on the HORIZONTAL axis (not photo-left/content-right). New `renderFeaturedAddonCard`: header (title, bold-italic subtitle, "Optional" + "$750" pills) → **full-width photo** → full-width description → a **large plain pill button** "Add the Setup/Reset Crew to your booking" (no photo inside). Extracted `renderPlacementRows` so the 8 placement dropdowns still appear once added. Staging Playwright-verified (vertical order head<photo<button, full-width photo+button, bold-italic tagline, toggle+placements work, no errors) + screenshot eyeballed. Confirmed to Drew (`19f52b7b847020cb`).
+
+### Round 31 addendum 2 (2026-07-11) — crew placements, multi-day disclaimer, deposit copy (msgs 19f52bccee3d674d / 19f52be7ed1b3688 / 19f52c0b87f46793)
+
+- [x] Setup crew placements: added "Storage Building" as an option for **Utility tables and extension cords** and for **Living room furniture** (booking-config.js).
+- [x] Featured crew card layout confirmed **universal** for event bookings — shows on single-day AND multi-day events (same one-large-square), and never on photo/video (eventsOnly + featured). Playwright-verified on all three paths.
+- [x] **35+ cleaning-fee disclaimer** (`updateParticipantNotices` capacity notice) suppressed on the MULTI-day path (fee is baked in regardless); kept on single-day. Gated on `state.eventMode !== "multi"`.
+- [x] **Deposit balance copy** (both cart + single rows) → "(Balance $X will be auto-charged to the card on file 48 hours before session start)". ⚠️ Promises the item-6 40% auto-charge — **staging-only display**; the auto-charge machinery is the **Andrew-gated prod-merge prerequisite** (do not ship this copy to prod until item-6 is armed).
+- [x] Verified on staging (Playwright, 3 paths, zero errors) + confirmed to Drew (msg `19f52c62c1ce8aa4`).
+
+## Feedback Round 32 (2026-07-11) — Drew's email 2026-07-11 15:59 (msg 19f52c36d21a0bc3): public Add-Ons menu page
+
+Foreman cycle. Drew: a standalone informational "Add-ons" page so anyone can see add-on prices without going through booking. On `staging.whitewallstudios.co/add-ons` (branch `worker/multiday-event-flow`), Playwright-verified, confirmed to Drew (`19f52d3bfa1e8525`).
+
+- [x] New **`add-ons.html`** → served at `/add-ons`: full-width, display-only menu of every Powdersville add-on (photo, name, price, full description; chairs/walls/backdrops list each option with price) in the booking order chairs → setup-crew. Reads `window.WWS_BOOKING_CONFIG` so it stays in sync with the booking flow. No interactive controls / CTAs per Drew. "Book your session with us" pill at top + bottom → `/book-powdersville`.
+- [x] Verified on staging (Playwright): HTTP 200, 8 cards in order with photos + prices + descriptions + option lists, 2 book pills → /book-powdersville, 0 interactive controls, no page errors; layout eyeballed via screenshot.
+
+### Round 32 addendum (2026-07-11) — Add-Ons nav tab + Hair and Makeup Area rename (msgs 19f52d7bd7687434 / 19f52d96298f09af)
+
+- [x] **Add-Ons nav tab** added to the top menu site-wide (index, powdersville, taylors-mill, gallery, faq desktop + mobile menus, and both booking pages) → `/add-ons`. Playwright-verified the link exists on home/powdersville/faq/gallery/booking and navigates to the page.
+- [x] **Renamed** the two "Getting-Ready area" setup-crew placement items → "Hair and Makeup Area Rug" / "Hair and Makeup Area Furniture" (booking-config.js). Verified in the deployed config (no "Getting-Ready area" left).
+- [x] Confirmed to Drew (msg `19f52e2948d24359`).
+
+## Feedback Round 33 (2026-07-11) — Drew's email 2026-07-11 16:38 (msg 19f52e735e36cdc2): floor-plan assets
+
+Foreman cycle (triage=question). Drew sent 4 to-scale floor-plan PDFs and asked how to leverage them. Response: built a page + nav tab; on `staging.whitewallstudios.co/floor-plans`, Playwright-verified, confirmed to Drew (`19f52eeeb39cb520`).
+
+- [x] Converted the 4 PDFs → PNG (`pdftoppm` 150dpi) into `images/floor-plans/` (default-layout, empty-dimensions, event-seated, event-standing).
+- [x] New **`floor-plans.html`** → `/floor-plans`: full-size, to-scale display of all 4 plans (The Full Space + dimensions, Default Studio Layout, Event Mockup Seated, Event Mockup Standing) each with a caption, "Book your session with us" pills top + bottom. Same menu style as the add-ons page.
+- [x] **"Floor Plans" nav tab** added site-wide (index, powdersville, taylors-mill, gallery, faq desktop + mobile, both booking pages, add-ons page), after the Add-Ons tab.
+- [x] Verified on staging (Playwright): HTTP 200, 4 cards with all images loaded (naturalW 1913), book pills → /book-powdersville, nav tab present on home/powdersville, no page errors.
+- [ ] **Offered (awaiting Drew):** a contextual "See the floor plans" link inside the event booking flow near chairs/tables.
+
+### Round 33 addendum (2026-07-11) — floor-plan 4th card retitled (msg 19f52f7fc9085ec4)
+
+- [x] Drew: the 4th plan (A2.1) is a combined seated + max-standing layout, not just standing. Retitled "Event Mockup — Standing" → "Event Mockup — Standing and Seated" and rewrote the caption (seated + up to 112 standing with DJ booth, open room on the right wall for a food and beverage station). Image unchanged (his attachment was a phone screenshot pointing at the card, not a replacement). Verified on staging + confirmed to Drew (`19f5...` reply).
+
+### Round 33 addendum 2 (2026-07-11) — 2 more floor plans (msg 19f5304eadd351d8)
+
+- [x] Added Ceremony Seating (163 chairs facing altar, 6ft aisle) + Maximum Standing (281 guests, full space) to /floor-plans (converted PDFs → PNG). Now 6 plans. Playwright-verified all 6 render, no errors. Confirmed to Drew.
+
+## Feedback Round 34 (2026-07-11) — Drew's email 2026-07-11 17:20 (msg 19f530d6fed9587b): per-add-on live line items
+
+Foreman cycle. Drew: the live event summary should show EACH add-on as its own line with the per-day math adding up, not one lumped total. On staging, Playwright-verified, confirmed to Drew (`19f531d2d543d74a`).
+
+- [x] `renderMultidaySummary` add-on section rebuilt: each selected add-on is its own line with per-day math (Day 1 full + Day 2/3 tapered) → subtotal, then an "Add-ons total", then the estimated total. E.g. 50 chairs on a 3-day event = "Day 1 $190.00 + Day 2 $161.50 + Day 3 $133.00" = $484.50. Added `currencyExact` (2-decimal) so half-dollar discounts display exactly.
+- [x] **Overcharge fix (caught while building this):** `syncRangeAddons` was mirroring every add-on onto every day, so flat add-ons (Event Setup and Reset Crew $750, lighting) were charged once PER DAY (3-day event billed the crew 3×=$2,250). Now discount-eligible gear goes on every day (tapered) and flat add-ons go on day 1 ONLY (charged once). Corrects the summary, the Step-5 cart total, AND the server charge (all read the session add-ons). Verified: crew shows "$750.00 once for the event", total $3,694.50 for the 3-day + chairs + crew example.
+- [ ] **Flagged to Drew:** lighting is currently counted once for the event (like the crew); asked whether it should instead bill per day.
+
+- [x] **Round 34 re-verified end-to-end (staging booking dry-run WITH add-ons):** a 2-day event + 50 chairs + Setup Crew booked to `/booking-confirmation`; the two Acuity appts confirm the flat-once fix — day 1 (`1736105259`) carries chairs + Setup Crew (`7088190`) + cleaning fee (`6881547`), day 2 (`1736105260`) carries chairs ONLY. Square charge $2,581.50 (day-2 chair discount applied); Acuity stores full add-on prices, the $28.50 delta = the day-2 discount. Test appts canceled after. No regression.
+
+- [x] **Pay-amount display consistency (follow-through on Round 34):** the sidebar summary showed exact cents but the Pay & Book button + cart/deposit totals still rounded to whole dollars (button read $2,582 vs the $2,581.50 charge). Added `fmtMoney` (whole → clean $350, fractional → $1,831.50) on the pay button, cart total, single-session total, and the 60/40 deposit + balance lines. Verified on staging: multi-day button "$1,831.50" exact; single photo session still "$350" (no .00).
+
+## Feedback Round 35 (2026-07-11) — Drew's email 2026-07-11 18:24 (msg 19f53489dcca8270): backend verification
+
+Drew: "verify everything works on the back end… setup crew window, cleaner time, auto-contact April, payment auto-charge… official thumbs up." Ran a read-only backend audit (see `client/comms/2026-07-11-backend-audit-multiday.md`). Gave Drew an HONEST itemized status (NO thumbs up) — msg `19f5352095101ca2`.
+
+- **Root cause:** multi-day events route through `handleCartCheckout`; the single-session path's notifications + cleaning buffer were never ported to the cart path.
+- [x] Appointment creation + scheduling: WORKS (verified via 2 dry-runs). 60% deposit collection + card-on-file: WORKS.
+- [ ] **Owner + customer notifications** on a paid multi-day booking: NOT wired (books silently; customer gets only Acuity's N per-day emails). → BUILD (port to cart path).
+- [ ] **Auto-contact April the cleaner** (.ics): NOT wired for cart path; notify-cleaner is single-session-shaped. → BUILD (key to event end).
+- [ ] **Cleaning buffer block** after the event: NOT wired for cart path. → BUILD.
+- [ ] **Setup/reset crew time window**: NOT built. → needs Drew's spec (asked).
+- [ ] **40% auto-charge at T−48h**: card + charge-time saved but the charge engine is dark by design (enroll/pgcron/scheduler/autocharge all off) = item-6, **Andrew-gated**. Told Drew "finalizing."
+
+### Round 35 build progress (2026-07-11)
+- [x] **Gap #2 — cleaning buffer block (multi-day):** added a 2.5h `POST /blocks` after the event's last session end in `handleCartCheckout` (passes calendarID). Verified on staging: a 2-day event booking created a block 2026-07-13 11:00 PM → 07-14 1:30 AM tied to both appts. Test data cleaned up. Commit on branch.
+- [ ] Gaps #3 (cleaner .ics to April) + #5 (owner email/SMS + customer SMS): need the single-session-shaped notifiers made multi-day-aware (event-level state, fire once, cleaner keyed to last day, add cleaningFee to cart sessionState). NEXT.
+- [ ] Gap #1 (crew time window): awaiting Drew's spec. Gap #4 (40% auto-charge): Andrew-gated item-6.
+
+### Round 35 → Drew's full backend spec (msg 19f535e0d7e0e8bb, 2026-07-11 18:48)
+Drew replied to the audit with a detailed spec (customer recap, owner Watson SMS + a crew-only second SMS, April email 4h/1.5h-delay when crew added, 4h back-end buffer + 2h front-end crew block when crew added, and "just run" the 40% auto-charge). Full verbatim + itemized build plan: **`client/comms/2026-07-11-drew-backend-spec.md`**. Acknowledged to Drew (`19f536b8677858d0`); item-7 auto-charge kept honest ("finalizing" + Watson manual-reminder fallback; item-6 is Andrew's arming gate). Build in progress: gap #2 done; items 1-6 next.
+
+- [x] **Drew's newest msg `19f53723a15d5325`** (2026-07-11 19:10, "Absolutely flawless across the board. Great work. Keep me updated.") = approval/fyi, logged (`client/comms/2026-07-11-drew-ack-backend-spec-flawless.md`), NO reply required, NO new request.
+- [x] **Items 1-6 BUILT (commit `b020c39`, pushed, deployed to staging) — fresh Foreman 2026-07-11.** New `api/_lib/notify-multiday.js` fires event-level notifications ONCE per multi-day event: customer recap email; owner recap email (full detail + crew placements + Square ids); owner Watson SMS (dates range, total, name, event use, headcount, "Cleaners emailed ✓", appt count); a SECOND crew-only Watson SMS (each placement + recommended crew start day1−2h + back-end reset = last-session end); April cleaner email keyed to the LAST day end, crew-aware (4h window + arrive 1.5h after end + crew-reset copy when crew, else 2.5h at end) + .ics. `handleCartCheckout`: back-end buffer → 4h when crew (else 2.5h); NEW 2h front-end crew setup block before day-1 when crew; `notifyMultidayEvent(ctx)` wired once for event carts. All isolated/best-effort; every /blocks call passes calendarID. Reuses proven transports (sendOwnerSMS, buildIcs, Resend). Staging self-suppresses sends + sinks recipients (verifies wiring only → these send REAL comms on PROD).
+- [x] **Verified (code-level):** node --check clean on both files; builder unit test proved exact content of all 5 messages + the item-7 fallback (3-day crew Oct 3–5 + no-crew, range fmt, cleaner timing); deployed staging serves 200 + a malformed `/api/create-checkout` POST returns clean **400 not 500** (proves the new require resolves in the deployed bundle).
+- [x] **STAGING BOOKING DRY-RUN PASSED (2026-07-11)** — Playwright booked a real 2-day CREW multi-day event end to end (07-12 pv-4 6pm + 07-13 full day, Setup Crew + 8 placements, Square sandbox). `create-checkout` 200 → `/booking-confirmation` (appt `1736178980`, sessions=2). Acuity-verified on cal `14110701`: 2 appts (day1 $1,250 = $350 + crew $750 + cleaning $150; day2 $980; total $2,230 = charge), **back-end buffer block 4h** (07-13 23:00→07-14 03:00, "incl. setup crew reset"), **front-end crew block 2h** (07-12 16:00→18:00). No JS errors (only cosmetic Square font CSP). Notify path ran self-suppressed (wiring verified). Test appts + blocks cleaned up (cancel 200 / delete 204). Confirmed to Drew (`19f5468f037fb285`); nudge/promise loop closed (`client/comms/2026-07-11-drew-any-update-nudge.md`).
+- [ ] **Item 7 (40% auto-charge) — ANDREW-GATED.** Fallback content built (`buildManualChargeReminderSms`: amount + Square customer/card ids + event); not wired to fire (needs deposit toggle + dark item-6 scheduler). Arming escalation becomes ripe only AFTER items 1-6 + a deposit dry-run pass staging. Do NOT auto-arm.

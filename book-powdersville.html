@@ -59,6 +59,8 @@
         <a href="/powdersville" class="hover:text-black transition">Flagship Location</a>
         <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill Location</a>
         <a href="/gallery" class="hover:text-black transition">Gallery</a>
+        <a href="/add-ons" class="hover:text-black transition">Add-Ons</a>
+        <a href="/floor-plans" class="hover:text-black transition">Floor Plans</a>
         <a href="/faq" class="hover:text-black transition">FAQ</a>
       </div>
     </div>
@@ -86,12 +88,16 @@
   -->
 
   <main class="px-6 pb-20">
-    <div class="progress-track-wrapper">
+    <!-- Step 1: "What are you booking?" gate (Drew 2026-07-10). Rendered by
+         booking-flow.js renderGate(); shown until a booking type is chosen, then
+         the normal progress + step flow below is revealed. -->
+    <div class="max-w-3xl mx-auto" data-booking-gate></div>
+    <div class="progress-track-wrapper" data-flow-region>
       <div class="max-w-7xl mx-auto">
         <div class="progress-track" data-progress></div>
       </div>
     </div>
-    <div class="max-w-7xl mx-auto booking-grid">
+    <div class="max-w-7xl mx-auto booking-grid" data-flow-region>
       <section class="booking-panel p-6 md:p-8">
 
         <div class="mt-8 booking-step is-active" data-step-panel="1">
@@ -102,6 +108,7 @@
             </div>
           </div>
           <p class="text-sm text-black/50 mt-4">Pick the length of your session — prices cover the full booked time.</p>
+          <div data-multiday-intro></div>
           <div class="choice-grid is-two-up mt-8" data-duration-options></div>
           <div class="mt-8 flex flex-wrap gap-3">
             <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="2">Continue to schedule</button>
@@ -110,10 +117,10 @@
 
         <div class="mt-8 booking-step" data-step-panel="2">
           <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 2</p>
-          <h2 class="font-display text-4xl mt-3">Pick a date &amp; time</h2>
-          <p class="text-sm text-black/50 mt-4">Select an available date and time for your session.</p>
+          <h2 class="font-display text-4xl mt-3" data-step2-title>Pick a date &amp; time</h2>
+          <p class="text-sm text-black/50 mt-4" data-step2-sub>Select an available date and time for your session.</p>
           <div class="mt-8" data-schedule-step></div>
-          <div class="mt-8 flex flex-wrap gap-3">
+          <div class="mt-8 flex flex-wrap gap-3" data-step2-nav>
             <button type="button" class="booking-button booking-button-secondary" data-action="go-step" data-step="1">Back</button>
             <button type="button" class="booking-button booking-button-primary" data-action="go-step" data-step="3">Continue to session details</button>
           </div>
@@ -310,9 +317,13 @@
 
           <p class="text-sm text-black/60 mt-4" data-location-address></p>
 
-          <div class="summary-divider my-6"></div>
+          <!-- Live multi-day event summary (Drew 2026-07-11): the days, times, and
+               finances build up here as you add each day. Hidden otherwise. -->
+          <div data-summary-multiday hidden></div>
 
-          <div class="summary-list">
+          <div class="summary-divider my-6" data-summary-single></div>
+
+          <div class="summary-list" data-summary-single>
             <div class="summary-line">
               <span>Selected timing</span>
               <span data-summary-duration></span>
@@ -323,9 +334,9 @@
             </div>
           </div>
 
-          <div class="summary-divider my-6"></div>
+          <div class="summary-divider my-6" data-summary-single></div>
 
-          <div>
+          <div data-summary-single>
             <div class="summary-list">
               <div class="summary-line">
                 <span>Session</span>

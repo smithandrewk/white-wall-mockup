@@ -18,6 +18,21 @@
     currency: "USD",
     maximumFractionDigits: 0
   });
+  // Cents-precise variant: shows cents only when the amount is not a whole dollar
+  // ($190, but $161.50). Used where the multi-day discount produces half-dollars so
+  // the per-add-on math adds up exactly (Drew 2026-07-11).
+  const currencyExact = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  // Whole dollars show clean ($350); fractional amounts show exact cents
+  // ($2,581.50). Used for the pay button + cart totals so what the customer sees
+  // matches the exact amount charged when the multi-day discount lands half-dollars.
+  function fmtMoney(dollars) {
+    return Number.isInteger(dollars) ? currency.format(dollars) : currencyExact.format(dollars);
+  }
 
   // Robust int parse for participant counts. Customers occasionally type
   // "35 +", "35+", "~35", "35-50", etc. Number() returns NaN for those and
@@ -33,6 +48,26 @@
 
   const state = {
     step: 1,
+    // Step-1 "What are you booking?" gate (Drew 2026-07-10). bookingType is set
+    // by the gate before the numbered flow is revealed: "" = gate not answered,
+    // "photo" = photo/video session, "event" = event booking. eventMode applies
+    // to events: "single" (one day, today's normal flow) or "multi" (day-by-day
+    // builder on the multi-session cart). _gateChoosingEventMode is a transient
+    // UI flag = the gate is showing the single/multi sub-choice. On PV only; TM
+    // is photo-only so its gate auto-resolves to "photo".
+    bookingType: "",
+    eventMode: "",
+    _gateChoosingEventMode: false,
+    _dayRole: "", // multi-day event: role of the day being configured ("middle"|"last"); "first" is derived from an empty cart
+    _multidayFixedTime: "", // locked start (first/middle) or start-of-access (last) time label for the confirmation line
+    // Airbnb-style multi-day RANGE flow (Drew 2026-07-11): the customer picks a
+    // day-one access time (durationId), then a start date + end date; the days
+    // between are auto-built as full days. _eventDurationId holds the day-one
+    // access-time pick; _eventStartDate/_eventEndDate are the picked range.
+    _eventDurationId: "",
+    _eventStartDate: "",
+    _eventEndDate: "",
+    _lastDayDurationId: "pv-full", // last day defaults to a full day (10:30 PM departure); early-checkout can shorten it
     durationId: location.durations[0] ? location.durations[0].id : "",
     eventIntent: "",
     participants: "",
@@ -113,6 +148,11 @@
       selectedDate: state.selectedDate,
       selectedTime: state.selectedTime,
       eventIntent: state.eventIntent,
+      // Multi-day event display metadata (Drew 2026-07-11 live summary): the day's
+      // role (first/middle/last) + its access/leave time label, so the running
+      // summary can show each day with the right wording as it's built.
+      _mdRole: currentDayRole(),
+      _mdTimeLabel: state._multidayFixedTime || "",
       addons: JSON.parse(JSON.stringify(state.addons || {})),
       foodDrinks: state.foodDrinks,
       perSessionIntake: {
@@ -129,7 +169,12 @@
     state.durationId = location.durations[0] ? location.durations[0].id : "";
     state.selectedDate = "";
     state.selectedTime = "";
-    state.eventIntent = "";
+    // Preserve the Step-1 gate's booking-type choice across days/sessions: every
+    // day of a gated booking is the same type (all event days, or all photo), and
+    // the mid-flow type selector is hidden once gated, so re-blanking eventIntent
+    // would strand a new event day with no way to mark it. Falls back to "" (the
+    // pre-gate single-session behavior) when the gate wasn't used.
+    state.eventIntent = state.bookingType === "event" ? "yes" : (state.bookingType === "photo" ? "no" : "");
     state.eventDescription = "";
     state.intake.participants = "";
     state.intake.business = "";
@@ -163,6 +208,15 @@
   // single-session path stays byte-identical until "Add another session" is used.
   function cartIsActive() {
     return state.cart.sessions.length > 0;
+  }
+
+  // A bookable slot exists when there's an active single slot OR every session in
+  // a built cart has its locked start time (a range/multi-day event has no single
+  // active slot — the cart carries each day's datetime). Used by the pay-time
+  // validators so a range event isn't wrongly bounced back to Step 2.
+  function hasBookableSlot() {
+    if (state.selectedTime) return true;
+    return cartIsActive() && state.cart.sessions.every(function (s) { return !!s.selectedTime; });
   }
 
   // Total number of sessions in this booking = committed + the active draft
@@ -300,6 +354,147 @@
   // The "Add another session" / "Review cart" branch, rendered at the top of
   // step 5. Always offered (Drew wants multi-day discovery), but never blocks
   // the single-session pay flow: payment stays directly available below.
+  // Multi-day event builder intro (Drew 2026-07-11): when eventMode === "multi",
+  // frame Step 1 as a day-by-day builder so it does not read like the normal
+  // single-session duration picker. Reflects which day they're setting up.
+  function renderMultidayIntro() {
+    var el = document.querySelector("[data-multiday-intro]");
+    if (!el) return;
+    var role = currentDayRole();
+    if (state.eventMode !== "multi" || !role) { el.hidden = true; el.innerHTML = ""; return; }
+    el.hidden = false;
+    var dayNum = state.cart.sessions.length + 1;
+    var body;
+    if (role === "first") {
+      // Drew's first-day framing (2026-07-11): access is continuous from the start
+      // time they pick on Day 1 through the end of the event.
+      body =
+        'You get access on <strong>Day one</strong> of your event, starting at the time you select here, ' +
+        'and it goes continuously until you get to the end of your event.';
+    } else if (role === "last") {
+      body =
+        'This is the <strong>last day</strong> of your event. Access carries through to when you leave — ' +
+        'pick your leave time below. This is when you leave with everything completely reset and cleaned up.';
+    } else {
+      body =
+        'Adding a <strong>full day</strong> to your event — access carries through continuously into the ' +
+        'next day. Add-ons and pricing adjust per day, and you pay for the whole event together at the end.';
+    }
+    el.innerHTML =
+      '<div class="booking-panel-soft p-5" style="margin-top:1.5rem">' +
+        '<p class="ui-kicker" style="margin-bottom:0.5rem">Multi-day event builder</p>' +
+        '<p class="ui-copy" style="color:rgba(0,0,0,0.65)">' + body + '</p>' +
+      '</div>';
+  }
+
+  // Live multi-day event summary (Drew 2026-07-11): as each day is committed, show
+  // it here with its date, access/leave time, and price, plus the running total +
+  // the $150 cleaning fee (baked into every multi-day event). Replaces the
+  // single-session summary block while building a multi-day event.
+  function renderMultidaySummary() {
+    var el = document.querySelector("[data-summary-multiday]");
+    var singles = document.querySelectorAll("[data-summary-single]");
+    if (!el) return;
+    if (state.eventMode !== "multi") {
+      el.hidden = true; el.innerHTML = "";
+      singles.forEach(function (s) { s.style.display = ""; });
+      return;
+    }
+    singles.forEach(function (s) { s.style.display = "none"; });
+    el.hidden = false;
+
+    // Days = committed sessions + the active draft (only once it has a slot).
+    var days = state.cart.sessions.slice();
+    if (state.selectedTime) days.push(snapshotActiveSession());
+    // Display in event order: first day, then middle full days (by date), then the
+    // last day — the logical event order, robust to dates picked out of sequence.
+    var roleRank = { first: 0, middle: 1, last: 2 };
+    days.sort(function (a, b) {
+      var ra = roleRank[a._mdRole] != null ? roleRank[a._mdRole] : 1;
+      var rb = roleRank[b._mdRole] != null ? roleRank[b._mdRole] : 1;
+      if (ra !== rb) return ra - rb;
+      var at = a.selectedTime || "", bt = b.selectedTime || "";
+      return at < bt ? -1 : (at > bt ? 1 : 0);
+    });
+
+    var sessionSum = 0;
+    var rows = days.map(function (s, i) {
+      var dur = location.durations.find(function (d) { return d.id === s.durationId; });
+      var price = dur && dur.price ? dur.price : 0;
+      sessionSum += price;
+      var dateLabel = "";
+      if (s.selectedDate) {
+        var dp = s.selectedDate.split("-");
+        dateLabel = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
+          .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      }
+      var role = s._mdRole || (i === 0 ? "first" : (i === days.length - 1 ? "last" : "middle"));
+      var tl = s._mdTimeLabel || "";
+      var timeText = role === "first" ? ("access " + tl) : (role === "last" ? ("leave " + tl) : "full day");
+      var dayName = role === "first" ? "First day" : (role === "last" ? "Last day" : "Full day");
+      return '<div class="summary-line"><span>' + escapeHtml(dayName) +
+        (dateLabel ? ' &middot; ' + escapeHtml(dateLabel) : '') +
+        ' <span class="ui-copy-muted" style="font-size:0.8rem">(' + escapeHtml(timeText) + ')</span></span>' +
+        '<span>' + currency.format(price) + '</span></div>';
+    }).join("");
+
+    // Add-on total via pricing-shared (per-day discount) — matches the cart/server.
+    var totals = (window.WWSPricing && window.WWSPricing.computeCartTotals)
+      ? window.WWSPricing.computeCartTotals(buildPricingCart(true))
+      : { addonTotal: 0 };
+    var addonCents = totals.addonTotal || 0;
+    // Cleaning fee: baked into every multi-day event (Drew) — mandatory + known
+    // upfront, so show it immediately (this fn only runs for a multi-day event).
+    var cleaningCents = 15000;
+    var grand = sessionSum * 100 + addonCents + cleaningCents;
+
+    var html =
+      '<div class="summary-divider my-6"></div>' +
+      '<p class="text-xs tracking-[0.2em] uppercase text-black/40">Your event so far</p>' +
+      '<div class="mt-4 summary-list">' +
+        (rows || '<div class="summary-line summary-line-muted"><span>No days added yet</span><span></span></div>') +
+      '</div>';
+    if (addonCents > 0) {
+      // Per-add-on, per-day breakdown (Drew 2026-07-11): each add-on is its own
+      // line showing how each day's amount adds up (Day 1 full, later days tapered
+      // for the discountable gear; flat add-ons counted once). Sums to addonCents.
+      var nDays = days.length;
+      var elig = (window.WWSPricing && window.WWSPricing.isDiscountEligible) ? window.WWSPricing.isDiscountEligible : function () { return true; };
+      var dAddon = (window.WWSPricing && window.WWSPricing.discountedAddonCents) ? window.WWSPricing.discountedAddonCents : function (c) { return c; };
+      var addonRows = "";
+      location.addons.forEach(function (addon) {
+        var full = addonSubtotalFor(addon, state.addons[addon.id]);
+        if (!full) return;
+        var fullCents = Math.round(full * 100);
+        var lineSub = 0, mathParts = [];
+        if (elig(addon.id) && nDays > 1) {
+          for (var i = 0; i < nDays; i++) {
+            var c = dAddon(fullCents, i, addon.id);
+            lineSub += c;
+            mathParts.push("Day " + (i + 1) + " " + currencyExact.format(c / 100));
+          }
+        } else {
+          lineSub = fullCents;
+          if (!elig(addon.id) && nDays > 1) mathParts.push("once for the event");
+        }
+        addonRows +=
+          '<div class="summary-line summary-line-muted"><span>' + escapeHtml(addon.name) + '</span><span>' + currencyExact.format(lineSub / 100) + '</span></div>' +
+          (mathParts.length ? '<div class="ui-copy-muted" style="font-size:0.72rem;margin:-0.2rem 0 0.4rem;line-height:1.4">' + escapeHtml(mathParts.join("  +  ")) + '</div>' : '');
+      });
+      html += '<div class="summary-list" style="margin-top:0.5rem">' +
+        '<p class="text-xs tracking-[0.2em] uppercase text-black/40" style="margin-bottom:0.35rem">Add-ons</p>' +
+        addonRows +
+        '<div class="summary-line"><span class="ui-copy-strong">Add-ons total</span><span class="ui-copy-strong">' + currencyExact.format(addonCents / 100) + '</span></div>' +
+      '</div>';
+    }
+    if (cleaningCents > 0) {
+      html += '<div class="summary-list"><div class="summary-line summary-line-muted"><span>Cleaning fee (baked into every event)</span><span>' + currency.format(cleaningCents / 100) + '</span></div></div>';
+    }
+    html += '<div class="summary-divider my-6"></div>' +
+      '<div class="summary-line summary-total"><span>Estimated total</span><strong>' + currencyExact.format(grand / 100) + '</strong></div>';
+    el.innerHTML = html;
+  }
+
   function renderCartBranch() {
     var container = document.querySelector("[data-cart-branch]");
     if (!container) return;
@@ -313,21 +508,25 @@
     }
     container.hidden = false;
 
+    // "day" language for events (Drew's multi-day event builder); "session" for
+    // photo/video multi-session carts.
+    var isEvt = state.eventMode === "multi" || state.eventIntent === "yes";
+    var unit = isEvt ? "day" : "session";
     var count = cartSessionCount();
     var countLine = cartIsActive()
-      ? '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">You have <strong>' + count + ' sessions</strong> in this cart (this one plus ' + state.cart.sessions.length + ' already added). Add more days, or review and pay for everything together in one payment.</p>'
-      : '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">Booking more than one day? Add another session to this cart and pay for everything together. Multi-day add-on discounts apply automatically.</p>';
+      ? '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">You have <strong>' + count + ' ' + unit + 's</strong> in this ' + (isEvt ? 'event' : 'cart') + ' (this one plus ' + state.cart.sessions.length + ' already added). Add more ' + unit + 's, or review and pay for everything together in one payment.</p>'
+      : '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.6)">' + (isEvt ? 'Your event runs across multiple days? Add another day and pay for the whole event together.' : 'Booking more than one day? Add another session to this cart and pay for everything together.') + ' Multi-day add-on discounts apply automatically.</p>';
 
     var reviewBtn = cartIsActive()
-      ? '<button type="button" class="booking-button booking-button-primary" data-action="review-cart">Review cart &amp; pay</button>'
+      ? '<button type="button" class="booking-button booking-button-primary" data-action="review-cart">Review ' + (isEvt ? 'event' : 'cart') + ' &amp; pay</button>'
       : '';
 
     container.innerHTML =
       '<div class="booking-panel-soft p-5">' +
-        '<p class="ui-kicker" style="margin-bottom:0.75rem">Multi-day booking</p>' +
+        '<p class="ui-kicker" style="margin-bottom:0.75rem">' + (isEvt ? 'Multi-day event' : 'Multi-day booking') + '</p>' +
         countLine +
         '<div style="display:flex;flex-wrap:wrap;gap:0.75rem">' +
-          '<button type="button" class="booking-button booking-button-secondary" data-action="add-another-session">+ Add another session</button>' +
+          '<button type="button" class="booking-button booking-button-secondary" data-action="add-another-session">+ Add another ' + unit + '</button>' +
           reviewBtn +
         '</div>' +
       '</div>';
@@ -429,6 +628,22 @@
       var discountLine = totals.addonDiscount > 0
         ? '<div class="summary-line summary-line-muted"><span>Multi-day add-on discount</span><span>−' + currency.format(totals.addonDiscount / 100) + '</span></div>'
         : '';
+      // Cleaning fee — MIRROR the server (create-checkout.js): $150 once when the
+      // cart is a multi-day event (an event with 2+ sessions) OR any session has
+      // 35+ attendees. Without this the on-site total ($X) would understate the
+      // Square charge ($X + $150) and the deposit would be computed too low.
+      var cartIsEventForFee = state.cart.sessions.some(function (s) { return s.eventIntent === "yes"; }) || state.eventIntent === "yes";
+      var feeSessionCount = priced.sessions.length;
+      var feeMaxAtt = parseCount(state.participants);
+      state.cart.sessions.forEach(function (s) {
+        var c = parseCount(s.perSessionIntake && s.perSessionIntake.participants);
+        if (c > feeMaxAtt) feeMaxAtt = c;
+      });
+      var cleaningCents = ((cartIsEventForFee && feeSessionCount >= 2) || feeMaxAtt >= 35) ? 15000 : 0;
+      var cleaningLine = cleaningCents > 0
+        ? '<div class="summary-line summary-line-muted"><span>Cleaning fee' + (cartIsEventForFee && feeSessionCount >= 2 ? ' (multi-day event)' : '') + '</span><span>' + currency.format(cleaningCents / 100) + '</span></div>'
+        : '';
+      var feeInclusiveTotal = totals.total + cleaningCents;
       totalsHtml =
         '<div class="booking-panel-soft p-5" style="margin-top:1rem">' +
           '<p class="ui-kicker" style="margin-bottom:1rem">Cart total</p>' +
@@ -436,15 +651,16 @@
             '<div class="summary-line"><span>Sessions</span><span>' + currency.format(totals.sessionTotal / 100) + '</span></div>' +
             '<div class="summary-line summary-line-muted"><span>Add-ons</span><span>' + currency.format(totals.addonTotalFull / 100) + '</span></div>' +
             discountLine +
+            cleaningLine +
             '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(totals.total / 100) + '</strong></span></div>' +
+            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(feeInclusiveTotal / 100) + '</strong></span></div>' +
           '</div>' +
-          renderCartDepositRow(totals) +
+          renderCartDepositRow(feeInclusiveTotal) +
         '</div>';
-      // Stash so updatePayButton can label the cart pay button.
+      // Stash so updatePayButton can label the cart pay button (fee-inclusive).
       state._grandTotal = (state.paymentMode === "deposit" && window.WWSPricing.depositSplit)
-        ? window.WWSPricing.depositSplit(totals.total).depositCents / 100
-        : totals.total / 100;
+        ? window.WWSPricing.depositSplit(feeInclusiveTotal).depositCents / 100
+        : feeInclusiveTotal / 100;
     }
 
     container.innerHTML =
@@ -514,21 +730,35 @@
     };
   }
 
+  // V3 item-6 (60/40 deposit + 40% auto-charge) is DARK on PRODUCTION until the
+  // auto-charge scheduler is armed (Andrew's money gate). The deposit UI promises
+  // the 40% balance is auto-charged 48h before the session, so it must not appear
+  // to real customers until that promise can actually be kept. Until then the
+  // deposit toggle renders on STAGING only; prod is full-payment. The server
+  // enforces the same rule (create-checkout forces paymentMode to full off-staging
+  // unless WWS_ITEM6_DEPOSIT_ARMED is set), so there is no way to reach the
+  // uncollectable-balance state on prod. Remove this gate when item-6 is armed.
+  function depositUiEnabled() {
+    try { return window.location.hostname.indexOf("staging.") === 0; } catch (e) { return false; }
+  }
+
   // Deposit option (V3 item 6) — pay 60% now — shown only when the cart contains
   // an event booking (deposit is event-only, enforced server-side too).
-  function renderCartDepositRow(totals) {
+  function renderCartDepositRow(totalCents) {
     var cartHasEvent = state.cart.sessions.some(function (s) { return s.eventIntent === "yes"; })
       || state.eventIntent === "yes"; // include the active draft
-    if (!cartHasEvent || !window.WWSPricing || !window.WWSPricing.depositSplit) {
-      if (state.paymentMode === "deposit") state.paymentMode = "full"; // can't deposit a non-event cart
+    if (!depositUiEnabled() || !cartHasEvent || !window.WWSPricing || !window.WWSPricing.depositSplit) {
+      if (state.paymentMode === "deposit") state.paymentMode = "full"; // can't deposit a non-event cart (or deposit UI is dark on prod)
       return "";
     }
-    var split = window.WWSPricing.depositSplit(totals.total);
+    // totalCents is the fee-inclusive cart total, so the 60/40 split matches the
+    // server (which computes the deposit on session + add-ons + cleaning fee).
+    var split = window.WWSPricing.depositSplit(totalCents);
     return '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
       '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
       '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
-        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(totals.total / 100) + '</span></label>' +
-        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (balance ' + currency.format(split.balanceDueCents / 100) + ' due 48h before)</span></label>' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + fmtMoney(totalCents / 100) + '</span></label>' +
+        '<label class="helper-item"><input type="radio" name="cart-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + fmtMoney(split.depositCents / 100) + ' (Balance ' + fmtMoney(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
       '</div>';
   }
 
@@ -571,6 +801,7 @@
   renderProgress();
   renderStepContent();
   bindEvents();
+  showGateOrFlow(); // Step-1 gate: show "What are you booking?" until a type is chosen (PV); TM auto-resolves.
   prefillFromAccount();
 
   trackEvent("booking_started", {
@@ -618,19 +849,30 @@
     setText("[data-location-description]", location.description);
     setText("[data-location-address]", location.address);
 
+    renderLocationPolicies();
+  }
+
+  // "Good to know" sidebar list. For a MULTI-DAY event the attendee-based cleaning
+  // clause is replaced by the multi-day one (Drew 2026-07-11: "It doesn't matter
+  // the total number of attendees anymore"). Re-rendered from renderStepContent so
+  // it updates the moment the customer chooses Multi-day event.
+  function renderLocationPolicies() {
     const policyList = document.querySelector("[data-location-policies]");
-    if (policyList) {
-      policyList.innerHTML = location.policies
-        .map(
-          (item) => `
-            <li class="helper-item">
-              <span class="helper-dot" style="background:${location.accent}"></span>
-              <span>${item}</span>
-            </li>
-          `
-        )
-        .join("");
-    }
+    if (!policyList) return;
+    var items = location.policies.map(function (item) {
+      if (state.eventMode === "multi" && /35 or more attendees/i.test(item)) {
+        return "Because this is a multi-day event, there is a mandatory $150 cleaning fee automatically added to the booking.";
+      }
+      return item;
+    });
+    policyList.innerHTML = items
+      .map(function (item) {
+        return '<li class="helper-item">' +
+          '<span class="helper-dot" style="background:' + location.accent + '"></span>' +
+          '<span>' + item + '</span>' +
+        '</li>';
+      })
+      .join("");
   }
 
   function bindEvents() {
@@ -642,8 +884,47 @@
 
       const action = actionTarget.dataset.action;
 
+      // Step-1 "What are you booking?" gate (Drew 2026-07-10).
+      if (action === "gate-choose") {
+        if (actionTarget.dataset.type === "photo") {
+          state.bookingType = "photo";
+          state.eventIntent = "no";
+          enterFlow();
+        } else if (actionTarget.dataset.type === "event") {
+          state._gateChoosingEventMode = true;
+          renderGate();
+        }
+        return;
+      }
+      if (action === "gate-event-mode") {
+        state.bookingType = "event";
+        state.eventMode = actionTarget.dataset.mode === "multi" ? "multi" : "single";
+        state.eventIntent = "yes";
+        state._gateChoosingEventMode = false;
+        enterFlow();
+        return;
+      }
+      if (action === "gate-back") {
+        state._gateChoosingEventMode = false;
+        renderGate();
+        return;
+      }
+
       if (action === "select-duration") {
         state.durationId = actionTarget.dataset.durationId;
+        // Multi-day RANGE flow: the pick is the DAY-ONE access time. Store it,
+        // rebuild the event if a range is already chosen, and go to the range
+        // calendar. Availability for this type loads on entering Step 2 (setStep).
+        if (state.eventMode === "multi") {
+          state._eventDurationId = state.durationId;
+          state.availableDates = [];
+          state.availableTimes = [];
+          state.selectedDate = "";
+          state.selectedTime = ""; // range flow never uses the single-slot fields
+          if (state._eventStartDate && state._eventEndDate) buildEventRangeCart();
+          setStep(2);
+          return;
+        }
         if (!currentDurationSupportsEvents()) {
           resetEventState();
         }
@@ -766,8 +1047,35 @@
 
       if (action === "select-date") {
         var date = actionTarget.dataset.date;
+        // Multi-day RANGE flow: first click sets the START, second sets the END
+        // (must be >= start) and auto-builds the event; an earlier second click
+        // restarts the range from there; a third click starts a fresh range.
+        if (state.eventMode === "multi") {
+          if (!state._eventStartDate || state._eventEndDate) {
+            state._eventStartDate = date;
+            state._eventEndDate = "";
+            state.cart.sessions = [];
+          } else if (date < state._eventStartDate) {
+            state._eventStartDate = date;
+          } else {
+            state._eventEndDate = date;
+            buildEventRangeCart();
+          }
+          trackEvent("date_selected", { location: location.slug, date: date, event_range: "multi" });
+          renderStepContent();
+          return;
+        }
         state.selectedDate = date;
         state.selectedTime = "";
+        // Multi-day event day: the start time is fixed by the day role + option,
+        // so we skip the time-slot picker and lock the slot, then show the
+        // confirmation + next-step buttons.
+        if (currentDayRole()) {
+          lockMultidaySlot();
+          trackEvent("date_selected", { location: location.slug, date: date });
+          renderStepContent();
+          return;
+        }
         var aptId = getAppointmentTypeID();
         if (aptId) fetchAvailableTimes(aptId, date);
         trackEvent("date_selected", { location: location.slug, date: date });
@@ -831,6 +1139,70 @@
         state._cartReviewing = true;
         renderStepContent();
         scrollToCart();
+        return;
+      }
+
+      // --- Multi-day event day-builder branch buttons (Drew 2026-07-11) --------
+      if (action === "md-add-multiple") {
+        // Commit the current day, then set up a MIDDLE full day ($980, 5 AM–10:30 PM).
+        commitActiveSessionToCart();
+        resetActiveDraft();
+        state._dayRole = "middle";
+        state.durationId = "pv-full";
+        state.selectedDate = "";
+        state.selectedTime = "";
+        state._multidayFixedTime = "";
+        state._cartReviewing = false;
+        setStep(2); // middle days have no length choice — go straight to the date
+        showToast("Day added. Pick the date for the next full day.");
+        return;
+      }
+      if (action === "md-add-last") {
+        // Commit the current day, then set up the LAST day (leave-time picker).
+        commitActiveSessionToCart();
+        resetActiveDraft();
+        state._dayRole = "last";
+        state.durationId = "";
+        state.selectedDate = "";
+        state.selectedTime = "";
+        state._multidayFixedTime = "";
+        state._cartReviewing = false;
+        setStep(1); // last day: pick the leave time first
+        showToast("Now set up your last day.");
+        return;
+      }
+      // Multi-day RANGE flow (Drew 2026-07-11): dates are picked as a start→end
+      // range; the cart is already auto-built by buildEventRangeCart, so review
+      // goes STRAIGHT to details (no active-draft commit — there is no draft).
+      if (action === "range-reset") {
+        state._eventStartDate = "";
+        state._eventEndDate = "";
+        state.cart.sessions = [];
+        renderStepContent();
+        return;
+      }
+      if (action === "range-review") {
+        if (!cartIsActive()) return; // both dates must be picked (cart built)
+        // Treat the built event as a cart in review: the checkout panel, cart
+        // summary, and pay button all key off (_cartReviewing && cartIsActive())
+        // since a range event has no single active slot (selectedTime stays "").
+        state._cartReviewing = true;
+        setStep(3); // Details (collect attendees once) → Waiver → Pay
+        showToast("Your event days are set. Now your details and payment.");
+        return;
+      }
+
+      if (action === "md-review") {
+        // Commit the last day, then send the customer through details → waiver →
+        // pay to collect the UNIVERSAL fields ONCE for the whole event (contact,
+        // attendees, waiver e-sign, card). The per-day builder only did Steps 1–2,
+        // so without this the flow dead-ends at review with a disabled pay button.
+        commitActiveSessionToCart();
+        resetActiveDraft();
+        state._dayRole = "";
+        state._cartReviewing = false;
+        setStep(3); // Details (collect attendees once) → Waiver → Pay
+        showToast("Your event days are set. Now your details and payment.");
         return;
       }
 
@@ -1088,6 +1460,15 @@
         return;
       }
 
+      // Multi-day RANGE flow: last-day early-checkout departure. Default pv-full
+      // (10:30 PM). Picking a shorter leave time rebuilds the event's last day.
+      if (target.matches("[data-action='set-last-day-leave']")) {
+        state._lastDayDurationId = target.value || "pv-full";
+        buildEventRangeCart();
+        renderStepContent();
+        return;
+      }
+
       if (target.matches("[data-check='cleanup']")) {
         state.acknowledgements.cleanup = target.checked;
         return;
@@ -1147,8 +1528,32 @@
     });
   }
 
+  // Range event: add-ons are picked once in Step 4 and mirrored onto the event's
+  // days. Discount-eligible gear (chairs, tables, walls, PA, TV, backdrops) stays
+  // up every day and tapers per the multi-day discount, so it goes on EVERY day.
+  // Flat add-ons that are once-per-event (Event Setup and Reset Crew, lighting)
+  // go on DAY 1 ONLY so they are charged once, not once per day.
+  function syncRangeAddons() {
+    if (state.eventMode !== "multi" || !state.cart.sessions.length) return;
+    var eligible = (window.WWSPricing && window.WWSPricing.isDiscountEligible)
+      ? window.WWSPricing.isDiscountEligible
+      : function () { return true; };
+    var src = state.addons || {};
+    state.cart.sessions.forEach(function (s, idx) {
+      var out = {};
+      Object.keys(src).forEach(function (id) {
+        // Day 1 carries every add-on; later days carry only the per-day gear.
+        if (idx === 0 || eligible(id)) out[id] = JSON.parse(JSON.stringify(src[id]));
+      });
+      s.addons = out;
+    });
+  }
+
   function renderStepContent() {
+    syncRangeAddons();
+    renderLocationPolicies();
     renderProgress();
+    renderMultidayIntro();
     renderDurations();
     renderEventStep();
     renderAddons();
@@ -1156,11 +1561,83 @@
     renderCheckoutPanel();
     renderWaiver();
     renderSummary();
+    renderMultidaySummary();
     renderCartBranch();
     renderCartSummary();
     renderStepVisibility();
     updateTermsGate();
     updateWaiverGate();
+  }
+
+  // Step-1 "What are you booking?" gate (Drew 2026-07-10). Rendered into
+  // [data-booking-gate]; two stages on PV: (A) Photo/Video vs Event, then for
+  // Event (B) Single-day vs Multi-day. TM is photo-only so it never gates.
+  function renderGate() {
+    var gate = document.querySelector("[data-booking-gate]");
+    if (!gate) return;
+    if (location.slug !== "powdersville" || state.bookingType) { gate.innerHTML = ""; return; }
+
+    if (state._gateChoosingEventMode) {
+      gate.innerHTML =
+        '<div class="booking-panel p-6 md:p-8">' +
+          '<p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 1</p>' +
+          '<h2 class="font-display text-4xl mt-3">Single-day or multi-day event?</h2>' +
+          '<div class="choice-grid is-two-up mt-8">' +
+            '<button type="button" class="booking-choice" data-action="gate-event-mode" data-mode="single">' +
+              '<h3 class="ui-display-sm">Single-day event</h3>' +
+              '<p class="ui-copy" style="margin-top:1rem">If your event will be started and completed on the same day for a set duration, select this option.</p>' +
+            '</button>' +
+            '<button type="button" class="booking-choice" data-action="gate-event-mode" data-mode="multi">' +
+              '<h3 class="ui-display-sm">Multi-day event</h3>' +
+              '<p class="ui-copy" style="margin-top:1rem">If your event is going to go overnight into the next day, select this option.</p>' +
+            '</button>' +
+          '</div>' +
+          '<div class="mt-8"><button type="button" class="booking-button booking-button-secondary" data-action="gate-back">Back</button></div>' +
+        '</div>';
+      return;
+    }
+
+    gate.innerHTML =
+      '<div class="booking-panel p-6 md:p-8">' +
+        '<p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 1</p>' +
+        '<h2 class="font-display text-4xl mt-3">What are you booking?</h2>' +
+        '<div class="choice-grid is-two-up mt-8">' +
+          '<button type="button" class="booking-choice" data-action="gate-choose" data-type="photo">' +
+            '<h3 class="ui-display-sm">Photo / video session</h3>' +
+            '<p class="ui-copy" style="margin-top:1rem">Standard photo, video, or production session.</p>' +
+            '<p class="ui-copy" style="margin-top:0.75rem;color:rgba(0,0,0,0.55);font-size:0.85rem">If you will be booking a multi-day photo/video session, please select Event.</p>' +
+          '</button>' +
+          '<button type="button" class="booking-choice" data-action="gate-choose" data-type="event">' +
+            '<h3 class="ui-display-sm">Event</h3>' +
+            '<p class="ui-copy" style="margin-top:1rem">Parties, receptions, workshops, and gatherings, on a single day or across multiple days.</p>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // Toggle between the gate and the numbered flow based on state.bookingType.
+  // TM (photo-only) auto-resolves to "photo" so it never sees the gate.
+  function showGateOrFlow() {
+    if (location.slug !== "powdersville" && !state.bookingType) {
+      state.bookingType = "photo";
+      state.eventIntent = "no";
+    }
+    var gated = !state.bookingType;
+    var gate = document.querySelector("[data-booking-gate]");
+    if (gate) gate.style.display = gated ? "" : "none";
+    document.querySelectorAll("[data-flow-region]").forEach(function (el) {
+      el.style.display = gated ? "none" : "";
+    });
+    if (gated) renderGate();
+  }
+
+  // Commit a gate choice and reveal the numbered flow at step 1.
+  function enterFlow() {
+    showGateOrFlow();
+    trackEvent("booking_type_chosen", {
+      location: location.slug, bookingType: state.bookingType, eventMode: state.eventMode
+    });
+    setStep(1);
   }
 
   function renderLocationSwitcher() {
@@ -1245,9 +1722,94 @@
     fill.style.width = fillPct + "%";
   }
 
+  // Multi-day event FIRST-DAY start-time options (Drew 2026-07-11). The first day
+  // of a multi-day event ends at 10:30 PM; the customer picks how early they come
+  // in (which sets the duration + price). These start times map 1:1 to the
+  // existing PV durations by price, so selecting one is still a normal duration
+  // selection under the hood ($130=1hr … $980=full). Includes their setup time.
+  var FIRST_DAY_START_LABEL = {
+    "pv-1": "9:00 PM", "pv-2": "8:00 PM", "pv-3": "7:00 PM", "pv-4": "6:00 PM",
+    "pv-6": "4:00 PM", "pv-8": "2:00 PM", "pv-full": "5:00 AM"
+  };
+  // 24h start time per first-day option (for locking the slot; access ends 10:30 PM).
+  var FIRST_DAY_START_24 = {
+    "pv-1": "21:00", "pv-2": "20:00", "pv-3": "19:00", "pv-4": "18:00",
+    "pv-6": "16:00", "pv-8": "14:00", "pv-full": "05:00"
+  };
+  // LAST day (Drew 2026-07-11): access starts 5 AM, pick a LEAVE time = first-day
+  // prices mirrored. Leave time = 5 AM + the duration the price implies.
+  var LAST_DAY_LEAVE_LABEL = {
+    "pv-1": "6:30 AM", "pv-2": "7:30 AM", "pv-3": "8:30 AM", "pv-4": "9:30 AM",
+    "pv-6": "11:30 AM", "pv-8": "1:30 PM", "pv-full": "10:30 PM"
+  };
+  var LAST_DAY_LEAVE_24 = {
+    "pv-1": "06:30", "pv-2": "07:30", "pv-3": "08:30", "pv-4": "09:30",
+    "pv-6": "11:30", "pv-8": "13:30", "pv-full": "22:30"
+  };
+  var LAST_DAY_START_24 = "05:00";
+
+  // Which day of a multi-day event is being configured: "first" (cart empty),
+  // else state._dayRole ("middle" | "last") set when a day is added.
+  function currentDayRole() {
+    if (state.eventMode !== "multi") return null;
+    if (!cartIsActive()) return "first";
+    // _dayRole is set explicitly when a day is added; "" (e.g. after review)
+    // means we are no longer configuring a day → not a day-builder screen.
+    return state._dayRole || null;
+  }
+  // True while configuring the FIRST day of a multi-day event (cart still empty).
+  function isMultidayFirstDay() {
+    return currentDayRole() === "first";
+  }
+
   function renderDurations() {
     const container = document.querySelector("[data-duration-options]");
     if (!container) {
+      return;
+    }
+
+    // Multi-day event (Airbnb-style RANGE flow, Drew 2026-07-11): Step 1 is the
+    // DAY-ONE access-time picker. Middle days ($980 full) and the last day are
+    // auto-built from the date range in Step 2 — no per-day duration choice.
+    if (state.eventMode === "multi") {
+      container.innerHTML = location.durations
+        .filter(function (d) { return FIRST_DAY_START_LABEL[d.id]; })
+        .map(function (duration) {
+          var isActive = duration.id === state._eventDurationId;
+          var lbl = FIRST_DAY_START_LABEL[duration.id];
+          var priceTag = duration.price ? currency.format(duration.price) : "";
+          return '<button type="button" class="booking-choice duration-pill ' + (isActive ? "is-active" : "") + '" data-action="select-duration" data-duration-id="' + duration.id + '" aria-pressed="' + isActive + '">' +
+            '<span class="duration-pill-label">' + lbl + ' &mdash; Day 1 Access Time' + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
+          '</button>';
+        }).join("");
+      return;
+    }
+
+    // Multi-day event: render a day-role-specific picker instead of raw durations.
+    var mdRole = currentDayRole();
+    if (mdRole === "middle") {
+      // Middle days are always a full day, $980 (Drew). No choice to make.
+      var full = location.durations.find(function (d) { return d.id === "pv-full"; });
+      container.innerHTML =
+        '<div class="booking-choice duration-pill is-active" style="cursor:default">' +
+          '<span class="duration-pill-label">Full day' + (full ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + currency.format(full.price) + '</span>' : '') + '</span>' +
+        '</div>';
+      return;
+    }
+    if (mdRole === "first" || mdRole === "last") {
+      var isLast = mdRole === "last";
+      var labelMap = isLast ? LAST_DAY_LEAVE_LABEL : FIRST_DAY_START_LABEL;
+      var suffix = isLast ? ' &mdash; Leave Time' : ' &mdash; Day 1 Access Time';
+      container.innerHTML = location.durations
+        .filter(function (d) { return labelMap[d.id]; })
+        .map(function (duration) {
+          var isActive = duration.id === state.durationId;
+          var lbl = labelMap[duration.id];
+          var priceTag = duration.price ? currency.format(duration.price) : "";
+          return '<button type="button" class="booking-choice duration-pill ' + (isActive ? "is-active" : "") + '" data-action="select-duration" data-duration-id="' + duration.id + '" aria-pressed="' + isActive + '">' +
+            '<span class="duration-pill-label">' + lbl + suffix + (priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : '') + '</span>' +
+          '</button>';
+        }).join("");
       return;
     }
 
@@ -1371,15 +1933,248 @@
     var container = document.querySelector("[data-schedule-step]");
     if (!container) return;
 
+    // Multi-day RANGE flow (Drew 2026-07-11): one calendar for the whole event —
+    // pick the start date then the end date; the days auto-build. Bypasses the
+    // per-day builder entirely.
+    if (state.eventMode === "multi") {
+      var rTitle = document.querySelector("[data-step2-title]");
+      var rSub = document.querySelector("[data-step2-sub]");
+      if (rTitle && rSub) {
+        rTitle.textContent = "Choose Your Event Dates";
+        rSub.textContent = "Pick the day your event starts, then the day it ends. Access begins at your Day 1 time and runs continuously through the last day.";
+      }
+      var rNav = document.querySelector("[data-step2-nav]");
+      if (rNav) rNav.style.display = "none";
+      if (!getAppointmentTypeID()) {
+        container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Choose your Day 1 access time first to see available dates.</p></div>';
+        return;
+      }
+      container.innerHTML = renderCalendar() + renderRangeControls();
+      return;
+    }
+
+    var mdRole = currentDayRole();
+
+    // Step-2 heading — Drew's multi-day copy per day role; restored otherwise.
+    var title = document.querySelector("[data-step2-title]");
+    var sub = document.querySelector("[data-step2-sub]");
+    if (title && sub) {
+      if (mdRole === "first") {
+        title.textContent = "Choose the First Day Of Your Event";
+        sub.textContent = "Pick the day your event begins. Your access time is already set from the last step.";
+      } else if (mdRole === "last") {
+        title.textContent = "Choose the Last Day Of Your Event";
+        sub.textContent = "Pick the final day. Access starts at 5:00 AM and you leave at the time you selected.";
+      } else if (mdRole === "middle") {
+        title.textContent = "Add a Full Day To Your Event";
+        sub.textContent = "Pick the date for this full day. Your access carries through continuously into the next day.";
+      } else {
+        title.innerHTML = "Pick a date &amp; time";
+        sub.textContent = "Select an available date and time for your session.";
+      }
+    }
+
+    // Multi-day days navigate via the confirmation buttons, not the static
+    // "Continue to session details" nav — hide it (the whole event goes to
+    // details/pay once, at review).
+    var nav = document.querySelector("[data-step2-nav]");
+    if (nav) nav.style.display = mdRole ? "none" : "";
+
     var appointmentTypeID = getAppointmentTypeID();
     if (!appointmentTypeID) {
       container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a duration first to see availability.</p></div>';
       return;
     }
 
+    // Multi-day: date only (start time is locked from the day picker), then a
+    // confirmation line + the day-role-appropriate next-step buttons (Drew).
+    if (mdRole) {
+      container.innerHTML = renderCalendar() + renderMultidayConfirm(mdRole);
+      return;
+    }
+
     container.innerHTML =
       renderCalendar() +
       renderTimeSlots();
+  }
+
+  // Multi-day: the "Confirming: …" line + the next-step buttons, shown once a
+  // date is picked (Drew 2026-07-11).
+  function renderMultidayConfirm(role) {
+    if (!state.selectedDate) return '';
+    var dp = state.selectedDate.split("-");
+    var human = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
+      .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    var t = state._multidayFixedTime || "";
+    var line, buttons;
+    if (role === "first") {
+      line = 'Confirming: your event session starts on <strong>' + escapeHtml(human) +
+        '</strong>, and you have initial access to the venue starting at <strong>' + escapeHtml(t) + '</strong>.';
+      buttons =
+        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Choose multiple more days</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">Choose the last day</button>';
+    } else if (role === "middle") {
+      line = 'Confirming: a full day on <strong>' + escapeHtml(human) + '</strong>, going into the next day continuously.';
+      buttons =
+        '<button type="button" class="booking-button booking-button-secondary" data-action="md-add-multiple">Choose more additional days</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-add-last">Move forward to the last day</button>';
+    } else { // last
+      line = 'Confirming: your last day is <strong>' + escapeHtml(human) +
+        '</strong> — access starts at 5:00 AM and you leave at <strong>' + escapeHtml(t) +
+        '</strong>, with everything completely reset and cleaned up.';
+      buttons =
+        '<button type="button" class="booking-button booking-button-primary" data-action="md-review">Review your event</button>';
+    }
+    return '<div class="booking-panel-soft p-5 mt-5">' +
+      '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.75)">' + line + '</p>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:0.75rem">' + buttons + '</div>' +
+    '</div>';
+  }
+
+  // America/New_York UTC offset ("-04:00" EDT / "-05:00" EST) for a YYYY-MM-DD
+  // date. Acuity requires ISO 8601 WITH the ET offset (see api/_lib/acuity.js) —
+  // a naive datetime would be read as UTC on the server and misbook the time.
+  function etOffsetForDate(dateStr) {
+    var noonUTC = new Date(dateStr + "T12:00:00Z");
+    var etD = new Date(noonUTC.toLocaleString("en-US", { timeZone: "America/New_York", hour12: false }));
+    var utcD = new Date(noonUTC.toLocaleString("en-US", { timeZone: "UTC", hour12: false }));
+    var offMin = Math.round((etD - utcD) / 60000);
+    var sign = offMin < 0 ? "-" : "+";
+    var abs = Math.abs(offMin);
+    return sign + String(Math.floor(abs / 60)).padStart(2, "0") + ":" + String(abs % 60).padStart(2, "0");
+  }
+
+  // Lock the booking slot for a multi-day day: start time is fixed by the day
+  // role + picked option (not a free time-slot pick). Sets selectedTime (booking
+  // start datetime, ISO 8601 + ET offset) + the label shown in the confirmation.
+  function lockMultidaySlot() {
+    var role = currentDayRole();
+    if (!role || !state.selectedDate) return;
+    var start24, label;
+    if (role === "first") {
+      start24 = FIRST_DAY_START_24[state.durationId] || "12:00";
+      label = FIRST_DAY_START_LABEL[state.durationId] || "";
+    } else if (role === "middle") {
+      start24 = "05:00"; label = "5:00 AM";
+    } else { // last: access starts 5 AM, they leave at the picked time
+      start24 = LAST_DAY_START_24;
+      label = LAST_DAY_LEAVE_LABEL[state.durationId] || "";
+    }
+    state.selectedTime = state.selectedDate + "T" + start24 + ":00" + etOffsetForDate(state.selectedDate);
+    state._multidayFixedTime = label;
+  }
+
+  // --- Airbnb-style multi-day RANGE flow (Drew 2026-07-11) ------------------
+  // Inclusive list of "YYYY-MM-DD" from start to end.
+  function datesInRange(startYmd, endYmd) {
+    var out = [];
+    if (!startYmd || !endYmd) return out;
+    var d = new Date(startYmd + "T12:00:00Z");
+    var e = new Date(endYmd + "T12:00:00Z");
+    while (d <= e) { out.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); }
+    return out;
+  }
+  function makeRangeSession(ymd, durationId, start24, timeLabel, role, prevAddons) {
+    return {
+      location: location.slug,
+      durationId: durationId,
+      selectedDate: ymd,
+      selectedTime: ymd + "T" + start24 + ":00" + etOffsetForDate(ymd),
+      eventIntent: "yes",
+      addons: prevAddons ? JSON.parse(JSON.stringify(prevAddons)) : {},
+      foodDrinks: null,
+      perSessionIntake: { participants: "", business: "", eventDescription: "" },
+      _mdRole: role,
+      _mdTimeLabel: timeLabel
+    };
+  }
+  // Auto-build the whole event from the day-one access time + the picked date
+  // range: day 1 = access time, middle days = full ($980), last day = full by
+  // default (10:30 PM departure) unless early-checkout shortened it. Preserves any
+  // per-day add-ons already chosen (matched by date) on a rebuild.
+  function buildEventRangeCart() {
+    if (!state._eventStartDate || !state._eventEndDate || !state._eventDurationId) return;
+    var prevByDate = {};
+    state.cart.sessions.forEach(function (s) { prevByDate[s.selectedDate] = s.addons; });
+    var dates = datesInRange(state._eventStartDate, state._eventEndDate);
+    var sessions = dates.map(function (ymd, i) {
+      if (i === 0) {
+        return makeRangeSession(ymd, state._eventDurationId,
+          FIRST_DAY_START_24[state._eventDurationId] || "12:00",
+          FIRST_DAY_START_LABEL[state._eventDurationId] || "", "first", prevByDate[ymd]);
+      }
+      if (i === dates.length - 1) {
+        var lastId = state._lastDayDurationId || "pv-full";
+        var leaveLabel = lastId === "pv-full" ? "10:30 PM" : (LAST_DAY_LEAVE_LABEL[lastId] || "10:30 PM");
+        return makeRangeSession(ymd, lastId, LAST_DAY_START_24, leaveLabel, "last", prevByDate[ymd]);
+      }
+      return makeRangeSession(ymd, "pv-full", "05:00", "5:00 AM", "middle", prevByDate[ymd]);
+    });
+    state.cart.sessions = sessions;
+  }
+
+  // The panel below the range calendar: prompts through start→end selection, then
+  // the day breakdown + last-day early-checkout + the "review & pay" CTA (Drew).
+  function renderRangeControls() {
+    function human(ymd) {
+      if (!ymd) return "";
+      var p = ymd.split("-");
+      return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+        .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    }
+    var s = state._eventStartDate, e = state._eventEndDate;
+    if (!s) {
+      return '<div class="booking-panel-soft p-5 mt-5"><p class="ui-copy" style="color:rgba(0,0,0,0.75)">Tap the day your event <strong>starts</strong>. Then tap the day it <strong>ends</strong> to set the full range.</p></div>';
+    }
+    if (!e) {
+      return '<div class="booking-panel-soft p-5 mt-5">' +
+        '<p class="ui-copy" style="margin-bottom:1rem;color:rgba(0,0,0,0.75)">Event starts <strong>' + escapeHtml(human(s)) + '</strong>. Now tap the day your event <strong>ends</strong> (a later date on the calendar).</p>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="range-reset">Start over</button>' +
+      '</div>';
+    }
+    // Both endpoints picked — the event is auto-built. Show the breakdown.
+    var days = datesInRange(s, e);
+    var n = days.length;
+    var accessLabel = FIRST_DAY_START_LABEL[state._eventDurationId] || "";
+    var lastId = state._lastDayDurationId || "pv-full";
+    var leaveLabel = lastId === "pv-full" ? "10:30 PM" : (LAST_DAY_LEAVE_LABEL[lastId] || "10:30 PM");
+
+    var lines;
+    if (n === 1) {
+      lines = '<li><strong>' + escapeHtml(human(s)) + '</strong> — access from <strong>' + escapeHtml(accessLabel) + '</strong> to 10:30 PM</li>';
+    } else {
+      lines = '<li>Day 1 (<strong>' + escapeHtml(human(s)) + '</strong>) — access from <strong>' + escapeHtml(accessLabel) + '</strong> through the evening</li>';
+      if (n > 2) lines += '<li>' + (n - 2) + ' full day' + (n - 2 === 1 ? '' : 's') + ' in between — continuous 24-hour access</li>';
+      lines += '<li>Last day (<strong>' + escapeHtml(human(e)) + '</strong>) — access all day, leave by <strong>' + escapeHtml(leaveLabel) + '</strong> with studio fully reset</li>';
+    }
+
+    var earlyCheckout = "";
+    if (n >= 2) {
+      var leaveOpts = ["pv-full", "pv-8", "pv-6", "pv-4", "pv-3", "pv-2", "pv-1"].map(function (id) {
+        var dur = location.durations.find(function (x) { return x.id === id; });
+        var price = dur && dur.price ? currency.format(dur.price) : "";
+        var lbl = id === "pv-full" ? "Stay all day — leave 10:30 PM" : "Early checkout — leave " + LAST_DAY_LEAVE_LABEL[id];
+        return '<option value="' + id + '"' + (id === lastId ? " selected" : "") + '>' + lbl + (price ? " (" + price + ")" : "") + '</option>';
+      }).join("");
+      earlyCheckout =
+        '<label class="ui-copy-strong" style="display:block;margin-bottom:0.35rem">Last day departure</label>' +
+        '<select class="booking-input" data-action="set-last-day-leave" style="margin-bottom:1rem;width:100%">' + leaveOpts + '</select>';
+    }
+
+    var cleaningNote = n >= 2
+      ? '<p class="ui-copy-muted" style="margin-bottom:1rem;font-size:0.85rem">Because this is a multi-day event, there is a mandatory $150 cleaning fee automatically added to the booking.</p>'
+      : '';
+
+    return '<div class="booking-panel-soft p-5 mt-5">' +
+      '<p class="ui-kicker" style="margin-bottom:0.75rem">Your event &mdash; ' + n + ' day' + (n === 1 ? '' : 's') + '</p>' +
+      '<ul class="ui-copy" style="margin:0 0 1rem 1.1rem;color:rgba(0,0,0,0.75);list-style:disc">' + lines + '</ul>' +
+      earlyCheckout +
+      cleaningNote +
+      '<div style="display:flex;flex-wrap:wrap;gap:0.75rem">' +
+        '<button type="button" class="booking-button booking-button-secondary" data-action="range-reset">Change dates</button>' +
+        '<button type="button" class="booking-button booking-button-primary" data-action="range-review">Review your event &amp; add details</button>' +
+      '</div>' +
+    '</div>';
   }
 
   function renderCalendar() {
@@ -1395,6 +2190,12 @@
       .map(function (d) { return '<span class="calendar-day-header">' + d + '</span>'; })
       .join("");
 
+    // RANGE mode (multi-day event): highlight the picked start→end span. Endpoints
+    // read as selected; in-between days get a lighter in-range highlight even when
+    // they have no standalone Acuity slot (the event is one continuous hold).
+    var rangeMode = state.eventMode === "multi";
+    var rStart = state._eventStartDate, rEnd = state._eventEndDate;
+
     var cells = "";
     for (var i = 0; i < firstDay; i++) {
       cells += '<span class="calendar-day is-empty"></span>';
@@ -1402,10 +2203,13 @@
     for (var d = 1; d <= daysInMonth; d++) {
       var dateStr = state.calendarMonth + "-" + String(d).padStart(2, "0");
       var isAvailable = state.availableDates.indexOf(dateStr) !== -1;
-      var isSelected = dateStr === state.selectedDate;
       var isPast = dateStr < today;
+      var isEndpoint = rangeMode && (dateStr === rStart || (rEnd && dateStr === rEnd));
+      var inRange = rangeMode && rStart && rEnd && dateStr > rStart && dateStr < rEnd;
+      var isSelected = rangeMode ? isEndpoint : (dateStr === state.selectedDate);
       var cls = "calendar-day";
       if (isSelected) cls += " is-selected";
+      else if (inRange) cls += " is-in-range";
       else if (isAvailable && !isPast) cls += " is-available";
       else cls += " is-unavailable";
       if (dateStr === today) cls += " is-today";
@@ -1549,7 +2353,8 @@
     // When deposit is selected the charge becomes 60% of the total (the rest is
     // captured 48h before via the saved card, server-side). depositSplit lives
     // in pricing-shared so the displayed amount matches the server recompute.
-    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive() && !isComp;
+    // Deposit UI is dark on prod until item-6 is armed (see depositUiEnabled).
+    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive() && !isComp && depositUiEnabled();
     var depositHtml = '';
     var chargeTotal = grandTotal;
     if (isSingleEvent && window.WWSPricing && window.WWSPricing.depositSplit) {
@@ -1561,8 +2366,8 @@
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
         '<p class="ui-copy-strong" style="margin-bottom:0.5rem">Payment option</p>' +
         '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
-          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + currency.format(grandTotal) + '</span></label>' +
-          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + currency.format(split.depositCents / 100) + ' (balance ' + currency.format(split.balanceDueCents / 100) + ' due 48h before)</span></label>' +
+          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="full"' + (state.paymentMode !== "deposit" ? " checked" : "") + '><span>Pay in full now — ' + fmtMoney(grandTotal) + '</span></label>' +
+          '<label class="helper-item"><input type="radio" name="single-payment-mode" data-action="set-payment-mode" data-mode="deposit"' + (state.paymentMode === "deposit" ? " checked" : "") + '><span>Pay 60% deposit now — ' + fmtMoney(split.depositCents / 100) + ' (Balance ' + fmtMoney(split.balanceDueCents / 100) + ' will be auto-charged to the card on file 48 hours before session start)</span></label>' +
         '</div>';
     } else if (state.paymentMode === "deposit") {
       // Non-event single session can't deposit — fall back to full.
@@ -1581,7 +2386,7 @@
         cleaningFeeHtml +
         couponLineHtml +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-        '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + currency.format(grandTotal) + '</strong></span></div>' +
+        '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(grandTotal) + '</strong></span></div>' +
       '</div>' +
       depositHtml +
       renderCouponRow() +
@@ -1624,7 +2429,10 @@
     var paySection = document.querySelector("[data-payment-section]");
     var compSection = document.querySelector("[data-comp-section]");
 
-    if (!state.selectedTime) {
+    // Payable when there's an active slot OR we're reviewing a built cart/event
+    // (a multi-day range event has no single active slot — the cart IS the order).
+    var payableCart = state._cartReviewing && cartIsActive();
+    if (!state.selectedTime && !payableCart) {
       container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Select a date and time in Step 2 to see your order summary.</p></div>';
       if (paySection) paySection.hidden = true;
       if (compSection) compSection.hidden = true;
@@ -1768,7 +2576,7 @@
     if (state.isSubmitting) {
       btn.textContent = "Processing…";
     } else if (typeof total === "number") {
-      btn.textContent = (depositMode ? "Pay deposit & Book — " : "Pay & Book — ") + currency.format(total);
+      btn.textContent = (depositMode ? "Pay deposit & Book — " : "Pay & Book — ") + fmtMoney(total);
     } else {
       btn.textContent = "Pay & Book";
     }
@@ -1852,7 +2660,7 @@
       alert(errors[0]); // Show first error
       // Navigate to the earliest incomplete step
       if (!state.durationId) { setStep(1); return; }
-      if (!state.selectedTime) { setStep(2); return; }
+      if (!hasBookableSlot()) { setStep(2); return; }
       if (!state.contact.firstName || !state.contact.email || !isTermsAccepted()) { setStep(3); return; }
       if (!state.waiverSigned) { setStep(4); return; }
       return;
@@ -2101,6 +2909,7 @@
       : 'Event? How many people will you have? <strong>If this is a photo/video session, leave this blank.</strong>';
 
     container.innerHTML = `
+      ${!state.bookingType ? `
       <p class="ui-copy" style="margin-bottom:1.5rem;color:rgba(0,0,0,0.55)">Events are allowed for 2-hour sessions and longer.</p>
       <div class="choice-grid is-two-up">
         <button type="button" class="booking-choice ${state.eventIntent === "no" ? "is-active" : ""}" data-action="set-event-intent" data-value="no" aria-pressed="${state.eventIntent === "no"}">
@@ -2115,6 +2924,7 @@
           ${isOneHour ? '<p class="ui-copy" style="margin-top:0.5rem;color:rgba(0,0,0,0.6);font-size:0.8rem">(Not eligible for events)</p>' : ""}
         </button>
       </div>
+      ` : ""}
 
       ${state.eventIntent === "yes" ? `
       <div style="margin-top:1.5rem">
@@ -2248,8 +3058,11 @@
       state.eventIntent === "no" && /^\d+$/.test(state.participants.trim())
         ? '<div class="warning-card" style="margin-top:1rem">Looks like you have attendees — did you mean to select "Event booking" above? If this is a photo/video session, leave this blank.</div>'
         : "";
+    // The 35+ cleaning-fee disclaimer is only relevant on the SINGLE-day path,
+    // where headcount triggers it. A multi-day event always has the $150 fee baked
+    // in regardless of attendees, so the disclaimer is redundant there (Drew 2026-07-11).
     var capacityNotice =
-      /^\d+$/.test(state.participants.trim()) && count >= 35
+      state.eventMode !== "multi" && /^\d+$/.test(state.participants.trim()) && count >= 35
         ? '<div class="warning-card" style="margin-top:1rem">For events with 35+ attendees, a $150 cleaning fee is automatically included.</div>'
         : "";
 
@@ -2293,6 +3106,16 @@
       return !addon.eventsOnly || state.eventIntent === "yes";
     });
 
+    // Display order (Drew 2026-07-11): chairs, tables, TV, PA, walls, backdrops,
+    // lighting, then the Event Setup and Reset Crew last. Ids not listed keep their
+    // config order after these. Order is display-only (logic keys off addon.id).
+    var ADDON_ORDER = ["chairs", "tables", "tv", "pa-system", "rolling-walls", "backdrops", "lighting", "setup-crew"];
+    visibleAddons.sort(function (a, b) {
+      var ia = ADDON_ORDER.indexOf(a.id); if (ia === -1) ia = ADDON_ORDER.length;
+      var ib = ADDON_ORDER.indexOf(b.id); if (ib === -1) ib = ADDON_ORDER.length;
+      return ia - ib;
+    });
+
     container.innerHTML = visibleAddons.map(renderAddonCard).join("");
 
     container.querySelectorAll(".backdrop-carousel").forEach(function (el) {
@@ -2303,8 +3126,75 @@
     });
   }
 
+  // Placement dropdowns for an add-on that requires them (Event Setup and Reset
+  // Crew): shown once selected. Extracted so both the standard toggle control and
+  // the featured card can render them. Returns "" when not applicable.
+  function renderPlacementRows(addon, addonState) {
+    if (!addon.requiresPlacements || !addonState.selected || !Array.isArray(addon.placementItems)) return "";
+    var placements = addonState.placements || {};
+    var rows = addon.placementItems.map(function (item) {
+      var chosen = placements[item.id] || "";
+      var opts = ['<option value="" disabled ' + (chosen ? "" : "selected") + '>Select...</option>']
+        .concat(item.options.map(function (opt) {
+          return '<option value="' + escapeHtml(opt) + '"' + (chosen === opt ? " selected" : "") + ">" + escapeHtml(opt) + "</option>";
+        }))
+        .join("");
+      return `
+        <label class="ui-field" style="display:block;margin-top:0.75rem">
+          <span class="ui-copy-strong">${escapeHtml(item.label)}</span>
+          <select class="booking-input" data-action="set-placement" data-addon-id="${addon.id}" data-placement-id="${item.id}" style="margin-top:0.35rem">
+            ${opts}
+          </select>
+        </label>`;
+    }).join("");
+    return `
+      <div class="addon-placements" style="margin-top:1rem">
+        <p class="ui-copy-strong">Tell our crew where each item should go:</p>
+        ${rows}
+      </div>
+    `;
+  }
+
+  // Featured add-on card (Event Setup and Reset Crew, Drew 2026-07-11): one large
+  // square, stacked on the HORIZONTAL axis — header (title, subtitle, optional +
+  // price pills) on top, then a full-width photo, then the full-width description,
+  // ending in a large plain pill button (no photo inside it). Placement dropdowns
+  // appear under the button once added.
+  function renderFeaturedAddonCard(addon, addonState) {
+    const tagline = addon.tagline
+      ? '<p class="addon-card-tagline">' + escapeHtml(addon.tagline) + '</p>'
+      : '';
+    const added = addonState.selected;
+    return `
+      <article class="addon-card addon-card-featured" data-addon-card-id="${addon.id}">
+        <div class="addon-card-content addon-featured-head">
+          <div>
+            <h3 class="ui-display-sm">${addon.name}</h3>
+            ${tagline}
+          </div>
+          <div class="addon-featured-pills">
+            <span class="summary-pill" style="border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)">Optional</span>
+            <span class="summary-pill" style="border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)">${currency.format(addon.price)}</span>
+          </div>
+        </div>
+        <img class="addon-featured-photo" src="${addon.image}" alt="${escapeHtml(addon.name)}">
+        <div class="addon-card-content">
+          <p class="ui-copy">${formatAddonDescription(addon)}</p>
+          <button type="button" class="booking-button ${added ? "booking-button-secondary" : "booking-button-primary"} addon-featured-btn" data-action="toggle-addon" data-addon-id="${addon.id}">
+            ${added ? "Added to your booking &#10003; — tap to remove" : "Add the Setup/Reset Crew to your booking"}
+          </button>
+          ${renderPlacementRows(addon, addonState)}
+        </div>
+      </article>
+    `;
+  }
+
   function renderAddonCard(addon) {
     const addonState = state.addons[addon.id];
+
+    // Featured add-on gets a bespoke full-width, vertically-stacked layout.
+    if (addon.featured) return renderFeaturedAddonCard(addon, addonState);
+
     const priceLine = getAddonPriceLine(addon);
     const controls = renderAddonControls(addon, addonState);
 
@@ -2347,30 +3237,7 @@
       `;
       // Placement dropdowns (e.g. Event Setup and Reset Crew): when selected, the
       // customer must say where each studio item should go. Required before pay.
-      if (addon.requiresPlacements && addonState.selected && Array.isArray(addon.placementItems)) {
-        var placements = addonState.placements || {};
-        var rows = addon.placementItems.map(function (item) {
-          var chosen = placements[item.id] || "";
-          var opts = ['<option value="" disabled ' + (chosen ? "" : "selected") + '>Select...</option>']
-            .concat(item.options.map(function (opt) {
-              return '<option value="' + escapeHtml(opt) + '"' + (chosen === opt ? " selected" : "") + ">" + escapeHtml(opt) + "</option>";
-            }))
-            .join("");
-          return `
-            <label class="ui-field" style="display:block;margin-top:0.75rem">
-              <span class="ui-copy-strong">${escapeHtml(item.label)}</span>
-              <select class="booking-input" data-action="set-placement" data-addon-id="${addon.id}" data-placement-id="${item.id}" style="margin-top:0.35rem">
-                ${opts}
-              </select>
-            </label>`;
-        }).join("");
-        toggleHtml += `
-          <div class="addon-placements" style="margin-top:1rem">
-            <p class="ui-copy-strong">Tell our crew where each item should go:</p>
-            ${rows}
-          </div>
-        `;
-      }
+      toggleHtml += renderPlacementRows(addon, addonState);
       return toggleHtml;
     }
 
@@ -2553,7 +3420,7 @@
     const cleaningFeeAmount = cleaningFee ? cleaningFee.amount : 0;
     const sessionPrice = selectedDuration && selectedDuration.price ? selectedDuration.price : 0;
     const grandTotal = sessionPrice + addonTotal + cleaningFeeAmount;
-    total.textContent = currency.format(grandTotal);
+    total.textContent = fmtMoney(grandTotal);
   }
 
   function renderStepVisibility() {
@@ -2952,7 +3819,7 @@
   // Step 5 (Add-ons & Pay): add-ons are optional, Pay & Book button here
   function isStepComplete(step) {
     if (step === 1) return Boolean(state.durationId);
-    if (step === 2) return Boolean(state.selectedDate && state.selectedTime);
+    if (step === 2) return Boolean((state.selectedDate && state.selectedTime) || hasBookableSlot());
     if (step === 3) {
       if (!state.eventIntent) return false;
       var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.leadSource && isTermsAccepted() && state.intake.readEmail);
@@ -2988,7 +3855,7 @@
   function getValidationErrors() {
     var errors = [];
     if (!state.durationId) errors.push("Please select a duration.");
-    if (!state.selectedTime) errors.push("Please select a date and time.");
+    if (!hasBookableSlot()) errors.push("Please select a date and time.");
     if (!state.eventIntent) errors.push("Please select photo/video session or event booking.");
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");

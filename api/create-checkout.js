@@ -46,6 +46,7 @@ const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
 const { notifyOwnerSMS, notifyOwnerCompSMS } = require("./_lib/notify-sms");
 const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
+const { notifyMultidayEvent } = require("./_lib/notify-multiday");
 const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 const sbDB = require("./_lib/supabase");
@@ -923,7 +924,17 @@ async function handleCartCheckout(req, res, body) {
   const cardholderName = universal.cardholderName || body.cardholderName || "";
   const squareToken = universal.squareToken || body.squareToken;
   const clientIdempotencyKey = universal.clientIdempotencyKey || body.clientIdempotencyKey;
-  const paymentMode = (body.paymentMode === "deposit") ? "deposit" : "full";
+  // V3 item-6 (60/40 deposit + 40% auto-charge) is DARK on production until the
+  // auto-charge scheduler is armed (Andrew's money gate). A deposit collects only
+  // 60% now and relies on the (currently dark) scheduler to auto-charge the 40%
+  // later, so allowing it on prod would leave an uncollectable balance. Force
+  // full payment off-staging unless WWS_ITEM6_DEPOSIT_ARMED is explicitly set.
+  // The client hides the deposit toggle under the same rule; this is the
+  // server-side backstop against a crafted/stale deposit request.
+  var paymentMode = (body.paymentMode === "deposit") ? "deposit" : "full";
+  if (paymentMode === "deposit" && !isStaging() && process.env.WWS_ITEM6_DEPOSIT_ARMED !== "1") {
+    paymentMode = "full";
+  }
   const couponCode = universal.couponCode || body.couponCode;
   // NOTE: PERCENTAGE promo codes are intentionally NOT applied on the cart path
   // in v1 (the single-session path handles them; multi-day discount math already
@@ -1058,7 +1069,19 @@ async function handleCartCheckout(req, res, body) {
       cartLocation
     );
 
-    var totalCents = priced.totals.total;
+    // Cleaning fee (Drew 2026-07-11): $150 ONCE per event booking (NOT per day).
+    // A MULTI-DAY event (>=2 sessions, event) is mandatory at any headcount; a
+    // single-day event or a photo cart keeps the existing 35+ rule. Applied to the
+    // authoritative charge here so the server matches the client display.
+    // cartIsEvent is defined above (any session is an event).
+    var cartMaxAttendees = normalized.reduce(function (m, n) {
+      var mm = String(n.participants || "").match(/\d+/);
+      return Math.max(m, mm ? parseInt(mm[0], 10) : 0);
+    }, 0);
+    var cartIsMultiDayEvent = cartIsEvent && priced.sessions.length >= 2;
+    var cleaningFeeCents = (cartIsMultiDayEvent || cartMaxAttendees >= 35) ? 15000 : 0;
+
+    var totalCents = priced.totals.total + cleaningFeeCents;
 
     // =====================================================================
     // FREE-COMP cart path (server-validated comp coupon). The WHOLE cart is
@@ -1082,9 +1105,11 @@ async function handleCartCheckout(req, res, body) {
       });
     }
 
-    // Charge amount: full cart total, or the 60% deposit in deposit mode.
-    var chargeCents = (paymentMode === "deposit") ? priced.deposit.depositCents : totalCents;
-    var balanceDueCents = (paymentMode === "deposit") ? priced.deposit.balanceDueCents : null;
+    // Charge amount: full cart total (incl. cleaning fee), or the 60% deposit.
+    // Recompute the deposit on the fee-inclusive total — priced.deposit is pre-fee.
+    var depositCents = Math.round(totalCents * 0.60);
+    var chargeCents = (paymentMode === "deposit") ? depositCents : totalCents;
+    var balanceDueCents = (paymentMode === "deposit") ? (totalCents - depositCents) : null;
 
     // Earliest session start (chronological) → balance fires 48h before it.
     // priced.sessions is already chronologically ordered by computeCart.
@@ -1175,8 +1200,17 @@ async function handleCartCheckout(req, res, body) {
         };
 
         var addonIDs = buildAcuityAddonIDs(sessionState.addons, sessionState.location);
+        // Cleaning fee: attach the Acuity add-on to the FIRST session only so the
+        // $150 shows once on the order (matches the single charge). (Drew 2026-07-11)
+        if (cleaningFeeCents > 0 && si === 0 && ACUITY_ADDON_IDS["cleaning-fee"]) {
+          addonIDs.push(ACUITY_ADDON_IDS["cleaning-fee"]);
+        }
         var fields = buildAcuityFields(sessionState.intake || {}, sessionState.location);
         var notes = buildAppointmentNotes(sessionState);
+        if (cleaningFeeCents > 0 && si === 0) {
+          notes += "\n\nCleaning fee: $150 (" +
+            (cartIsMultiDayEvent ? "mandatory for multi-day event" : "35+ attendees") + ")";
+        }
 
         // Cart context so Drew sees this is one session of a multi-session order.
         notes += "\n\n[MULTI-SESSION CART: session " + (si + 1) + " of "
@@ -1281,6 +1315,107 @@ async function handleCartCheckout(req, res, body) {
       });
     }
 
+    // ---- 6b. Crew-aware buffers + blocks for the whole event ------------
+    // Setup crew (event-only add-on) changes the calendar footprint: it needs a
+    // 2h FRONT-END block before day 1 (crew sets up) and extends the BACK-END
+    // buffer to 4h (crew resets + April cleans). Without crew, keep the existing
+    // 2.5h back-end cleaning buffer. (Drew spec 2026-07-11.)
+    var crewAdded = normalized.some(function (s) {
+      return s.addons && s.addons["setup-crew"] && s.addons["setup-crew"].selected;
+    });
+    var crewPlacements = null;
+    if (crewAdded) {
+      var crewSession = normalized.find(function (s) {
+        return s.addons && s.addons["setup-crew"] && s.addons["setup-crew"].selected;
+      });
+      crewPlacements = (crewSession && crewSession.addons["setup-crew"].placements) || null;
+    }
+    var backBufferMin = crewAdded ? 240 : 150;
+
+    // Back-end cleaning/reset buffer after the LAST session's end. A multi-day
+    // event always carries the mandatory $150 fee, so this fires whenever the fee
+    // applies. Isolated + skipped in staging-mock (no real appointments to buffer).
+    if (cleaningFeeCents > 0 && !stagingMocked) {
+      try {
+        var lastPs = priced.sessions[priced.sessions.length - 1];
+        var lastDurMin = TYPE_TO_DURATION[String(lastPs.appointmentTypeID)] || 60;
+        var evEnd = new Date(new Date(lastPs.datetime).getTime() + lastDurMin * 60000);
+        var evBufEnd = new Date(evEnd.getTime() + backBufferMin * 60000);
+        await acuityPost("/blocks", {
+          start: evEnd.toISOString(),
+          end: evBufEnd.toISOString(),
+          calendarID: stagingCalID || CALENDAR_IDS[cartLocation],
+          notes: (isStaging() ? "[STAGING] " : "") + "Cleaning/reset buffer (auto-created for event booking, "
+            + (backBufferMin / 60) + "h" + (crewAdded ? " incl. setup crew reset" : "") + ", "
+            + priced.sessions.length + " day" + (priced.sessions.length > 1 ? "s" : "") + ", appts "
+            + createdAppointments.map(function (a) { return a.id; }).join("/") + ")"
+        });
+      } catch (e) {
+        console.error("cart cleaning buffer block failed:", e.message);
+      }
+    }
+
+    // Front-end setup block — 2h before day-1 start, ONLY when the crew was added,
+    // so the crew has the studio to set up before the event begins.
+    if (crewAdded && !stagingMocked) {
+      try {
+        var firstPs = priced.sessions[0];
+        var day1Start = new Date(firstPs.datetime);
+        var crewBlockStart = new Date(day1Start.getTime() - 120 * 60000);
+        await acuityPost("/blocks", {
+          start: crewBlockStart.toISOString(),
+          end: day1Start.toISOString(),
+          calendarID: stagingCalID || CALENDAR_IDS[cartLocation],
+          notes: (isStaging() ? "[STAGING] " : "") + "Event setup crew (auto-created, 2h front-end, appt "
+            + ((createdAppointments[0] && createdAppointments[0].id) || "") + ")"
+        });
+      } catch (e) {
+        console.error("cart crew front-end block failed:", e.message);
+      }
+    }
+
+    // ---- 6c. Event-level notifications (owner + customer + cleaner) ------
+    // The cart path previously sent NONE of these (gap #5 / backend audit). Fire
+    // ONCE per event, event-shaped, for EVENT carts only. Best-effort + isolated:
+    // a notification failure never unwinds a paid+booked cart. On staging the
+    // transports self-suppress AND recipients are sinked (verifies wiring only).
+    if (cartIsEvent) {
+      try {
+        var mdDays = priced.sessions.map(function (ps, i) {
+          var srcN = normalized.find(function (n) {
+            return n.appointmentTypeID === ps.appointmentTypeID && n.datetime === ps.datetime;
+          }) || normalized[i];
+          return {
+            typeId: ps.appointmentTypeID,
+            datetime: ps.datetime,
+            sessionCents: ps.sessionCents,
+            addons: (srcN && srcN.addons) || {},
+            appointmentId: (createdAppointments[i] && createdAppointments[i].id) || null
+          };
+        });
+        await notifyMultidayEvent({
+          contact: contact,
+          location: cartLocation,
+          days: mdDays,
+          totalCents: totalCents,
+          cleaningFeeCents: cleaningFeeCents,
+          paymentMode: paymentMode,
+          chargeCents: chargeCents,
+          depositCents: (paymentMode === "deposit") ? depositCents : null,
+          balanceDueCents: balanceDueCents,
+          balanceChargeAt: balanceChargeAt,
+          square: { customerId: customerId, cardId: cardOnFile.id, paymentId: payment.id },
+          crewAdded: crewAdded,
+          crewPlacements: crewPlacements,
+          headcount: cartMaxAttendees || null,
+          eventDescription: (normalized.find(function (n) { return n.eventDescription; }) || {}).eventDescription || "",
+          foodDrinks: normalized.some(function (n) { return n.foodDrinks; })
+        });
+      } catch (e) {
+        console.error("cart event notifications failed:", e.message);
+      }
+    }
+
     // ---- 7. Persist ONE bookings row + N sessions (+ addons) -------------
     // Best-effort + isolated, same discipline as the single-session path: a
     // Supabase failure NEVER unwinds a paid+booked cart. Skipped in staging-mock.
@@ -1294,7 +1429,7 @@ async function handleCartCheckout(req, res, body) {
           subtotal_cents: totalCents,
           total_cents: totalCents,
           payment_mode: paymentMode,
-          deposit_cents: (paymentMode === "deposit") ? priced.deposit.depositCents : null,
+          deposit_cents: (paymentMode === "deposit") ? depositCents : null,
           balance_due_cents: balanceDueCents,
           balance_charge_at: balanceChargeAt,
           balance_status: (paymentMode === "deposit") ? "scheduled" : "none",
