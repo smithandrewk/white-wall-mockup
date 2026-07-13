@@ -1180,3 +1180,21 @@ body.booking-page {
 [data-step-panel] h2:focus {
   outline: none;
 }
+
+/* Back-to-gate link on Step 1 (Drew 2026-07-13). Quiet, text-style affordance —
+   it sits above the step heading and only appears once a booking type is chosen. */
+.booking-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+  padding: 0.3rem 0;
+  background: none;
+  border: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.booking-back-link:hover { color: rgba(0, 0, 0, 0.85); }
