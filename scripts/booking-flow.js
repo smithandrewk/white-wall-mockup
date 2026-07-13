@@ -835,6 +835,10 @@
   renderStepContent();
   bindEvents();
   showGateOrFlow(); // Step-1 gate: show "What are you booking?" until a type is chosen (PV); TM auto-resolves.
+  // Seed the initial history entry (replaceState) for the gate position, so the
+  // first setStep() PUSHES a new entry rather than overwriting this one — that is
+  // what makes browser Back from Step 1 return to the gate instead of leaving.
+  pushFlowHistory();
   prefillFromAccount();
 
   trackEvent("booking_started", {
@@ -1219,6 +1223,20 @@
         state._eventEndDate = "";
         state.cart.sessions = [];
         renderStepContent();
+        return;
+      }
+      // Back to the "What are you booking?" gate (Drew 2026-07-13). Clears the
+      // booking type AND any half-built event so the customer can switch
+      // Multi-day <-> Single-day, or Event <-> Photo/Video, without reloading.
+      if (action === "gate-restart") {
+        clearEventBuild();
+        state.bookingType = "";
+        state.eventMode = "";
+        state.eventIntent = "";
+        state._gateChoosingEventMode = false;
+        state.step = 1;
+        showGateOrFlow();
+        pushFlowHistory();
         return;
       }
       if (action === "range-review") {
@@ -1668,6 +1686,12 @@
     document.querySelectorAll("[data-flow-region]").forEach(function (el) {
       el.style.display = gated ? "none" : "";
     });
+    // "Change booking type" is only meaningful where the gate actually exists
+    // (Powdersville). Taylor's Mill auto-resolves to photo and never gates.
+    var restart = document.querySelector("[data-gate-restart]");
+    if (restart) {
+      restart.hidden = gated || location.slug !== "powdersville";
+    }
     if (gated) renderGate();
   }
 
@@ -1790,6 +1814,22 @@
 
   // Which day of a multi-day event is being configured: "first" (cart empty),
   // else state._dayRole ("middle" | "last") set when a day is added.
+  // Tear down a half-built event so the flow can be restarted cleanly (used by
+  // the back-to-gate action). Keeps contact/waiver info — only the event build.
+  function clearEventBuild() {
+    state._eventStartDate = "";
+    state._eventEndDate = "";
+    state.cart.sessions = [];
+    state._dayRole = "";
+    state._cartReviewing = false;
+    state.durationId = "";
+    state._eventDurationId = "";
+    state.selectedDate = "";
+    state.selectedTime = "";
+    state.availableDates = [];
+    state.availableTimes = [];
+  }
+
   function currentDayRole() {
     if (state.eventMode !== "multi") return null;
     if (!cartIsActive()) return "first";
@@ -1983,8 +2023,21 @@
         rTitle.textContent = "Choose Your Event Dates";
         rSub.textContent = "Pick the day your event starts, then the day it ends. Access begins at your Day 1 time and runs continuously through the last day.";
       }
+      // The range flow advances via "Review your event", not the static Continue —
+      // but keep the BACK button so the customer can return to Step 1 and change
+      // the Day-1 access time. Hiding this whole nav is what stranded Drew
+      // (2026-07-13): he picked 4 PM, wanted a full day, and had no way back.
       var rNav = document.querySelector("[data-step2-nav]");
-      if (rNav) rNav.style.display = "none";
+      if (rNav) {
+        rNav.style.display = "";
+        var rCont = rNav.querySelector("[data-action='go-step'][data-step='3']");
+        if (rCont) rCont.style.display = "none";
+        var rBack = rNav.querySelector("[data-action='go-step'][data-step='1']");
+        if (rBack) {
+          rBack.style.display = "";
+          rBack.textContent = "\u2190 Back \u00b7 change Day 1 access time";
+        }
+      }
       if (!getAppointmentTypeID()) {
         container.innerHTML = '<div class="note-card"><p class="ui-copy-strong">Choose your Day 1 access time first to see available dates.</p></div>';
         return;
@@ -2014,11 +2067,25 @@
       }
     }
 
-    // Multi-day days navigate via the confirmation buttons, not the static
-    // "Continue to session details" nav — hide it (the whole event goes to
-    // details/pay once, at review).
+    // Multi-day days advance via the confirmation / review buttons, not the static
+    // "Continue to session details" nav — so hide THAT button. But the BACK button
+    // must stay: hiding the whole nav (as this did) left a multi-day customer with
+    // no way back to Step 1 to change the Day-1 access time, and the browser back
+    // button dumped them on the home page (Drew, 2026-07-13 — he picked 4 PM, then
+    // wanted a full day, and was stuck).
     var nav = document.querySelector("[data-step2-nav]");
-    if (nav) nav.style.display = mdRole ? "none" : "";
+    if (nav) {
+      nav.style.display = "";
+      var contBtn = nav.querySelector("[data-action='go-step'][data-step='3']");
+      if (contBtn) contBtn.style.display = mdRole ? "none" : "";
+      var backBtn = nav.querySelector("[data-action='go-step'][data-step='1']");
+      if (backBtn) {
+        backBtn.style.display = "";
+        backBtn.textContent = mdRole
+          ? "\u2190 Back \u00b7 change Day 1 access time"
+          : "Back";
+      }
+    }
 
     var appointmentTypeID = getAppointmentTypeID();
     if (!appointmentTypeID) {
@@ -3471,9 +3538,65 @@
 
   var STEP_NAMES = { 1: "Duration", 2: "Schedule", 3: "Details", 4: "Waiver", 5: "Review & Pay" };
 
+  // ---- Browser back/forward inside the booking flow (Drew 2026-07-13) --------
+  // The flow is a single page app. With no history entries the browser Back button
+  // left the booking page entirely — Drew was mid multi-day event and got dumped on
+  // the home page. We now push one history entry per flow position (the gate, or
+  // step N) and restore it on popstate, so Back walks BACK THROUGH THE FLOW. The
+  // first entry is a replaceState, so Back from the gate still leaves the page
+  // normally, which is what a customer expects there.
+  var historyReady = false;
+
+  function flowHistoryState() {
+    return {
+      wws: true,
+      gated: !state.bookingType,
+      step: state.step,
+      bookingType: state.bookingType,
+      eventMode: state.eventMode
+    };
+  }
+
+  function pushFlowHistory() {
+    try {
+      var st = flowHistoryState();
+      if (!historyReady) {
+        window.history.replaceState(st, "");
+        historyReady = true;
+        return;
+      }
+      var cur = window.history.state;
+      if (cur && cur.wws && cur.gated === st.gated && cur.step === st.step) return;
+      window.history.pushState(st, "");
+    } catch (e) {
+      // History API unavailable — the explicit Back buttons still work.
+    }
+  }
+
+  window.addEventListener("popstate", function (ev) {
+    var st = ev.state;
+    if (!st || !st.wws) return; // not one of ours — let the browser navigate away
+    if (st.gated) {
+      clearEventBuild();
+      state.bookingType = "";
+      state.eventMode = "";
+      state.eventIntent = "";
+      state._gateChoosingEventMode = false;
+      state.step = 1;
+      showGateOrFlow();
+      return;
+    }
+    state.bookingType = st.bookingType || state.bookingType;
+    state.eventMode = st.eventMode || state.eventMode;
+    state.step = clamp(st.step || 1, 1, 5);
+    showGateOrFlow();
+    renderStepContent();
+  });
+
   function setStep(step) {
     state.step = clamp(step, 1, 5);
     trackEvent("step_viewed", { location: location.slug, step: state.step, step_name: STEP_NAMES[state.step] });
+    pushFlowHistory();
     renderStepContent();
 
     // Load availability when entering step 2 (Schedule)

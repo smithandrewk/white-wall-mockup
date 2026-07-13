@@ -101,6 +101,11 @@
       <section class="booking-panel p-6 md:p-8">
 
         <div class="mt-8 booking-step is-active" data-step-panel="1">
+          <!-- Back to the "What are you booking?" gate (Drew 2026-07-13): a
+               multi-day customer had no way to change their mind and switch to a
+               single day, or to a photo/video session, without reloading. Shown
+               only once a booking type has been chosen (JS toggles it). -->
+          <button type="button" class="booking-back-link" data-action="gate-restart" data-gate-restart hidden>&larr; Change booking type</button>
           <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p class="text-xs tracking-[0.25em] uppercase text-black/40">Step 1</p>
