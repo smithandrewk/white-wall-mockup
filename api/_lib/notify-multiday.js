@@ -162,6 +162,13 @@ function buildEventRecapLines(ctx) {
     lines.push("");
   });
   if (ctx.cleaningFeeCents > 0) lines.push("Cleaning fee: " + fmtMoney(ctx.cleaningFeeCents));
+  // Multi-day discount (Drew 2026-07-13): $100 off per day the event spans.
+  if (ctx.multiDayDiscountCents > 0) {
+    lines.push(
+      "Multi-day discount (" + ctx.days.length + " days x $100): -" +
+        fmtMoney(ctx.multiDayDiscountCents)
+    );
+  }
   lines.push("─────");
   lines.push("Total: " + fmtMoney(ctx.totalCents));
   if (ctx.paymentMode === "deposit") {
