@@ -137,12 +137,38 @@ function fakeRes() {
 // Two valid Powdersville event sessions on consecutive days. pv-6 ($500) type.
 // Use the real SESSION_PRICES from acuity.js so totals are authoritative.
 const acuityReal = require(R("api/_lib/acuity.js"));
+const pricingShared = require(R("scripts/pricing-shared.js"));
+
+// The 60/40 deposit (V3 item-6) is DARK on production: create-checkout forces
+// paymentMode to "full" off-staging unless WWS_ITEM6_DEPOSIT_ARMED=1, so that no
+// customer is ever promised a 40% auto-charge the scheduler cannot yet run. The
+// deposit MACHINERY still has to work when it is armed, which is what T2 covers —
+// so arm it here. (Without this, T2 would silently be testing the full-payment
+// path while claiming to test the deposit.)
+process.env.WWS_ITEM6_DEPOSIT_ARMED = "1";
 // Pick two valid appointment type IDs from the live allowlist.
 const validTypes = Object.keys(acuityReal.SESSION_PRICES);
 const TYPE_A = validTypes[0];
 const TYPE_B = validTypes[1] || validTypes[0];
 const priceA = acuityReal.SESSION_PRICES[TYPE_A].cents;
 const priceB = acuityReal.SESSION_PRICES[TYPE_B].cents;
+
+// The fixture cart is a 2-day EVENT, so the authoritative charge is not just the
+// session prices — it composes every event-level pricing rule:
+//   sessions
+//   + $150 cleaning fee   (Drew 2026-07-11: mandatory on ANY multi-day event)
+//   - $100 x 2 days       (Drew 2026-07-13: multi-day discount, $200 here)
+// This test previously asserted `priceA + priceB` and had been FAILING on main
+// since the cleaning fee shipped — it was never updated. Derive the expectation
+// from the same shared pricing module the server charges from, so it tracks the
+// rules instead of hardcoding a number that silently rots.
+const CLEANING_FEE_CENTS = 15000;
+const MULTIDAY_DISCOUNT_CENTS = pricingShared.multiDayDiscountCents(
+  2,
+  priceA + priceB + CLEANING_FEE_CENTS
+);
+const EXPECTED_TOTAL =
+  priceA + priceB + CLEANING_FEE_CENTS - MULTIDAY_DISCOUNT_CENTS;
 
 // Use far-future afternoon datetimes (after 12:30pm ET) so no earliest-start
 // floor trips. 2pm ET ~= 18:00Z (EDT) — safe.
@@ -192,7 +218,7 @@ async function run() {
   );
   assert.strictEqual(res.statusCode, 200, "T1: expected 200, got " + res.statusCode + " " + JSON.stringify(res.body));
   assert.strictEqual(calls.payments.length, 1, "T1: exactly ONE createPayment");
-  assert.strictEqual(calls.payments[0].amountCents, priceA + priceB, "T1: charged the WHOLE cart total");
+  assert.strictEqual(calls.payments[0].amountCents, EXPECTED_TOTAL, "T1: charged sessions + cleaning fee - multi-day discount");
   assert.strictEqual(calls.cards.length, 1, "T1: exactly ONE createCardOnFile");
   assert.strictEqual(calls.appointments.length, 2, "T1: N=2 Acuity appointments");
   calls.appointments.forEach(function (a, i) {
@@ -204,7 +230,7 @@ async function run() {
   const bRow = Array.isArray(bookingInsert.rows) ? bookingInsert.rows[0] : bookingInsert.rows;
   assert.strictEqual(bRow.payment_mode, "full", "T1: payment_mode=full");
   assert.strictEqual(bRow.balance_status, "none", "T1: balance_status=none in full mode");
-  assert.strictEqual(bRow.total_cents, priceA + priceB, "T1: total_cents persisted");
+  assert.strictEqual(bRow.total_cents, EXPECTED_TOTAL, "T1: total_cents persisted (fee-inclusive, discount-applied)");
   const sessionInserts = calls.inserts.filter(function (c) { return c.table === "booking_sessions"; });
   assert.strictEqual(sessionInserts.length, 2, "T1: N=2 booking_sessions rows");
   assert.strictEqual(res.body.sessionCount, 2, "T1: response sessionCount=2");
@@ -221,7 +247,7 @@ async function run() {
     res
   );
   assert.strictEqual(res.statusCode, 200, "T2: expected 200, got " + res.statusCode + " " + JSON.stringify(res.body));
-  const total = priceA + priceB;
+  const total = EXPECTED_TOTAL;
   const expectDeposit = Math.round(total * 0.60);
   assert.strictEqual(calls.payments[0].amountCents, expectDeposit, "T2: charged 60% deposit");
   const bRow2 = (function () {
@@ -254,7 +280,7 @@ async function run() {
   assert.strictEqual(res.statusCode, 500, "T3: expected 500 on partial failure");
   assert.strictEqual(calls.payments.length, 1, "T3: one charge happened");
   assert.strictEqual(calls.refunds.length, 1, "T3: the WHOLE charge was refunded");
-  assert.strictEqual(calls.refunds[0].amount, priceA + priceB, "T3: refund amount == full charge");
+  assert.strictEqual(calls.refunds[0].amount, EXPECTED_TOTAL, "T3: refund amount == full charge");
   assert.strictEqual(res.body.refunded, true, "T3: response flags refunded");
   const confirmedBooking = calls.inserts.find(function (c) {
     if (c.table !== "bookings") return false;

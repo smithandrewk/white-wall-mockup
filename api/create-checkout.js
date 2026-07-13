@@ -1081,7 +1081,19 @@ async function handleCartCheckout(req, res, body) {
     var cartIsMultiDayEvent = cartIsEvent && priced.sessions.length >= 2;
     var cleaningFeeCents = (cartIsMultiDayEvent || cartMaxAttendees >= 35) ? 15000 : 0;
 
-    var totalCents = priced.totals.total + cleaningFeeCents;
+    // Multi-day event discount (Drew 2026-07-13): $100 off per consecutive day the
+    // event spans, off the grand total. Day length is irrelevant — a short first
+    // day or an early-checkout last day still counts as a full impacted day — so
+    // the multiplier is the day-session COUNT. Computed by the SAME pricing-shared
+    // fn the browser used, but recomputed here from the server's own priced cart:
+    // the client's number is never trusted. Clamped inside the helper so it can
+    // never exceed the pre-discount total (no negative charge).
+    var preDiscountTotalCents = priced.totals.total + cleaningFeeCents;
+    var multiDayDiscountCents = cartIsEvent
+      ? pricingShared.multiDayDiscountCents(priced.sessions.length, preDiscountTotalCents)
+      : 0;
+
+    var totalCents = preDiscountTotalCents - multiDayDiscountCents;
 
     // =====================================================================
     // FREE-COMP cart path (server-validated comp coupon). The WHOLE cart is
@@ -1210,6 +1222,13 @@ async function handleCartCheckout(req, res, body) {
         if (cleaningFeeCents > 0 && si === 0) {
           notes += "\n\nCleaning fee: $150 (" +
             (cartIsMultiDayEvent ? "mandatory for multi-day event" : "35+ attendees") + ")";
+        }
+        // Multi-day discount: recorded once, on the first session, so the Acuity
+        // record explains why the Square charge is below the sum of the day prices.
+        if (multiDayDiscountCents > 0 && si === 0) {
+          notes += "\n\nMulti-day discount: -$" + (multiDayDiscountCents / 100).toFixed(2) +
+            " ($100 x " + priced.sessions.length + " day" +
+            (priced.sessions.length === 1 ? "" : "s") + ")";
         }
 
         // Cart context so Drew sees this is one session of a multi-session order.
@@ -1399,6 +1418,7 @@ async function handleCartCheckout(req, res, body) {
           days: mdDays,
           totalCents: totalCents,
           cleaningFeeCents: cleaningFeeCents,
+          multiDayDiscountCents: multiDayDiscountCents,
           paymentMode: paymentMode,
           chargeCents: chargeCents,
           depositCents: (paymentMode === "deposit") ? depositCents : null,

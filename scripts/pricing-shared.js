@@ -87,6 +87,50 @@
     return { depositCents: deposit, balanceDueCents: totalCents - deposit };
   }
 
+  // ---------------------------------------------------------------------------
+  // MULTI-DAY EVENT DISCOUNT (Drew, 2026-07-13)
+  //
+  // "For every consecutive day impacted, they get $100 off the total amount."
+  //   2-day event  -> $200 off
+  //   3-day event  -> $300 off  (his Oct 3 afternoon -> Oct 5 end-of-day example)
+  //   5-day event  -> $500 off
+  //   10-day event -> $1,000 off ("you essentially get one of those days free" —
+  //                   a full day is $980, so the math checks out)
+  //
+  // Day LENGTH is deliberately irrelevant: "doesn't matter how long the first day
+  // or last day are booked for, because the event impacts five days in total."
+  // A short evening first day and an early-checkout last day each still count as
+  // one impacted day. So the multiplier is the COUNT OF CALENDAR DAYS the event
+  // spans, which in the range flow is exactly the number of day-sessions.
+  //
+  // Multi-day EVENTS only (>= 2 days). A single-day event or a photo session gets
+  // nothing (a 1-day "event" is not a multi-day event, and Drew framed this
+  // strictly as a multi-day incentive).
+  //
+  // This lives in pricing-shared — the ONE module both the browser and
+  // api/create-checkout.js load — so the number the customer is shown and the
+  // number we actually charge are computed by the same code and cannot drift.
+  // The server still recomputes it independently and never trusts the client.
+  // ---------------------------------------------------------------------------
+  var MULTIDAY_DISCOUNT_PER_DAY_CENTS = 10000; // $100 per impacted day
+  var MULTIDAY_DISCOUNT_MIN_DAYS = 2;          // multi-day only
+
+  /**
+   * @param {number} dayCount  calendar days the event spans (= day-session count)
+   * @param {number} [preDiscountTotalCents]  grand total BEFORE this discount.
+   *        When supplied, the discount is clamped so it can never exceed it —
+   *        a discount must never produce a negative charge.
+   * @returns {number} discount in cents (0 when not a qualifying multi-day event)
+   */
+  function multiDayDiscountCents(dayCount, preDiscountTotalCents) {
+    var days = Math.floor(Number(dayCount) || 0);
+    if (days < MULTIDAY_DISCOUNT_MIN_DAYS) return 0;
+    var raw = days * MULTIDAY_DISCOUNT_PER_DAY_CENTS;
+    if (preDiscountTotalCents == null) return raw;
+    var cap = Math.max(0, Math.floor(Number(preDiscountTotalCents) || 0));
+    return Math.min(raw, cap);
+  }
+
   return {
     DISCOUNT_ELIGIBLE_ADDONS: DISCOUNT_ELIGIBLE_ADDONS,
     dayDiscountMultiplier: dayDiscountMultiplier,
@@ -94,6 +138,9 @@
     discountedAddonCents: discountedAddonCents,
     addonDiscountCents: addonDiscountCents,
     computeCartTotals: computeCartTotals,
-    depositSplit: depositSplit
+    depositSplit: depositSplit,
+    MULTIDAY_DISCOUNT_PER_DAY_CENTS: MULTIDAY_DISCOUNT_PER_DAY_CENTS,
+    MULTIDAY_DISCOUNT_MIN_DAYS: MULTIDAY_DISCOUNT_MIN_DAYS,
+    multiDayDiscountCents: multiDayDiscountCents
   };
 });
