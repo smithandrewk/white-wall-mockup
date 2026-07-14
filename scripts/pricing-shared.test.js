@@ -46,4 +46,35 @@ var d = P.depositSplit(t.total);
 assert.strictEqual(d.depositCents + d.balanceDueCents, t.total, "split sums to total");
 assert.strictEqual(d.depositCents, Math.round(t.total * 0.6), "60% deposit");
 
-console.log("pricing-shared: ALL TESTS PASSED (total = $" + (t.total / 100).toFixed(2) + ", deposit = $" + (d.depositCents / 100).toFixed(2) + ")");
+// ---------------------------------------------------------------------------
+// MULTI-DAY EVENT DISCOUNT — $160 per impacted day (Drew, 2026-07-13, raised from
+// $100 the same evening). These are HIS numbers, quoted from msg 19f5e16ccb04f1c3,
+// so if someone changes the rate again this test tells them exactly what Drew was
+// promised. The 2-day case is the one he did NOT list (his table starts at 3 days);
+// it is the linear implication of his own arithmetic and was confirmed to him.
+assert.strictEqual(P.multiDayDiscountCents(2), 32000, "2 days -> $320 (inferred, linear)");
+assert.strictEqual(P.multiDayDiscountCents(3), 48000, "3 days -> $480 (Drew)");
+assert.strictEqual(P.multiDayDiscountCents(4), 64000, "4 days -> $640 (Drew)");
+assert.strictEqual(P.multiDayDiscountCents(5), 80000, "5 days -> $800 (Drew)");
+assert.strictEqual(P.multiDayDiscountCents(6), 96000, "6 days -> $960 (Drew)");
+assert.strictEqual(P.multiDayDiscountCents(7), 112000, "7 days -> $1,120 (Drew)");
+
+// Not a multi-day event -> nothing. A 1-day "event" is not multi-day.
+assert.strictEqual(P.multiDayDiscountCents(1), 0, "1 day -> no discount");
+assert.strictEqual(P.multiDayDiscountCents(0), 0, "0 days -> no discount");
+
+// Clamp: a discount can NEVER exceed the total (no negative charge). A 10-day event
+// discounts $1,600, so against a $500 total it must clamp to $500, not refund $1,100.
+assert.strictEqual(P.multiDayDiscountCents(10, 50000), 50000, "clamped to the total");
+assert.strictEqual(P.multiDayDiscountCents(3, 100000), 48000, "under the cap, unclamped");
+
+// The customer-facing copy is DERIVED from the rate, so the page cannot promise a
+// rate the checkout won't charge. This is the assertion that catches copy drift.
+assert.strictEqual(P.multiDayPerDayLabel(), "$160", "per-day label matches the rate");
+assert.strictEqual(
+  P.multiDayPerDayLabel(),
+  "$" + P.MULTIDAY_DISCOUNT_PER_DAY_CENTS / 100,
+  "label is derived from the constant, not typed"
+);
+
+console.log("pricing-shared: ALL TESTS PASSED (total = $" + (t.total / 100).toFixed(2) + ", deposit = $" + (d.depositCents / 100).toFixed(2) + ", multi-day rate = " + P.multiDayPerDayLabel() + "/day)");

@@ -90,12 +90,19 @@
   // ---------------------------------------------------------------------------
   // MULTI-DAY EVENT DISCOUNT (Drew, 2026-07-13)
   //
-  // "For every consecutive day impacted, they get $100 off the total amount."
-  //   2-day event  -> $200 off
-  //   3-day event  -> $300 off  (his Oct 3 afternoon -> Oct 5 end-of-day example)
-  //   5-day event  -> $500 off
-  //   10-day event -> $1,000 off ("you essentially get one of those days free" —
-  //                   a full day is $980, so the math checks out)
+  // "For every consecutive day impacted, they get $N off the total amount."
+  // Drew RAISED the rate $100 -> $160/day the same evening (msg 19f5e16ccb04f1c3),
+  // with these examples: 3d = $480, 4d = $640, 5d = $800, 6d = $960, 7d = $1,120.
+  // All exactly 160 x days, so the rule's SHAPE is unchanged — only the rate moved.
+  //   2-day event  -> $320 off   (he listed from 3 days up; linear implies this, and
+  //                   MIN_DAYS has always been 2. Confirmed to him in writing.)
+  //   3-day event  -> $480 off
+  //   5-day event  -> $800 off
+  //
+  // Because he has now changed this rate twice in one day, the customer-facing COPY
+  // is derived from the constant below (see perDayLabel/multiDayCopy) instead of
+  // hardcoding the dollars in the page text. The math already lived in one place; the
+  // WORDS did not, and stale copy promising the old rate is a money bug.
   //
   // Day LENGTH is deliberately irrelevant: "doesn't matter how long the first day
   // or last day are booked for, because the event impacts five days in total."
@@ -112,7 +119,7 @@
   // number we actually charge are computed by the same code and cannot drift.
   // The server still recomputes it independently and never trusts the client.
   // ---------------------------------------------------------------------------
-  var MULTIDAY_DISCOUNT_PER_DAY_CENTS = 10000; // $100 per impacted day
+  var MULTIDAY_DISCOUNT_PER_DAY_CENTS = 16000; // $160 per impacted day (Drew, 2026-07-13)
   var MULTIDAY_DISCOUNT_MIN_DAYS = 2;          // multi-day only
 
   /**
@@ -131,8 +138,23 @@
     return Math.min(raw, cap);
   }
 
+  /**
+   * The per-day rate as customer-facing text, e.g. "$160". Whole dollars when the rate
+   * is whole dollars (it always has been), cents only if it ever isn't.
+   *
+   * Every place the site SAYS the rate — the builder intro, the live discount line, the
+   * cart summary, the Good-to-Know clause, the Acuity note — calls this. So changing
+   * MULTIDAY_DISCOUNT_PER_DAY_CENTS above changes the words too, and the page can never
+   * promise a rate we don't actually charge.
+   */
+  function multiDayPerDayLabel() {
+    var c = MULTIDAY_DISCOUNT_PER_DAY_CENTS;
+    return c % 100 === 0 ? "$" + (c / 100) : "$" + (c / 100).toFixed(2);
+  }
+
   return {
     DISCOUNT_ELIGIBLE_ADDONS: DISCOUNT_ELIGIBLE_ADDONS,
+    multiDayPerDayLabel: multiDayPerDayLabel,
     dayDiscountMultiplier: dayDiscountMultiplier,
     isDiscountEligible: isDiscountEligible,
     discountedAddonCents: discountedAddonCents,

@@ -27,6 +27,17 @@
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+  // Multi-day discount COPY, derived from the rate in pricing-shared rather than
+  // typed into the page. Drew moved the rate $100 -> $160 within a day of shipping it,
+  // and the words live in five places — so any hardcoded "$100" is a promise the
+  // checkout won't honor. mdRate() is the rate ("$160"); mdSaves(n) is what an n-day
+  // event saves ("$480"), for the worked examples in the intro and Good-to-Know copy.
+  function mdRate() {
+    return window.WWSPricing.multiDayPerDayLabel();
+  }
+  function mdSaves(days) {
+    return currency.format(window.WWSPricing.multiDayDiscountCents(days) / 100);
+  }
   // Whole dollars show clean ($350); fractional amounts show exact cents
   // ($2,581.50). Used for the pay button + cart totals so what the customer sees
   // matches the exact amount charged when the multi-day discount lands half-dollars.
@@ -387,9 +398,9 @@
         // Multi-day discount, stated up front (Drew 2026-07-13: "make that logic
         // known to them ... right on the front end. It needs to be crystal clear.")
         '<div style="margin-top:0.85rem;padding:0.7rem 0.85rem;border-radius:0.5rem;background:#f0fdf4;border:1px solid #bbf7d0">' +
-          '<p class="ui-copy-strong" style="color:#166534;margin:0">You save $100 for every day of your event.</p>' +
+          '<p class="ui-copy-strong" style="color:#166534;margin:0">You save ' + mdRate() + ' for every day of your event.</p>' +
           '<p class="ui-copy-muted" style="font-size:0.8rem;margin:0.25rem 0 0;line-height:1.45">' +
-            'A 2 day event takes $200 off your total, a 3 day event $300, a 5 day event $500. ' +
+            'A 2 day event takes ' + mdSaves(2) + ' off your total, a 3 day event ' + mdSaves(3) + ', a 5 day event ' + mdSaves(5) + '. ' +
             'It applies no matter how long each day runs, and it comes off automatically as you build your event below.' +
           '</p>' +
         '</div>' +
@@ -456,7 +467,7 @@
     // upfront, so show it immediately (this fn only runs for a multi-day event).
     var cleaningCents = 15000;
     var preDiscountGrand = sessionSum * 100 + addonCents + cleaningCents;
-    // Multi-day event discount (Drew 2026-07-13): $100 off per consecutive day the
+    // Multi-day event discount (Drew 2026-07-13): $160 off per consecutive day the
     // event spans, regardless of how long any given day is booked for. Same
     // pricing-shared fn the server charges from, so this live number is the real one.
     var mdDiscount = (window.WWSPricing && window.WWSPricing.multiDayDiscountCents)
@@ -508,8 +519,8 @@
     }
     if (mdDiscount > 0) {
       html += '<div class="summary-list">' +
-        '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Multi-day discount · ' + days.length + ' days × $100</span><span class="ui-copy-strong">−' + currency.format(mdDiscount / 100) + '</span></div>' +
-        '<div class="ui-copy-muted" style="font-size:0.72rem;margin-top:-0.2rem;line-height:1.4">You save $100 for every day your event runs. Add another day and you save another $100.</div>' +
+        '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Multi-day discount · ' + days.length + ' days × ' + mdRate() + '</span><span class="ui-copy-strong">−' + currency.format(mdDiscount / 100) + '</span></div>' +
+        '<div class="ui-copy-muted" style="font-size:0.72rem;margin-top:-0.2rem;line-height:1.4">You save ' + mdRate() + ' for every day your event runs. Add another day and you save another ' + mdRate() + '.</div>' +
       '</div>';
     }
     html += '<div class="summary-divider my-6"></div>' +
@@ -665,7 +676,7 @@
       var cleaningLine = cleaningCents > 0
         ? '<div class="summary-line summary-line-muted"><span>Cleaning fee' + (cartIsEventForFee && feeSessionCount >= 2 ? ' (multi-day event)' : '') + '</span><span>' + currency.format(cleaningCents / 100) + '</span></div>'
         : '';
-      // Multi-day event discount (Drew 2026-07-13): $100 off per consecutive day
+      // Multi-day event discount (Drew 2026-07-13): $160 off per consecutive day
       // the event spans. Computed by the SAME pricing-shared fn the server uses,
       // so the number shown here is byte-for-byte the number that gets charged.
       var preDiscountTotal = totals.total + cleaningCents;
@@ -673,7 +684,7 @@
         ? window.WWSPricing.multiDayDiscountCents(feeSessionCount, preDiscountTotal)
         : 0;
       var multiDayLine = multiDayDiscount > 0
-        ? '<div class="summary-line summary-line-muted"><span>Multi-day discount (' + feeSessionCount + ' days × $100)</span><span>−' + currency.format(multiDayDiscount / 100) + '</span></div>'
+        ? '<div class="summary-line summary-line-muted"><span>Multi-day discount (' + feeSessionCount + ' days × ' + mdRate() + ')</span><span>−' + currency.format(multiDayDiscount / 100) + '</span></div>'
         : '';
       var feeInclusiveTotal = preDiscountTotal - multiDayDiscount;
       totalsHtml =
@@ -906,7 +917,7 @@
     // the rule is visible from the moment they choose a multi-day event.
     if (state.eventMode === "multi") {
       items = items.concat([
-        "Multi-day discount: you save $100 for every day your event runs, taken off your total automatically. A 3 day event saves $300."
+        "Multi-day discount: you save " + mdRate() + " for every day your event runs, taken off your total automatically. A 3 day event saves " + mdSaves(3) + "."
       ]);
     }
     policyList.innerHTML = items

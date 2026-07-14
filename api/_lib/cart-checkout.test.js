@@ -157,7 +157,7 @@ const priceB = acuityReal.SESSION_PRICES[TYPE_B].cents;
 // session prices — it composes every event-level pricing rule:
 //   sessions
 //   + $150 cleaning fee   (Drew 2026-07-11: mandatory on ANY multi-day event)
-//   - $100 x 2 days       (Drew 2026-07-13: multi-day discount, $200 here)
+//   - $160 x 2 days       (Drew 2026-07-13: multi-day discount, $320 here)
 // This test previously asserted `priceA + priceB` and had been FAILING on main
 // since the cleaning fee shipped — it was never updated. Derive the expectation
 // from the same shared pricing module the server charges from, so it tracks the
