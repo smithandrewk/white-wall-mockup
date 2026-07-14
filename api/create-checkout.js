@@ -1230,6 +1230,23 @@ async function handleCartCheckout(req, res, body) {
             " (" + pricingShared.multiDayPerDayLabel() + " x " + priced.sessions.length + " day" +
             (priced.sessions.length === 1 ? "" : "s") + ")";
         }
+        // Add-on multi-day savings. Acuity prices every add-on at its FULL catalog
+        // rate on every session, so the per-day taper is invisible in Acuity's own
+        // numbers — the sum of the appointment prices sits ABOVE what Square actually
+        // charged, and until now only the multi-day discount was there to explain the
+        // gap. That left the taper (Drew raised it to 20%/40% on 2026-07-13, so it is
+        // now real money) silently unaccounted for. Stamp it, then state the charge, so
+        // the Acuity record reconciles to Square without anyone doing arithmetic.
+        if (priced.totals.addonDiscount > 0 && si === 0) {
+          notes += "\n\nAdd-on savings: -$" + (priced.totals.addonDiscount / 100).toFixed(2) +
+            " (gear is full price Day 1, then " +
+            Math.round((1 - pricingShared.dayDiscountMultiplier(1)) * 100) + "% off Day 2 and " +
+            Math.round((1 - pricingShared.dayDiscountMultiplier(2)) * 100) + "% off Day 3+)";
+        }
+        if (si === 0 && (multiDayDiscountCents > 0 || priced.totals.addonDiscount > 0)) {
+          notes += "\nTotal charged: $" + (totalCents / 100).toFixed(2) +
+            (paymentMode === "deposit" ? " (60% deposit collected now)" : "");
+        }
 
         // Cart context so Drew sees this is one session of a multi-session order.
         notes += "\n\n[MULTI-SESSION CART: session " + (si + 1) + " of "
