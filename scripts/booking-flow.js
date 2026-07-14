@@ -38,6 +38,15 @@
   function mdSaves(days) {
     return currency.format(window.WWSPricing.multiDayDiscountCents(days) / 100);
   }
+  // The add-on taper, in words, derived from the ladder itself — same discipline as
+  // mdRate(): Drew has now moved this ladder once (15/30 -> 20/40), and copy that
+  // states a percentage the pricing module doesn't actually apply is a money bug.
+  function addonTaperPct(dayIndex) {
+    return Math.round((1 - window.WWSPricing.dayDiscountMultiplier(dayIndex)) * 100);
+  }
+  function addonTaperCopy() {
+    return addonTaperPct(1) + "% off on Day 2 and " + addonTaperPct(2) + "% off every day after.";
+  }
   // Whole dollars show clean ($350); fractional amounts show exact cents
   // ($2,581.50). Used for the pay button + cart totals so what the customer sees
   // matches the exact amount charged when the multi-day discount lands half-dollars.
@@ -461,8 +470,13 @@
     // Add-on total via pricing-shared (per-day discount) — matches the cart/server.
     var totals = (window.WWSPricing && window.WWSPricing.computeCartTotals)
       ? window.WWSPricing.computeCartTotals(buildPricingCart(true))
-      : { addonTotal: 0 };
+      : { addonTotal: 0, addonTotalFull: 0, addonDiscount: 0 };
     var addonCents = totals.addonTotal || 0;
+    // Retail (what the add-ons cost with no multi-day taper) and the savings that
+    // taper produces. Both come from the SAME pricing-shared totals the server
+    // charges from, so the "you save" number can't drift from the charge.
+    var addonRetailCents = totals.addonTotalFull || 0;
+    var addonSavings = totals.addonDiscount || 0;
     // Cleaning fee: baked into every multi-day event (Drew) — mandatory + known
     // upfront, so show it immediately (this fn only runs for a multi-day event).
     var cleaningCents = 15000;
@@ -488,39 +502,63 @@
       var nDays = days.length;
       var elig = (window.WWSPricing && window.WWSPricing.isDiscountEligible) ? window.WWSPricing.isDiscountEligible : function () { return true; };
       var dAddon = (window.WWSPricing && window.WWSPricing.discountedAddonCents) ? window.WWSPricing.discountedAddonCents : function (c) { return c; };
+      // Drew 2026-07-13 (msg 19f5e1ef38252d34): the add-on line item now prices at
+      // RETAIL — the Day 1 price, times the number of days — and the per-day taper is
+      // still spelled out underneath it. The money the taper saves is no longer buried
+      // inside each line; it is pulled out into one "Add-on savings" line below, so the
+      // summary reads the way he asked for it: this is retail, this is what you save,
+      // therefore this is your total.
       var addonRows = "";
       location.addons.forEach(function (addon) {
         var full = addonSubtotalFor(addon, state.addons[addon.id]);
         if (!full) return;
         var fullCents = Math.round(full * 100);
-        var lineSub = 0, mathParts = [];
+        var retailLine = fullCents, mathParts = [];
         if (elig(addon.id) && nDays > 1) {
+          retailLine = fullCents * nDays;   // retail = Day 1 price every day
           for (var i = 0; i < nDays; i++) {
-            var c = dAddon(fullCents, i, addon.id);
-            lineSub += c;
-            mathParts.push("Day " + (i + 1) + " " + currencyExact.format(c / 100));
+            mathParts.push("Day " + (i + 1) + " " + currencyExact.format(dAddon(fullCents, i, addon.id) / 100));
           }
-        } else {
-          lineSub = fullCents;
-          if (!elig(addon.id) && nDays > 1) mathParts.push("once for the event");
+        } else if (!elig(addon.id) && nDays > 1) {
+          mathParts.push("once for the event");   // flat / one-time fee: never tapered
         }
         addonRows +=
-          '<div class="summary-line summary-line-muted"><span>' + escapeHtml(addon.name) + '</span><span>' + currencyExact.format(lineSub / 100) + '</span></div>' +
-          (mathParts.length ? '<div class="ui-copy-muted" style="font-size:0.72rem;margin:-0.2rem 0 0.4rem;line-height:1.4">' + escapeHtml(mathParts.join("  +  ")) + '</div>' : '');
+          '<div class="summary-line summary-line-muted"><span>' + escapeHtml(addon.name) + '</span><span>' + currencyExact.format(retailLine / 100) + '</span></div>' +
+          (mathParts.length ? '<div class="ui-copy-muted" style="font-size:0.72rem;margin:-0.2rem 0 0.4rem;line-height:1.4">You pay ' + escapeHtml(mathParts.join("  +  ")) + '</div>' : '');
       });
       html += '<div class="summary-list" style="margin-top:0.5rem">' +
         '<p class="text-xs tracking-[0.2em] uppercase text-black/40" style="margin-bottom:0.35rem">Add-ons</p>' +
         addonRows +
-        '<div class="summary-line"><span class="ui-copy-strong">Add-ons total</span><span class="ui-copy-strong">' + currencyExact.format(addonCents / 100) + '</span></div>' +
+        '<div class="summary-line"><span class="ui-copy-strong">Add-ons at retail</span><span class="ui-copy-strong">' + currencyExact.format(addonRetailCents / 100) + '</span></div>' +
       '</div>';
     }
     if (cleaningCents > 0) {
       html += '<div class="summary-list"><div class="summary-line summary-line-muted"><span>Cleaning fee (baked into every event)</span><span>' + currency.format(cleaningCents / 100) + '</span></div></div>';
     }
+    // Drew 2026-07-13: show the whole arc — this is retail, this is what you save,
+    // therefore this is your total. Retail subtotal prices the add-ons with NO taper;
+    // the taper then comes back as its own "Add-on savings" line beneath the multi-day
+    // discount. The two savings lines and the retail subtotal are just a re-grouping of
+    // the same arithmetic — the charged total below is unchanged.
+    var retailSubtotal = sessionSum * 100 + addonRetailCents + cleaningCents;
+    var totalSavings = addonSavings + mdDiscount;
+    html += '<div class="summary-divider my-6"></div>' +
+      '<div class="summary-line"><span>Subtotal at retail</span><span>' + currencyExact.format(retailSubtotal / 100) + '</span></div>';
     if (mdDiscount > 0) {
       html += '<div class="summary-list">' +
         '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Multi-day discount · ' + days.length + ' days × ' + mdRate() + '</span><span class="ui-copy-strong">−' + currency.format(mdDiscount / 100) + '</span></div>' +
         '<div class="ui-copy-muted" style="font-size:0.72rem;margin-top:-0.2rem;line-height:1.4">You save ' + mdRate() + ' for every day your event runs. Add another day and you save another ' + mdRate() + '.</div>' +
+      '</div>';
+    }
+    if (addonSavings > 0) {
+      html += '<div class="summary-list">' +
+        '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Add-on savings</span><span class="ui-copy-strong">−' + currencyExact.format(addonSavings / 100) + '</span></div>' +
+        '<div class="ui-copy-muted" style="font-size:0.72rem;margin-top:-0.2rem;line-height:1.4">Your gear is full price on Day 1, then ' + addonTaperCopy() + '</div>' +
+      '</div>';
+    }
+    if (totalSavings > 0) {
+      html += '<div class="summary-list">' +
+        '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Total savings</span><span class="ui-copy-strong">−' + currencyExact.format(totalSavings / 100) + '</span></div>' +
       '</div>';
     }
     html += '<div class="summary-divider my-6"></div>' +
@@ -658,8 +696,10 @@
 
     var totalsHtml = "";
     if (totals) {
+      // Drew 2026-07-13: this line is named "Add-on savings" and sits BELOW the
+      // multi-day discount (see totalsHtml), so the two savings read as one block.
       var discountLine = totals.addonDiscount > 0
-        ? '<div class="summary-line summary-line-muted"><span>Multi-day add-on discount</span><span>−' + currency.format(totals.addonDiscount / 100) + '</span></div>'
+        ? '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Add-on savings</span><span class="ui-copy-strong">−' + currencyExact.format(totals.addonDiscount / 100) + '</span></div>'
         : '';
       // Cleaning fee — MIRROR the server (create-checkout.js): $150 once when the
       // cart is a multi-day event (an event with 2+ sessions) OR any session has
@@ -684,18 +724,29 @@
         ? window.WWSPricing.multiDayDiscountCents(feeSessionCount, preDiscountTotal)
         : 0;
       var multiDayLine = multiDayDiscount > 0
-        ? '<div class="summary-line summary-line-muted"><span>Multi-day discount (' + feeSessionCount + ' days × ' + mdRate() + ')</span><span>−' + currency.format(multiDayDiscount / 100) + '</span></div>'
+        ? '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Multi-day discount (' + feeSessionCount + ' days × ' + mdRate() + ')</span><span class="ui-copy-strong">−' + currencyExact.format(multiDayDiscount / 100) + '</span></div>'
         : '';
       var feeInclusiveTotal = preDiscountTotal - multiDayDiscount;
+      // Retail = sessions + add-ons with NO taper + cleaning. Savings = the taper +
+      // the multi-day discount. retail - savings === feeInclusiveTotal by construction
+      // (addonTotalFull - addonDiscount === addonTotal), so this is a re-grouping of
+      // the existing arithmetic and does NOT move the charge.
+      var retailSubtotal = totals.sessionTotal + totals.addonTotalFull + cleaningCents;
+      var cartSavings = totals.addonDiscount + multiDayDiscount;
+      var savingsSummary = cartSavings > 0
+        ? '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Total savings</span><span class="ui-copy-strong">−' + currencyExact.format(cartSavings / 100) + '</span></div>'
+        : '';
       totalsHtml =
         '<div class="booking-panel-soft p-5" style="margin-top:1rem">' +
           '<p class="ui-kicker" style="margin-bottom:1rem">Cart total</p>' +
           '<div class="summary-list">' +
             '<div class="summary-line"><span>Sessions</span><span>' + currency.format(totals.sessionTotal / 100) + '</span></div>' +
-            '<div class="summary-line summary-line-muted"><span>Add-ons</span><span>' + currency.format(totals.addonTotalFull / 100) + '</span></div>' +
-            discountLine +
+            '<div class="summary-line summary-line-muted"><span>Add-ons at retail</span><span>' + currencyExact.format(totals.addonTotalFull / 100) + '</span></div>' +
             cleaningLine +
+            '<div class="summary-line"><span>Subtotal at retail</span><span>' + currencyExact.format(retailSubtotal / 100) + '</span></div>' +
             multiDayLine +
+            discountLine +
+            savingsSummary +
             '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
             '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(feeInclusiveTotal / 100) + '</strong></span></div>' +
           '</div>' +
