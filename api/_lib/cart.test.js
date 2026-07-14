@@ -67,22 +67,33 @@ assert.strictEqual(day3Table.cents, 3000, "2 tables = $30 full");
 const day1Crew = result.sessions[0].addons.find(function (a) { return a.addonId === "setup-crew"; });
 assert.strictEqual(day1Crew.cents, 75000);
 
-// --- Totals (independently computed from pricing-shared) ---
+// --- Totals ---
 // sessionTotal = 200 + 270 + 130 = $600
 // addonTotalFull = (70 + 750) + (50 + 40) + (30 + 50) = $990
-// addonDiscount: Day1 walls full ($0 off, dayIndex 0), Setup Crew flat ($0).
-//   Day2 tv -15% = $7.50, pa -15% = $6.00.
-//   Day3 table -30% = $9.00, backdrops flat ($0). Total discount = $22.50.
-// addonTotal = 990 - 22.50 = $967.50 ; total = 600 + 967.50 = $1567.50
+// The DISCOUNT is derived from pricing-shared rather than hardcoded: Drew has moved
+// the add-on ladder once already (15%/30% -> 20%/40% on 2026-07-13), and a hardcoded
+// expectation here just goes stale and gets "fixed" by editing the number, which
+// silently stops the test from gating anything. Deriving it means this test keeps
+// checking what it was written to check — that computeCart applies the ladder by
+// chronological day index to eligible add-ons only — at whatever the rate is.
+const pricingShared = require("../../scripts/pricing-shared");
+const expectedDiscount =
+  pricingShared.addonDiscountCents(5000, 1, "tv") +        // Day2 TV
+  pricingShared.addonDiscountCents(4000, 1, "pa-system") + // Day2 PA
+  pricingShared.addonDiscountCents(3000, 2, "table");      // Day3 2x table
+// Day1 walls (dayIndex 0) and the flat Setup Crew contribute nothing.
 assert.strictEqual(result.totals.sessionTotal, 60000);
 assert.strictEqual(result.totals.addonTotalFull, 99000);
-assert.strictEqual(result.totals.addonDiscount, 2250);
-assert.strictEqual(result.totals.addonTotal, 96750);
-assert.strictEqual(result.totals.total, 156750);
+assert.strictEqual(result.totals.addonDiscount, expectedDiscount, "ladder applied per day");
+assert.strictEqual(result.totals.addonTotal, 99000 - expectedDiscount);
+assert.strictEqual(result.totals.total, 60000 + 99000 - expectedDiscount);
+// At the current 20%/40% ladder that is $10 + $8 + $12 = $30 off.
+assert.strictEqual(expectedDiscount, 3000, "20/40 ladder -> $30 off this cart");
 
 // Deposit split (60/40 on cart total).
-assert.strictEqual(result.deposit.depositCents, 94050);
-assert.strictEqual(result.deposit.balanceDueCents, 62700);
+const expectedTotal = 60000 + 99000 - expectedDiscount;
+assert.strictEqual(result.deposit.depositCents, Math.round(expectedTotal * 0.6));
+assert.strictEqual(result.deposit.balanceDueCents, expectedTotal - Math.round(expectedTotal * 0.6));
 
 approxLog("sessionTotal", result.totals.sessionTotal);
 approxLog("addonDiscount", result.totals.addonDiscount);

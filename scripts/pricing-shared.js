@@ -8,10 +8,12 @@
 //  - Session prices are the existing FLAT per-duration prices, per day. The
 //    5am/10:30pm "billing floors" are availability/duration-selection rules,
 //    NOT a per-hour billing formula — there is no custom hours math here.
-//  - Per-day add-on discount by chronological day index: Day1 100%, Day2 85%,
-//    Day3+ 70%. Applies ONLY to the five listed add-ons (rolling walls, chairs,
-//    tables, PA, TV). The Event Setup and Reset Crew and any future add-ons are flat,
-//    never discounted. Session price is never discounted.
+//  - Per-day add-on discount by chronological day index: Day1 100%, Day2 80%,
+//    Day3+ 60% (Drew raised this from 85%/70% on 2026-07-13). Applies ONLY to the
+//    listed add-ons (rolling walls, chairs, tables, PA, TV, backdrops). The Event
+//    Setup and Reset Crew and any future add-ons are flat — "fixed cost or one-time
+//    fee" add-ons are never discounted, which is exactly the carve-out Drew asked
+//    for. Session price is never discounted.
 
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -33,11 +35,17 @@
     "backdrops": true
   };
 
-  // Day index -> multiplier. Day1 (0) full, Day2 (1) -15%, Day3+ (>=2) -30%.
+  // Day index -> multiplier. Day1 (0) full, Day2 (1) -20%, Day3+ (>=2) -40%.
+  //
+  // Drew RAISED this ladder 2026-07-13 (msg 19f5e1ef38252d34) from 15%/30% to
+  // 20%/40%, and sent his own worked example as the spec — a $190 add-on over
+  // five days: $190, $152, $114, $114, $114 = $684. That example is pinned in
+  // pricing-shared.test.js; if this ladder changes again, that test is the
+  // statement of what the customer was promised.
   function dayDiscountMultiplier(dayIndex) {
     if (dayIndex <= 0) return 1.0;
-    if (dayIndex === 1) return 0.85;
-    return 0.70;
+    if (dayIndex === 1) return 0.80;
+    return 0.60;
   }
 
   function isDiscountEligible(addonId) {
