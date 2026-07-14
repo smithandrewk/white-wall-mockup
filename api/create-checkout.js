@@ -1081,7 +1081,7 @@ async function handleCartCheckout(req, res, body) {
     var cartIsMultiDayEvent = cartIsEvent && priced.sessions.length >= 2;
     var cleaningFeeCents = (cartIsMultiDayEvent || cartMaxAttendees >= 35) ? 15000 : 0;
 
-    // Multi-day event discount (Drew 2026-07-13): $100 off per consecutive day the
+    // Multi-day event discount (Drew 2026-07-13): $160 off per consecutive day the
     // event spans, off the grand total. Day length is irrelevant — a short first
     // day or an early-checkout last day still counts as a full impacted day — so
     // the multiplier is the day-session COUNT. Computed by the SAME pricing-shared
@@ -1227,7 +1227,7 @@ async function handleCartCheckout(req, res, body) {
         // record explains why the Square charge is below the sum of the day prices.
         if (multiDayDiscountCents > 0 && si === 0) {
           notes += "\n\nMulti-day discount: -$" + (multiDayDiscountCents / 100).toFixed(2) +
-            " ($100 x " + priced.sessions.length + " day" +
+            " (" + pricingShared.multiDayPerDayLabel() + " x " + priced.sessions.length + " day" +
             (priced.sessions.length === 1 ? "" : "s") + ")";
         }
 
