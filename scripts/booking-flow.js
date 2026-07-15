@@ -4042,12 +4042,19 @@
   // Step 3 (Details): requires contact info + terms accepted
   // Step 4 (Waiver): requires waiver signed
   // Step 5 (Add-ons & Pay): add-ons are optional, Pay & Book button here
+  // Matches the server-side check in api/create-checkout.js so a malformed
+  // email (e.g. a website domain typed into the field) is caught inline before
+  // submit, instead of only failing at Square's createCustomer call.
+  function isValidEmail(email) {
+    return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }
+
   function isStepComplete(step) {
     if (step === 1) return Boolean(state.durationId);
     if (step === 2) return Boolean((state.selectedDate && state.selectedTime) || hasBookableSlot());
     if (step === 3) {
       if (!state.eventIntent) return false;
-      var baseComplete = Boolean(state.contact.firstName && state.contact.email && state.intake.leadSource && isTermsAccepted() && state.intake.readEmail);
+      var baseComplete = Boolean(state.contact.firstName && isValidEmail(state.contact.email) && state.intake.leadSource && isTermsAccepted() && state.intake.readEmail);
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
@@ -4084,6 +4091,7 @@
     if (!state.eventIntent) errors.push("Please select photo/video session or event booking.");
     if (!state.contact.firstName) errors.push("Please enter your first name.");
     if (!state.contact.email) errors.push("Please enter your email address.");
+    else if (!isValidEmail(state.contact.email)) errors.push("Please enter a valid email address.");
     if (!state.intake.leadSource) errors.push("Please tell us how you heard about us.");
     if (!state.intake.readEmail) errors.push("Please confirm you will read the confirmation email and watch the linked videos.");
     var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
