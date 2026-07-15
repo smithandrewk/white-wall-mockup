@@ -3011,6 +3011,9 @@
       // Stash the booker email so the confirmation page can prefill the
       // "create an account" prompt. Best-effort; never blocks the redirect.
       try { sessionStorage.setItem("wws_booking_email", state.contact.email || ""); } catch (e) {}
+      // Stash the charged total so the confirmation page can fire the Google Ads
+      // booking conversion with a real value (ENT-98). Best-effort; never blocks.
+      try { sessionStorage.setItem("wws_booking_total", String(typeof state._grandTotal === "number" ? state._grandTotal : "")); } catch (e) {}
       window.location.href = checkoutData.redirect;
     } catch (err) {
       console.error("Checkout error:", err);
