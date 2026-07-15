@@ -53,6 +53,16 @@ const sbDB = require("./_lib/supabase");
 const { enrollBooking } = require("./_lib/campaign-enroll");
 const crypto = require("crypto");
 
+// Pragmatic email-format check. Guards the Square createCustomer call, which
+// 400s on a malformed address (e.g. a customer typing their website domain into
+// the email field) — that used to throw into the catch below and page as a
+// CRITICAL production alert for what is really a user typo. We reject it up
+// front with a friendly 400 instead. Deliberately permissive: something before
+// the @, something after, and a dotted domain.
+function isValidEmail(email) {
+  return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -112,6 +122,9 @@ module.exports = async function handler(req, res) {
   }
   if (!contact || !contact.firstName || !contact.email) {
     return res.status(400).json({ error: "Missing contact info" });
+  }
+  if (!isValidEmail(contact.email)) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
   }
   if (!waiverSigned) {
     return res.status(400).json({ error: "Waiver must be signed" });
@@ -949,6 +962,9 @@ async function handleCartCheckout(req, res, body) {
   // ---- Validation (universal + per session) --------------------------------
   if (!contact || !contact.firstName || !contact.email) {
     return res.status(400).json({ error: "Missing contact info" });
+  }
+  if (!isValidEmail(contact.email)) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
   }
   if (!waiverSigned) {
     return res.status(400).json({ error: "Waiver must be signed" });
