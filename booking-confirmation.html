@@ -25,6 +25,14 @@
           if (stored) { total = parseFloat(stored) || 0; }
           sessionStorage.removeItem("wws_booking_total");
         } catch (e) {}
+        // Enhanced conversions (ENT-99): attach the booker email so Google can
+        // match the conversion to the ad click even without cookies. gtag hashes
+        // it SHA-256 client-side (account-level enhanced conversions is on).
+        // Read-only — the account-creation prompt below also needs this key.
+        try {
+          var em = (sessionStorage.getItem("wws_booking_email") || "").trim().toLowerCase();
+          if (em) { gtag('set', 'user_data', { email: em }); }
+        } catch (e) {}
         gtag('event', 'conversion', {
           'send_to': 'AW-18314188875/ljOTCL3z_tAcEMuw8ZxE',
           'value': total,
