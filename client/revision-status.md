@@ -699,3 +699,15 @@ DASHBOARD (wws-dashboard), not the booking site. **PR #87 (squash `458b00d`) mer
 - [x] Full-width Apple-style month calendar (new `components/glance/month-calendar-card.tsx` + `getMonthCalendar`): studio-colored dot per booking under each day (PV green / TM blue canon), tap a day to unfold each booking (name, start time, studio, length, amount paid, photo/video vs event), tap to collapse.
 - [x] Verified: `npm run build`; 103 unit tests (new `computeYoy` handoff/headline/January + `weekAvg`); live-DB render of all 3 scopes (calendar counts reconcile **21 PV + 15 TM = 36 company**), tapped day, 390px mobile (no overflow, no console errors).
 - Money rule unchanged (net Square cash; calendar per-booking amount = net collected, booked value labeled when unpaid). Told Drew: (a) one-line swap to gross if he wants "charged"; (b) YoY prior reads n/a for Powdersville (2026 flagship, no attributable 2025 cash), full for Taylors Mill.
+
+## Feedback Round 37 (2026-07-16) — Drew reply (msg 19f6b944d8b1bc71): full-width, perf-colored lines, per-person intake, dedicated Calendar page
+
+DASHBOARD. **PR #88 (squash) merged + deployed + prod-verified.** Confirmed live to Drew (`19f6ba5414cfa72f`). Comms in `client/comms/2026-07-16-drew-dashboard-overview-rd.md` (Round 2 section).
+
+- [x] Full-width Overview (dropped `max-w-6xl` on GlancePage).
+- [x] Perf-colored chart lines (shared `perfColor()`): current-year line + projection GREEN when beating baseline / RED when behind; avg-month + prior-year lines stay gray; applied to month-vs-normal AND YoY; neutral when pct null.
+- [x] Per-person booking intake dropdown in the calendar day expansion: Instagram (linked), business, phone, email, headcount, add-ons (`addonName()`), consent-stripped form notes. `stripConsentFromNotes()` parses OUT the card-on-file consent block (Square token ids, consent IP/UA) — pure + unit-tested (no token/IP leak). Concatenated `business_name` " | " dumps split into a readable list.
+- [x] New `/calendar` full-page route + "Calendar" nav entry under Bookings (`getCalendarPage()` all-scopes, `large` cells).
+- [x] Answered Drew's Q inline: calendar reads the dashboard Postgres, synced hourly from Acuity + Square by `co.entrpy.wws-poll` (read-only), <=~1h behind, snapshot pattern not live-API.
+- [x] Verified: build; 105 tests (2 new consent-strip); live-DB render of all the above, no overflow at 1600/390, no console errors.
+- FLAGGED to Drew (non-blocking): some clients' whole intake form is ingested into `client.business_name` as a " | " blob; shown as a readable "Booking form" list. Offered to break out specific fields if he wants.

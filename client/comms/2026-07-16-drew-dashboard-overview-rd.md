@@ -81,3 +81,60 @@ nav entry gone). **Open promise RESOLVED** — sent Drew the live link + walkthr
   labeled when unpaid); one-line swap to gross if he wants "charged". (b) YoY prior line reads
   n/a for Powdersville (no 2025 cash attributable to the 2026 flagship), full for Taylor's Mill.
 - Worktree left at `wws-dashboard-worktrees/overview-glance` (branch not deleted).
+
+## Round 2 — Drew reply (msg `19f6b944d8b1bc71`, 2026-07-16 11:38, contact@whitewallstudios.co) + screenshot
+
+Verbatim: "Okay, this is great. The first thing is, can we fill the full page on the left and
+right sides? If I expand the window, I want it to actually fill the whole size. [screenshot of
+the centered column with empty side margins]. Let's also make the solid line and future
+projection dotted lines green. While the average month or previous year's lines can stay
+gray/black, make that current year/projected lines green if we are beating the average month or
+year prior. Make it red if we are not beating it. The calendar is also amazing... Whenever I click
+on a day... I want to then be able to click on this specific person and then view all the
+information they put in the form... [Instagram handle? how many people? what exactly the event
+was? add-ons, literally all of it. Clean, easy to read]. and then, on the left side where we have
+'Bookings' as a tab, I want you to make a new tab underneath that one that says 'Calendar'...
+an entire page allocated to this exact same process, but bigger and better... Can you confirm
+that the calendar is pulling straight from acuity/square?"
+
+Triage (not §4-gated — full-width, chart colors, a read-only intake dropdown, a new read-only
+page, and answering a question):
+1. **Full-width** — drop GlancePage's `mx-auto max-w-6xl` so it fills the window.
+2. **Perf-colored chart lines** — current-year + projected lines GREEN when beating baseline
+   (pctChange >= 0), RED when behind; average-month / prior-year lines stay neutral. Apply to
+   BOTH the month-vs-normal chart (`data.pctChange`) and the YoY chart (`yoy.pctChange`); null pct
+   → neutral.
+3. **Per-person intake dropdown** in the calendar day expansion. Data: `client.instagram/
+   business_name/phone/email_norm/display_name`, `booking.participants`/`properties.attendees_raw`,
+   `booking.notes` (the labeled intake: Heard about us / Event booking / Event guests / Food or
+   drinks / Event description), `booking_addon` (resolve ids via `addonName()` from
+   `lib/addons-catalog.ts`; N rows = qty N). **PARSE OUT** the `--- CARD-ON-FILE CONSENT ---`
+   block in notes (Square token ids, consent IP/UA, hashes) — auto system data + sensitive, NOT
+   "what she filled in". Needs a `getBookingIntake(id)` loader + nested collapse UI.
+4. **New `/calendar` full-page route** + a "Calendar" nav entry directly under "Bookings" — the
+   month calendar full-page (scope toggle + the per-person intake), bigger.
+5. **Answer (inline, done in the reply):** the calendar reads the dashboard's own Postgres, which
+   the hourly poller (`co.entrpy.wws-poll`, StartInterval 3600, read-only) syncs from Acuity
+   (bookings) + Square (cash). So it's real Acuity/Square data, <=~1h behind, by design (snapshot
+   pattern, not a live per-page API hit). Square IS flowing (real revenue in the DB).
+- Replied ack + answered the data-source Q inline (msg `19f6b9a8f95a721c`). Screenshot saved to
+  scratchpad `drew-fullwidth.png`.
+
+### Round 2 SHIPPED + LIVE (2026-07-16) — wws-dashboard PR #88 (squash) merged + deployed + prod-verified
+Confirmed live to Drew (msg `19f6ba5414cfa72f`). All 4 build items + the inline data-source answer.
+- **Full width** (dropped `max-w-6xl` on GlancePage). **Perf-colored lines** (shared `perfColor()`:
+  current+projected GREEN when beating baseline / RED when behind; avg + prior stay gray; applied to
+  month-vs-normal AND YoY; neutral when pct null). **Per-person intake dropdown** (`getMonthCalendar`
+  now returns per-booking `intake`: client contact + participants + add-ons via `addonName()` +
+  consent-stripped notes; `stripConsentFromNotes()` pure + unit-tested — the CARD-ON-FILE CONSENT
+  block with Square token ids / consent IP is parsed OUT; concatenated `business_name` " | " dumps
+  split into a readable list). **New `/calendar` full page** + "Calendar" nav under Bookings
+  (`getCalendarPage()`, `components/glance/calendar-page.tsx`, `large` cells).
+- **Verified:** build; 105 tests (2 new consent-strip, asserting no token/IP leak); live-DB render of
+  full-width Overview (red month line / green YoY), a person intake expand (consent block absent), the
+  /calendar page, no overflow at 1600/390, no console errors. Screenshots `r2-*` in scratchpad.
+- **Data quirk flagged to Drew (not blocking):** some clients' entire Acuity intake form is ingested
+  into `client.business_name` as a " | " blob; shown as a readable "Booking form" list. Offered to
+  pull specific fields (participants, event description) into labeled rows if he wants. His call.
+- **Answered inline:** calendar reads the dashboard's Postgres, synced hourly from Acuity (bookings)
+  + Square (cash) by `co.entrpy.wws-poll` (read-only); <=~1h behind, snapshot pattern not live-API.
