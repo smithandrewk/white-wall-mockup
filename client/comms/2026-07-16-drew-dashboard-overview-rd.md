@@ -138,3 +138,48 @@ Confirmed live to Drew (msg `19f6ba5414cfa72f`). All 4 build items + the inline 
   pull specific fields (participants, event description) into labeled rows if he wants. His call.
 - **Answered inline:** calendar reads the dashboard's Postgres, synced hourly from Acuity (bookings)
   + Square (cash) by `co.entrpy.wws-poll` (read-only); <=~1h behind, snapshot pattern not live-API.
+
+## Round 3 — Drew reply (msg `19f6bb298d4fcd4b`, 2026-07-16 12:11, contact@whitewallstudios.co)
+
+Verbatim asks: (1) more bottom breathing room — after opening a person the last panel gets chopped
+with no scroll buffer; add dead space at the very bottom. (2) In the person dropdown, ALWAYS show the
+Instagram handle (NA if none). (3) Add a "Purpose" subject = what the event/photo session is for
+(whatever they entered). (4) For events, a payment-status field: paid in full vs paid the 60% deposit
++ balance still due; reflect it in the calendar too. (5) "Scrape acuity and square every minute
+instead of every hour." (6) In the Calendar tab, a month/year selector to view ANY month in ANY year
+(historical + future), not just the current July.
+
+Triage (not §4-gated — UI + a read-only month picker + a poll-cadence tweak on OUR OWN poller,
+reversible, no spend, no platform/architecture change, internal):
+1. Bottom spacer on GlancePage + CalendarPage.
+2. IntakePanel: always render Instagram (link or "NA").
+3. Add a parsed **Purpose** (event/session description) from notes; NA if none.
+4. `paymentStatus` from amountPaid vs bookedValue (paid-in-full / deposit-balance-due / partial /
+   unpaid); chip in the person row + a subtle calendar marker (esp. events).
+5. `deploy/co.entrpy.wws-poll.plist` StartInterval 3600 → 60 + reload the launchd job. Safe: launchd
+   won't run concurrent copies of one label (no overlap), poll is incremental, Acuity/Square reads are
+   free. Verify poll runtime before committing.
+6. Parameterize `getMonthCalendar(scope, year?, month?)`; add `GET /api/calendar` + a month/year
+   picker in CalendarPage that fetches on navigate (initial month server-precomputed).
+- Sent a brief ack confirming the read + the every-minute change. Building Round 3 as PR #3.
+
+### Round 3 SHIPPED + LIVE (2026-07-16) — wws-dashboard PR #89 merged + deployed + prod-verified
+Ack `19f6bb5eb9cc7c00`; confirmed live `19f6bc35f94e75ac`. All 6 items.
+- Bottom spacer (GlancePage + CalendarPage). Instagram always (NA). New Purpose row (`parsePurpose()`,
+  NA if none). Event payment status (`computePaymentStatus()`: paid / deposit+balance / partial /
+  unpaid; fee-aware thresholds) as a chip on the booking row AND in the person detail. Poll hourly→
+  **every minute** (plist StartInterval 3600→60 + installed-copy reloaded; run interval = 60s
+  verified; also fixed the plist's stale program path). Calendar **month/year picker** (any month/year,
+  past+future) via month-parameterized `getMonthCalendar` + `GET /api/calendar` + prev/next + selects.
+- Verified: build; 107 tests (new computePaymentStatus + parsePurpose); live-DB screenshots (payment
+  chips, Instagram/Purpose/Payment rows, month picker → empty March 2027 + PV June 2026=15); prod
+  spot-check (home/calendar 200, /api/calendar future=0/past=15, picker present, poll interval=60s).
+- **⚠️ DEPLOY LANDMINE HIT + RECOVERED:** the wws-dashboard **main checkout carries pre-existing
+  uncommitted local edits to `deploy/*` (a path-fix on the poll plist) + CLAUDE.md + a campaigns
+  route.** `git pull` in the deploy step could NOT fast-forward over the dirty plist (which PR #89
+  also touched) → pull aborted, HEAD stayed at #88, the rebuild silently recompiled STALE code and
+  kickstarted prod on Round 2. `git pull | tail -1` masked the abort. Caught it by checking
+  `git rev-parse HEAD == origin/main`. Fix: `git checkout -- deploy/co.entrpy.wws-poll.plist` (local
+  change was fully subsumed by #89) then pull ff'd cleanly; rebuilt + redeployed R3. **Lesson: the
+  deploy step MUST assert HEAD advanced to origin/main after pull, not just that build succeeded.**
+  The other local deploy-drift files remain uncommitted (pre-existing, not mine) — a standing hazard.

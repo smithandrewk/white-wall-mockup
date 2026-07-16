@@ -711,3 +711,15 @@ DASHBOARD. **PR #88 (squash) merged + deployed + prod-verified.** Confirmed live
 - [x] Answered Drew's Q inline: calendar reads the dashboard Postgres, synced hourly from Acuity + Square by `co.entrpy.wws-poll` (read-only), <=~1h behind, snapshot pattern not live-API.
 - [x] Verified: build; 105 tests (2 new consent-strip); live-DB render of all the above, no overflow at 1600/390, no console errors.
 - FLAGGED to Drew (non-blocking): some clients' whole intake form is ingested into `client.business_name` as a " | " blob; shown as a readable "Booking form" list. Offered to break out specific fields if he wants.
+
+## Feedback Round 38 (2026-07-16) — Drew reply (msg 19f6bb298d4fcd4b): bottom room, Instagram/Purpose, event payment status, every-minute poll, month/year calendar picker
+
+DASHBOARD. **PR #89 merged + deployed + prod-verified.** Ack `19f6bb5eb9cc7c00`; confirmed live `19f6bc35f94e75ac`.
+
+- [x] Bottom breathing-room spacer on Overview + Calendar pages.
+- [x] Instagram always shown in the person dropdown (NA when blank); new **Purpose** row = event/session description (`parsePurpose()`, NA if none).
+- [x] Event **payment status** (`computePaymentStatus()` from Square cash vs list value; fee-aware): Paid in full / Deposit paid + ~balance due / Partially paid / Unpaid — chip on the booking row AND in the detail (reflected at calendar level). Deposit state dormant until item-6 armed.
+- [x] Poll cadence hourly → **every minute** (`deploy/co.entrpy.wws-poll.plist` StartInterval 3600→60 + installed copy reloaded, run interval=60s; also fixed the plist's stale program path). Reversible ops change on our own poller; safe (launchd no-overlap, few-sec poll, free reads).
+- [x] Calendar **month/year picker** (any month/year, historical+future): month-parameterized `getMonthCalendar` + `GET /api/calendar` + prev/next + month & year selects; current month server-precomputed, others fetched.
+- [x] Verified: build; 107 tests; live-DB screenshots + prod spot-check.
+- ⚠️ **Deploy landmine (recovered):** the main checkout has pre-existing uncommitted `deploy/*` edits that blocked `git pull` fast-forward → a silent stale-code deploy on the first attempt. Fixed by discarding the subsumed local plist change + re-pulling. Deploy must assert HEAD==origin/main. See comms.
