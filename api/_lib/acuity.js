@@ -273,7 +273,14 @@ function buildAppointmentNotes(bookingState) {
   const lines = [];
 
   const intake = bookingState.intake || {};
-  if (intake.leadSource) lines.push("Heard about us: " + intake.leadSource);
+  if (intake.leadSource) {
+    // "Other" records the exact free text the customer typed, not the word "Other".
+    const heard =
+      intake.leadSource === "Other" && intake.leadSourceOther
+        ? intake.leadSourceOther
+        : intake.leadSource;
+    lines.push("Heard about us: " + heard);
+  }
 
   if (bookingState.eventIntent === "yes") {
     lines.push("Event booking: Yes");

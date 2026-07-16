@@ -111,6 +111,7 @@
       participants: "",
       instagram: "",
       leadSource: "",
+      leadSourceOther: "",
       readEmail: false
     },
     emailAcknowledgment: "",
@@ -1529,6 +1530,13 @@
         renderStepContent();
       }
 
+      if (target.matches("[data-input='intake-lead-source-other']")) {
+        // Free text (required, 3-char min) when lead source is "Other". Use the
+        // lightweight gate update, not a re-render, so the caret isn't disturbed.
+        state.intake.leadSourceOther = target.value;
+        updateTermsGate();
+      }
+
       if (target.matches("[data-input='email-acknowledgment']")) {
         state.emailAcknowledgment = target.value;
         renderStepContent();
@@ -1624,6 +1632,20 @@
 
       if (target.matches("[data-input='intake-lead-source']")) {
         state.intake.leadSource = target.value;
+        // "Other" reveals a required free-text box; anything else hides + clears it.
+        var isOther = target.value === "Other";
+        var otherWraps = document.querySelectorAll("[data-lead-other-wrap]");
+        for (var w = 0; w < otherWraps.length; w++) {
+          otherWraps[w].classList.toggle("hidden", !isOther);
+        }
+        if (!isOther) {
+          state.intake.leadSourceOther = "";
+          var otherInputs = document.querySelectorAll("[data-input='intake-lead-source-other']");
+          for (var oi = 0; oi < otherInputs.length; oi++) otherInputs[oi].value = "";
+        } else {
+          var firstOther = document.querySelector("[data-input='intake-lead-source-other']");
+          if (firstOther) firstOther.focus();
+        }
         updateTermsGate();
       }
 
@@ -4057,7 +4079,8 @@
     if (step === 2) return Boolean((state.selectedDate && state.selectedTime) || hasBookableSlot());
     if (step === 3) {
       if (!state.eventIntent) return false;
-      var baseComplete = Boolean(state.contact.firstName && isValidEmail(state.contact.email) && state.intake.leadSource && isTermsAccepted() && state.intake.readEmail);
+      var leadSourceComplete = Boolean(state.intake.leadSource) && (state.intake.leadSource !== "Other" || (state.intake.leadSourceOther || "").trim().length >= 3);
+      var baseComplete = Boolean(state.contact.firstName && isValidEmail(state.contact.email) && leadSourceComplete && isTermsAccepted() && state.intake.readEmail);
       // Email acknowledgment signature must match first+last name
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
@@ -4096,6 +4119,7 @@
     if (!state.contact.email) errors.push("Please enter your email address.");
     else if (!isValidEmail(state.contact.email)) errors.push("Please enter a valid email address.");
     if (!state.intake.leadSource) errors.push("Please tell us how you heard about us.");
+    else if (state.intake.leadSource === "Other" && (state.intake.leadSourceOther || "").trim().length < 3) errors.push("Please tell us exactly how you heard about us (at least 3 characters).");
     if (!state.intake.readEmail) errors.push("Please confirm you will read the confirmation email and watch the linked videos.");
     var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
     if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) errors.push("Please sign the email acknowledgment with your full name.");
