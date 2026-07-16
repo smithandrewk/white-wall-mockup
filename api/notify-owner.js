@@ -143,7 +143,7 @@ function buildEmailBody(bookingState, appointmentId, recipientType) {
     "Business name:        " + (intake.business || "—"),
     "Total participants:   " + (intake.participants || "—"),
     "Instagram:            " + (intake.instagram || "—"),
-    "Heard about us:       " + (intake.leadSource || "—"),
+    "Heard about us:       " + ((intake.leadSource === "Other" && intake.leadSourceOther) ? intake.leadSourceOther : (intake.leadSource || "—")),
     "Will read full email: " + (intake.readEmail ? "Yes" : "No")
   );
 

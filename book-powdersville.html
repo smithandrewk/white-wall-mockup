@@ -190,13 +190,20 @@
               <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-lead-source">How did you hear about us?</label>
               <select id="intake-lead-source" class="booking-input" data-input="intake-lead-source">
                 <option value="">Please select…</option>
-                <option value="Google Search">Google Search</option>
+                <option value="Repeat customer">Repeat customer</option>
+                <option value="Google search">Google search</option>
                 <option value="Instagram">Instagram</option>
                 <option value="Facebook">Facebook</option>
                 <option value="Friend / Referral">Friend / Referral</option>
                 <option value="Drove by">Drove by</option>
+                <option value="Instagram ad">Instagram ad</option>
+                <option value="Facebook ad">Facebook ad</option>
                 <option value="Other">Other</option>
               </select>
+              <div data-lead-other-wrap class="hidden mt-3">
+                <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-2" for="intake-lead-source-other">How did you hear about us?</label>
+                <input id="intake-lead-source-other" class="booking-input" data-input="intake-lead-source-other" placeholder="Tell us exactly how you heard about us" minlength="3">
+              </div>
               <label class="flex items-start gap-3 mt-5 cursor-pointer">
                 <input type="checkbox" data-check="read-email" class="mt-1 shrink-0">
                 <span class="text-sm text-black/65">I will read the entire confirmation email I receive and watch the videos linked in that email.</span>
