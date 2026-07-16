@@ -12,3 +12,9 @@
 - Server records the EXACT text: `api/_lib/acuity.js` buildAppointmentNotes + `api/notify-owner.js` use `leadSourceOther` when leadSource === "Other" (so Acuity note reads "Heard about us: <their text>", not "Other"). Feeds the dashboard /stats/lead-source lens unchanged (parses whatever's in the note).
 - Verify: node --check touched JS; staging deploy + Playwright (options present, Other reveals a required box, <3 chars blocks, resolves to the note); then prod (merge → Vercel auto-deploy) + confirm.
 - Ack sent `19f6bc7162f7b335`.
+
+## SHIPPED + LIVE (2026-07-16) — white-wall-mockup PR #87 merged → Vercel prod (~40s)
+Both pages live on whitewallstudios.co (PV + TM show the 9 options + `intake-lead-source-other`).
+Confirmed to Drew `19f6bd0dbea483d8`. Verified: node --check; buildAppointmentNotes Other→exact text;
+staging Playwright on both pages (9 options, box hidden→revealed→hidden+cleared, no console errors);
+prod spot-check both pages. Branch `worker/lead-source-other` (not deleted).

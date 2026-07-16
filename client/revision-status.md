@@ -723,3 +723,12 @@ DASHBOARD. **PR #89 merged + deployed + prod-verified.** Ack `19f6bb5eb9cc7c00`;
 - [x] Calendar **month/year picker** (any month/year, historical+future): month-parameterized `getMonthCalendar` + `GET /api/calendar` + prev/next + month & year selects; current month server-precomputed, others fetched.
 - [x] Verified: build; 107 tests; live-DB screenshots + prod spot-check.
 - ⚠️ **Deploy landmine (recovered):** the main checkout has pre-existing uncommitted `deploy/*` edits that blocked `git pull` fast-forward → a silent stale-code deploy on the first attempt. Fixed by discarding the subsumed local plist change + re-pulling. Deploy must assert HEAD==origin/main. See comms.
+
+## Feedback Round 39 (2026-07-16) — Drew (msg 19f6bb5d4cbc7012): booking-SITE lead-source dropdown + required "Other" free-text
+
+BOOKING SITE (white-wall-mockup, not the dashboard). **PR #87 merged → Vercel prod (~40s), live on whitewallstudios.co.** Confirmed `19f6bd0dbea483d8`. Comms `client/comms/2026-07-16-drew-booking-site-lead-source.md`.
+
+- [x] "How did you hear about us?" options → Repeat customer, Google search, Instagram, Facebook, Friend / Referral, Drove by, Instagram ad, Facebook ad, Other (both `book-powdersville.html` + `book-taylors-mill.html`; shared Step-3 field = every path).
+- [x] "Other" reveals a **required** free-text box (3-char min); switching away hides + clears it. Client validation gates Step-3 + Pay (`isStepComplete`/`getValidationErrors`); input handler uses `updateTermsGate()` (no re-render, caret safe).
+- [x] Exact typed answer recorded: `api/_lib/acuity.js` `buildAppointmentNotes` (the one note builder all checkout paths use) + `api/notify-owner.js` write the free text, not "Other" → dashboard lead-source lens shows the real answer.
+- [x] Verified: node --check; buildAppointmentNotes Other→exact text; staging Playwright both pages (9 options, hidden→revealed→hidden+cleared, no console errors); prod spot-check both pages.
