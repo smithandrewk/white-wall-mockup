@@ -732,3 +732,12 @@ BOOKING SITE (white-wall-mockup, not the dashboard). **PR #87 merged → Vercel 
 - [x] "Other" reveals a **required** free-text box (3-char min); switching away hides + clears it. Client validation gates Step-3 + Pay (`isStepComplete`/`getValidationErrors`); input handler uses `updateTermsGate()` (no re-render, caret safe).
 - [x] Exact typed answer recorded: `api/_lib/acuity.js` `buildAppointmentNotes` (the one note builder all checkout paths use) + `api/notify-owner.js` write the free text, not "Other" → dashboard lead-source lens shows the real answer.
 - [x] Verified: node --check; buildAppointmentNotes Other→exact text; staging Playwright both pages (9 options, hidden→revealed→hidden+cleared, no console errors); prod spot-check both pages.
+
+## Feedback Round 40 (2026-07-17) — Drew (msg 19f7180aeade755d): dashboard Overview — This Week chart + Bookings calendar SIDE BY SIDE
+
+DASHBOARD (wws-dashboard, not the booking site). **PR #90 (squash `c8c2ded`) merged + deployed + kickstarted + prod-verified on wws.entrpy.co.** Confirmed to Drew (`19f71c22a197b86a`). Comms `client/comms/2026-07-17-drew-dashboard-overview-side-by-side.md`.
+
+- [x] Exported `WeekChartCard` from `components/glance/glance-view.tsx` (was private) and dropped it from the `GlanceView` stack.
+- [x] Rendered `[WeekChartCard | MonthCalendarCard]` as a two-column `lg:grid-cols-2` row (`items-start`) in `components/glance/glance-page.tsx` — chart left, calendar right, condensed; stacks to one column below `lg`.
+- [x] Same click-a-day unfold UI: `MonthCalendarCard` renders its day detail inside the card and works unchanged at half width.
+- [x] Verified: `npm run build` clean; live-DB Playwright (desktop two-column, 390px mobile stack, click-a-day unfold on both, 0px horizontal overflow, live data, zero console errors); prod re-verify on the deployed `:18794` process + public tunnel healthy (302 CF Access). Pure LAYOUT change, READ-ONLY lenses, not §4-gated.
