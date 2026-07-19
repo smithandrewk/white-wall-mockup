@@ -750,3 +750,13 @@ BOOKING/MARKETING SITE (white-wall-mockup, whitewallstudios.co). Branch `worker/
 - [x] "Sunlight Simulator" added to the menu bar on all 9 menu-bearing pages (index, powdersville, taylors-mill, gallery, floor-plans, faq, add-ons, book-powdersville, book-taylors-mill), desktop + mobile, right after Floor Plans, cloning each page's own nav styling (14 links).
 - [x] FAQ "What is the best time of day for natural light?" answer gets a new line + hyperlink to `/sunlight-simulator` ("live Sunlight Simulator … what the sunlight will look like in the space at any time of day, in any month"). Covers both of Drew's phrasings; no new question needed.
 - [x] Verified: no JS touched (`node --check` n/a); grep completeness (14 nav links + 1 FAQ link); headless render of the wrapper (bundle unpacks, sliders/presets render, zero console/page errors, desktop + 390px mobile); Vercel prod spot-check on the live URL after merge.
+
+## Feedback Round 42 (2026-07-19) — Drew (msg 19f7b9f45b99a756): hamburger nav must appear top-right on EVERY page
+
+BOOKING/MARKETING SITE (white-wall-mockup, whitewallstudios.co). PR #89 (squash `5f97a5f`). Comms `client/comms/2026-07-19-drew-hamburger-every-page.md`. Copy/static nav change — no money/booking-logic, not §4-gated.
+
+- [x] Root cause: per-page nav-markup drift. Some pages had desktop links but no mobile hamburger (add-ons, floor-plans, book-*, booking-confirmation/error, login, addon-menu, account, 404, guides); some had a `md:hidden` hamburger but no desktop menu (faq, terms, privacy, props, gallery, gear-rentals-*); two had no nav at all (theresavideoforthat, sunlight-simulator wrapper).
+- [x] New **`scripts/site-nav.js`** (single source of truth, included on all 23 content pages): injects an always-visible hamburger (blue icon in a dark blurred chip) top-right at every breakpoint + a consistent dark dropdown of 11 links, **Flagship/Powdersville first**. Hides legacy per-page link rows/toggles (no double menu), folds a page's sign-out into the menu, mirrors nav-account.js "My Account" swap. Fail-silent + idempotent → can't drift again.
+- [x] Sunlight Simulator app bundle (`sunlight-simulator-app.html`) left byte-for-byte untouched; only its wrapper gets the nav.
+- [x] Home + 2 location pages' desktop spelled-out link bar is now the same hamburger (consistency); offered Drew a one-line restore of inline links if preferred.
+- [x] Verified: Playwright on all 23 pages × {1280, 390}px (present + visible + top-right + opens + 11 links + 0px overflow + no console errors), then re-verified 7 pages on LIVE prod post-deploy. Confirmed to Drew (`19f7bdc4fa1fa17a`).
