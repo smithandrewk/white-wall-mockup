@@ -741,3 +741,12 @@ DASHBOARD (wws-dashboard, not the booking site). **PR #90 (squash `c8c2ded`) mer
 - [x] Rendered `[WeekChartCard | MonthCalendarCard]` as a two-column `lg:grid-cols-2` row (`items-start`) in `components/glance/glance-page.tsx` — chart left, calendar right, condensed; stacks to one column below `lg`.
 - [x] Same click-a-day unfold UI: `MonthCalendarCard` renders its day detail inside the card and works unchanged at half width.
 - [x] Verified: `npm run build` clean; live-DB Playwright (desktop two-column, 390px mobile stack, click-a-day unfold on both, 0px horizontal overflow, live data, zero console errors); prod re-verify on the deployed `:18794` process + public tunnel healthy (302 CF Access). Pure LAYOUT change, READ-ONLY lenses, not §4-gated.
+
+## Feedback Round 41 (2026-07-18) — Drew (msg 19f7822ca6f71be2): publish the Sunlight Simulator live + add to menu bar + link from FAQ
+
+BOOKING/MARKETING SITE (white-wall-mockup, whitewallstudios.co). Branch `worker/sunlight-simulator`. Comms `client/comms/2026-07-18-drew-sunlight-simulator.md`. Copy/static addition — no money/booking-logic.
+
+- [x] Drew's attached bundle (`Whitewall Sunlight Simulator.html`, 2.9 MB, self-contained) added byte-for-byte as `sunlight-simulator-app.html`; thin wrapper `sunlight-simulator.html` (title/meta/favicon + full-viewport iframe) serves it at the clean route **`/sunlight-simulator`**. Wrapper exists because the bundle rewrites its own head on unpack (empty tab title otherwise); Drew's artifact stays untouched.
+- [x] "Sunlight Simulator" added to the menu bar on all 9 menu-bearing pages (index, powdersville, taylors-mill, gallery, floor-plans, faq, add-ons, book-powdersville, book-taylors-mill), desktop + mobile, right after Floor Plans, cloning each page's own nav styling (14 links).
+- [x] FAQ "What is the best time of day for natural light?" answer gets a new line + hyperlink to `/sunlight-simulator` ("live Sunlight Simulator … what the sunlight will look like in the space at any time of day, in any month"). Covers both of Drew's phrasings; no new question needed.
+- [x] Verified: no JS touched (`node --check` n/a); grep completeness (14 nav links + 1 FAQ link); headless render of the wrapper (bundle unpacks, sliders/presets render, zero console/page errors, desktop + 390px mobile); Vercel prod spot-check on the live URL after merge.
