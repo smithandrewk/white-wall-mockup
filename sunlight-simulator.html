@@ -23,14 +23,18 @@
       border: 0;
       display: block;
     }
-    /* Drew, 2026-07-20: a small hint pinned to the bottom of the image telling first-time
-       visitors they can drag to interact. Lives on the wrapper (never inside Drew's bundle).
-       pointer-events:none so it can never intercept the very drag it is advertising. */
+    /* Drew, 2026-07-20: a small hint telling first-time visitors they can drag to interact.
+       Lives on the wrapper (never inside Drew's bundle). Revised (DREW-6): yellow pill +
+       black text, device-aware copy (finger vs cursor), and JS-pinned to the bottom-center
+       of the actual studio image (the bundle's stage box) rather than the screen bottom.
+       pointer-events:none so it can never intercept the very drag it is advertising.
+       position/left/top are set by JS; hidden until the image is found + positioned. */
     #drag-hint {
       position: fixed;
-      left: 50%;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
-      transform: translateX(-50%);
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -100%);
+      visibility: hidden;
       z-index: 10;
       pointer-events: none;
       display: inline-flex;
@@ -40,15 +44,13 @@
       max-width: min(92vw, 640px);
       padding: 0.5rem 0.9rem;
       border-radius: 999px;
-      background: rgba(20, 22, 26, 0.62);
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-      color: #fff;
+      background: #ffd400;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+      color: #000;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-size: clamp(0.72rem, 2.4vw, 0.85rem);
       line-height: 1.25;
-      font-weight: 500;
+      font-weight: 600;
       text-align: center;
       letter-spacing: 0.01em;
     }
@@ -62,7 +64,7 @@
     bundle stays byte-for-byte as delivered. Change requests: Drew, 2026-07-18.
   -->
   <iframe id="sim-frame" src="/sunlight-simulator-app.html" title="WhiteWall Studios Natural Light Simulator" allowfullscreen loading="eager"></iframe>
-  <div id="drag-hint" role="note" aria-label="Drag your finger, or cursor if on computer, to interact with the simulator">
+  <div id="drag-hint" role="note">
     <!-- pointer with left-right motion arrows: "drag to interact" -->
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/>
@@ -73,8 +75,82 @@
       <path d="M1.5 7.5h6"/>
       <path d="M16.5 7.5h6"/>
     </svg>
-    <span>Drag your finger (or cursor if on computer) to interact with the simulator</span>
+    <span id="drag-hint-label">Drag your cursor to interact with the simulator</span>
   </div>
+  <script>
+    /* DREW-6 (Drew, 2026-07-20): the drag hint is device-aware and pinned to the actual
+       studio image, not the screen. The bundle is same-origin, so we read the image's box
+       (the stage that wraps <img alt="Whitewall Studios interior">) and place the pill at
+       its bottom-center, tracking it on load / resize / scroll. Drew's bundle is never
+       modified — we only read its layout and draw over it. */
+    (function () {
+      var frame = document.getElementById('sim-frame');
+      var hint = document.getElementById('drag-hint');
+      var label = document.getElementById('drag-hint-label');
+      var STAGE_SEL = 'img[alt="Whitewall Studios interior"]';
+
+      // Device-aware copy: a touch / coarse-pointer device (iPhone, iPad, Android) drags with
+      // a finger; everything else drags with a cursor. Keyed on capability, not UA string.
+      var isTouch =
+        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+        ('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0);
+      var text = 'Drag your ' + (isTouch ? 'finger' : 'cursor') + ' to interact with the simulator';
+      label.textContent = text;
+      hint.setAttribute('aria-label', text);
+
+      function stageEl() {
+        try {
+          var doc = frame.contentDocument;
+          if (!doc) return null;
+          var img = doc.querySelector(STAGE_SEL);
+          return img ? img.parentElement : null;
+        } catch (e) {
+          return null; // cross-origin guard (should not happen — same origin)
+        }
+      }
+
+      function place() {
+        var stage = stageEl();
+        if (!stage) { hint.style.visibility = 'hidden'; return; }
+        var r = stage.getBoundingClientRect();
+        // The iframe is fixed at inset:0 filling the viewport 1:1, so the stage's rect (in the
+        // iframe's viewport) equals the top-window viewport coords the fixed pill uses.
+        if (r.width < 1 || r.height < 1 || r.bottom < 0 || r.top > window.innerHeight) {
+          hint.style.visibility = 'hidden';
+          return;
+        }
+        hint.style.left = (r.left + r.width / 2) + 'px';
+        hint.style.top = (r.bottom - 14) + 'px'; // pill bottom sits just inside the image bottom
+        hint.style.visibility = 'visible';
+      }
+
+      function bindInner() {
+        try {
+          var win = frame.contentWindow;
+          if (!win) return;
+          win.addEventListener('scroll', place, { passive: true });
+          win.addEventListener('resize', place, { passive: true });
+          if (win.document) {
+            win.document.addEventListener('scroll', place, { passive: true });
+          }
+        } catch (e) {}
+      }
+
+      // The bundle unpacks asynchronously; poll until the image exists, then bind + place.
+      var tries = 0;
+      var poll = setInterval(function () {
+        tries++;
+        if (stageEl()) { clearInterval(poll); bindInner(); place(); }
+        else if (tries > 200) { clearInterval(poll); } // ~40s ceiling, then give up quietly
+      }, 200);
+
+      frame.addEventListener('load', function () { bindInner(); place(); });
+      window.addEventListener('resize', place, { passive: true });
+      window.addEventListener('scroll', place, { passive: true });
+      setInterval(place, 400); // safety net for layout shifts as controls reflow the stage
+    })();
+  </script>
   <script src="/scripts/site-nav.js"></script>
 </body>
 </html>
