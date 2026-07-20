@@ -760,3 +760,13 @@ BOOKING/MARKETING SITE (white-wall-mockup, whitewallstudios.co). PR #89 (squash 
 - [x] Sunlight Simulator app bundle (`sunlight-simulator-app.html`) left byte-for-byte untouched; only its wrapper gets the nav.
 - [x] Home + 2 location pages' desktop spelled-out link bar is now the same hamburger (consistency); offered Drew a one-line restore of inline links if preferred.
 - [x] Verified: Playwright on all 23 pages × {1280, 390}px (present + visible + top-right + opens + 11 links + 0px overflow + no console errors), then re-verified 7 pages on LIVE prod post-deploy. Confirmed to Drew (`19f7bdc4fa1fa17a`).
+
+## Feedback Round 43 (2026-07-20) — Drew (msg 19f7fc5a4d615d26): hamburger white + desktop Robinhood-style horizontal tab reveal
+
+BOOKING/MARKETING SITE (white-wall-mockup, whitewallstudios.co). PR #90 (squash `aa672f5`). Comms `client/comms/2026-07-20-drew-hamburger-white-and-robinhood-reveal.md`. Ticket DREW-4. CSS/nav interaction on the shared `scripts/site-nav.js` — not §4-gated. Drew attached 2 Robinhood screenshots (closed = ☰; open = ✕ + horizontal tab strip below the header).
+
+- [x] Hamburger icon color **blue `#4A90D9` → white `#fff`** on every page. Sits in a dark blurred chip, so white stays legible on any header background.
+- [x] **Desktop (≥768px) only:** clicking the hamburger opens the nav as a **full-width horizontal tab strip** pinned below the header (logo stays top-left; icon swaps to an ✕ top-right), links laid left-to-right — the Robinhood web pattern. Powdersville/Flagship first.
+- [x] **Mobile (<768px) untouched** — same white hamburger + vertical dropdown (Drew: "only on desktop"). The ✕-icon swap is desktop-only too, so mobile stays pixel-identical.
+- [x] Interpretation flagged to Drew + in PR: White Wall has no persistent Robinhood-style top bar (just the floating hamburger), so the strip is a full-width reveal below the header; with 11 links it lands on one wide row + a short second row on a laptop. Offered to trim/reorder tabs if he prefers.
+- [x] Verified: `node --check` clean; Playwright desktop 1280 + mobile 390 across 7 pages (white stroke both widths; desktop full-width flex + left-to-right links + ✕ + 0px overflow; mobile block dropdown + stacked links + stays ☰); then LIVE prod re-verify on whitewallstudios.co (desktop + mobile) post-deploy. Confirmed to Drew (`19f7ff1f71802693`).
