@@ -54,3 +54,27 @@ screen would differ.
   flagged the south-facing assumption, offered a proper accuracy audit + fix as the next
   step. Did NOT build (he asked to align first).
 - Ticket: DREW-11 (audit horizontal/azimuth accuracy of the sunlight simulator).
+
+---
+
+## Follow-up — Drew confirms windows face TRUE SOUTH (msg `19f80e6afb77b8ca`, Mon 20 Jul 2026 15:00:16 -0400, from contact@whitewallstudios.co)
+
+### Verbatim
+
+> Okay, this is super helpful. Thank you for clarifying all that. Believe it or not, the windows are facing 100% true south. We built it from the ground up with the GPS to make sure that we have these windows facing 100% completely true south. With that said, technically it's good, isn't it?
+
+### Disposition
+
+- Drew answered the one open question: the studio's main window wall faces **100% true south**
+  (GPS-verified during construction). That is **exactly the assumption the sim's model already
+  bakes in** (`beta = az - 180`, i.e. window normal = due south). So the single assumption I
+  flagged in the audit is now **confirmed correct** — there is no orientation error to fix.
+- Net: the simulator is astronomically accurate. Vertical elevation right, horizontal (azimuth)
+  right, and the reason the left-right shift reads quiet on screen is a perception effect (in/out
+  swing dominates the diagonal at a fixed afternoon time), not a physics error. **No build.**
+- Replied confirming "yes, technically it is good," explained why, and offered — purely optional —
+  a readability aid (a faint marker tracking the sun's left-right position through the year) so the
+  subtle sideways motion is easier to SEE, framed explicitly as a readability aid, not an accuracy
+  fix (accuracy is already there). Reply id: `19f80e8d2e8bba1c`.
+- **DREW-11 → done** (audit complete, conclusion: accurate, orientation confirmed, no fix needed).
+  If Drew wants the optional readability aid, that spawns a fresh foreman as a new distinct request.
