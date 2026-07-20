@@ -34,3 +34,21 @@ Follow-up / revision to DREW-12 (the "Time Lapse Entire Year" button shipped in 
     (both low, similar wash) with no horizon-crossing discontinuity — the strobe is gone, and it's
     still honest (a day time-lapse showing sunrise→sunset). Play Day / Play Year / idle / presets
     are byte-for-byte unchanged.
+
+---
+
+## Follow-up (mid-build, arrived while shipping the 2-days version) — 1 day/month @ 1.5s
+
+- **From:** WhiteWall Studios <contact@whitewallstudios.co> (Drew)
+- **Date:** Mon, 20 Jul 2026 15:32:32 -0400
+- **Message-id:** `19f8104367a68271`
+- **Note:** sent at 15:32, before pip's 2-days confirmation (`19f810f5dcfc6f49`, ~15:40) — the two crossed. This supersedes the 2-days/month sample count. The strobe fix stays.
+
+### Verbatim
+
+> Lets make it one day per month, but make that one day take 1.5 seconds. So only 12 days, each at 1.5 seconds.
+
+### Triage
+- Supersedes: `%24 / tourStep/2` (2 days/month) → **1 day/month** (`%12 / tourStep` = the 15th of each month).
+- Speed: **1.5s per day** → advance `dHour` at `(tourHi-tourLo)/1.5` per second so each daylight sweep takes exactly 1.5s regardless of season. 12 days × 1.5s = **18s** loop.
+- Strobe fix (daylight-arc clamp + immediate recompute + `_tb`) unchanged. Play Day/Year/idle/presets untouched.
