@@ -110,6 +110,31 @@
         }
       }
 
+      // Drew, 2026-07-20 (DREW-7): remove the "SUN PATH" mini-chart in the top-right of the
+      // image. It is a self-contained card inside Drew's bundle; we find it in the live DOM by
+      // its "SUN PATH" label and hide the card. Cache it so we only scan once, then re-assert
+      // display:none each tick in case the bundle ever redraws. Bundle file stays untouched.
+      var pathCard = null;
+      function hidePath() {
+        try {
+          if (pathCard) {
+            if (pathCard.style.display !== 'none') pathCard.style.display = 'none';
+            return;
+          }
+          var doc = frame.contentDocument;
+          if (!doc) return;
+          var divs = doc.querySelectorAll('div');
+          for (var i = 0; i < divs.length; i++) {
+            var d = divs[i];
+            if (d.children.length === 0 && d.textContent.trim() === 'SUN PATH') {
+              pathCard = d.parentElement; // the blurred card holding the label + sun-path canvas
+              if (pathCard) pathCard.style.display = 'none';
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+
       function place() {
         var stage = stageEl();
         if (!stage) { hint.style.visibility = 'hidden'; return; }
@@ -141,14 +166,15 @@
       var tries = 0;
       var poll = setInterval(function () {
         tries++;
+        hidePath();
         if (stageEl()) { clearInterval(poll); bindInner(); place(); }
         else if (tries > 200) { clearInterval(poll); } // ~40s ceiling, then give up quietly
       }, 200);
 
-      frame.addEventListener('load', function () { bindInner(); place(); });
+      frame.addEventListener('load', function () { bindInner(); place(); hidePath(); });
       window.addEventListener('resize', place, { passive: true });
       window.addEventListener('scroll', place, { passive: true });
-      setInterval(place, 400); // safety net for layout shifts as controls reflow the stage
+      setInterval(function () { place(); hidePath(); }, 400); // reflow tracking + keep the sun-path chart hidden
     })();
   </script>
   <script src="/scripts/site-nav.js"></script>
