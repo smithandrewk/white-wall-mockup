@@ -770,3 +770,13 @@ BOOKING/MARKETING SITE (white-wall-mockup, whitewallstudios.co). PR #90 (squash 
 - [x] **Mobile (<768px) untouched** — same white hamburger + vertical dropdown (Drew: "only on desktop"). The ✕-icon swap is desktop-only too, so mobile stays pixel-identical.
 - [x] Interpretation flagged to Drew + in PR: White Wall has no persistent Robinhood-style top bar (just the floating hamburger), so the strip is a full-width reveal below the header; with 11 links it lands on one wide row + a short second row on a laptop. Offered to trim/reorder tabs if he prefers.
 - [x] Verified: `node --check` clean; Playwright desktop 1280 + mobile 390 across 7 pages (white stroke both widths; desktop full-width flex + left-to-right links + ✕ + 0px overflow; mobile block dropdown + stacked links + stays ☰); then LIVE prod re-verify on whitewallstudios.co (desktop + mobile) post-deploy. Confirmed to Drew (`19f7ff1f71802693`).
+
+## Feedback Round 44 (2026-07-20) — Drew (msg 19f7ffebbfc2cb76): Sunlight Simulator drag-to-interact hint caption
+
+BOOKING/MARKETING SITE (white-wall-mockup, whitewallstudios.co). PR #91 (squash `2cf1deb`). Ticket **DREW-5**. Comms `client/comms/2026-07-20-drew-sunlight-simulator-drag-hint.md`. Copy/static overlay — no money/booking-logic, not §4-gated. Access: ACTIVE paid window.
+
+- [x] Small hint pill pinned **bottom-center of the simulator frame** with a drag/pointer icon + text: "Drag your finger (or cursor if on computer) to interact with the simulator."
+- [x] Lives on the **wrapper** (`sunlight-simulator.html`) as a fixed overlay; Drew's bundle (`sunlight-simulator-app.html`) stays **byte-for-byte untouched**.
+- [x] `pointer-events: none` so it never intercepts the drag it advertises. Semi-opaque dark pill + blur, white text → legible on any scene; responsive width (one line desktop, tidy 2-line box on a phone); safe-area inset.
+- [x] Copy: Drew wrote "curser" → shipped corrected "cursor" on the live page, flagged to Drew (one-word revert offered).
+- [x] Verified: Playwright desktop 1280 + mobile 390 (visible, centered, near bottom, 0px overflow, clear of slider/preset controls, no console errors), then LIVE prod render + curl on whitewallstudios.co/sunlight-simulator post-deploy. Confirmed to Drew (`19f800ad4db9b934`).
