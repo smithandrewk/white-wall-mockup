@@ -635,7 +635,16 @@ module.exports = async function handler(req, res) {
     // (falls back to the token tail). Survives tokenize retries so a
     // resubmit after a lost response never double-charges. Square dedupes
     // on this key.
-    const idempotencySeed = clientIdempotencyKey || String(squareToken).slice(-16);
+    // WW-7: the idempotency key MUST vary with the payment SOURCE (squareToken),
+    // not just a stable client-supplied attempt id. Keying on clientIdempotencyKey
+    // ALONE meant a retry after a decline reused the same key with a DIFFERENT
+    // card, which Square rejects ("Different request parameters used for the same
+    // idempotency_key") — the customer could never recover from a first failure.
+    // The squareToken is unique per card tokenization, so a genuine retry (new
+    // card entry → new token) gets a fresh key, while a network resubmit of the
+    // SAME token still dedupes (no double charge). clientIdempotencyKey is kept as
+    // an extra discriminator.
+    const idempotencySeed = String(squareToken) + "|" + (clientIdempotencyKey || "");
     // Square caps idempotency_key at 45 chars; a full sha256 hex is 64 and
     // gets rejected with a 400 ("Field must not be greater than 45 length"),
     // which would fail EVERY card-on-file charge. Truncate to 45 — still
@@ -1169,7 +1178,11 @@ async function handleCartCheckout(req, res, body) {
     var cartKey = priced.sessions.map(function (s) {
       return s.appointmentTypeID + "@" + s.datetime;
     }).join(",");
-    var idempotencySeed = clientIdempotencyKey || String(squareToken).slice(-16);
+    // WW-7: seed on the payment SOURCE (squareToken) so a retry after a decline
+    // (new card → new token) gets a fresh key instead of reusing the old one with
+    // different params (Square rejects that). A network resubmit of the SAME token
+    // still dedupes. clientIdempotencyKey kept as an extra discriminator.
+    var idempotencySeed = String(squareToken) + "|" + (clientIdempotencyKey || "");
     var idempotencyKey = crypto.createHash("sha256")
       .update("cart|" + paymentMode + "|" + cartKey + "|" + contact.email + "|" + idempotencySeed)
       .digest("hex")
