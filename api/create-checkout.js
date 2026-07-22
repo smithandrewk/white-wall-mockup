@@ -580,9 +580,18 @@ module.exports = async function handler(req, res) {
           }
           if (!sessionItem) sessionItem = lineItems[0];
           var sessionAmount = sessionItem ? (sessionItem.amount * (sessionItem.quantity || 1)) : 0;
-          couponDiscountCents = sessionDiscountCents(sessionAmount, couponResult.percentOff);
-          // Clamp defensively — never discount more than the session, never below 0.
-          if (couponDiscountCents > sessionAmount) couponDiscountCents = sessionAmount;
+          if (couponResult.amountOff > 0) {
+            // Flat-dollar coupon (e.g. SHARON200): a fixed number of CENTS off the
+            // WHOLE ORDER total, not just the session line. No session clamp — the
+            // shared >= 1 cent floor below is the only cap, so a $200 code on a
+            // $150 order simply zeroes it to the floor.
+            couponDiscountCents = Math.round(couponResult.amountOff);
+          } else {
+            // Percentage coupon: session line item only.
+            couponDiscountCents = sessionDiscountCents(sessionAmount, couponResult.percentOff);
+            // Clamp defensively — never discount more than the session.
+            if (couponDiscountCents > sessionAmount) couponDiscountCents = sessionAmount;
+          }
           if (couponDiscountCents < 0) couponDiscountCents = 0;
           // Defensive floor (belt-and-suspenders): Square rejects a $0 charge,
           // so the charged total must never drop below 1 cent. The 99% cap in
@@ -603,7 +612,8 @@ module.exports = async function handler(req, res) {
             totalCents = totalCents - couponDiscountCents;
             appliedCoupon = {
               code: couponResult.code,
-              percentOff: couponResult.percentOff,
+              percentOff: couponResult.percentOff || 0,
+              amountOff: couponResult.amountOff || 0,
               discountCents: couponDiscountCents
             };
           }
@@ -680,8 +690,15 @@ module.exports = async function handler(req, res) {
       if (highTrafficNote) notes += "\nCustomer note: " + highTrafficNote;
       if (tmHighTrafficNote) notes += "\nTM high-traffic note: " + tmHighTrafficNote;
       if (appliedCoupon) {
+        // Format is parsed by the dashboard's Acuity ingest for redemption
+        // tracking (lib/acuity-ingest.ts PROMO_RE) — it keys on the code and the
+        // trailing "-$X.XX". Flat-dollar codes read "$200.00 off order"; percentage
+        // codes read "N% off session".
+        var promoDetail = appliedCoupon.amountOff > 0
+          ? ("$" + (appliedCoupon.amountOff / 100).toFixed(2) + " off order")
+          : (appliedCoupon.percentOff + "% off session");
         notes += "\n\nPromo code: " + appliedCoupon.code +
-          " (" + appliedCoupon.percentOff + "% off session, -$" +
+          " (" + promoDetail + ", -$" +
           (appliedCoupon.discountCents / 100).toFixed(2) + ")";
       }
 
