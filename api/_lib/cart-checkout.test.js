@@ -51,16 +51,21 @@ function installStubs() {
   // the side-effecting parts of acuity (acuityPost/acuityGet) by wrapping the
   // real module.
   const realAcuity = require(R("api/_lib/acuity.js"));
+  const stubAcuityPost = async function (urlPath, payload) {
+    if (urlPath.indexOf("/appointments") === 0) {
+      calls.appointments.push(payload);
+      if (acuityPostBehavior) return acuityPostBehavior(payload, calls.appointments.length);
+      return { id: "appt-" + calls.appointments.length };
+    }
+    return {};
+  };
   const wrappedAcuity = Object.assign({}, realAcuity, {
     acuityGet: async function () { return []; },
-    acuityPost: async function (urlPath, payload) {
-      if (urlPath.indexOf("/appointments") === 0) {
-        calls.appointments.push(payload);
-        if (acuityPostBehavior) return acuityPostBehavior(payload, calls.appointments.length);
-        return { id: "appt-" + calls.appointments.length };
-      }
-      return {};
-    }
+    acuityPost: stubAcuityPost,
+    // create-checkout calls createAppointment (resilient wrapper). Route it
+    // through the same stub so appointment creations are captured/mocked
+    // (incl. the acuityPostBehavior failure simulation for the refund tests).
+    createAppointment: async function (payload) { return stubAcuityPost("/appointments?admin=true", payload); }
   });
   stub("api/_lib/acuity.js", wrappedAcuity);
 

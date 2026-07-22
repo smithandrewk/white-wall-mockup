@@ -22,6 +22,7 @@ const {
   buildSquareLineItems,
   acuityGet,
   acuityPost,
+  createAppointment,
   buildAcuityAddonIDs,
   buildAcuityFields,
   buildAppointmentNotes,
@@ -260,7 +261,7 @@ module.exports = async function handler(req, res) {
         compAppointment = { id: "staging-mock-" + Date.now() };
         console.warn("create-checkout(comp): ACUITY_STAGING_CALENDAR_ID unset — mocking Acuity write");
       } else {
-        compAppointment = await acuityPost("/appointments?admin=true", {
+        compAppointment = await createAppointment({
           appointmentTypeID: appointmentTypeID,
           datetime: datetime,
           firstName: compApptFirstName,
@@ -755,7 +756,7 @@ module.exports = async function handler(req, res) {
         appointment = { id: "staging-mock-" + Date.now() };
         console.warn("create-checkout: ACUITY_STAGING_CALENDAR_ID unset — mocking Acuity write");
       } else {
-        appointment = await acuityPost("/appointments?admin=true", {
+        appointment = await createAppointment({
           appointmentTypeID: appointmentTypeID,
           datetime: datetime,
           firstName: apptFirstName,
@@ -1325,7 +1326,7 @@ async function handleCartCheckout(req, res, body) {
           createdAppointments.push({ id: "staging-mock-" + Date.now() + "-" + si, sessionIndex: si });
           console.warn("create-checkout(cart): ACUITY_STAGING_CALENDAR_ID unset — mocking Acuity write for session " + si);
         } else {
-          var appt = await acuityPost("/appointments?admin=true", {
+          var appt = await createAppointment({
             appointmentTypeID: src.appointmentTypeID,
             datetime: src.datetime,
             firstName: apptFirstName,
@@ -1689,7 +1690,7 @@ async function handleCartComp(req, res, ctx) {
         createdAppointments.push({ id: "staging-mock-" + Date.now() + "-" + si, sessionIndex: si });
         console.warn("create-checkout(cart-comp): ACUITY_STAGING_CALENDAR_ID unset — mocking Acuity write for session " + si);
       } else {
-        var appt = await acuityPost("/appointments?admin=true", {
+        var appt = await createAppointment({
           appointmentTypeID: src.appointmentTypeID,
           datetime: src.datetime,
           firstName: apptFirstName,

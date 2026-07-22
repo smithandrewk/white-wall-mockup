@@ -539,6 +539,105 @@ const ADDON_PRICES = {
 };
 
 // ---------------------------------------------------------------------------
+// Resilient appointment creation — survive a type that is missing an add-on in
+// its Acuity config.
+//
+// Acuity validates each addonID against the appointment TYPE's allowed add-on
+// list (a DASHBOARD setting the public API cannot edit — POST/PUT on
+// appointment-types return 403/405). When a type is missing an add-on (e.g. the
+// V3 8-hour Powdersville type 94823049 shipped with only the Setup Crew add-on
+// attached), POST /appointments fails AFTER payment with:
+//   {"error":"invalid_addons_type","message":"The addons \"6840271, ...\" are
+//    not valid with this appointment type."}
+// and the caller then auto-refunds — so the customer is charged, refunded, and
+// left with NO booking (the 2026-07-22 Denise Ko incident).
+//
+// This helper makes the create resilient: on invalid_addons_type it STRIPS the
+// offending add-on IDs, records them (name + qty + price) in the appointment
+// notes so the studio still sets them up, and retries ONCE. The customer stays
+// charged (the add-ons were paid via Square) and the booking completes. Any
+// other error, or a still-failing retry, is rethrown so the caller's
+// refund/alert path runs unchanged. This also self-heals any future type/add-on
+// config gap without an Acuity dashboard change.
+// ---------------------------------------------------------------------------
+
+// Numeric Acuity addon ID -> { label, cents } for readable stripped-addon notes.
+const ADDON_ID_TO_INFO = (function () {
+  var m = {};
+  Object.keys(ACUITY_ADDON_IDS).forEach(function (key) {
+    var id = ACUITY_ADDON_IDS[key];
+    var price = ADDON_PRICES[key];
+    m[id] = { label: price ? price.label : key, cents: price ? price.cents : null };
+  });
+  // Cleaning fee is a fee, not in ADDON_PRICES.
+  if (ACUITY_ADDON_IDS["cleaning-fee"]) {
+    m[ACUITY_ADDON_IDS["cleaning-fee"]] = { label: "Cleaning Fee", cents: 15000 };
+  }
+  return m;
+})();
+
+// Extract the numeric addon IDs Acuity flagged as invalid from an error message.
+// The message body is JSON with escaped quotes; parse it when possible, else
+// fall back to a tolerant regex over the raw text.
+function parseInvalidAddonIDs(message) {
+  var msg = String(message || "");
+  if (msg.indexOf("invalid_addons_type") === -1) return [];
+  var ids = [];
+  var brace = msg.indexOf("{");
+  if (brace !== -1) {
+    try {
+      var inner = JSON.parse(msg.slice(brace)).message || "";
+      var mm = inner.match(/"([0-9][0-9,\s]*)"/);
+      if (mm) ids = mm[1].split(",");
+    } catch (e) { /* fall through to regex */ }
+  }
+  if (!ids.length) {
+    var mm2 = msg.match(/addons?[\\"\s]+([0-9][0-9,\s]*)/i);
+    if (mm2) ids = mm2[1].split(",");
+  }
+  return ids.map(function (s) { return parseInt(String(s).trim(), 10); })
+            .filter(function (n) { return !isNaN(n); });
+}
+
+async function createAppointment(payload) {
+  try {
+    return await acuityPost("/appointments?admin=true", payload);
+  } catch (err) {
+    var badIds = parseInvalidAddonIDs(err && err.message);
+    if (!badIds.length) throw err; // not an addon-type problem — let the caller handle it
+    var badSet = {};
+    badIds.forEach(function (id) { badSet[id] = true; });
+
+    // Count each stripped add-on (addonIDs may repeat for quantity) for the note.
+    var counts = {};
+    (payload.addonIDs || []).forEach(function (id) {
+      if (badSet[id]) counts[id] = (counts[id] || 0) + 1;
+    });
+    var lines = Object.keys(counts).map(function (id) {
+      var info = ADDON_ID_TO_INFO[id] || { label: "Add-on " + id, cents: null };
+      var qty = counts[id];
+      var priceStr = info.cents != null ? " ($" + ((info.cents * qty) / 100).toFixed(2) + ")" : "";
+      return "  - " + info.label + (qty > 1 ? " x" + qty : "") + priceStr;
+    });
+    var keptAddons = (payload.addonIDs || []).filter(function (id) { return !badSet[id]; });
+
+    var strippedNote =
+      "\n\n[!] ADD-ONS PAID BUT NOT SHOWN AS ACUITY LINE ITEMS (this appointment " +
+      "type is missing them in its add-on config). They WERE charged and MUST be " +
+      "set up for this booking:\n" + lines.join("\n");
+
+    console.warn("acuity: appointment type rejected add-ons " + JSON.stringify(badIds) +
+      " — stripping them into notes and retrying (booking preserved, customer stays charged)");
+
+    var retryPayload = Object.assign({}, payload, {
+      addonIDs: keptAddons,
+      notes: (payload.notes || "") + strippedNote
+    });
+    return await acuityPost("/appointments?admin=true", retryPayload);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Event Setup and Reset Crew placement items (V3 item 5) — server-side source of truth.
 // Each selected booking must specify where every item goes. Mirrors
 // placementItems in scripts/booking-config.js; used for notes + validation.
@@ -653,6 +752,8 @@ function verifyAndDecodeState(encoded, sig) {
 module.exports = {
   acuityGet,
   acuityPost,
+  createAppointment,
+  parseInvalidAddonIDs,
   acuityPut,
   acuityDelete,
   rescheduleAppointment,
