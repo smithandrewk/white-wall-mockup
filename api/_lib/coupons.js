@@ -19,9 +19,16 @@
 //
 // Coupon definitions (whether from Edge Config or the env var) are a JSON
 // array of
-//   { code, percentOff?, comp?, location, validFrom, validUntil }
-// where:
+//   { code, percentOff?, amountOff?, comp?, location, validFrom, validUntil }
+// where exactly ONE discount mechanism applies, in precedence comp > amountOff >
+// percentOff:
 //   - code        string, customer-typed (normalized: trim + uppercase)
+//   - amountOff   number of CENTS off the WHOLE ORDER total (session + add-ons +
+//                 fees). A flat-dollar coupon (e.g. SHARON200 = 20000 = $200 off).
+//                 Takes precedence over percentOff. The charged total is still
+//                 floored to >= 1 cent in create-checkout.js, so an amountOff that
+//                 exceeds the order just zeroes it to that floor. Only present on
+//                 flat-dollar codes; percentOff is omitted when amountOff is set.
 //   - percentOff  number 1..99 (whole-number percent off the session). Capped
 //                 at 99, never 100: a 100%-off code on an add-on-free session
 //                 would post a $0 charge to Square, which Square rejects. A
@@ -216,14 +223,26 @@ function validateCouponAgainst(code, coupons, opts) {
   // codes. Comp codes still honor location scope + validity (checked below).
   var isComp = (match.comp === true);
 
-  // For NON-comp coupons, percentOff must be a sane whole-ish number 1..99. The
-  // upper bound is 99 (not 100) on purpose: a 100%-off NON-comp code would drive
-  // a session-only (add-on-free) booking's charged total to $0, which Square
-  // rejects → the booking fails. Capping at 99% guarantees a charge of at least
-  // ~1% of the session, so the floor in create-checkout.js never has to engage
-  // in the realistic case. (A true $0 booking only happens via a comp code.)
+  // Flat-dollar coupon (e.g. SHARON200): `amountOff` is a positive integer number
+  // of CENTS taken off the WHOLE ORDER total (session + add-ons + fees), not just
+  // the session line — unlike percentOff, which is session-only. It takes
+  // precedence over percentOff (percentOff is ignored when amountOff is set); comp
+  // still wins over both. The charged total is floored to >= 1 cent in
+  // create-checkout.js (Square rejects a $0 charge), so an amountOff larger than
+  // the order simply zeroes it to the floor. Location scope + validity apply the
+  // same as any other coupon (checked below).
+  var amt = Number(match.amountOff);
+  var isAmount = !isComp && isFinite(amt) && amt > 0;
+
+  // For plain PERCENTAGE coupons (not comp, not flat-dollar), percentOff must be a
+  // sane whole-ish number 1..99. The upper bound is 99 (not 100) on purpose: a
+  // 100%-off NON-comp code would drive a session-only (add-on-free) booking's
+  // charged total to $0, which Square rejects → the booking fails. Capping at 99%
+  // guarantees a charge of at least ~1% of the session, so the floor in
+  // create-checkout.js never has to engage in the realistic case. (A true $0
+  // booking only happens via a comp code.)
   var pct = Number(match.percentOff);
-  if (!isComp) {
+  if (!isComp && !isAmount) {
     if (!isFinite(pct) || pct <= 0 || pct > 99) {
       console.error("coupons: coupon " + normalized + " has invalid percentOff", match.percentOff);
       return { valid: false, reason: "That promo code isn’t valid." };
@@ -252,6 +271,16 @@ function validateCouponAgainst(code, coupons, opts) {
       code: normalized,
       comp: true,
       label: "Full comp (" + normalized + ")"
+    };
+  }
+
+  if (isAmount) {
+    var amtCents = Math.round(amt);
+    return {
+      valid: true,
+      code: normalized,
+      amountOff: amtCents,
+      label: "$" + (amtCents / 100).toFixed(2).replace(/\.00$/, "") + " off (" + normalized + ")"
     };
   }
 
@@ -302,10 +331,14 @@ async function hasActiveCoupon(location, nowISO) {
     var c = coupons[i];
     if (!c) continue;
     // A comp code is "active" regardless of percentOff (it has none); a non-comp
-    // code needs a sane 1..99 percentOff to count.
+    // code counts if it carries either a positive flat-dollar amountOff OR a sane
+    // 1..99 percentOff.
     if (c.comp !== true) {
+      var amt = Number(c.amountOff);
+      var okAmt = isFinite(amt) && amt > 0;
       var pct = Number(c.percentOff);
-      if (!isFinite(pct) || pct <= 0 || pct > 99) continue;
+      var okPct = isFinite(pct) && pct > 0 && pct <= 99;
+      if (!okAmt && !okPct) continue;
     }
     var scope = (c.location == null ? "any" : String(c.location).trim().toLowerCase());
     if (scope === "all") scope = "any";

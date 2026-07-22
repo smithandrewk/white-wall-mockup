@@ -49,6 +49,21 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // Flat-dollar code (e.g. SHARON200): amountOff is CENTS off the WHOLE ORDER.
+    // The endpoint only knows the session price (not the customer's add-ons), so
+    // it returns the nominal amountOff and lets the client clamp it to the live
+    // order total in the summary. The authoritative discount + >= 1c floor is
+    // recomputed in create-checkout.js at pay time.
+    if (result.amountOff > 0) {
+      return res.status(200).json({
+        valid: true,
+        code: result.code,
+        amountOff: result.amountOff,
+        label: result.label,
+        discountCents: result.amountOff
+      });
+    }
+
     // Preview discount off the session price, if we can resolve it.
     let discountCents = 0;
     let sessionCents = 0;

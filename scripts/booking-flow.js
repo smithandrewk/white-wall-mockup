@@ -136,7 +136,7 @@
     // (pay 60% now) is offered only for event bookings; defaults to full.
     _cartReviewing: false,
     paymentMode: "full",
-    coupon: null,        // applied promo: { code, comp, percentOff, discountCents } — comp:true = full-comp ($0, no card)
+    coupon: null,        // applied promo: { code, comp, percentOff, amountOff, discountCents } — comp:true = full-comp ($0, no card); amountOff = cents off whole order (flat-dollar code)
     couponInput: "",     // current text in the promo field (preserves on re-render)
     couponError: "",     // inline error message for a rejected code
     couponPending: false,
@@ -2504,6 +2504,10 @@
     var couponDiscount = 0;
     if (isComp) {
       couponDiscount = subtotal;
+    } else if (state.coupon && state.coupon.amountOff > 0) {
+      // Flat-dollar code (e.g. SHARON200): cents off the WHOLE order, clamped to
+      // the live subtotal for the preview. The server recomputes + floors to >= 1c.
+      couponDiscount = Math.min(state.coupon.amountOff / 100, subtotal);
     } else if (state.coupon && state.coupon.percentOff > 0 && sessionPrice > 0) {
       couponDiscount = Math.floor(sessionPrice * state.coupon.percentOff) / 100;
     }
@@ -2533,6 +2537,10 @@
       couponLineHtml =
         '<div class="summary-line summary-line-muted"><span>Promo · ' + escapeHtml(state.coupon.code) +
         ' (free booking)</span><span>−' + currency.format(couponDiscount) + '</span></div>';
+    } else if (state.coupon && state.coupon.amountOff > 0 && couponDiscount > 0) {
+      couponLineHtml =
+        '<div class="summary-line summary-line-muted"><span>Promo · ' + escapeHtml(state.coupon.code) +
+        ' (' + currency.format(state.coupon.amountOff / 100) + ' off)</span><span>−' + currency.format(couponDiscount) + '</span></div>';
     } else if (state.coupon && couponDiscount > 0) {
       couponLineHtml =
         '<div class="summary-line summary-line-muted"><span>Promo · ' + escapeHtml(state.coupon.code) +
@@ -2811,6 +2819,7 @@
           code: data.code,
           comp: data.comp === true,
           percentOff: data.percentOff || 0,
+          amountOff: data.amountOff || 0,
           discountCents: data.discountCents || 0
         };
         state.couponInput = "";

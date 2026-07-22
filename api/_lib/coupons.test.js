@@ -96,4 +96,47 @@ const NOW = "2026-06-26T12:00:00-04:00";
   ok("comp coupon bypasses the 1..99 cap (percentOff ignored when comp:true)");
 })();
 
+// ---- 7. flat-dollar coupon validates with amountOff (cents) -----------------
+(function () {
+  const coupons = [{ code: "SHARON200", amountOff: 20000, location: "any", validFrom: null, validUntil: null }];
+  const r = validateCouponAgainst("sharon200", coupons, { location: "powdersville", nowISO: NOW });
+  assert.strictEqual(r.valid, true, "flat-dollar coupon validates");
+  assert.strictEqual(r.amountOff, 20000, "amountOff (cents) preserved");
+  assert.strictEqual(r.code, "SHARON200", "code normalized");
+  assert.strictEqual(r.percentOff, undefined, "flat-dollar result carries NO percentOff");
+  assert.ok(!r.comp, "flat-dollar is not comp");
+  assert.ok(/\$200 off/.test(r.label), "label reads '$200 off', got: " + r.label);
+  ok("flat-dollar coupon validates with amountOff cents, no percentOff");
+})();
+
+// ---- 8. amountOff takes precedence over a percentOff on the same coupon -----
+(function () {
+  const coupons = [{ code: "BOTH", amountOff: 5000, percentOff: 25, location: "any", validFrom: null, validUntil: null }];
+  const r = validateCouponAgainst("BOTH", coupons, { location: "taylors-mill", nowISO: NOW });
+  assert.strictEqual(r.valid, true, "coupon with both fields validates");
+  assert.strictEqual(r.amountOff, 5000, "amountOff wins over percentOff");
+  assert.strictEqual(r.percentOff, undefined, "percentOff not surfaced when amountOff present");
+  ok("amountOff takes precedence over percentOff");
+})();
+
+// ---- 9. flat-dollar honors location scope + validity -----------------------
+(function () {
+  const scoped = [{ code: "PV50", amountOff: 5000, location: "powdersville", validFrom: null, validUntil: null }];
+  assert.strictEqual(validateCouponAgainst("PV50", scoped, { location: "taylors-mill", nowISO: NOW }).valid, false, "flat-dollar scoped to PV invalid at TM");
+  assert.strictEqual(validateCouponAgainst("PV50", scoped, { location: "powdersville", nowISO: NOW }).valid, true, "flat-dollar valid at its own location");
+
+  const expired = [{ code: "OLD", amountOff: 5000, location: "any", validFrom: null, validUntil: "2026-06-01" }];
+  assert.strictEqual(validateCouponAgainst("OLD", expired, { location: "powdersville", nowISO: NOW }).valid, false, "expired flat-dollar rejected");
+  ok("flat-dollar coupon honors location scope + validity window");
+})();
+
+// ---- 10. zero / negative amountOff is not a valid flat-dollar --------------
+(function () {
+  // amountOff:0 with no valid percentOff → falls through to the percentOff check
+  // and is rejected (no discount mechanism at all).
+  const zero = [{ code: "ZERO", amountOff: 0, location: "any", validFrom: null, validUntil: null }];
+  assert.strictEqual(validateCouponAgainst("ZERO", zero, { location: "powdersville", nowISO: NOW }).valid, false, "amountOff:0 with no percentOff is rejected");
+  ok("zero amountOff with no percentOff is rejected");
+})();
+
 console.log("\nAll " + passed + " coupon assertions passed.");
