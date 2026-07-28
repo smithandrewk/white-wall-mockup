@@ -50,3 +50,41 @@
   tampered/revoked links refused) then prod verify without payment (locked render + delete-revokes-link).
 - Confirmed live to Drew: `19faaa2825b7f69f` (usage guide, revocation model, slot-not-held + long-URL caveats,
   viewed/paid KPIs noted as the natural next piece). Tracker Round 61.
+
+## Follow-up 1 — Drew: what tests before making it a live SOP?
+
+- **Source:** Gmail (account `andrew@entrpy.co`)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Tue, 28 Jul 2026 17:33:39 -0400
+- **Thread:** 19fa478568fc46a2
+- **Msg id:** 19faaa5f8b98fc3e
+- **In reply to:** my go-live confirmation `19faaa2825b7f69f`
+- **Classification:** question (converse only, no build)
+- **Ticket:** DREW-21 (same work, follow-up; add-msg + comment)
+
+### Verbatim
+
+> Incredible. I'll look shortly. What tests would you recommend I try before
+> sending it out to people as a live SOP within WW?
+
+### Triage
+
+Question, fast path, converse only. Answer inline with a concrete acceptance checklist
+he can run himself: zero-cost checks (locked render as a customer, real-channel send,
+tamper, revoke, regenerate-supersedes) plus one optional small real-card dress rehearsal
+(discount the total down, pay, verify Square charge + Acuity appointment + emails, then
+cancel and refund in his own Square). SOP guidance: one saved session per customer offer,
+regenerating kills older copies, links do not hold slots. No build, no money moved by pip,
+nothing gated.
+
+### Handling — ANSWERED 2026-07-28
+
+Replied `19faaa867ce0c110` (17:36 ET, no payment mention): 6-step acceptance run. Steps
+1-5 zero cost (locked render as a customer in incognito, real-channel text send, tamper
+= stop page, delete-revokes within seconds + re-save kills old link, regenerate
+supersedes older copies) and step 6 an optional real-card dress rehearsal (discount the
+total to a few dollars, pay himself, verify Square charge + calendar appointment with
+the custom offer note + confirmation emails, then cancel and refund in his own Square).
+Told him tampering and slot-conflict need no testing (server-enforced, staging-verified).
+SOP notes: one saved session per customer offer, delete = kill switch, regenerate kills
+old copies, links do not hold slots. No build. DREW-21 stays done.
