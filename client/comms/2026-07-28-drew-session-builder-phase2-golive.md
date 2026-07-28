@@ -39,8 +39,14 @@
   forcing the custom price into the Square checkout server-side; all on pip, nothing
   needed from Drew.
 
-## Handling
+## Handling — HANDLED, SHIPPED + LIVE 2026-07-28
 
-- Ack + inline answer sent to Drew: (reply id recorded below when sent)
-- Escalation update to Andrew via foreman-escalate (reason=architecture)
-- Build: one PR per repo (booking site offer mode + dashboard link generation)
+- Ack + inline backend answer sent to Drew: `19faa6e82c4edee8` (16:33 ET).
+- Escalation to Andrew recorded (`esc-session-builder-phase-2-building-on-drew-s-relay-of-your-gre-architecture`,
+  reason=architecture; iMessage down → notified by email `19faa6f40cf02f5c`). Resolved after ship per its stated
+  default (ship after verify unless hold; no hold received).
+- Shipped: booking-site PR #105 (squash `db66842`) + wws-dashboard PR #101 (squash `a748088`). Full staging money
+  dry-run (sandbox charged exactly the signed $1,884.00, 2 staging appointments with the CUSTOM OFFER note block,
+  tampered/revoked links refused) then prod verify without payment (locked render + delete-revokes-link).
+- Confirmed live to Drew: `19faaa2825b7f69f` (usage guide, revocation model, slot-not-held + long-URL caveats,
+  viewed/paid KPIs noted as the natural next piece). Tracker Round 61.
