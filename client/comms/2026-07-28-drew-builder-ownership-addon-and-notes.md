@@ -31,3 +31,7 @@
 - Money path: none. Builder mode takes no payment; drafts are dashboard-local. Server recompute stays authoritative. Percent-vs-order matters: (base+addon)*(1-d%) ≠ base*(1-d%)+addon — the toggle is real logic, not display.
 - "shows up for the customer": today the only customer surface is the PARKED Phase 2 shareable link, so notes persist into the saved draft/summary now and flow into Phase 2 when Andrew green-lights it.
 - No §4 gate: no customer sends, no architecture change, no legal text, no upstream writes.
+
+## HANDLED (2026-07-28, same session)
+
+Shipped + live within the active paid window. booking-site PR #104 (`4b1c711`, builder-only, customer site inert + spot-checked) and wws-dashboard PR #98 (`1ccccdb`, server recompute + vendored sync @ 4b1c711) merged; dashboard built + kickstarted on the mini; verified live on :18794 (Playwright 30/30 + live-DB save round-trip $200 + $1,000 − 10% = $1,080 server-recomputed). Tracker Round 58 (`4b47480`). Ticket DREW-19 done. Confirmation reply sent to Drew (id recorded in SESSION-STATE).
