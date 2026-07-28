@@ -27,4 +27,7 @@
 
 ## HANDLED
 
-- wws-dashboard PR #99 — see revision-status Round 59.
+- wws-dashboard PR #99 (squash `9da5054`) merged, deployed to the mini, live-verified on
+  :18794 (Company 2 / Powdersville 1 / Taylor's Mill 1, psql cross-checked). Confirmed to
+  Drew `19faa417af7bc548` (definition + possessive-wording interpretation flagged, no
+  payment mention). Ticket DREW-20 done. Revision-status Round 59.
