@@ -902,3 +902,14 @@ OPS DASHBOARD (wws-dashboard). PR #96 (squash `7ac141d`). Ticket **DREW-18**. Co
 
 - [x] Repeat/New column moved to sit between Client and Instagram on the lifetime Clients list; account tab keeps Login method in the last slot; Repeat-visits view still omits the column; mobile cards unchanged.
 - [x] Verified: `npm run build`, 143 unit tests, seed + live-DB Playwright (header order Client / Repeat? / Instagram across 1,095 rows, 0px mobile overflow, zero console errors). Confirmed live to Drew (`19fa9ecd43056fd8`).
+
+## Feedback Round 58 (2026-07-28) — Drew (msg 19faa25598e78bdd): Session Builder Ownership add-on + notes + order swap (DREW-19)
+
+OPS DASHBOARD + BOOKING SITE (builder-only code). booking-site PR #104 (squash `4b1c711`) + wws-dashboard PR #98 (squash `1ccccdb`). Ticket **DREW-19**. Comms `client/comms/2026-07-28-drew-builder-ownership-addon-and-notes.md`.
+
+- [x] Ownership discount gains an optional note field; the note renders under the discount line in the summary and saves with the session (will ride the Phase 2 customer link when that ships).
+- [x] New Ownership add-on in the same summary area: percent or dollar amount that ADDS to the total, with its own optional note.
+- [x] Swap-order button: add-on-first (default, Drew's office-rental example) vs discount-first. Percent values compute on the running total at the point they apply, so the order genuinely changes the math; input sections and summary lines re-order to match.
+- [x] Dashboard recomputes server-side (`flow-pricing.ts` mirrors the panel math exactly; pre-DREW-19 drafts price unchanged). No schema change — fields live in the draft config jsonb.
+- [x] Customer site inert: all new code gated behind the dashboard-only builder panel; prod booking page spot-checked post-deploy (200, new code present but dormant).
+- [x] Verified: `npm run build`, 150 unit tests (2 new DREW-19 suites); Playwright drive 30/30 seed AND live :18794 (both orders' math on Drew-style numbers, notes under their lines, $0 clamp, restore round-trip, 0px mobile overflow); live-DB save round-trip ($200 base + $1,000 add-on − 10% of $1,200 = $1,080 recomputed server-side, then deleted).
