@@ -913,3 +913,11 @@ OPS DASHBOARD + BOOKING SITE (builder-only code). booking-site PR #104 (squash `
 - [x] Dashboard recomputes server-side (`flow-pricing.ts` mirrors the panel math exactly; pre-DREW-19 drafts price unchanged). No schema change — fields live in the draft config jsonb.
 - [x] Customer site inert: all new code gated behind the dashboard-only builder panel; prod booking page spot-checked post-deploy (200, new code present but dormant).
 - [x] Verified: `npm run build`, 150 unit tests (2 new DREW-19 suites); Playwright drive 30/30 seed AND live :18794 (both orders' math on Drew-style numbers, notes under their lines, $0 clamp, restore round-trip, 0px mobile overflow); live-DB save round-trip ($200 base + $1,000 add-on − 10% of $1,200 = $1,080 recomputed server-side, then deleted).
+
+## Feedback Round 59 (2026-07-28) — Drew (msg 19faa3a0981ac9da): Overview At a Glance Today's Money + Today's Bookings rows (DREW-20)
+
+OPS DASHBOARD (wws-dashboard). PR #99 (squash `9da5054`). Ticket **DREW-20**. Comms `client/comms/2026-07-28-drew-overview-todays-money-bookings-rows.md` (+ his At a Glance screenshot in `attachments/`).
+
+- [x] First At a Glance row renamed Today → **Today's Money** (same gold hero, same Square net collected today).
+- [x] New **Today's Bookings** row directly below: bookings PLACED today (created_at ET = today, non-cancelled, non-staging, via v_booking), scope-filtered by the existing Company / Powdersville / Taylor's Mill toggle. Booked-at axis flagged to Drew (sessions-happening-today offered as the alternative); "Today is Money" dictation shipped as the possessive, flagged.
+- [x] Verified: `npm run build`, 150 unit tests; seed-mode Playwright (rows in order, survive toggle, 0px mobile overflow, zero console errors); live-DB verify on :18794 psql-cross-checked (Company 2 / Powdersville 1 / Taylor's Mill 1, money row intact at $407 matching Drew's screenshot). Confirmed live to Drew (`19faa417af7bc548`).
