@@ -64,6 +64,37 @@
     }
   } catch (e) { OFFER = null; OFFER_BROKEN = true; }
 
+  // Offer mode: every action that could change WHAT was built or WHAT it costs
+  // is locked — the customer can look but not touch (Drew: "completely locked…
+  // grayed out"). Navigation (go-step) and the customer's own steps (contact,
+  // terms, waiver signing, payment) stay live. The matching CSS graying is
+  // injected by initOfferMode(); the bindEvents guards are the functional lock,
+  // so keyboard activation can't slip past pointer-events:none. Defined up here
+  // because the boot sequence (initOfferMode) runs before the later var
+  // assignments would execute.
+  var OFFER_LOCKED_ACTIONS = {
+    "gate-choose": 1, "gate-event-mode": 1, "gate-back": 1,
+    "select-duration": 1, "select-date": 1, "select-time": 1, "navigate-month": 1,
+    "add-another-session": 1, "review-cart": 1, "back-to-cart-edit": 1,
+    "edit-cart-session": 1, "remove-cart-session": 1,
+    "md-add-last": 1, "md-add-multiple": 1, "md-review": 1,
+    "range-reset": 1, "range-review": 1,
+    "set-event-intent": 1, "set-last-day-leave": 1,
+    "adjust-quantity": 1, "set-addon-mode": 1, "set-placement": 1,
+    "set-quantity-max": 1, "set-tier": 1,
+    "toggle-addon": 1, "toggle-color": 1, "toggle-wall": 1,
+    "apply-coupon": 1, "remove-coupon": 1, "set-payment-mode": 1
+  };
+  var OFFER_LOCKED_INPUTS = [
+    "[data-input='participants']", "[data-input='intake-participants']",
+    "[data-input='event-description']", "[data-input='high-traffic-note']",
+    "[data-input='coupon-code']"
+  ];
+  var OFFER_LOCKED_CHECKS = [
+    "[data-check='food-drinks-yes']", "[data-check='food-drinks-no']",
+    "[data-action='set-placement']", "[data-action='set-last-day-leave']"
+  ];
+
   const currency = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -294,6 +325,10 @@
   // Total number of sessions in this booking = committed + the active draft
   // (the draft becomes the last session at "Review cart" time). Used for labels.
   function cartSessionCount() {
+    // Offer mode restores every day as a COMMITTED cart session with no active
+    // draft, so the customer-facing count is exactly the committed list — the
+    // normal flow's "+1" counts the session currently being configured.
+    if (OFFER) return state.cart.sessions.length + (state.selectedTime ? 1 : 0);
     return state.cart.sessions.length + 1;
   }
 
@@ -615,8 +650,20 @@
         '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Total savings</span><span class="ui-copy-strong">−' + currencyExact.format(totalSavings / 100) + '</span></div>' +
       '</div>';
     }
-    html += '<div class="summary-divider my-6"></div>' +
-      '<div class="summary-line summary-total"><span>Estimated total</span><strong>' + currencyExact.format(grand / 100) + '</strong></div>';
+    // Offer mode (DREW-21): the aside is the multi-day event's live summary, so
+    // the link's ownership lines + locked total must show here too, not just in
+    // the checkout panels. Same drift gate as the checkout renders.
+    if (offerActive()) {
+      var offerAdjAside = offerAdjustments(grand);
+      offerDriftCheck(offerAdjAside.finalCents);
+      html += '<div class="summary-divider my-6"></div>' +
+        '<div class="summary-list">' + offerLinesHtml(offerAdjAside) + '</div>' +
+        '<div class="summary-divider my-6"></div>' +
+        '<div class="summary-line summary-total"><span>Your price</span><strong>' + currencyExact.format(offerAdjAside.finalCents / 100) + '</strong></div>';
+    } else {
+      html += '<div class="summary-divider my-6"></div>' +
+        '<div class="summary-line summary-total"><span>Estimated total</span><strong>' + currencyExact.format(grand / 100) + '</strong></div>';
+    }
     el.innerHTML = html;
   }
 
@@ -789,7 +836,7 @@
       var offerAdjCart = null;
       var offerLinesCart = '';
       var chargeCents = feeInclusiveTotal;
-      if (OFFER) {
+      if (offerActive()) {
         offerAdjCart = offerAdjustments(feeInclusiveTotal);
         offerLinesCart = offerLinesHtml(offerAdjCart);
         offerDriftCheck(offerAdjCart.finalCents);
@@ -1003,6 +1050,14 @@
   }
 
   // ---- Offer mode helpers (DREW-21) ----------------------------------------
+  // Offer rendering + the drift gate only make sense AFTER initOfferMode has
+  // restored the link's flow state — the boot sequence renders once with
+  // default state before the deferred restore runs, and comparing the signed
+  // total against defaults would false-alarm the drift gate.
+  function offerActive() {
+    return !!OFFER && !!state._offerReady;
+  }
+
   // The ownership adjustments carried by the signed link, computed on the LIVE
   // client base so any drift between today's pricing and the signed final total
   // is caught (offerDriftCheck) before the customer reaches payment.
@@ -1036,7 +1091,7 @@
   // since Drew signed the link (or the build was tampered with) — never show or
   // charge a number that no longer adds up; the server enforces the same check.
   function offerDriftCheck(computedFinalCents) {
-    if (!OFFER) return true;
+    if (!offerActive()) return true;
     if (computedFinalCents === OFFER.finalTotalCents) return true;
     showOfferErrorPanel("changed");
     return false;
@@ -1532,6 +1587,7 @@
     state.promoActive = false;
     state.paymentMode = "full";
     applyFlowState(OFFER.flowState);
+    state._offerReady = true;
     // Keyboard belt-and-suspenders: readonly-by-interception, so a Tab-focused
     // locked input can't even change its visible text.
     document.addEventListener("beforeinput", function (e) {
@@ -1566,7 +1622,12 @@
   renderStepContent();
   bindEvents();
   if (OFFER) {
-    initOfferMode(); // locked pre-filled flow — skips the gate entirely
+    // Locked pre-filled flow — skips the gate entirely. Deferred one tick:
+    // this boot block sits mid-file, and initOfferMode → setStep touches
+    // consts (STEP_NAMES, …) whose assignments only execute after the rest of
+    // the script evaluates. The original boot never called setStep
+    // synchronously, so those late definitions were fine until offer mode.
+    setTimeout(initOfferMode, 0);
   } else {
     showGateOrFlow(); // Step-1 gate: show "What are you booking?" until a type is chosen (PV); TM auto-resolves.
     if (OFFER_BROKEN) showOfferErrorPanel("invalid");
@@ -1654,35 +1715,6 @@
       })
       .join("");
   }
-
-  // Offer mode: every action that could change WHAT was built or WHAT it costs
-  // is locked — the customer can look but not touch (Drew: "completely locked…
-  // grayed out"). Navigation (go-step) and the customer's own steps (contact,
-  // terms, waiver signing, payment) stay live. The matching CSS graying is
-  // injected by initOfferMode(); this guard is the functional lock, so keyboard
-  // activation can't slip past pointer-events:none.
-  var OFFER_LOCKED_ACTIONS = {
-    "gate-choose": 1, "gate-event-mode": 1, "gate-back": 1,
-    "select-duration": 1, "select-date": 1, "select-time": 1, "navigate-month": 1,
-    "add-another-session": 1, "review-cart": 1, "back-to-cart-edit": 1,
-    "edit-cart-session": 1, "remove-cart-session": 1,
-    "md-add-last": 1, "md-add-multiple": 1, "md-review": 1,
-    "range-reset": 1, "range-review": 1,
-    "set-event-intent": 1, "set-last-day-leave": 1,
-    "adjust-quantity": 1, "set-addon-mode": 1, "set-placement": 1,
-    "set-quantity-max": 1, "set-tier": 1,
-    "toggle-addon": 1, "toggle-color": 1, "toggle-wall": 1,
-    "apply-coupon": 1, "remove-coupon": 1, "set-payment-mode": 1
-  };
-  var OFFER_LOCKED_INPUTS = [
-    "[data-input='participants']", "[data-input='intake-participants']",
-    "[data-input='event-description']", "[data-input='high-traffic-note']",
-    "[data-input='coupon-code']"
-  ];
-  var OFFER_LOCKED_CHECKS = [
-    "[data-check='food-drinks-yes']", "[data-check='food-drinks-no']",
-    "[data-action='set-placement']", "[data-action='set-last-day-leave']"
-  ];
 
   function bindEvents() {
     document.addEventListener("click", (event) => {
@@ -3258,7 +3290,7 @@
     // with an offer (the price IS the offer).
     var offerAdjSingle = null;
     var offerLinesSingle = '';
-    if (OFFER) {
+    if (offerActive()) {
       offerAdjSingle = offerAdjustments(Math.round(grandTotal * 100));
       offerLinesSingle = offerLinesHtml(offerAdjSingle);
       offerDriftCheck(offerAdjSingle.finalCents);
@@ -4375,13 +4407,21 @@
           .join("") + cleaningFeeHtml
       : '<p class="ui-empty">No add-ons selected yet.</p>';
 
-    addons.innerHTML = addonAndFeeHtml;
-
     const addonTotal = summaryItems.reduce((sum, item) => sum + item.amount, 0);
     const cleaningFeeAmount = cleaningFee ? cleaningFee.amount : 0;
     const sessionPrice = selectedDuration && selectedDuration.price ? selectedDuration.price : 0;
     const grandTotal = sessionPrice + addonTotal + cleaningFeeAmount;
-    total.textContent = fmtMoney(grandTotal);
+    // Offer mode (DREW-21): the aside shows the link's ownership lines and the
+    // locked price for single-session offers too (multi-day uses its own aside).
+    if (offerActive() && state.eventMode !== "multi") {
+      var asideAdj = offerAdjustments(Math.round(grandTotal * 100));
+      offerDriftCheck(asideAdj.finalCents);
+      addonAndFeeHtml += offerLinesHtml(asideAdj);
+      total.textContent = fmtMoney(asideAdj.finalCents / 100);
+    } else {
+      total.textContent = fmtMoney(grandTotal);
+    }
+    addons.innerHTML = addonAndFeeHtml;
     // Builder mode: the aside's single-session total feeds the override panel.
     // (The multi-day summary overwrites this when eventMode === "multi".)
     if (BUILDER && state.eventMode !== "multi") {
