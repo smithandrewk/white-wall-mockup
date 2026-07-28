@@ -24,6 +24,46 @@
   var BUILDER = !!window.WWS_BUILDER_MODE;
   var BUILDER_MAX_STEP = 3;
 
+  // ---- Offer mode (DREW-21, Session Builder Phase 2) -----------------------
+  // A dashboard-minted "session link": /book-<loc>?offer=<base64url payload>.<sig>.
+  // The payload is the operator's locked build (sessions, ownership adjustments,
+  // final price), HMAC-signed by the dashboard with the same BOOKING_SECRET the
+  // server holds. The client decode below is DISPLAY ONLY — api/create-checkout
+  // re-verifies the signature + the Edge Config active-list and recomputes every
+  // cent server-side, so a tampered link can render whatever it likes but can
+  // never charge a forged price. OFFER stays null on any parse problem;
+  // OFFER_BROKEN distinguishes "?offer= present but unusable" (error panel)
+  // from "no offer param at all" (normal flow).
+  var OFFER = null;
+  var OFFER_TOKEN = "";
+  var OFFER_BROKEN = false;
+  try {
+    if (!BUILDER) {
+      var offerRaw = new URLSearchParams(window.location.search).get("offer");
+      if (offerRaw) {
+        OFFER_TOKEN = offerRaw.trim();
+        OFFER_BROKEN = true; // until proven parseable
+        var offerDot = OFFER_TOKEN.lastIndexOf(".");
+        if (offerDot > 0) {
+          var offerB64 = OFFER_TOKEN.slice(0, offerDot).replace(/-/g, "+").replace(/_/g, "/");
+          while (offerB64.length % 4) offerB64 += "=";
+          var offerBin = atob(offerB64);
+          var offerBytes = new Uint8Array(offerBin.length);
+          for (var obi = 0; obi < offerBin.length; obi++) offerBytes[obi] = offerBin.charCodeAt(obi);
+          var offerPayload = JSON.parse(new TextDecoder("utf-8").decode(offerBytes));
+          if (offerPayload && offerPayload.v === 1 &&
+              offerPayload.locationSlug === location.slug &&
+              Array.isArray(offerPayload.sessions) && offerPayload.sessions.length &&
+              offerPayload.flowState && typeof offerPayload.flowState === "object" &&
+              typeof offerPayload.finalTotalCents === "number") {
+            OFFER = offerPayload;
+            OFFER_BROKEN = false;
+          }
+        }
+      }
+    }
+  } catch (e) { OFFER = null; OFFER_BROKEN = true; }
+
   const currency = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -744,6 +784,17 @@
       // Builder mode: a reviewed photo/multi-session cart total feeds the
       // override panel (multi-day events use the aside summary's number).
       if (BUILDER && state.eventMode !== "multi") state._builderTotalCents = feeInclusiveTotal;
+      // Offer mode (DREW-21): the link's ownership adjustments apply on top of
+      // the fee-inclusive cart total, and the charge locks to the signed number.
+      var offerAdjCart = null;
+      var offerLinesCart = '';
+      var chargeCents = feeInclusiveTotal;
+      if (OFFER) {
+        offerAdjCart = offerAdjustments(feeInclusiveTotal);
+        offerLinesCart = offerLinesHtml(offerAdjCart);
+        offerDriftCheck(offerAdjCart.finalCents);
+        chargeCents = offerAdjCart.finalCents;
+      }
       // Retail = sessions + add-ons with NO taper + cleaning. Savings = the taper +
       // the multi-day discount. retail - savings === feeInclusiveTotal by construction
       // (addonTotalFull - addonDiscount === addonTotal), so this is a re-grouping of
@@ -764,15 +815,17 @@
             multiDayLine +
             discountLine +
             savingsSummary +
+            offerLinesCart +
             '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(feeInclusiveTotal / 100) + '</strong></span></div>' +
+            '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(chargeCents / 100) + '</strong></span></div>' +
           '</div>' +
           renderCartDepositRow(feeInclusiveTotal) +
         '</div>';
-      // Stash so updatePayButton can label the cart pay button (fee-inclusive).
-      state._grandTotal = (state.paymentMode === "deposit" && window.WWSPricing.depositSplit)
+      // Stash so updatePayButton can label the cart pay button (fee-inclusive;
+      // offer mode charges the signed adjusted total, always in full).
+      state._grandTotal = (!OFFER && state.paymentMode === "deposit" && window.WWSPricing.depositSplit)
         ? window.WWSPricing.depositSplit(feeInclusiveTotal).depositCents / 100
-        : feeInclusiveTotal / 100;
+        : chargeCents / 100;
     }
 
     container.innerHTML =
@@ -819,7 +872,11 @@
     var sessions = snapshots.map(snapshotToSessionPayload);
     return {
       sessions: sessions,
-      paymentMode: state.paymentMode === "deposit" ? "deposit" : "full",
+      // The signed offer token (DREW-21). When present the server rebuilds the
+      // session list and the price from the TOKEN (never from the rows above),
+      // verifies the signature + active-list, and charges the signed total.
+      offerToken: OFFER ? OFFER_TOKEN : undefined,
+      paymentMode: (OFFER || state.paymentMode !== "deposit") ? "full" : "deposit",
       universal: {
         contact: state.contact,
         intake: state.intake,
@@ -830,7 +887,8 @@
         // Carries a full-comp code (e.g. WWSHUNDRED) so the cart endpoint can
         // re-validate it and take the payment-free path. Non-comp codes are a
         // no-op on the cart path (cart pricing has no per-session discount).
-        couponCode: state.coupon ? state.coupon.code : "",
+        // Never on an offer — the price is the offer.
+        couponCode: (!OFFER && state.coupon) ? state.coupon.code : "",
         squareToken: squareToken,
         clientIdempotencyKey: state.bookingAttemptId,
         consent: {
@@ -857,6 +915,11 @@
   // Deposit option (V3 item 6) — pay 60% now — shown only when the cart contains
   // an event booking (deposit is event-only, enforced server-side too).
   function renderCartDepositRow(totalCents) {
+    // Offer mode: always full payment — no deposit option on a locked offer.
+    if (OFFER) {
+      if (state.paymentMode === "deposit") state.paymentMode = "full";
+      return "";
+    }
     var cartHasEvent = state.cart.sessions.some(function (s) { return s.eventIntent === "yes"; })
       || state.eventIntent === "yes"; // include the active draft
     if (!depositUiEnabled() || !cartHasEvent || !window.WWSPricing || !window.WWSPricing.depositSplit) {
@@ -913,52 +976,70 @@
   // wws-dashboard Session Builder embed). The panel renders into
   // [data-builder-panel] — a container the dashboard wrapper injects into the
   // aside — so on the customer site (no container, no flag) this is inert.
-  function builderOverrideCents(baseCents) {
-    var ov = state._builderOverride;
-    if (!ov) return 0;
-    var v = parseFloat(ov.value);
-    if (!isFinite(v) || v <= 0) return 0;
-    var cents = ov.mode === "percent"
-      ? Math.round(baseCents * (Math.min(100, v) / 100))
-      : Math.round(v * 100);
-    return Math.min(Math.max(0, cents), Math.max(0, baseCents));
-  }
-
-  function builderAddonCents(baseCents) {
-    var ad = state._builderAddon;
-    if (!ad) return 0;
-    var v = parseFloat(ad.value);
-    if (!isFinite(v) || v <= 0) return 0;
-    // Sanity bounds only (1000% / $1M) — an add-on has no natural clamp like
-    // the discount's "never below zero". Server mirrors these exact bounds.
-    return ad.mode === "percent"
-      ? Math.round(baseCents * (Math.min(1000, v) / 100))
-      : Math.round(Math.min(v, 1000000) * 100);
-  }
-
   // Ownership add-on and discount applied in the operator-chosen order
   // (DREW-19). Percent values are taken of the RUNNING total at the point
   // they apply, so swapping the order genuinely changes the math:
   //   add-on first:  final = (base + addon(base)) − discount(base + addon)
   //   discount first: final = (base − discount(base)) + addon(base − discount)
+  // The math itself lives in pricing-shared.ownershipAdjustments — the ONE
+  // implementation this panel, the dashboard's server recompute, and the
+  // offer-link charge path (create-checkout) all share (DREW-21).
   function builderAdjustedTotals() {
     var base = state._builderTotalCents || 0;
     var addonFirst = state._builderOrder !== "discount-first";
-    var addonCents, discountCents;
-    if (addonFirst) {
-      addonCents = builderAddonCents(base);
-      discountCents = builderOverrideCents(base + addonCents);
-    } else {
-      discountCents = builderOverrideCents(base);
-      addonCents = builderAddonCents(base - discountCents);
-    }
+    var adj = window.WWSPricing.ownershipAdjustments(
+      base,
+      state._builderAddon ? { mode: state._builderAddon.mode, value: parseFloat(state._builderAddon.value) } : null,
+      state._builderOverride ? { mode: state._builderOverride.mode, value: parseFloat(state._builderOverride.value) } : null,
+      addonFirst ? "addon-first" : "discount-first"
+    );
     return {
       baseCents: base,
       addonFirst: addonFirst,
-      addonCents: addonCents,
-      discountCents: discountCents,
-      finalCents: base + addonCents - discountCents
+      addonCents: adj.addonCents,
+      discountCents: adj.discountCents,
+      finalCents: adj.finalCents
     };
+  }
+
+  // ---- Offer mode helpers (DREW-21) ----------------------------------------
+  // The ownership adjustments carried by the signed link, computed on the LIVE
+  // client base so any drift between today's pricing and the signed final total
+  // is caught (offerDriftCheck) before the customer reaches payment.
+  function offerAdjustments(baseCents) {
+    return window.WWSPricing.ownershipAdjustments(
+      baseCents,
+      OFFER.ownershipAddon || null,
+      OFFER.override || null,
+      OFFER.applyOrder === "discount-first" ? "discount-first" : "addon-first"
+    );
+  }
+
+  // Ownership summary lines + customer-visible notes for the offer summary —
+  // same visual language the builder panel uses, in apply order.
+  function offerLinesHtml(adj) {
+    var addonNote = OFFER.ownershipAddon && OFFER.ownershipAddon.note ? String(OFFER.ownershipAddon.note) : "";
+    var discountNote = OFFER.override && OFFER.override.note ? String(OFFER.override.note) : "";
+    var addonLine = adj.addonCents > 0
+      ? '<div class="summary-line" style="color:#1e40af"><span class="ui-copy-strong">Ownership add-on</span><span class="ui-copy-strong">+' + currencyExact.format(adj.addonCents / 100) + '</span></div>' +
+        (addonNote ? '<p class="ui-copy-muted" style="font-size:0.78rem;font-style:italic;margin:0.1rem 0 0">' + escapeHtml(addonNote) + '</p>' : '')
+      : '';
+    var discountLine = adj.discountCents > 0
+      ? '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Ownership discount</span><span class="ui-copy-strong">−' + currencyExact.format(adj.discountCents / 100) + '</span></div>' +
+        (discountNote ? '<p class="ui-copy-muted" style="font-size:0.78rem;font-style:italic;margin:0.1rem 0 0">' + escapeHtml(discountNote) + '</p>' : '')
+      : '';
+    return OFFER.applyOrder === "discount-first" ? discountLine + addonLine : addonLine + discountLine;
+  }
+
+  // Fail-loud drift gate: the locked total the link promises must equal what
+  // today's pricing computes for the same build. A mismatch means prices moved
+  // since Drew signed the link (or the build was tampered with) — never show or
+  // charge a number that no longer adds up; the server enforces the same check.
+  function offerDriftCheck(computedFinalCents) {
+    if (!OFFER) return true;
+    if (computedFinalCents === OFFER.finalTotalCents) return true;
+    showOfferErrorPanel("changed");
+    return false;
   }
 
   // The sessions being built, as plain per-day rows for the saved config. The
@@ -1078,6 +1159,10 @@
           if (res.body.draft && res.body.draft.id) state._builderDraftId = res.body.draft.id;
           state._builderStatus = isUpdate ? "Session updated." : "Session saved.";
           state._builderStatusError = false;
+          // A config re-save revokes any prior link server-side — drop the
+          // stale URL so the operator regenerates from the new saved version.
+          state._builderLinkUrl = "";
+          state._builderLinkCopied = false;
           try { window.parent.postMessage({ type: "wws-builder-saved" }, "*"); } catch (e) {}
         } else {
           state._builderStatus = (res.body && res.body.error) ? "Save failed: " + res.body.error : "Save failed. Try again.";
@@ -1157,8 +1242,17 @@
       '<textarea class="booking-input" data-builder-notes rows="2" maxlength="2000" placeholder="Anything worth remembering about this build" style="margin-top:0.35rem;resize:vertical">' + escapeHtml(state._builderNotes || "") + '</textarea>' +
       '<div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1rem">' +
         '<button type="button" class="booking-button booking-button-primary" data-builder-save' + (state._builderSaving ? " disabled" : "") + '>' + (state._builderSaving ? "Saving…" : (state._builderDraftId ? "Update Session" : "Save Session")) + '</button>' +
-        '<button type="button" class="booking-button booking-button-secondary" data-builder-link disabled title="Coming in Phase 2 — the shareable customer link">Get Session Link</button>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-builder-link' + (state._builderLinkPending ? " disabled" : "") + '>' + (state._builderLinkPending ? "Generating…" : "Get Session Link") + '</button>' +
       '</div>' +
+      (state._builderLinkUrl
+        ? '<div style="margin-top:0.85rem">' +
+            '<div style="display:flex;gap:0.5rem">' +
+              '<input type="text" class="booking-input" data-builder-link-url readonly value="' + escapeAttribute(state._builderLinkUrl) + '" style="flex:1;min-width:0;font-size:0.78rem">' +
+              '<button type="button" class="booking-button booking-button-secondary" data-builder-link-copy style="white-space:nowrap;padding:0.45rem 0.9rem;font-size:0.8rem">' + (state._builderLinkCopied ? "Copied ✓" : "Copy") + '</button>' +
+            '</div>' +
+            '<p class="ui-copy-muted" style="font-size:0.75rem;margin-top:0.4rem">Anyone with this link can book this exact session at this exact price. It sells the SAVED version of this session. Generating a new link replaces the old one; deleting the session kills the link.</p>' +
+          '</div>'
+        : "") +
       startNew +
       (state._builderStatus
         ? '<p class="ui-copy-muted" role="status" style="margin-top:0.6rem;font-size:0.8rem' + (state._builderStatusError ? ";color:#b3261e" : ";color:#166534") + '">' + escapeHtml(state._builderStatus) + '</p>'
@@ -1243,12 +1337,102 @@
     if (notesInput) notesInput.addEventListener("input", function () { state._builderNotes = notesInput.value; });
     var saveBtn = el.querySelector("[data-builder-save]");
     if (saveBtn) saveBtn.addEventListener("click", builderSaveDraft);
+    var linkBtn = el.querySelector("[data-builder-link]");
+    if (linkBtn) linkBtn.addEventListener("click", builderGetLink);
+    var linkCopyBtn = el.querySelector("[data-builder-link-copy]");
+    if (linkCopyBtn) linkCopyBtn.addEventListener("click", function () {
+      var urlInput = el.querySelector("[data-builder-link-url]");
+      var url = urlInput ? urlInput.value : state._builderLinkUrl;
+      function done() { state._builderLinkCopied = true; renderBuilderPanel(); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done).catch(function () {
+          if (urlInput) { urlInput.select(); document.execCommand("copy"); done(); }
+        });
+      } else if (urlInput) {
+        urlInput.select();
+        document.execCommand("copy");
+        done();
+      }
+    });
     var newBtn = el.querySelector("[data-builder-new]");
     if (newBtn) newBtn.addEventListener("click", function () {
       state._builderDraftId = null;
       state._builderStatus = "";
+      state._builderLinkUrl = "";
+      state._builderLinkCopied = false;
       renderBuilderPanel();
     });
+  }
+
+  // Get Session Link (DREW-21, Phase 2): asks the dashboard to sign the SAVED
+  // draft into a locked customer link. The dashboard recomputes the price
+  // server-side, signs the payload, and activates the link in the booking
+  // site's Edge Config allow-list — so the URL that comes back is live the
+  // moment it appears here.
+  function builderGetLink() {
+    if (!state._builderDraftId) {
+      state._builderStatus = "Save the session first — the link is generated from the saved version.";
+      state._builderStatusError = true;
+      renderBuilderPanel();
+      return;
+    }
+    state._builderLinkPending = true;
+    state._builderLinkCopied = false;
+    state._builderStatus = "";
+    state._builderStatusError = false;
+    renderBuilderPanel();
+    fetch("/api/session-links", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ draftId: state._builderDraftId })
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        state._builderLinkPending = false;
+        if (res.ok && res.body && res.body.ok && res.body.url) {
+          state._builderLinkUrl = res.body.url;
+        } else {
+          state._builderStatus = (res.body && res.body.error) ? "Link failed: " + res.body.error : "Link failed. Try again.";
+          state._builderStatusError = true;
+        }
+        renderBuilderPanel();
+      })
+      .catch(function () {
+        state._builderLinkPending = false;
+        state._builderStatus = "Link failed. Check the connection and try again.";
+        state._builderStatusError = true;
+        renderBuilderPanel();
+      });
+  }
+
+  // Rehydrate a saved flow-state snapshot (builderSnapshotFlowState shape) into
+  // the live flow. Shared by the builder's Load (below) and offer mode (DREW-21),
+  // so a link restores the customer into EXACTLY the build Drew saved.
+  function applyFlowState(fs) {
+    if (!fs || typeof fs !== "object") return;
+    [
+      "bookingType", "eventMode", "_dayRole", "_multidayFixedTime",
+      "_eventDurationId", "_eventStartDate", "_eventEndDate",
+      "_lastDayDurationId", "durationId", "eventIntent", "participants",
+      "eventDescription", "foodDrinks", "highTrafficNote",
+      "_cartReviewing", "selectedDate", "selectedTime"
+    ].forEach(function (k) { if (fs[k] !== undefined) state[k] = fs[k]; });
+    state.addons = {};
+    location.addons.forEach(function (a) {
+      state.addons[a.id] = (fs.addons && fs.addons[a.id])
+        ? JSON.parse(JSON.stringify(fs.addons[a.id]))
+        : getInitialAddonState(a);
+    });
+    state.cart.sessions = fs.cart && Array.isArray(fs.cart.sessions)
+      ? JSON.parse(JSON.stringify(fs.cart.sessions))
+      : [];
+    if (fs.intake && typeof fs.intake === "object") {
+      state.intake.participants = fs.intake.participants || "";
+      state.intake.business = fs.intake.business || "";
+    }
+    state._gateChoosingEventMode = false;
+    state.availableDates = [];
+    state.availableTimes = [];
   }
 
   // Load a saved session back into the live flow. Called by the dashboard
@@ -1257,29 +1441,7 @@
     window.WWSBuilderAPI = {
       restore: function (fs, meta) {
         if (!fs || typeof fs !== "object") return;
-        [
-          "bookingType", "eventMode", "_dayRole", "_multidayFixedTime",
-          "_eventDurationId", "_eventStartDate", "_eventEndDate",
-          "_lastDayDurationId", "durationId", "eventIntent", "participants",
-          "eventDescription", "foodDrinks", "highTrafficNote",
-          "_cartReviewing", "selectedDate", "selectedTime"
-        ].forEach(function (k) { if (fs[k] !== undefined) state[k] = fs[k]; });
-        state.addons = {};
-        location.addons.forEach(function (a) {
-          state.addons[a.id] = (fs.addons && fs.addons[a.id])
-            ? JSON.parse(JSON.stringify(fs.addons[a.id]))
-            : getInitialAddonState(a);
-        });
-        state.cart.sessions = fs.cart && Array.isArray(fs.cart.sessions)
-          ? JSON.parse(JSON.stringify(fs.cart.sessions))
-          : [];
-        if (fs.intake && typeof fs.intake === "object") {
-          state.intake.participants = fs.intake.participants || "";
-          state.intake.business = fs.intake.business || "";
-        }
-        state._gateChoosingEventMode = false;
-        state.availableDates = [];
-        state.availableTimes = [];
+        applyFlowState(fs);
         if (meta && typeof meta === "object") {
           state._builderDraftId = meta.id || null;
           state._builderName = meta.name || "";
@@ -1292,6 +1454,8 @@
             : { mode: "dollar", value: "", note: "" };
           state._builderOrder = meta.applyOrder === "discount-first" ? "discount-first" : "addon-first";
           state._builderStatus = "";
+          state._builderLinkUrl = "";
+          state._builderLinkCopied = false;
         }
         showGateOrFlow();
         setStep(clamp(Number(fs.step) || BUILDER_MAX_STEP, 1, BUILDER_MAX_STEP));
@@ -1299,12 +1463,114 @@
     };
   }
 
+  // ---- Offer mode boot pieces (DREW-21) ------------------------------------
+  // Visual lock: gray + inert every control the offer freezes. The functional
+  // lock is the action/input/change guards above — this CSS is the "grayed out"
+  // Drew asked for, and survives every re-render because it keys off a body
+  // class instead of per-element attributes.
+  function injectOfferStyles() {
+    var sels = Object.keys(OFFER_LOCKED_ACTIONS).map(function (a) {
+      return 'body.wws-offer-mode [data-action="' + a + '"]';
+    }).concat(OFFER_LOCKED_INPUTS.map(function (s) {
+      return "body.wws-offer-mode " + s;
+    })).concat(OFFER_LOCKED_CHECKS.map(function (s) {
+      return "body.wws-offer-mode " + s;
+    }));
+    var css = sels.join(",\n") + " { pointer-events: none; opacity: 0.55; cursor: default; }" +
+      "\nbody.wws-offer-mode .offer-banner { background:#0f172a; color:#f8fafc; border-radius:0.75rem; padding:1rem 1.25rem; margin:0 0 1.25rem; }" +
+      "\nbody.wws-offer-mode .offer-banner p { margin:0; }" +
+      "\n.offer-error-overlay { position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.55); display:flex; align-items:center; justify-content:center; padding:1.5rem; }" +
+      "\n.offer-error-card { background:#fff; border-radius:1rem; max-width:28rem; width:100%; padding:2rem; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.25); }";
+    var tag = document.createElement("style");
+    tag.textContent = css;
+    document.head.appendChild(tag);
+  }
+
+  // Full-screen stop card. Used when the link is unusable (bad copy/paste,
+  // revoked by Drew, or pricing drifted since it was signed). An overlay — not
+  // an inline swap — so no later re-render can accidentally resurrect the flow.
+  function showOfferErrorPanel(reason) {
+    if (document.querySelector(".offer-error-overlay")) return;
+    var copy;
+    if (reason === "revoked") {
+      copy = "This session link is no longer active. White Wall may have updated your offer — reach out to the person who sent it and they will send you a fresh link.";
+    } else if (reason === "changed") {
+      copy = "This offer's pricing has changed since the link was created, so we can't honor it as-is. Contact White Wall and they will send you an updated link.";
+    } else if (reason === "unavailable") {
+      copy = "We can't verify this session link right now. Please try again in a few minutes.";
+    } else {
+      copy = "This session link isn't valid. It may have been cut short when it was copied or forwarded. Ask White Wall to resend it.";
+    }
+    var overlay = document.createElement("div");
+    overlay.className = "offer-error-overlay";
+    overlay.innerHTML =
+      '<div class="offer-error-card">' +
+        '<p class="ui-kicker" style="margin-bottom:0.75rem">Custom session link</p>' +
+        '<p class="ui-copy-strong" style="margin-bottom:0.75rem">' + escapeHtml(copy) + '</p>' +
+        '<p class="ui-copy-muted" style="font-size:0.85rem">You can also book normally at whitewallstudios.co.</p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+
+  function renderOfferBanner() {
+    var anchor = document.querySelector("[data-progress]");
+    if (!anchor || document.querySelector(".offer-banner")) return;
+    var who = OFFER.name ? " — " + escapeHtml(String(OFFER.name)) : "";
+    anchor.insertAdjacentHTML("beforebegin",
+      '<div class="offer-banner">' +
+        '<p class="ui-copy-strong" style="color:#f8fafc">A custom session prepared for you by White Wall Studios' + who + '</p>' +
+        '<p style="font-size:0.85rem;opacity:0.85;margin-top:0.35rem">Everything below is already set up for you — the dates, times, add-ons, and your custom price are locked. Just add your details, sign, and pay. Want a change? Reply to the person who sent you this link.</p>' +
+      '</div>');
+  }
+
+  function initOfferMode() {
+    document.body.classList.add("wws-offer-mode");
+    injectOfferStyles();
+    // Offers never mix with promos or deposits — the price IS the offer.
+    state.coupon = null;
+    state.couponInput = "";
+    state.promoActive = false;
+    state.paymentMode = "full";
+    applyFlowState(OFFER.flowState);
+    // Keyboard belt-and-suspenders: readonly-by-interception, so a Tab-focused
+    // locked input can't even change its visible text.
+    document.addEventListener("beforeinput", function (e) {
+      var t = e.target;
+      if (t && t.matches && OFFER_LOCKED_INPUTS.some(function (s) { return t.matches(s); })) {
+        e.preventDefault();
+      }
+    }, true);
+    showGateOrFlow();
+    setStep(1);
+    renderOfferBanner();
+    // Server verdict: signature + the dashboard's active-offer list. The render
+    // above is optimistic; a bad verdict drops the stop card over it. A network
+    // hiccup leaves the optimistic render — create-checkout re-verifies at pay,
+    // so nothing can be charged off an unverified link either way.
+    fetch("/api/validate-offer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: OFFER_TOKEN })
+    })
+      .then(function (r) { return r.json().catch(function () { return null; }); })
+      .then(function (j) {
+        if (!j) return; // malformed response — treat as network hiccup
+        if (!j.ok) showOfferErrorPanel(j.reason || "invalid");
+      })
+      .catch(function () {});
+  }
+
   bindStaticContent();
   renderLocationSwitcher();
   renderProgress();
   renderStepContent();
   bindEvents();
-  showGateOrFlow(); // Step-1 gate: show "What are you booking?" until a type is chosen (PV); TM auto-resolves.
+  if (OFFER) {
+    initOfferMode(); // locked pre-filled flow — skips the gate entirely
+  } else {
+    showGateOrFlow(); // Step-1 gate: show "What are you booking?" until a type is chosen (PV); TM auto-resolves.
+    if (OFFER_BROKEN) showOfferErrorPanel("invalid");
+  }
   // Seed the initial history entry (replaceState) for the gate position, so the
   // first setStep() PUSHES a new entry rather than overwriting this one — that is
   // what makes browser Back from Step 1 return to the gate instead of leaving.
@@ -1389,6 +1655,35 @@
       .join("");
   }
 
+  // Offer mode: every action that could change WHAT was built or WHAT it costs
+  // is locked — the customer can look but not touch (Drew: "completely locked…
+  // grayed out"). Navigation (go-step) and the customer's own steps (contact,
+  // terms, waiver signing, payment) stay live. The matching CSS graying is
+  // injected by initOfferMode(); this guard is the functional lock, so keyboard
+  // activation can't slip past pointer-events:none.
+  var OFFER_LOCKED_ACTIONS = {
+    "gate-choose": 1, "gate-event-mode": 1, "gate-back": 1,
+    "select-duration": 1, "select-date": 1, "select-time": 1, "navigate-month": 1,
+    "add-another-session": 1, "review-cart": 1, "back-to-cart-edit": 1,
+    "edit-cart-session": 1, "remove-cart-session": 1,
+    "md-add-last": 1, "md-add-multiple": 1, "md-review": 1,
+    "range-reset": 1, "range-review": 1,
+    "set-event-intent": 1, "set-last-day-leave": 1,
+    "adjust-quantity": 1, "set-addon-mode": 1, "set-placement": 1,
+    "set-quantity-max": 1, "set-tier": 1,
+    "toggle-addon": 1, "toggle-color": 1, "toggle-wall": 1,
+    "apply-coupon": 1, "remove-coupon": 1, "set-payment-mode": 1
+  };
+  var OFFER_LOCKED_INPUTS = [
+    "[data-input='participants']", "[data-input='intake-participants']",
+    "[data-input='event-description']", "[data-input='high-traffic-note']",
+    "[data-input='coupon-code']"
+  ];
+  var OFFER_LOCKED_CHECKS = [
+    "[data-check='food-drinks-yes']", "[data-check='food-drinks-no']",
+    "[data-action='set-placement']", "[data-action='set-last-day-leave']"
+  ];
+
   function bindEvents() {
     document.addEventListener("click", (event) => {
       const actionTarget = event.target.closest("[data-action]");
@@ -1397,6 +1692,11 @@
       }
 
       const action = actionTarget.dataset.action;
+
+      if (OFFER && OFFER_LOCKED_ACTIONS[action]) {
+        event.preventDefault();
+        return;
+      }
 
       // Step-1 "What are you booking?" gate (Drew 2026-07-10).
       if (action === "gate-choose") {
@@ -1845,6 +2145,13 @@
     document.addEventListener("input", (event) => {
       const target = event.target;
 
+      // Offer mode: locked inputs are readonly in the DOM (initOfferMode), but
+      // guard here too so nothing (autofill, extensions, keyboard edge cases)
+      // can mutate the locked build's state.
+      if (OFFER && target.matches && OFFER_LOCKED_INPUTS.some(function (sel) { return target.matches(sel); })) {
+        return;
+      }
+
       if (target.matches("[data-input='participants']")) {
         state.participants = target.value;
         // Keep intake participants in sync when event intent is active (intake field hidden)
@@ -1991,6 +2298,15 @@
 
     document.addEventListener("change", (event) => {
       const target = event.target;
+
+      if (OFFER && target.matches && OFFER_LOCKED_CHECKS.some(function (sel) { return target.matches(sel); })) {
+        // Revert the visual toggle to the locked build's state.
+        if (target.type === "checkbox" || target.type === "radio") {
+          if (target.matches("[data-check='food-drinks-yes']")) target.checked = state.foodDrinks === true;
+          if (target.matches("[data-check='food-drinks-no']")) target.checked = state.foodDrinks === false;
+        }
+        return;
+      }
 
       if (target.matches("[data-action='set-placement']")) {
         var pAddon = state.addons[target.dataset.addonId];
@@ -2936,6 +3252,18 @@
     }
     var grandTotal = subtotal - couponDiscount;
     if (grandTotal < 0) grandTotal = 0;
+
+    // Offer mode (DREW-21): apply the link's ownership adjustments to the live
+    // base and lock the total to the signed number. Coupons/deposit never mix
+    // with an offer (the price IS the offer).
+    var offerAdjSingle = null;
+    var offerLinesSingle = '';
+    if (OFFER) {
+      offerAdjSingle = offerAdjustments(Math.round(grandTotal * 100));
+      offerLinesSingle = offerLinesHtml(offerAdjSingle);
+      offerDriftCheck(offerAdjSingle.finalCents);
+      grandTotal = offerAdjSingle.finalCents / 100;
+    }
     var timeLabel = new Date(state.selectedTime).toLocaleString("en-US", {
       weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
     });
@@ -2976,7 +3304,7 @@
     // captured 48h before via the saved card, server-side). depositSplit lives
     // in pricing-shared so the displayed amount matches the server recompute.
     // Deposit UI is dark on prod until item-6 is armed (see depositUiEnabled).
-    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive() && !isComp && depositUiEnabled();
+    var isSingleEvent = state.eventIntent === "yes" && !cartIsActive() && !isComp && !OFFER && depositUiEnabled();
     var depositHtml = '';
     var chargeTotal = grandTotal;
     if (isSingleEvent && window.WWSPricing && window.WWSPricing.depositSplit) {
@@ -3007,6 +3335,7 @@
         addonHtml +
         cleaningFeeHtml +
         couponLineHtml +
+        offerLinesSingle +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
         '<div class="summary-line summary-total"><span><strong>Total</strong></span><span><strong>' + fmtMoney(grandTotal) + '</strong></span></div>' +
       '</div>' +
@@ -3020,6 +3349,8 @@
   // inside the order summary so it re-renders with the total. The handlers do
   // targeted DOM work (no full re-render from keystrokes — see input handler).
   function renderCouponRow() {
+    // Offer mode: the price IS the offer — no promo field, ever.
+    if (OFFER) return '';
     // Gate: only render the promo field during an active campaign (or if a code
     // is already applied this session). Hidden entirely otherwise.
     if (!state.promoActive && !state.coupon) return '';
@@ -3337,7 +3668,10 @@
     // every session's availability server-side, so the single-slot client
     // pre-verify below is skipped for the cart path (and would be wrong when the
     // active draft has no slot in review mode).
-    var willUseCart = cartIsActive() || (state.paymentMode === "deposit");
+    // Offer mode always routes through the cart endpoint — it owns the
+    // offer-token verification and per-session availability checks, and a
+    // single-session offer is just a one-session cart.
+    var willUseCart = !!OFFER || cartIsActive() || (state.paymentMode === "deposit");
 
     try {
       // Verify the (single-session) slot is still available. Cart path defers to

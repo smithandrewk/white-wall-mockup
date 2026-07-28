@@ -41,6 +41,7 @@ const {
   refundPayment
 } = require("./_lib/square");
 const { validateCoupon, sessionDiscountCents } = require("./_lib/coupons");
+const { verifyOfferToken, offerErrorMessage } = require("./_lib/offers");
 const { isStaging, stagingSinkEmail, stagingCalendarID } = require("./_lib/env");
 const { buildWaiverText } = require("./_lib/waiver-text");
 const { notifyOwner } = require("./notify-owner");
@@ -952,7 +953,59 @@ module.exports = async function handler(req, res) {
 //   }
 //   (universal.* may also be sent flat on the body; universal wins if present.)
 // ===========================================================================
+
+// Rebuild the cart body from a VERIFIED offer payload (DREW-21). Sessions come
+// from the token (dashboard-resolved appointmentTypeID + slot + add-ons); the
+// customer's request contributes only their identity: contact, intake (minus
+// the locked participants count), waiver/terms/card. Coupons and deposits
+// never mix with an offer — the price IS the offer.
+function offerCartBody(offer, body) {
+  var universal = body.universal || {};
+  var custIntake = universal.intake || body.intake || {};
+  var fs = offer.flowState || {};
+  var lockedParticipants = offer.participants ? String(offer.participants) : "";
+  var sessions = offer.sessions.map(function (s) {
+    return {
+      appointmentTypeID: s.appointmentTypeID,
+      datetime: s.selectedTime,
+      location: offer.locationSlug,
+      addons: s.addons || {},
+      eventIntent: offer.bookingType === "event" ? "yes" : "no",
+      intake: Object.assign({}, custIntake, lockedParticipants ? { participants: lockedParticipants } : {}),
+      participants: lockedParticipants || (custIntake.participants || ""),
+      eventDescription: fs.eventDescription || "",
+      foodDrinks: fs.foodDrinks != null ? fs.foodDrinks : false
+    };
+  });
+  return {
+    sessions: sessions,
+    paymentMode: "full",
+    universal: Object.assign({}, universal, { couponCode: "" })
+  };
+}
 async function handleCartCheckout(req, res, body) {
+  // ---- Locked offer link (DREW-21, Session Builder Phase 2) ----------------
+  // When the client presents an offerToken, the TOKEN is authoritative for
+  // everything Drew locked: which sessions, which add-ons, the participants
+  // count, and (asserted further down) the final price. The client's own
+  // session rows are discarded — only the customer's identity fields (contact,
+  // intake, waiver, terms, card) are taken from the request. Verification =
+  // HMAC signature + the Edge Config active-list (see _lib/offers.js), so a
+  // revoked or superseded link dies here no matter what the page rendered.
+  var offer = null;
+  if (body.offerToken) {
+    var offerCheck = await verifyOfferToken(body.offerToken);
+    if (!offerCheck.ok) {
+      var offerStatus = offerCheck.reason === "unavailable" ? 503 : 403;
+      return res.status(offerStatus).json({
+        error: offerErrorMessage(offerCheck.reason),
+        offerReason: offerCheck.reason
+      });
+    }
+    offer = offerCheck.payload;
+    body = offerCartBody(offer, body);
+  }
+
   const sessions = body.sessions;
   const universal = body.universal || {};
   // Universal fields: prefer the `universal` envelope, fall back to top-level
@@ -1138,6 +1191,40 @@ async function handleCartCheckout(req, res, body) {
 
     var totalCents = preDiscountTotalCents - multiDayDiscountCents;
 
+    // ---- Offer price authority (DREW-21) ---------------------------------
+    // Apply the token's ownership adjustments to the freshly recomputed cart
+    // total and ASSERT the result equals the signed final price. A mismatch
+    // means prices moved since Drew signed the link (or a mint bug) — never
+    // silently charge a number the link no longer adds up to.
+    var offerAdj = null;
+    if (offer) {
+      offerAdj = pricingShared.ownershipAdjustments(
+        totalCents,
+        offer.ownershipAddon || null,
+        offer.override || null,
+        offer.applyOrder === "discount-first" ? "discount-first" : "addon-first"
+      );
+      if (offerAdj.finalCents !== offer.finalTotalCents) {
+        console.error("create-checkout(cart): OFFER PRICE MISMATCH — computed "
+          + offerAdj.finalCents + "c vs signed " + offer.finalTotalCents
+          + "c (draft " + offer.id + ")");
+        await alertFailure("alert", "Offer link price mismatch — link refused", {
+          draftId: offer.id,
+          offerName: offer.name || "",
+          signedFinalCents: offer.finalTotalCents,
+          computedFinalCents: offerAdj.finalCents,
+          customerEmail: contact.email
+        });
+        return res.status(409).json({ error: offerErrorMessage("changed"), offerReason: "changed" });
+      }
+      if (offerAdj.finalCents <= 0) {
+        return res.status(400).json({
+          error: "This offer totals $0 and can't be charged online. Contact White Wall to finish this booking."
+        });
+      }
+      totalCents = offerAdj.finalCents;
+    }
+
     // =====================================================================
     // FREE-COMP cart path (server-validated comp coupon). The WHOLE cart is
     // comped to $0: ZERO Square calls (no customer / charge / saved card), N
@@ -1211,6 +1298,7 @@ async function handleCartCheckout(req, res, body) {
         note: "WhiteWall cart (" + priced.sessions.length + " session"
           + (priced.sessions.length === 1 ? "" : "s") + ") — "
           + cardLabelName + (paymentMode === "deposit" ? " — 60% deposit" : "")
+          + (offer ? " — custom offer" + (offer.name ? ": " + String(offer.name).slice(0, 60) : "") : "")
       });
 
       // ---- 5. ONE saved card ----------------------------------------------
@@ -1290,9 +1378,26 @@ async function handleCartCheckout(req, res, body) {
             Math.round((1 - pricingShared.dayDiscountMultiplier(1)) * 100) + "% off Day 2 and " +
             Math.round((1 - pricingShared.dayDiscountMultiplier(2)) * 100) + "% off Day 3+)";
         }
-        if (si === 0 && (multiDayDiscountCents > 0 || priced.totals.addonDiscount > 0)) {
+        if (si === 0 && !offer && (multiDayDiscountCents > 0 || priced.totals.addonDiscount > 0)) {
           notes += "\nTotal charged: $" + (totalCents / 100).toFixed(2) +
             (paymentMode === "deposit" ? " (60% deposit collected now)" : "");
+        }
+        // Custom offer (DREW-21): stamp the ownership adjustments + their notes
+        // so the Acuity record reconciles to the Square charge, and the draft id
+        // gives the dashboard a KPI hook (link -> paid booking) at ingest time.
+        if (offer && si === 0) {
+          notes += "\n\n--- CUSTOM OFFER (Session Builder link) ---" +
+            "\nOffer: " + (offer.name ? String(offer.name) : "(unnamed)") + " (draft " + offer.id + ")";
+          if (offerAdj.addonCents > 0) {
+            notes += "\nOwnership add-on: +$" + (offerAdj.addonCents / 100).toFixed(2) +
+              (offer.ownershipAddon && offer.ownershipAddon.note ? " — " + String(offer.ownershipAddon.note) : "");
+          }
+          if (offerAdj.discountCents > 0) {
+            notes += "\nOwnership discount: -$" + (offerAdj.discountCents / 100).toFixed(2) +
+              (offer.override && offer.override.note ? " — " + String(offer.override.note) : "");
+          }
+          notes += "\nTotal charged: $" + (totalCents / 100).toFixed(2) +
+            "\n--- END CUSTOM OFFER ---";
         }
 
         // Cart context so Drew sees this is one session of a multi-session order.

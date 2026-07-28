@@ -146,6 +146,76 @@
     return Math.min(raw, cap);
   }
 
+  // ---------------------------------------------------------------------------
+  // OWNERSHIP ADJUSTMENTS (Session Builder, DREW-19/DREW-21)
+  //
+  // The operator (Drew) can attach an "Ownership add-on" (adds) and an "Ownership
+  // discount" (subtracts) to a built session, each percent or flat dollars, applied
+  // in a swappable order. Percent values compute on the RUNNING total at their
+  // apply point — that order-sensitivity is Drew's spec, pinned by his own worked
+  // example (a $3,546 build + $1,000 add-on with a 10% discount: addon-first takes
+  // off $454.60, discount-first takes off $354.60).
+  //
+  // This is the ONE implementation. The dashboard builder UI, the dashboard's
+  // server recompute (via the generated copy of this module), and the booking
+  // site's offer-link charge path all call it, so the number Drew sees when he
+  // builds, the number stored on the draft, and the number the customer is
+  // actually charged cannot drift.
+  //
+  // adj shape: { mode: "percent"|"dollar", value: number } or null/undefined.
+  // Discount: percent clamps to [0,100], result clamps to [0, base] so a charge
+  // can never go negative. Add-on: no clamp-to-base, only sanity bounds
+  // (1000% / $1M). These clamp (never reject) — identical to the dashboard's
+  // ownershipCents/ownershipAddCents and the builder client math.
+  // ---------------------------------------------------------------------------
+  function ownershipDiscountAmount(discount, baseCents) {
+    if (!discount) return 0;
+    var value = Number(discount.value) || 0;
+    if (value <= 0) return 0;
+    var cents;
+    if (discount.mode === "percent") {
+      var pct = Math.min(100, Math.max(0, value));
+      cents = Math.round(baseCents * (pct / 100));
+    } else {
+      cents = Math.round(value * 100);
+    }
+    return Math.min(Math.max(0, cents), Math.max(0, baseCents));
+  }
+
+  function ownershipAddonAmount(addon, baseCents) {
+    if (!addon) return 0;
+    var value = Number(addon.value) || 0;
+    if (value <= 0) return 0;
+    if (addon.mode === "percent") {
+      return Math.round(baseCents * (Math.min(1000, value) / 100));
+    }
+    return Math.round(Math.min(value, 1000000) * 100);
+  }
+
+  /**
+   * @param {number} baseCents  the pre-adjustment cart total
+   * @param {{mode:string,value:number}|null} addon     Ownership add-on (adds)
+   * @param {{mode:string,value:number}|null} discount  Ownership discount (subtracts)
+   * @param {string} applyOrder "addon-first" (default) | "discount-first"
+   * @returns {{addonCents:number, discountCents:number, finalCents:number}}
+   */
+  function ownershipAdjustments(baseCents, addon, discount, applyOrder) {
+    var base = Math.max(0, Math.round(Number(baseCents) || 0));
+    var addonCents, discountCents;
+    if (applyOrder === "discount-first") {
+      discountCents = ownershipDiscountAmount(discount, base);
+      addonCents = ownershipAddonAmount(addon, base - discountCents);
+    } else {
+      addonCents = ownershipAddonAmount(addon, base);
+      discountCents = ownershipDiscountAmount(discount, base + addonCents);
+    }
+    return {
+      addonCents: addonCents,
+      discountCents: discountCents,
+      finalCents: Math.max(0, base + addonCents - discountCents)
+    };
+  }
+
   /**
    * The per-day rate as customer-facing text, e.g. "$160". Whole dollars when the rate
    * is whole dollars (it always has been), cents only if it ever isn't.
@@ -169,6 +239,9 @@
     addonDiscountCents: addonDiscountCents,
     computeCartTotals: computeCartTotals,
     depositSplit: depositSplit,
+    ownershipAdjustments: ownershipAdjustments,
+    ownershipDiscountAmount: ownershipDiscountAmount,
+    ownershipAddonAmount: ownershipAddonAmount,
     MULTIDAY_DISCOUNT_PER_DAY_CENTS: MULTIDAY_DISCOUNT_PER_DAY_CENTS,
     MULTIDAY_DISCOUNT_MIN_DAYS: MULTIDAY_DISCOUNT_MIN_DAYS,
     multiDayDiscountCents: multiDayDiscountCents
