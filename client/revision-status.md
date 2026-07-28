@@ -874,3 +874,31 @@ OPS DASHBOARD (wws-dashboard, wws.entrpy.co). PR #93 (squash `5593f9c`). Ticket 
 - [x] **Saved drafts (folded into Phase 1 by this msg):** migration `0017_session_drafts.sql` + `GET`/`POST /api/session-drafts` + `PUT`/`DELETE /api/session-drafts/[id]` (server RECOMPUTES the total from config — never trusts the client). Save a named draft with notes; the Saved sessions section lists them with load / rename / edit-notes / delete. NO shareable link yet (that is Phase 2).
 - [x] Verified: `npm run build` passes; **136 unit tests pass** (11 new pinning Drew's worked examples + builder composition + setup-crew-once + override clamp); seed-mode Playwright drive confirms exact totals (single $130/$200; 3-day event $270 = 600 + $150 cleaning − $480 multi-day; +TV $390; −$200 override → $190; seed draft loads + recomputes to $712), 0px mobile overflow, zero console errors; then **LIVE-DB verify on the deployed :18794** (page 200; POST/list/rename/DELETE round-trip recomputed a 3-day event to $712 server-side, cleaned up). Migration 0017 applied to the live wws DB. Confirmed live to Drew (`19fa57a7745ace96`).
 - [ ] **Phase 2 (PARKED, Andrew's architecture call):** save → shareable signed link → pre-filled + LOCKED customer checkout that forces the custom Square price. Drew's design answer captured: fully locked, no extra add-ons (customer contacts Drew to change anything). Same foundation V3 items 2/6/7 need. Soft escalation (reason=architecture) still open. A fresh DREW ticket opens when Andrew green-lights.
+
+## Feedback Round 55 (2026-07-27) — Drew (msg 19fa569db8e7fb7a): Dashboard data hygiene + client columns + stats default (DREW-15/16)
+
+OPS DASHBOARD (wws-dashboard, wws.entrpy.co). PR #94 (squash `ff9aab7`). Tickets **DREW-15** (UI) + **DREW-16** (data). Comms `client/comms/2026-07-27-drew-dashboard-data-hygiene-and-columns.md`. Display-layer only — Acuity/Square/QBO READ-ONLY invariant untouched. (Round written by the catch-up foreman 2026-07-28: the session that shipped this died mid-deploy before adding the tracker round.)
+
+- [x] Sidebar Stats group collapsed by default on landing; opens when inside a stats page.
+- [x] Clients lifetime list gains the same Repeat / New column as the Bookings table.
+- [x] Repeat-visits view drops that column (everyone there is a repeat by definition).
+- [x] Andrew Smith, Max Huggins, Drew Shahoud excluded from every list, count, and dollar total (SQL views `v_client`/`v_booking`/`v_payment`, migration 0018).
+- [x] Lucas Williams, Wesley/West Cannon, Nick Riddle show nothing pre-2026-01-01 (test data); 2026+ shows normally.
+- [x] Duplicate identities consolidated by name (Lucas one row with real numbers). Drew confirmed all merges correct (msg 19fa972592483e26 "Merge - totally fine") — none split back.
+- [x] Verified: `npm run build`, 143 unit tests, live-DB Playwright pass. Confirmed to Drew in the 11:15 status (`19fa94b4852a2b49`); Drew approved items 1/3/4/5/6 (`19fa972592483e26`).
+
+## Feedback Round 56 (2026-07-27) — Drew (msg 19fa5847a069d1e5): Session Builder rebuilt as the website booking flow (DREW-17)
+
+OPS DASHBOARD + BOOKING SITE. booking-site PR #103 (squash `ed418e1`) + wws-dashboard PR #95 (squash `b707b34`) + #97. Ticket **DREW-17**. Comms `client/comms/2026-07-27-drew-session-builder-ui-rebuild.md`. Drew rejected the form-style DREW-14 UI and asked for a carbon copy of the website booking flow; greenlit continuing Tue 11:57 ("Session builder - great. Lemme know when ready for review").
+
+- [x] Inert flag-gated BUILDER mode in `scripts/booking-flow.js` (`window.WWS_BUILDER_MODE`): flow capped at add-ons, Ownership override + Save Session / Get Session Link panel, `WWSBuilderAPI.restore`. Flag unset = customers byte-identical (prod re-verified post-deploy, zero console errors).
+- [x] Dashboard `/session-builder` now embeds the synced booking pages (`scripts/sync-booking-app.mjs` → `public/session-builder-app/`): title "Session Builder", self-service paragraph dropped, Flagship/Taylor's Mill toggle (Powdersville first), identical gate cards + hover + left controls / live summary right.
+- [x] `lib/session-builder/flow-pricing.ts` server-recomputes flow-v2 drafts; availability via read-only proxy routes; saved drafts (0017) still load.
+- [x] Verified: `npm run build`, 148 unit tests, seed-mode Playwright desktop+mobile pre-ship; post-deploy live prod verify on :18794 (toggle works, photo path prices, override panel + Save/Get Link present, 0px mobile overflow). Confirmed live to Drew (`19fa9ecd43056fd8`).
+
+## Feedback Round 57 (2026-07-28) — Drew (msg 19fa972592483e26): Clients list Repeat/New column between Client and Instagram (DREW-18)
+
+OPS DASHBOARD (wws-dashboard). PR #96 (squash `7ac141d`). Ticket **DREW-18**. Comms: Follow-up 2 in `client/comms/2026-07-27-drew-session-builder-ui-rebuild.md` (item 2 of Drew's point-by-point reply; items 1/3/4/5/6 were approvals of Round 55).
+
+- [x] Repeat/New column moved to sit between Client and Instagram on the lifetime Clients list; account tab keeps Login method in the last slot; Repeat-visits view still omits the column; mobile cards unchanged.
+- [x] Verified: `npm run build`, 143 unit tests, seed + live-DB Playwright (header order Client / Repeat? / Instagram across 1,095 rows, 0px mobile overflow, zero console errors). Confirmed live to Drew (`19fa9ecd43056fd8`).
