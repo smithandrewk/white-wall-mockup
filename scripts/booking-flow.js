@@ -13,6 +13,17 @@
     return;
   }
 
+  // ---- Builder mode (DREW-17, 2026-07-28) ----------------------------------
+  // The wws-dashboard "Session Builder" tab embeds a synced copy of this exact
+  // page and sets window.WWS_BUILDER_MODE before this script runs. In builder
+  // mode the flow is the identical booking experience but ENDS at the add-ons
+  // step (no contact / waiver / payment), and the order summary gains an
+  // Ownership-discount override plus Save Session / Get Session Link controls.
+  // On the customer site this flag is never set, so every BUILDER branch below
+  // is dead code there — behavior is byte-identical for real customers.
+  var BUILDER = !!window.WWS_BUILDER_MODE;
+  var BUILDER_MAX_STEP = 3;
+
   const currency = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -489,6 +500,8 @@
       ? window.WWSPricing.multiDayDiscountCents(days.length, preDiscountGrand)
       : 0;
     var grand = preDiscountGrand - mdDiscount;
+    // Builder mode: the live multi-day total is what the override applies to.
+    if (BUILDER) state._builderTotalCents = grand;
 
     var html =
       '<div class="summary-divider my-6"></div>' +
@@ -728,6 +741,9 @@
         ? '<div class="summary-line" style="color:#166534"><span class="ui-copy-strong">Multi-day discount (' + feeSessionCount + ' days × ' + mdRate() + ')</span><span class="ui-copy-strong">−' + currencyExact.format(multiDayDiscount / 100) + '</span></div>'
         : '';
       var feeInclusiveTotal = preDiscountTotal - multiDayDiscount;
+      // Builder mode: a reviewed photo/multi-session cart total feeds the
+      // override panel (multi-day events use the aside summary's number).
+      if (BUILDER && state.eventMode !== "multi") state._builderTotalCents = feeInclusiveTotal;
       // Retail = sessions + add-ons with NO taper + cleaning. Savings = the taper +
       // the multi-day discount. retail - savings === feeInclusiveTotal by construction
       // (addonTotalFull - addonDiscount === addonTotal), so this is a re-grouping of
@@ -892,6 +908,263 @@
     }
   }
 
+  // ---- Builder mode: override panel + Save Session (DREW-17) ---------------
+  // Everything below only runs when window.WWS_BUILDER_MODE is set (the
+  // wws-dashboard Session Builder embed). The panel renders into
+  // [data-builder-panel] — a container the dashboard wrapper injects into the
+  // aside — so on the customer site (no container, no flag) this is inert.
+  function builderOverrideCents(baseCents) {
+    var ov = state._builderOverride;
+    if (!ov) return 0;
+    var v = parseFloat(ov.value);
+    if (!isFinite(v) || v <= 0) return 0;
+    var cents = ov.mode === "percent"
+      ? Math.round(baseCents * (Math.min(100, v) / 100))
+      : Math.round(v * 100);
+    return Math.min(Math.max(0, cents), Math.max(0, baseCents));
+  }
+
+  // The sessions being built, as plain per-day rows for the saved config. The
+  // dashboard recomputes the total server-side from these (never trusts ours).
+  function builderSessions() {
+    var raw = state.cart.sessions.slice();
+    if (state.selectedTime) raw.push(snapshotActiveSession());
+    if (!raw.length) raw.push(snapshotActiveSession()); // duration-only build
+    return raw.map(function (s) {
+      return {
+        durationId: s.durationId || "",
+        selectedDate: s.selectedDate || "",
+        selectedTime: s.selectedTime || "",
+        mdRole: s._mdRole || "",
+        mdTimeLabel: s._mdTimeLabel || "",
+        addons: JSON.parse(JSON.stringify(s.addons || {}))
+      };
+    });
+  }
+
+  // Max attendee count across the build — drives the cleaning fee server-side,
+  // mirroring the fee logic in renderCartSummary/getCleaningFee.
+  function builderParticipants() {
+    var max = Math.max(parseCount(state.participants), parseCount(state.intake.participants));
+    state.cart.sessions.forEach(function (s) {
+      var c = parseCount(s.perSessionIntake && s.perSessionIntake.participants);
+      if (c > max) max = c;
+    });
+    return max;
+  }
+
+  // Raw flow-state snapshot (whitelisted fields only) so a saved session can be
+  // loaded straight back into this exact flow later.
+  function builderSnapshotFlowState() {
+    return JSON.parse(JSON.stringify({
+      step: state.step,
+      bookingType: state.bookingType,
+      eventMode: state.eventMode,
+      _dayRole: state._dayRole,
+      _multidayFixedTime: state._multidayFixedTime,
+      _eventDurationId: state._eventDurationId,
+      _eventStartDate: state._eventStartDate,
+      _eventEndDate: state._eventEndDate,
+      _lastDayDurationId: state._lastDayDurationId,
+      durationId: state.durationId,
+      eventIntent: state.eventIntent,
+      participants: state.participants,
+      eventDescription: state.eventDescription,
+      foodDrinks: state.foodDrinks,
+      highTrafficNote: state.highTrafficNote,
+      addons: state.addons,
+      cart: { sessions: state.cart.sessions },
+      _cartReviewing: state._cartReviewing,
+      selectedDate: state.selectedDate,
+      selectedTime: state.selectedTime,
+      intake: { participants: state.intake.participants, business: state.intake.business }
+    }));
+  }
+
+  function builderSavePayload() {
+    var ov = state._builderOverride;
+    var ovValue = ov ? parseFloat(ov.value) : 0;
+    var override = ov && isFinite(ovValue) && ovValue > 0
+      ? { mode: ov.mode === "dollar" ? "dollar" : "percent", value: ovValue }
+      : null;
+    return {
+      name: (state._builderName || "").trim(),
+      notes: (state._builderNotes || "").trim() || null,
+      config: {
+        kind: "flow-v2",
+        locationSlug: location.slug,
+        bookingType: state.eventIntent === "yes" || state.bookingType === "event" ? "event" : "single",
+        eventMode: state.eventMode || "",
+        participants: builderParticipants(),
+        override: override,
+        sessions: builderSessions(),
+        flowState: builderSnapshotFlowState()
+      }
+    };
+  }
+
+  function builderSaveDraft() {
+    var payload = builderSavePayload();
+    if (!payload.name) {
+      state._builderStatus = "Give this session a name before saving.";
+      state._builderStatusError = true;
+      renderBuilderPanel();
+      return;
+    }
+    state._builderSaving = true;
+    state._builderStatus = "";
+    state._builderStatusError = false;
+    renderBuilderPanel();
+    var isUpdate = !!state._builderDraftId;
+    var url = isUpdate ? "/api/session-drafts/" + state._builderDraftId : "/api/session-drafts";
+    fetch(url, {
+      method: isUpdate ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        state._builderSaving = false;
+        if (res.ok && res.body && res.body.ok) {
+          if (res.body.draft && res.body.draft.id) state._builderDraftId = res.body.draft.id;
+          state._builderStatus = isUpdate ? "Session updated." : "Session saved.";
+          state._builderStatusError = false;
+          try { window.parent.postMessage({ type: "wws-builder-saved" }, "*"); } catch (e) {}
+        } else {
+          state._builderStatus = (res.body && res.body.error) ? "Save failed: " + res.body.error : "Save failed. Try again.";
+          state._builderStatusError = true;
+        }
+        renderBuilderPanel();
+      })
+      .catch(function () {
+        state._builderSaving = false;
+        state._builderStatus = "Save failed. Check the connection and try again.";
+        state._builderStatusError = true;
+        renderBuilderPanel();
+      });
+  }
+
+  function renderBuilderPanel() {
+    var el = document.querySelector("[data-builder-panel]");
+    if (!el) return;
+    if (!state._builderOverride) state._builderOverride = { mode: "percent", value: "" };
+    var ov = state._builderOverride;
+    var baseCents = state._builderTotalCents || 0;
+    var ovCents = builderOverrideCents(baseCents);
+    var finalCents = baseCents - ovCents;
+
+    var startNew = state._builderDraftId
+      ? '<button type="button" class="booking-back-link" data-builder-new style="margin-top:0.75rem">Start a new saved session instead of updating this one</button>'
+      : "";
+
+    el.innerHTML =
+      '<div class="summary-divider my-6"></div>' +
+      '<p class="text-xs tracking-[0.2em] uppercase text-black/40">Ownership discount</p>' +
+      '<div style="display:flex;gap:0.5rem;margin-top:0.85rem">' +
+        '<button type="button" class="booking-button ' + (ov.mode === "percent" ? "booking-button-primary" : "booking-button-secondary") + '" data-builder-mode="percent" style="padding:0.45rem 0.9rem;font-size:0.8rem">% off</button>' +
+        '<button type="button" class="booking-button ' + (ov.mode === "dollar" ? "booking-button-primary" : "booking-button-secondary") + '" data-builder-mode="dollar" style="padding:0.45rem 0.9rem;font-size:0.8rem">$ off</button>' +
+        '<input type="number" class="booking-input" data-builder-value inputmode="decimal" min="0" step="any" placeholder="' + (ov.mode === "percent" ? "e.g. 20" : "e.g. 150") + '" value="' + escapeAttribute(String(ov.value || "")) + '" style="flex:1;min-width:0">' +
+      '</div>' +
+      '<div class="summary-list" style="margin-top:1rem">' +
+        '<div class="summary-line"><span>Customer total</span><span data-builder-base>' + fmtMoney(baseCents / 100) + '</span></div>' +
+        '<div class="summary-line" style="color:#166534' + (ovCents > 0 ? "" : ";display:none") + '" data-builder-ov-line><span class="ui-copy-strong">Ownership discount</span><span class="ui-copy-strong" data-builder-ov>−' + currencyExact.format(ovCents / 100) + '</span></div>' +
+        '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
+        '<div class="summary-line summary-total"><span><strong>Final total</strong></span><strong data-builder-final>' + fmtMoney(finalCents / 100) + '</strong></div>' +
+      '</div>' +
+      '<div class="summary-divider my-6"></div>' +
+      '<label class="ui-field-label" style="font-size:0.8rem">Session name</label>' +
+      '<input type="text" class="booking-input" data-builder-name maxlength="120" placeholder="e.g. October 3–5 brand shoot" value="' + escapeAttribute(state._builderName || "") + '" style="margin-top:0.35rem">' +
+      '<label class="ui-field-label" style="font-size:0.8rem;display:block;margin-top:0.75rem">Notes (only you see these)</label>' +
+      '<textarea class="booking-input" data-builder-notes rows="2" maxlength="2000" placeholder="Anything worth remembering about this build" style="margin-top:0.35rem;resize:vertical">' + escapeHtml(state._builderNotes || "") + '</textarea>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1rem">' +
+        '<button type="button" class="booking-button booking-button-primary" data-builder-save' + (state._builderSaving ? " disabled" : "") + '>' + (state._builderSaving ? "Saving…" : (state._builderDraftId ? "Update Session" : "Save Session")) + '</button>' +
+        '<button type="button" class="booking-button booking-button-secondary" data-builder-link disabled title="Coming in Phase 2 — the shareable customer link">Get Session Link</button>' +
+      '</div>' +
+      startNew +
+      (state._builderStatus
+        ? '<p class="ui-copy-muted" role="status" style="margin-top:0.6rem;font-size:0.8rem' + (state._builderStatusError ? ";color:#b3261e" : ";color:#166534") + '">' + escapeHtml(state._builderStatus) + '</p>'
+        : "");
+
+    // Targeted listeners (builder-only; the global data-action bus stays untouched).
+    el.querySelectorAll("[data-builder-mode]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state._builderOverride.mode = btn.dataset.builderMode === "dollar" ? "dollar" : "percent";
+        renderBuilderPanel();
+      });
+    });
+    var valueInput = el.querySelector("[data-builder-value]");
+    if (valueInput) {
+      valueInput.addEventListener("input", function () {
+        state._builderOverride.value = valueInput.value;
+        // Targeted number updates so typing never loses focus to a re-render.
+        var base = state._builderTotalCents || 0;
+        var c = builderOverrideCents(base);
+        var line = el.querySelector("[data-builder-ov-line]");
+        var ovEl = el.querySelector("[data-builder-ov]");
+        var fin = el.querySelector("[data-builder-final]");
+        if (line) line.style.display = c > 0 ? "" : "none";
+        if (ovEl) ovEl.textContent = "−" + currencyExact.format(c / 100);
+        if (fin) fin.textContent = fmtMoney((base - c) / 100);
+      });
+    }
+    var nameInput = el.querySelector("[data-builder-name]");
+    if (nameInput) nameInput.addEventListener("input", function () { state._builderName = nameInput.value; });
+    var notesInput = el.querySelector("[data-builder-notes]");
+    if (notesInput) notesInput.addEventListener("input", function () { state._builderNotes = notesInput.value; });
+    var saveBtn = el.querySelector("[data-builder-save]");
+    if (saveBtn) saveBtn.addEventListener("click", builderSaveDraft);
+    var newBtn = el.querySelector("[data-builder-new]");
+    if (newBtn) newBtn.addEventListener("click", function () {
+      state._builderDraftId = null;
+      state._builderStatus = "";
+      renderBuilderPanel();
+    });
+  }
+
+  // Load a saved session back into the live flow. Called by the dashboard
+  // wrapper (builder-mode.js) when the operator hits Load on a saved draft.
+  if (BUILDER) {
+    window.WWSBuilderAPI = {
+      restore: function (fs, meta) {
+        if (!fs || typeof fs !== "object") return;
+        [
+          "bookingType", "eventMode", "_dayRole", "_multidayFixedTime",
+          "_eventDurationId", "_eventStartDate", "_eventEndDate",
+          "_lastDayDurationId", "durationId", "eventIntent", "participants",
+          "eventDescription", "foodDrinks", "highTrafficNote",
+          "_cartReviewing", "selectedDate", "selectedTime"
+        ].forEach(function (k) { if (fs[k] !== undefined) state[k] = fs[k]; });
+        state.addons = {};
+        location.addons.forEach(function (a) {
+          state.addons[a.id] = (fs.addons && fs.addons[a.id])
+            ? JSON.parse(JSON.stringify(fs.addons[a.id]))
+            : getInitialAddonState(a);
+        });
+        state.cart.sessions = fs.cart && Array.isArray(fs.cart.sessions)
+          ? JSON.parse(JSON.stringify(fs.cart.sessions))
+          : [];
+        if (fs.intake && typeof fs.intake === "object") {
+          state.intake.participants = fs.intake.participants || "";
+          state.intake.business = fs.intake.business || "";
+        }
+        state._gateChoosingEventMode = false;
+        state.availableDates = [];
+        state.availableTimes = [];
+        if (meta && typeof meta === "object") {
+          state._builderDraftId = meta.id || null;
+          state._builderName = meta.name || "";
+          state._builderNotes = meta.notes || "";
+          state._builderOverride = meta.override
+            ? { mode: meta.override.mode === "dollar" ? "dollar" : "percent", value: String(meta.override.value || "") }
+            : { mode: "percent", value: "" };
+          state._builderStatus = "";
+        }
+        showGateOrFlow();
+        setStep(clamp(Number(fs.step) || BUILDER_MAX_STEP, 1, BUILDER_MAX_STEP));
+      }
+    };
+  }
+
   bindStaticContent();
   renderLocationSwitcher();
   renderProgress();
@@ -940,7 +1213,7 @@
 
   window.addEventListener("resize", function() {
     var progress = document.querySelector("[data-progress]");
-    if (progress) alignProgressTrack(progress, 5);
+    if (progress) alignProgressTrack(progress, BUILDER ? BUILDER_MAX_STEP : 5);
   });
 
   function bindStaticContent() {
@@ -1034,6 +1307,12 @@
         }
         if (!currentDurationSupportsEvents()) {
           resetEventState();
+          // Builder mode: the gate already answered photo vs event, and step 3
+          // (add-ons) keys off eventIntent — re-derive it so a 1-hour pick
+          // doesn't blank the add-on list.
+          if (BUILDER && state.bookingType) {
+            state.eventIntent = state.bookingType === "event" ? "yes" : "no";
+          }
         }
         // Reset calendar state since availability changes per duration
         state.availableDates = [];
@@ -1706,6 +1985,7 @@
     renderMultidaySummary();
     renderCartBranch();
     renderCartSummary();
+    if (BUILDER) renderBuilderPanel();
     renderStepVisibility();
     updateTermsGate();
     updateWaiverGate();
@@ -1801,8 +2081,11 @@
         const isActive = item.slug === location.slug;
         const stateClass = isActive ? "is-active" : "";
         const themeClass = item.slug === "powdersville" ? "is-powdersville" : "is-taylors-mill";
+        // Builder mode: the synced copies live side by side in the same
+        // directory (powdersville.html / taylors-mill.html on the dashboard).
+        const href = BUILDER ? item.slug + ".html" : "/book-" + item.slug;
         return `
-          <a href="/book-${item.slug}" class="location-chip ${themeClass} ${stateClass}">
+          <a href="${href}" class="location-chip ${themeClass} ${stateClass}">
             <span style="display:inline-flex;width:0.55rem;height:0.55rem;border-radius:999px;background:${item.accent}"></span>
             <span>${item.name}</span>
           </a>
@@ -1817,13 +2100,19 @@
       return;
     }
 
-    const steps = [
-      { index: 1, label: "Timing" },
-      { index: 2, label: "Schedule" },
-      { index: 3, label: "Details" },
-      { index: 4, label: "Waiver" },
-      { index: 5, label: "Review" }
-    ];
+    const steps = BUILDER
+      ? [
+          { index: 1, label: "Timing" },
+          { index: 2, label: "Schedule" },
+          { index: 3, label: "Add-ons" }
+        ]
+      : [
+          { index: 1, label: "Timing" },
+          { index: 2, label: "Schedule" },
+          { index: 3, label: "Details" },
+          { index: 4, label: "Waiver" },
+          { index: 5, label: "Review" }
+        ];
 
     const maxStep = getMaxAccessibleStep();
     progress.innerHTML = `
@@ -3077,13 +3366,14 @@
           <p class="ui-copy-strong">This location is only approved for photo and video shoots, no events/parties allowed.</p>
         </div>
       `;
-      if (detailsSection) detailsSection.style.display = "";
+      if (detailsSection) detailsSection.style.display = BUILDER ? "none" : "";
       return;
     }
 
-    // PV: show/hide form based on whether user has chosen photo/video or event
+    // PV: show/hide form based on whether user has chosen photo/video or event.
+    // Builder mode never shows the contact/terms block — the flow ends at add-ons.
     if (detailsSection) {
-      detailsSection.style.display = state.eventIntent ? "" : "none";
+      detailsSection.style.display = state.eventIntent && !BUILDER ? "" : "none";
     }
 
     const selectedDuration = getSelectedDuration();
@@ -3287,7 +3577,7 @@
       // Show the early list only once an intent is chosen (the add-on set
       // depends on event vs photo for PV's events-only add-ons), then hide the
       // legacy step-5 list to avoid a duplicate render.
-      earlyContainer.hidden = !state.eventIntent;
+      earlyContainer.hidden = !state.eventIntent && !(BUILDER && state.bookingType);
       earlyContainer.classList.add("choice-grid", "is-two-up");
       if (legacyContainer && legacyContainer !== earlyContainer) {
         legacyContainer.hidden = true;
@@ -3624,6 +3914,11 @@
     const sessionPrice = selectedDuration && selectedDuration.price ? selectedDuration.price : 0;
     const grandTotal = sessionPrice + addonTotal + cleaningFeeAmount;
     total.textContent = fmtMoney(grandTotal);
+    // Builder mode: the aside's single-session total feeds the override panel.
+    // (The multi-day summary overwrites this when eventMode === "multi".)
+    if (BUILDER && state.eventMode !== "multi") {
+      state._builderTotalCents = Math.round(grandTotal * 100);
+    }
   }
 
   function renderStepVisibility() {
@@ -3684,13 +3979,13 @@
     }
     state.bookingType = st.bookingType || state.bookingType;
     state.eventMode = st.eventMode || state.eventMode;
-    state.step = clamp(st.step || 1, 1, 5);
+    state.step = clamp(st.step || 1, 1, BUILDER ? BUILDER_MAX_STEP : 5);
     showGateOrFlow();
     renderStepContent();
   });
 
   function setStep(step) {
-    state.step = clamp(step, 1, 5);
+    state.step = clamp(step, 1, BUILDER ? BUILDER_MAX_STEP : 5);
     trackEvent("step_viewed", { location: location.slug, step: state.step, step_name: STEP_NAMES[state.step] });
     pushFlowHistory();
     renderStepContent();
@@ -4114,6 +4409,8 @@
   function getMaxAccessibleStep() {
     if (!isStepComplete(1)) return 1;
     if (!isStepComplete(2)) return 2;
+    // Builder mode: the flow ends at Add-ons — contact/terms never gate it.
+    if (BUILDER) return BUILDER_MAX_STEP;
     if (!isStepComplete(3)) return 3;
     if (!isStepComplete(4)) return 4;
     return 5;
