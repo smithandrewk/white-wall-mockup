@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --ink:#0F172A; --brand:#14532D; --muted:#64748B; --rule:#D4D4CE;
+    --cream:#EEE8D0; --creamlight:#F7F3E4; --link:#2F7A4B;
+  }
+  @page{ size:Letter; margin:1.15in 1.25in; }
+  *{ box-sizing:border-box; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{
+    font-family:"Charter","Georgia",serif;
+    color:var(--ink); font-size:11pt; line-height:1.42;
+    margin:0;
+  }
+  p{ margin:0 0 9pt 0; }
+  .sans{ font-family:"Helvetica Neue","Arial",sans-serif; }
+
+  /* ---------- Cover ---------- */
+  .cover{ height:8.35in; display:flex; flex-direction:column; page-break-after:always; }
+  .lockup{ display:flex; align-items:center; gap:8px; }
+  .lockup svg{ width:26px; height:26px; }
+  .wordmark{ font-family:"Helvetica Neue","Arial",sans-serif; font-weight:700;
+    letter-spacing:0.14em; color:var(--brand); font-size:13pt; }
+  .cover-gap{ flex:0 0 1.7in; }
+  .cover-title{ font-family:"Charter","Georgia",serif; font-weight:700; color:var(--brand);
+    font-size:40pt; line-height:1.08; letter-spacing:-0.01em; margin:0; }
+  .cover-sub{ font-size:20pt; color:var(--ink); margin:14pt 0 0 0; line-height:1.25; }
+  .cover-meta{ font-size:11pt; color:var(--ink); margin-top:0.9in; }
+  .cover-fill{ flex:1 1 auto; }
+  .cover-rule{ border:0; border-top:0.6pt solid var(--rule); margin:0; }
+  .cover-url{ font-family:"Helvetica Neue","Arial",sans-serif; font-size:9pt; color:var(--muted);
+    margin-top:5pt; letter-spacing:0.04em; }
+
+  /* ---------- Sections ---------- */
+  h2{ font-family:"Helvetica Neue","Arial",sans-serif; font-weight:700; color:var(--brand);
+    font-size:17pt; line-height:1.2; margin:26pt 0 12pt 0; page-break-after:avoid; }
+  h2 .num{ display:inline-block; min-width:26px; }
+  h3{ font-family:"Helvetica Neue","Arial",sans-serif; font-weight:700; color:var(--brand);
+    font-size:12.5pt; margin:16pt 0 5pt 0; page-break-after:avoid; }
+  h4{ font-family:"Helvetica Neue","Arial",sans-serif; font-weight:700; color:var(--muted);
+    font-size:10.5pt; margin:12pt 0 3pt 0; text-transform:none; page-break-after:avoid; }
+  ul{ margin:6pt 0 9pt 0; padding-left:1.3em; }
+  li{ margin:0 0 5pt 0; }
+  strong{ color:var(--ink); }
+  a{ color:var(--link); text-decoration:none; }
+  .lead{ font-size:12pt; }
+  em{ font-style:italic; }
+
+  /* ---------- Overview table ---------- */
+  table.ov{ border-collapse:collapse; width:100%; margin:10pt 0 6pt 0; }
+  table.ov td{ vertical-align:top; padding:7pt 12pt; }
+  table.ov td.k{ font-family:"Helvetica Neue","Arial",sans-serif; font-weight:700;
+    background:var(--cream); width:1.55in; color:var(--ink); font-size:10pt; }
+  table.ov td.v{ background:var(--creamlight); font-size:10.5pt; }
+  table.ov tr{ }
+
+  blockquote{ margin:8pt 2em; font-style:italic; color:var(--ink); }
+  .rule{ border:0; border-top:0.6pt solid var(--rule); margin:16pt 0; }
+  .pagebreak{ page-break-before:always; }
+  .kpis{ display:flex; gap:0; margin:12pt 0 2pt 0; border-top:0.6pt solid var(--rule);
+    border-bottom:0.6pt solid var(--rule); }
+  .kpi{ flex:1; padding:12pt 0; text-align:center; }
+  .kpi .n{ font-family:"Helvetica Neue","Arial",sans-serif; font-weight:700; color:var(--brand); font-size:22pt; line-height:1; }
+  .kpi .l{ font-family:"Helvetica Neue","Arial",sans-serif; color:var(--muted); font-size:8.5pt;
+    letter-spacing:0.06em; text-transform:uppercase; margin-top:6pt; }
+  .foot{ font-family:"Helvetica Neue","Arial",sans-serif; color:var(--muted); font-size:8pt;
+    letter-spacing:0.06em; margin-top:22pt; padding-top:8pt; border-top:0.6pt solid var(--rule); }
+  code{ font-family:"DM Mono","SFMono-Regular",Menlo,monospace; font-size:9.5pt; color:var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<section class="cover">
+  <div class="lockup">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="26" height="26">
+      <rect fill="#E8C547" x="12" y="14" width="20" height="72" rx="10"/>
+      <rect fill="#E05A3A" x="38" y="14" width="50" height="20" rx="10"/>
+      <rect fill="#4CAF7D" x="38" y="40" width="50" height="20" rx="10"/>
+      <rect fill="#0B84FF" x="38" y="66" width="50" height="20" rx="10"/>
+    </svg>
+    <span class="wordmark">ENTRPY</span>
+  </div>
+  <div class="cover-gap"></div>
+  <h1 class="cover-title">The Multi-Day<br>Event Booking System</h1>
+  <p class="cover-sub">How entrpy designed, built, and shipped a new booking engine for White Wall Studios &mdash; from a single customer request to production in under two days.</p>
+  <p class="cover-meta">Engagement recap &middot; July 12, 2026</p>
+  <div class="cover-fill"></div>
+  <hr class="cover-rule">
+  <p class="cover-url">ENTRPY &middot; AI INFRASTRUCTURE &middot; entrpy.co</p>
+</section>
+
+<!-- ================= 1. SUMMARY ================= -->
+<h2 class="sans"><span class="num">1</span>Executive summary</h2>
+<p class="lead">White Wall Studios needed to sell multi-day events, not just single sessions. Their booking site could only take one appointment at a time, yet real customers were trying to book three- and four-day event windows. Over a tight back-and-forth, entrpy rebuilt the flagship booking flow into a guided multi-day event builder, wired the operational backend behind it (notifications, cleaner scheduling, setup-crew logistics, calendar buffers), verified the whole money path on a staging mirror, and pushed it live.</p>
+
+<table class="ov">
+  <tr><td class="k">Client</td><td class="v">White Wall Studios &mdash; a Greenville, SC photo &amp; event studio (Powdersville flagship + Taylors Mill).</td></tr>
+  <tr><td class="k">Builder</td><td class="v">entrpy, LLC.</td></tr>
+  <tr><td class="k">The ask</td><td class="v">Let customers book a whole multi-day event as one booking &mdash; pick a date range, price each day, add event-only extras once, pay together &mdash; and make the operations behind it run themselves.</td></tr>
+  <tr><td class="k">Outcome</td><td class="v">A live, guided multi-day event flow on whitewallstudios.co, backed by an automated operations layer. Full-payment path live; the deposit / auto-charge path built and deliberately held dark until final sign-off.</td></tr>
+  <tr><td class="k">Timeline</td><td class="v">First request July 10, 2:23 PM &rarr; live July 12, ~1:07 AM. Roughly 35 hours, start to finish.</td></tr>
+</table>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">35 hrs</div><div class="l">request to live</div></div>
+  <div class="kpi"><div class="n">73</div><div class="l">emails, 3 days</div></div>
+  <div class="kpi"><div class="n">51</div><div class="l">commits</div></div>
+  <div class="kpi"><div class="n">1</div><div class="l">staging dry-run, then prod</div></div>
+</div>
+
+<!-- ================= 2. WHERE WE STARTED ================= -->
+<h2 class="sans"><span class="num">2</span>Where we started</h2>
+<p>White Wall's booking site is not a custom backend &mdash; it orchestrates three systems: <strong>Acuity</strong> (the source of truth for appointments and availability), <strong>Square</strong> (payment, via custom payment flows), and the studio's own pricing and add-on rules. The architecture is <strong>pay then book</strong>: no appointment exists on the calendar until the customer has actually paid, which keeps the studio's calendar honest and avoids the premature-confirmation problems that Acuity's own scheduler creates.</p>
+<p>That system was built for one session at a time. But the client had live demand for <strong>multi-day events</strong> &mdash; a customer wanting the studio for October 3rd through 5th, for example, each day with its own start time, priced as a single event with one checkout. The single-session flow simply could not express that. The client's words, at the start:</p>
+<blockquote>&ldquo;Make Event vs Photo/Video the very first choice. If they pick Event, let them build the event as a set of days &mdash; each day its own duration and start time &mdash; with the event add-ons once, one checkout, and the event deposit.&rdquo;</blockquote>
+<p>That one paragraph hid an entire platform feature. Solving it well meant rethinking the flow, the pricing, the calendar mechanics, and the operations behind every booking.</p>
+
+<!-- ================= 3. FIGURING OUT THE LOGIC ================= -->
+<h2 class="sans"><span class="num">3</span>Figuring out the logic</h2>
+<p>The design was not handed down &mdash; it was found, live, through rapid iteration with the client. The shape of the flow changed three times before it was right, and each change came from putting a working version in front of the client on a staging site and reacting to exactly what felt wrong.</p>
+
+<h3>The pre-flow gate</h3>
+<p>Rather than renumber the existing five-step booking machine (risky &mdash; it powers every live single-session booking), entrpy added an <strong>additive front gate</strong>: a &ldquo;What are you booking?&rdquo; chooser that sets intent and then reveals the existing flow. Photo/Video keeps the proven path byte-for-byte. Event branches into <strong>Single-day</strong> vs <strong>Multi-day</strong>. Nothing about the existing single-session experience changed.</p>
+
+<h3>Three builders, until it was right</h3>
+<ul>
+  <li><strong>v1 &mdash; add a day at a time.</strong> A day-by-day builder on the studio's existing multi-session cart. Functional, but the client wanted the days to feel like one continuous event, not a stack of separate bookings.</li>
+  <li><strong>v2 &mdash; time-typed days.</strong> Day one picks a <em>start time</em> (not a duration): come in at 9 PM, 8 PM, &hellip; down to 5 AM for a full day, with each option feeding continuously into the next day. Closer, but still built one day at a time.</li>
+  <li><strong>v3 &mdash; the range model (the one that shipped).</strong> The client's insight: this should feel like booking a hotel. entrpy rebuilt step two as a single calendar where the customer picks a <strong>start date and an end date</strong>; the event auto-fills the contiguous range &mdash; day one at the chosen access time, the middle days as full days, the last day full by default with an optional <strong>early checkout</strong> for a lower price. Airbnb-style, and it locked the dates into a valid contiguous window as a side effect.</li>
+</ul>
+<p>This is the part worth underlining: the winning design came out of <strong>collaboration at speed</strong>. Over roughly two days and more than seventy emails &mdash; fifty-six on the busiest day alone &mdash; every version was deployed to staging, tested by the client as a real customer, and refined within minutes. The final flow is the client's product, arrived at through entrpy's iterations.</p>
+
+<!-- ================= 4. THE FRONT END ================= -->
+<h2 class="sans"><span class="num">4</span>The front end</h2>
+<h3>The day-one access-time picker</h3>
+<p>For a multi-day event, day one is not a &ldquo;duration&rdquo; &mdash; it is an <em>access time</em>. The picker relabels the studio's existing session lengths as arrival times (6:00 PM &mdash; $350, &hellip; 5:00 AM &mdash; $980) and frames them as &ldquo;you get access on day one and keep it continuously until the end of your event.&rdquo; The same underlying appointment types, reframed for how an event actually runs.</p>
+
+<h3>The range calendar and per-day pricing</h3>
+<p>Pick a start date, then an end date; the span highlights and the event assembles itself. Pricing is per day, and add-ons carry the studio's <strong>progressive multi-day discount</strong> &mdash; full price on day one, 15% off day two, 30% off day three and beyond &mdash; applied automatically to the eligible gear (chairs, tables, walls, backdrops, PA, TV) while flat items are charged once. A live event summary builds itself as the customer goes, day by day, with the running total and the mandatory cleaning fee shown the moment multi-day is chosen.</p>
+
+<h3>Supporting pages</h3>
+<p>Alongside the flow, entrpy shipped a public <strong>Add-Ons menu</strong> (every extra with photo, price, and description) and a <strong>Floor Plans</strong> page (to-scale layouts for the full space, seated events, and standing events), both wired into site-wide navigation.</p>
+
+<!-- ================= 5. THE BACK END ================= -->
+<h2 class="sans"><span class="num">5</span>The back end &mdash; the inner workings</h2>
+<p>The front end is what the customer sees. The back end is where a multi-day event becomes real appointments, one payment, and a studio that knows what to do. This is the part that had to be exactly right, because it moves money and puts blocks on a real calendar.</p>
+
+<h3>One event, N appointments, one charge</h3>
+<p>A multi-day event is priced as a <strong>cart</strong>. The checkout creates <strong>one Square charge</strong> for the whole event and <strong>one Acuity appointment per day</strong>, writes a single booking record with per-day sessions, and stores the card on file. Each day lands on the calendar at the correct wall-clock time.</p>
+
+<h4>The timezone bug we caught before it shipped</h4>
+<p>A naive datetime (for example <code>2026-10-03T21:00:00</code>) is read as UTC on the hosting platform &mdash; so a 9 PM event would have quietly booked at 5 PM. entrpy fixed this by building every slot as a full ISO-8601 timestamp <em>with the Eastern offset</em> (<code>&hellip;T21:00:00-04:00</code>), and unit-checked both the daylight (&minus;04:00) and standard (&minus;05:00) cases so October and January both book correctly.</p>
+
+<h4>The multi-calendar gotcha</h4>
+<p>Because the studio's appointment types belong to more than one Acuity calendar, any API call that omits the calendar ID silently routes to the wrong one. Every calendar write in the new flow &mdash; each appointment and every buffer block &mdash; explicitly passes the calendar ID, closing a class of misroute bug the hard way.</p>
+
+<h4>The dead-end we found and fixed</h4>
+<p>An early integration exposed a real gap: the multi-day builder walked each day through date and time, but the <em>universal</em> details every booking needs &mdash; contact info, the signed waiver, terms, and the card &mdash; were never collected, so the flow dead-ended at a disabled pay button. entrpy routed the finished event through those steps once, for the whole event, and the money path completed cleanly.</p>
+
+<h3>The operations layer</h3>
+<p>The client's real requirement was that the operations behind an event should run themselves. entrpy built an event-level notification and scheduling layer that fires <strong>once per event</strong> (never once per day) on every real multi-day booking:</p>
+<ul>
+  <li><strong>Customer recap</strong> &mdash; a confirmation with every day of the event and the total.</li>
+  <li><strong>Owner text (via Watson)</strong> &mdash; dates, total, customer name, what they are using the space for, headcount, and a line confirming the cleaners were emailed.</li>
+  <li><strong>A second owner text, only when the Setup &amp; Reset Crew is added</strong> &mdash; exactly where each item goes (from the intake), the recommended crew start time (two hours before the event), and the back-end reset time keyed to when the event ends.</li>
+  <li><strong>Cleaner email (April)</strong> &mdash; keyed to the last day of the event, with a calendar invite. When the crew is added, her window becomes four hours and she is told to arrive 90 minutes after the event ends, so she is never cleaning on top of the crew resetting.</li>
+</ul>
+
+<h3>Calendar buffers and the crew</h3>
+<p>The studio's calendar automatically protects the time an event actually consumes. A <strong>back-end reset buffer</strong> is blocked after the last day &mdash; the standard length normally, and <strong>four hours</strong> when the Setup &amp; Reset Crew is added (crew reset plus cleaning). When the crew is added, a <strong>two-hour front-end block</strong> is also placed before day one so they can set up before guests arrive. The <strong>$150 cleaning fee</strong> is charged once for the whole event (mandatory for any multi-day event, regardless of headcount), not per day.</p>
+
+<h3>What we deliberately held back</h3>
+<p>The client wanted a 60/40 deposit option where the remaining 40% auto-charges 48 hours before the event. entrpy built the full path but <strong>held it dark on the live site</strong>: arming real automatic charges is a go-live safety decision, so until it is finalized, the deposit toggle is hidden on production and the server forces full payment. No customer is ever shown a promise (&ldquo;auto-charged 48 hours before&rdquo;) that the system cannot yet keep. In the meantime, an owner reminder two days before any balance is the manual interim. This is the one intentional gate between what is built and what is switched on.</p>
+
+<!-- ================= 6. VERIFICATION ================= -->
+<h2 class="sans"><span class="num">6</span>How we proved it before shipping</h2>
+<p>None of this went live on trust. White Wall runs a fully isolated <strong>staging mirror</strong> of the booking system &mdash; sandbox payments, a dedicated test calendar, notifications suppressed &mdash; so the entire money path can be exercised without touching real customers, real cards, or the real calendar.</p>
+<p>entrpy ran a complete <strong>booking dry-run</strong> on staging: a real two-day event with the Setup &amp; Reset Crew added, driven end to end through the live flow to payment. The result verified every moving part &mdash; two appointments created at the right times and prices, the crew's two-hour front block and four-hour back buffer placed correctly, the crew and cleaning fee each charged once, and a total (<strong>$2,230</strong>) that matched the charge to the cent. The test data was then cleaned off the calendar. After go-live, the production flow was walked all the way to the pay screen to confirm it renders and behaves correctly &mdash; and to confirm the deposit toggle is correctly absent on the live site.</p>
+
+<!-- ================= 7. GO-LIVE ================= -->
+<h2 class="sans"><span class="num">7</span>Go-live and what is next</h2>
+<p>On the client's go-ahead &mdash; &ldquo;Let's do it. Push it all live!&rdquo; &mdash; entrpy merged the work and deployed to <strong>whitewallstudios.co</strong>, then verified it on the live site. The multi-day event flow, the per-day pricing, the live summary, the Add-Ons and Floor Plans pages, and the entire operations layer are live and firing on real bookings.</p>
+<p>The remaining step is a single, deliberate one: a deposit dry-run and the safety sign-off to arm the 40% auto-charge, at which point the deposit option flips on. Everything else is done.</p>
+
+<table class="ov">
+  <tr><td class="k">Live now</td><td class="v">Multi-day event flow, day-one access-time picker, range calendar, per-day pricing, live summary, Add-Ons + Floor Plans pages, and the full owner / customer / cleaner / crew operations layer.</td></tr>
+  <tr><td class="k">Held dark</td><td class="v">60/40 deposit + 40% auto-charge (built, gated off on production until final safety sign-off).</td></tr>
+  <tr><td class="k">Method</td><td class="v">Additive design over a proven flow, staging-first verification, one dry-run of the full money path, then production &mdash; with the single high-risk money feature deliberately gated.</td></tr>
+</table>
+
+<p class="foot">ENTRPY &middot; AI INFRASTRUCTURE &middot; entrpy.co &nbsp;&mdash;&nbsp; Prepared for White Wall Studios &middot; July 12, 2026</p>
+
+</body>
+</html>

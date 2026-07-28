@@ -921,3 +921,11 @@ OPS DASHBOARD (wws-dashboard). PR #99 (squash `9da5054`). Ticket **DREW-20**. Co
 - [x] First At a Glance row renamed Today → **Today's Money** (same gold hero, same Square net collected today).
 - [x] New **Today's Bookings** row directly below: bookings PLACED today (created_at ET = today, non-cancelled, non-staging, via v_booking), scope-filtered by the existing Company / Powdersville / Taylor's Mill toggle. Booked-at axis flagged to Drew (sessions-happening-today offered as the alternative); "Today is Money" dictation shipped as the possessive, flagged.
 - [x] Verified: `npm run build`, 150 unit tests; seed-mode Playwright (rows in order, survive toggle, 0px mobile overflow, zero console errors); live-DB verify on :18794 psql-cross-checked (Company 2 / Powdersville 1 / Taylor's Mill 1, money row intact at $407 matching Drew's screenshot). Confirmed live to Drew (`19faa417af7bc548`).
+
+## Feedback Round 60 (2026-07-28) — Drew (msg 19faa5c1009a19e8): "session builder things not showing for an event" (DREW-19 follow-up, incident)
+
+OPS DASHBOARD (wws-dashboard). PR #100 (squash `697488d`). Ticket **DREW-19** (reopened, closed again). Comms `client/comms/2026-07-28-drew-builder-ownership-addon-and-notes.md` (Follow-up 1).
+
+- [x] Reproduced Drew's exact path (Session Builder → Event → Multi-Day Event → add-ons) with a full Playwright drive on live :18794: the DREW-19 panel (Ownership add-on + notes + Swap order) renders at EVERY step. The origin was already serving the correct code — Drew's open tab was still running the pre-3:31 booking-flow.js (the embed had no cache busting).
+- [x] Fix shipped so it cannot recur: sync-booking-app.mjs stamps `?v=<content sha1>` on every local script/style URL in the generated pages, and next.config serves `/session-builder-app/*` with `Cache-Control: no-cache, must-revalidate`. A deploy now always reaches the browser; a one-time manual refresh is the last one Drew ever needs.
+- [x] Verified: `npm run build`, 150 unit tests; live headers + versioned URLs curl-checked; multi-day drive re-run green post-deploy. Replied to Drew (`19faa67c3f077b22`): live confirmation + refresh instruction + dashboard-vs-customer-site distinction.

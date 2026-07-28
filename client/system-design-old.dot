@@ -1,0 +1,81 @@
+digraph OldSystem {
+    graph [
+        rankdir=LR
+        bgcolor="#fafafa"
+        fontname="Helvetica Neue"
+        label=<<BR/><FONT POINT-SIZE="20" FACE="Georgia"><B>WhiteWall Studios — Current System</B></FONT><BR/><FONT POINT-SIZE="11" COLOR="#888888">Squarespace + Acuity + Square + QuickBooks</FONT><BR/><BR/>>
+        labelloc=t
+        pad="0.5"
+        nodesep=1.0
+        ranksep=1.5
+        dpi=300
+        size="10,7"
+    ]
+
+    node [
+        fontname="Helvetica Neue"
+        fontsize=11
+        shape=box
+        style="rounded,filled"
+        penwidth=0
+        margin="0.3,0.2"
+    ]
+
+    edge [
+        fontname="Helvetica Neue"
+        fontsize=9
+        fontcolor="#555555"
+        color="#444444"
+        penwidth=1.5
+        arrowsize=0.8
+    ]
+
+    // Nodes
+    customer [
+        label=<<B>Customer</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb">Visits website<BR/>Browses, selects, pays</FONT>>
+        fillcolor="#8ba7b8"
+        fontcolor=white
+        shape=oval
+    ]
+
+    squarespace [
+        label=<<B>Squarespace</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb">Website hosting<BR/>Static pages + Acuity embed</FONT>>
+        fillcolor="#2a2a2a"
+        fontcolor=white
+    ]
+
+    acuity [
+        label=<<B>Acuity Scheduling</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb">Booking engine<BR/>Calendar, availability, intake forms<BR/>Appointment management<BR/>Drew blocks off times here</FONT>>
+        fillcolor="#c4a882"
+        fontcolor=white
+    ]
+
+    square [
+        label=<<B>Square</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb">Payment processor<BR/>Collects card payments<BR/>via Acuity's built-in connection</FONT>>
+        fillcolor="#4a90d9"
+        fontcolor=white
+    ]
+
+    quickbooks [
+        label=<<B>QuickBooks Online</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb">Accounting / source of truth<BR/>Invoices, revenue tracking<BR/>Sends $0 invoice (known behavior)</FONT>>
+        fillcolor="#2e7d32"
+        fontcolor=white
+    ]
+
+    drew [
+        label=<<B>Drew (Admin)</B><BR/><FONT POINT-SIZE="8" COLOR="#ffffffbb">Manages calendar in Acuity<BR/>Blocks off times<BR/>Views revenue in QuickBooks</FONT>>
+        fillcolor="#6a6a6a"
+        fontcolor=white
+        shape=oval
+    ]
+
+    // Edges
+    customer -> squarespace [label="  Visits site  "]
+    squarespace -> acuity [label="  Acuity scheduler\n  embedded/linked  "]
+    acuity -> square [label="  \"Book & Pay\" triggers\n  payment collection  "]
+    square -> acuity [label="  Payment confirmed\n  → appointment created  " style=dashed]
+    acuity -> quickbooks [label="  Auto-syncs appointment\n  Creates draft/$0 invoice  "]
+    acuity -> customer [label="  Confirmation email\n  (after payment)  " style=dashed color="#2e7d32" fontcolor="#2e7d32"]
+    drew -> acuity [label="  Blocks times\n  Manages calendar  "]
+    drew -> quickbooks [label="  Views books\n  Revenue tracking  " style=dashed]
+}

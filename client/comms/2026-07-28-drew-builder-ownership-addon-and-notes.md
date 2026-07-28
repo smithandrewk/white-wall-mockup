@@ -35,3 +35,22 @@
 ## HANDLED (2026-07-28, same session)
 
 Shipped + live within the active paid window. booking-site PR #104 (`4b1c711`, builder-only, customer site inert + spot-checked) and wws-dashboard PR #98 (`1ccccdb`, server recompute + vendored sync @ 4b1c711) merged; dashboard built + kickstarted on the mini; verified live on :18794 (Playwright 30/30 + live-DB save round-trip $200 + $1,000 − 10% = $1,080 server-recomputed). Tracker Round 58 (`4b47480`). Ticket DREW-19 done. Confirmation reply sent to Drew (id recorded in SESSION-STATE).
+
+## Follow-up 1 — Drew reports NOT SEEING the three pieces on the EVENT path (msg `19faa5c1009a19e8`)
+
+- Source: gmail thread `19fa478568fc46a2` (account andrew@entrpy.co)
+- From: WhiteWall Studios <contact@whitewallstudios.co>
+- Date: Tue, 28 Jul 2026 16:12:55 -0400
+- Message id: `19faa5c1009a19e8`
+
+> Looks great, Pip, but it doesn't look like you did the session builder things, or at least if you did, I'm not seeing it whenever I run through it for an event.
+>
+> For example, I'm clicking Event and then Multi-Day Event. I'm going through a hypothetical situation, and I get all the way down to where I select my add-ons. I'm not seeing any of the stuff that we worked on prior.
+>
+> Remember referring to the three things you emailed in your 3:32 PM email. Doesn't look like any of it is actually done, or at least is not pushed live.
+
+Classification: incident (defect report against DREW-19's ship, event/multi-day path). Same work as DREW-19 → fold in, reproduce on live :18794 before replying.
+
+### HANDLED (2026-07-28, follow-up session)
+
+Reproduced his exact path with a full Playwright drive on live :18794 (Event > Multi-Day Event > add-ons): all three DREW-19 pieces render at every step, so the origin was correct. Root cause: his open tab was still running the pre-3:31 booking-flow.js — the embed's assets had no cache busting. Shipped wws-dashboard PR #100 (squash `697488d`, content-hash `?v=` params stamped at sync + `no-cache, must-revalidate` on `/session-builder-app/*`), deployed + kickstarted, headers and versioned URLs curl-verified, drive re-run green. Replied `19faa67c3f077b22` (live + refresh once + the ownership tools live only in the dashboard, never the customer site). Tracker Round 60. DREW-19 re-closed.
