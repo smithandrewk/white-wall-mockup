@@ -924,6 +924,43 @@
     return Math.min(Math.max(0, cents), Math.max(0, baseCents));
   }
 
+  function builderAddonCents(baseCents) {
+    var ad = state._builderAddon;
+    if (!ad) return 0;
+    var v = parseFloat(ad.value);
+    if (!isFinite(v) || v <= 0) return 0;
+    // Sanity bounds only (1000% / $1M) — an add-on has no natural clamp like
+    // the discount's "never below zero". Server mirrors these exact bounds.
+    return ad.mode === "percent"
+      ? Math.round(baseCents * (Math.min(1000, v) / 100))
+      : Math.round(Math.min(v, 1000000) * 100);
+  }
+
+  // Ownership add-on and discount applied in the operator-chosen order
+  // (DREW-19). Percent values are taken of the RUNNING total at the point
+  // they apply, so swapping the order genuinely changes the math:
+  //   add-on first:  final = (base + addon(base)) − discount(base + addon)
+  //   discount first: final = (base − discount(base)) + addon(base − discount)
+  function builderAdjustedTotals() {
+    var base = state._builderTotalCents || 0;
+    var addonFirst = state._builderOrder !== "discount-first";
+    var addonCents, discountCents;
+    if (addonFirst) {
+      addonCents = builderAddonCents(base);
+      discountCents = builderOverrideCents(base + addonCents);
+    } else {
+      discountCents = builderOverrideCents(base);
+      addonCents = builderAddonCents(base - discountCents);
+    }
+    return {
+      baseCents: base,
+      addonFirst: addonFirst,
+      addonCents: addonCents,
+      discountCents: discountCents,
+      finalCents: base + addonCents - discountCents
+    };
+  }
+
   // The sessions being built, as plain per-day rows for the saved config. The
   // dashboard recomputes the total server-side from these (never trusts ours).
   function builderSessions() {
@@ -981,12 +1018,22 @@
     }));
   }
 
+  function builderAdjustmentPayload(adj, defaultMode) {
+    if (!adj) return null;
+    var v = parseFloat(adj.value);
+    if (!isFinite(v) || v <= 0) return null;
+    var out = {
+      mode: adj.mode === "percent" || adj.mode === "dollar" ? adj.mode : defaultMode,
+      value: v
+    };
+    var note = (adj.note || "").trim().slice(0, 300);
+    if (note) out.note = note;
+    return out;
+  }
+
   function builderSavePayload() {
-    var ov = state._builderOverride;
-    var ovValue = ov ? parseFloat(ov.value) : 0;
-    var override = ov && isFinite(ovValue) && ovValue > 0
-      ? { mode: ov.mode === "dollar" ? "dollar" : "percent", value: ovValue }
-      : null;
+    var override = builderAdjustmentPayload(state._builderOverride, "percent");
+    var ownershipAddon = builderAdjustmentPayload(state._builderAddon, "dollar");
     return {
       name: (state._builderName || "").trim(),
       notes: (state._builderNotes || "").trim() || null,
@@ -997,6 +1044,8 @@
         eventMode: state.eventMode || "",
         participants: builderParticipants(),
         override: override,
+        ownershipAddon: ownershipAddon,
+        applyOrder: state._builderOrder === "discount-first" ? "discount-first" : "addon-first",
         sessions: builderSessions(),
         flowState: builderSnapshotFlowState()
       }
@@ -1047,29 +1096,59 @@
   function renderBuilderPanel() {
     var el = document.querySelector("[data-builder-panel]");
     if (!el) return;
-    if (!state._builderOverride) state._builderOverride = { mode: "percent", value: "" };
+    if (!state._builderOverride) state._builderOverride = { mode: "percent", value: "", note: "" };
+    if (!state._builderAddon) state._builderAddon = { mode: "dollar", value: "", note: "" };
+    if (!state._builderOrder) state._builderOrder = "addon-first";
     var ov = state._builderOverride;
-    var baseCents = state._builderTotalCents || 0;
-    var ovCents = builderOverrideCents(baseCents);
-    var finalCents = baseCents - ovCents;
+    var ad = state._builderAddon;
+    var t = builderAdjustedTotals();
 
     var startNew = state._builderDraftId
       ? '<button type="button" class="booking-back-link" data-builder-new style="margin-top:0.75rem">Start a new saved session instead of updating this one</button>'
       : "";
 
-    el.innerHTML =
-      '<div class="summary-divider my-6"></div>' +
-      '<p class="text-xs tracking-[0.2em] uppercase text-black/40">Ownership discount</p>' +
+    // The two adjustment sections AND their summary lines render in APPLY
+    // order, so the swap button visibly re-orders the very logic it swaps.
+    var discountSection =
+      '<p class="text-xs tracking-[0.2em] uppercase text-black/40" style="margin-top:1.1rem">Ownership discount</p>' +
       '<div style="display:flex;gap:0.5rem;margin-top:0.85rem">' +
         '<button type="button" class="booking-button ' + (ov.mode === "percent" ? "booking-button-primary" : "booking-button-secondary") + '" data-builder-mode="percent" style="padding:0.45rem 0.9rem;font-size:0.8rem">% off</button>' +
         '<button type="button" class="booking-button ' + (ov.mode === "dollar" ? "booking-button-primary" : "booking-button-secondary") + '" data-builder-mode="dollar" style="padding:0.45rem 0.9rem;font-size:0.8rem">$ off</button>' +
         '<input type="number" class="booking-input" data-builder-value inputmode="decimal" min="0" step="any" placeholder="' + (ov.mode === "percent" ? "e.g. 20" : "e.g. 150") + '" value="' + escapeAttribute(String(ov.value || "")) + '" style="flex:1;min-width:0">' +
       '</div>' +
+      '<input type="text" class="booking-input" data-builder-ov-note maxlength="300" placeholder="Optional note the customer sees, e.g. why this discount" value="' + escapeAttribute(ov.note || "") + '" style="margin-top:0.5rem;font-size:0.85rem">';
+
+    var addonSection =
+      '<p class="text-xs tracking-[0.2em] uppercase text-black/40" style="margin-top:1.1rem">Ownership add-on</p>' +
+      '<div style="display:flex;gap:0.5rem;margin-top:0.85rem">' +
+        '<button type="button" class="booking-button ' + (ad.mode === "percent" ? "booking-button-primary" : "booking-button-secondary") + '" data-builder-addon-mode="percent" style="padding:0.45rem 0.9rem;font-size:0.8rem">% added</button>' +
+        '<button type="button" class="booking-button ' + (ad.mode === "dollar" ? "booking-button-primary" : "booking-button-secondary") + '" data-builder-addon-mode="dollar" style="padding:0.45rem 0.9rem;font-size:0.8rem">$ added</button>' +
+        '<input type="number" class="booking-input" data-builder-addon-value inputmode="decimal" min="0" step="any" placeholder="' + (ad.mode === "percent" ? "e.g. 10" : "e.g. 1000") + '" value="' + escapeAttribute(String(ad.value || "")) + '" style="flex:1;min-width:0">' +
+      '</div>' +
+      '<input type="text" class="booking-input" data-builder-addon-note maxlength="300" placeholder="Optional note the customer sees, e.g. what this covers" value="' + escapeAttribute(ad.note || "") + '" style="margin-top:0.5rem;font-size:0.85rem">';
+
+    var swapButton =
+      '<button type="button" class="booking-back-link" data-builder-swap style="margin-top:1rem;display:block">&#8645; Swap order &mdash; ' +
+        (t.addonFirst ? "add-on applies first, then the discount" : "discount applies first, then the add-on") +
+      '</button>';
+
+    var adNoteText = (ad.note || "").trim();
+    var ovNoteText = (ov.note || "").trim();
+    var addonLine =
+      '<div class="summary-line" style="color:#1e40af' + (t.addonCents > 0 ? "" : ";display:none") + '" data-builder-ad-line><span class="ui-copy-strong">Ownership add-on</span><span class="ui-copy-strong" data-builder-ad>+' + currencyExact.format(t.addonCents / 100) + '</span></div>' +
+      '<p class="ui-copy-muted" data-builder-ad-note-line style="font-size:0.78rem;font-style:italic;margin:0.1rem 0 0' + (t.addonCents > 0 && adNoteText ? "" : ";display:none") + '">' + escapeHtml(adNoteText) + '</p>';
+    var discountLine =
+      '<div class="summary-line" style="color:#166534' + (t.discountCents > 0 ? "" : ";display:none") + '" data-builder-ov-line><span class="ui-copy-strong">Ownership discount</span><span class="ui-copy-strong" data-builder-ov>−' + currencyExact.format(t.discountCents / 100) + '</span></div>' +
+      '<p class="ui-copy-muted" data-builder-ov-note-line style="font-size:0.78rem;font-style:italic;margin:0.1rem 0 0' + (t.discountCents > 0 && ovNoteText ? "" : ";display:none") + '">' + escapeHtml(ovNoteText) + '</p>';
+
+    el.innerHTML =
+      '<div class="summary-divider my-6"></div>' +
+      (t.addonFirst ? addonSection + swapButton + discountSection : discountSection + swapButton + addonSection) +
       '<div class="summary-list" style="margin-top:1rem">' +
-        '<div class="summary-line"><span>Customer total</span><span data-builder-base>' + fmtMoney(baseCents / 100) + '</span></div>' +
-        '<div class="summary-line" style="color:#166534' + (ovCents > 0 ? "" : ";display:none") + '" data-builder-ov-line><span class="ui-copy-strong">Ownership discount</span><span class="ui-copy-strong" data-builder-ov>−' + currencyExact.format(ovCents / 100) + '</span></div>' +
+        '<div class="summary-line"><span>Customer total</span><span data-builder-base>' + fmtMoney(t.baseCents / 100) + '</span></div>' +
+        (t.addonFirst ? addonLine + discountLine : discountLine + addonLine) +
         '<div class="summary-divider" style="margin:0.75rem 0"></div>' +
-        '<div class="summary-line summary-total"><span><strong>Final total</strong></span><strong data-builder-final>' + fmtMoney(finalCents / 100) + '</strong></div>' +
+        '<div class="summary-line summary-total"><span><strong>Final total</strong></span><strong data-builder-final>' + fmtMoney(t.finalCents / 100) + '</strong></div>' +
       '</div>' +
       '<div class="summary-divider my-6"></div>' +
       '<label class="ui-field-label" style="font-size:0.8rem">Session name</label>' +
@@ -1086,25 +1165,76 @@
         : "");
 
     // Targeted listeners (builder-only; the global data-action bus stays untouched).
+    // Value/note inputs update the summary numbers IN PLACE so typing never
+    // loses focus to a re-render; mode/swap buttons re-render the whole panel.
+    function updateBuilderNumbers() {
+      var n = builderAdjustedTotals();
+      var noteA = (state._builderAddon.note || "").trim();
+      var noteO = (state._builderOverride.note || "").trim();
+      var adLine = el.querySelector("[data-builder-ad-line]");
+      var adEl = el.querySelector("[data-builder-ad]");
+      var adNote = el.querySelector("[data-builder-ad-note-line]");
+      var ovLine = el.querySelector("[data-builder-ov-line]");
+      var ovEl = el.querySelector("[data-builder-ov]");
+      var ovNote = el.querySelector("[data-builder-ov-note-line]");
+      var fin = el.querySelector("[data-builder-final]");
+      if (adLine) adLine.style.display = n.addonCents > 0 ? "" : "none";
+      if (adEl) adEl.textContent = "+" + currencyExact.format(n.addonCents / 100);
+      if (adNote) {
+        adNote.textContent = noteA;
+        adNote.style.display = n.addonCents > 0 && noteA ? "" : "none";
+      }
+      if (ovLine) ovLine.style.display = n.discountCents > 0 ? "" : "none";
+      if (ovEl) ovEl.textContent = "−" + currencyExact.format(n.discountCents / 100);
+      if (ovNote) {
+        ovNote.textContent = noteO;
+        ovNote.style.display = n.discountCents > 0 && noteO ? "" : "none";
+      }
+      if (fin) fin.textContent = fmtMoney(n.finalCents / 100);
+    }
     el.querySelectorAll("[data-builder-mode]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state._builderOverride.mode = btn.dataset.builderMode === "dollar" ? "dollar" : "percent";
         renderBuilderPanel();
       });
     });
+    el.querySelectorAll("[data-builder-addon-mode]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state._builderAddon.mode = btn.dataset.builderAddonMode === "percent" ? "percent" : "dollar";
+        renderBuilderPanel();
+      });
+    });
+    var swapBtn = el.querySelector("[data-builder-swap]");
+    if (swapBtn) swapBtn.addEventListener("click", function () {
+      state._builderOrder = state._builderOrder === "discount-first" ? "addon-first" : "discount-first";
+      renderBuilderPanel();
+    });
     var valueInput = el.querySelector("[data-builder-value]");
     if (valueInput) {
       valueInput.addEventListener("input", function () {
         state._builderOverride.value = valueInput.value;
-        // Targeted number updates so typing never loses focus to a re-render.
-        var base = state._builderTotalCents || 0;
-        var c = builderOverrideCents(base);
-        var line = el.querySelector("[data-builder-ov-line]");
-        var ovEl = el.querySelector("[data-builder-ov]");
-        var fin = el.querySelector("[data-builder-final]");
-        if (line) line.style.display = c > 0 ? "" : "none";
-        if (ovEl) ovEl.textContent = "−" + currencyExact.format(c / 100);
-        if (fin) fin.textContent = fmtMoney((base - c) / 100);
+        updateBuilderNumbers();
+      });
+    }
+    var addonValueInput = el.querySelector("[data-builder-addon-value]");
+    if (addonValueInput) {
+      addonValueInput.addEventListener("input", function () {
+        state._builderAddon.value = addonValueInput.value;
+        updateBuilderNumbers();
+      });
+    }
+    var ovNoteInput = el.querySelector("[data-builder-ov-note]");
+    if (ovNoteInput) {
+      ovNoteInput.addEventListener("input", function () {
+        state._builderOverride.note = ovNoteInput.value;
+        updateBuilderNumbers();
+      });
+    }
+    var addonNoteInput = el.querySelector("[data-builder-addon-note]");
+    if (addonNoteInput) {
+      addonNoteInput.addEventListener("input", function () {
+        state._builderAddon.note = addonNoteInput.value;
+        updateBuilderNumbers();
       });
     }
     var nameInput = el.querySelector("[data-builder-name]");
@@ -1155,8 +1285,12 @@
           state._builderName = meta.name || "";
           state._builderNotes = meta.notes || "";
           state._builderOverride = meta.override
-            ? { mode: meta.override.mode === "dollar" ? "dollar" : "percent", value: String(meta.override.value || "") }
-            : { mode: "percent", value: "" };
+            ? { mode: meta.override.mode === "dollar" ? "dollar" : "percent", value: String(meta.override.value || ""), note: meta.override.note ? String(meta.override.note) : "" }
+            : { mode: "percent", value: "", note: "" };
+          state._builderAddon = meta.ownershipAddon
+            ? { mode: meta.ownershipAddon.mode === "percent" ? "percent" : "dollar", value: String(meta.ownershipAddon.value || ""), note: meta.ownershipAddon.note ? String(meta.ownershipAddon.note) : "" }
+            : { mode: "dollar", value: "", note: "" };
+          state._builderOrder = meta.applyOrder === "discount-first" ? "discount-first" : "addon-first";
           state._builderStatus = "";
         }
         showGateOrFlow();
