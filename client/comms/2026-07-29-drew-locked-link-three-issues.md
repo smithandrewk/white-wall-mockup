@@ -40,3 +40,63 @@ Three distinct-but-coupled follow-ups to the Session Builder locked-link feature
 - **DREW-26 — Builder-side field visibility + optional prefill + "Start New Session Build".** In the dashboard builder Drew does NOT want to see "food/drinks?" or "required acknowledgments" (customer answers those). He DOES keep "# people" + "tell us about your event", but they are OPTIONAL for him: if he fills them → locked/prefilled for the customer; if he leaves them blank → customer fills them normally. Add a **"Start New Session Build"** button next to the Session Builder title that resets to page 1.
 
 Note: DREW-25 makes the customer check the (unchanged) required-acknowledgment text themselves rather than it being pre-checked — this is not a terms.html/legal-text edit, and is arguably more correct (the customer, not Drew, acknowledges). No standing-decision conflict; both repos in scope; reversible + staging-gated; Drew self-authorizes WWS product/money-policy (item-6 auto-charge is the only Andrew gate, not touched here) → BUILD, do not escalate.
+
+---
+
+## Follow-up 1 — "still trapping us at step two" (2026-07-29 14:19 ET)
+
+- **Source:** Gmail (`andrew@entrpy.co`), thread `19fa478568fc46a2`
+- **From:** WhiteWall Studios <contact@whitewallstudios.co> (Drew)
+- **Date:** Wed, 29 Jul 2026 14:19:06 -0400
+- **msgid:** `19faf1a3d1fd7a3a`
+- **Attachment:** `attachments/2026-07-29-drew-step-two-trap-IMG_0738.png` (iPhone screenshot)
+- **Classification:** incident (regression report on the DREW-25 locked flow, money-adjacent)
+
+### Verbatim
+
+> Also, I copy the link and sent it again for a trial run and it's still
+> trapping us at step two and not step three I copied it multiple times in
+> different locations live in the Session boat itself and also from the quick
+> access button in the safe sessions still not working it takes you straight
+> to step two and it doesn't let you continue to Session detail details
+> Here's a screenshot
+
+### Screenshot analysis (IMG_0738.png)
+
+Locked-offer banner IS showing ("...change? Reply to the person who sent you this link.")
+— the offer is recognized and the DREW-24 short-link resolves. Progress bar: **1 TIMING (done),
+2 SCHEDULE (current), 3 DETAILS, 4 WAIVER, 5 REVIEW.** Body = **STEP 2 "Pick a date & time"**
+with a live July-2026 calendar (29/30/31 selectable, none highlighted) + a "CONTINUE TO SESSION
+DETAILS" button + BACK. This is the **photo/video** five-step flow.
+
+### Root cause
+
+`scripts/booking-flow.js:1674` — `initOfferMode()` lands the customer with
+`setStep((OFFER.bookingType === "event" || state.eventIntent === "yes") ? 3 : 2)`. The DREW-25
+ship sent **event** offers to Step 3 (verified in the DREW-25 prod smoke — a $4,173.30 event),
+but **photo/video (`single`) offers land on Step 2 (the schedule/date picker)**. Drew's "drew
+test 3" link is photo/video, so it drops on the calendar. The offer DOES carry a locked
+`selectedDate`/`selectedTime` (the dashboard `buildOfferPayload` refuses to mint a link unless
+every session has a `selectedTime`, `lib/session-links.ts:60`), and `applyFlowState` restores it,
+so `hasBookableSlot()` is satisfied — but the customer is still stranded on a timing step Drew
+explicitly said they should never see. Matches his original issue-2 wording: "why are they
+choosing a time? ... They should not be at the choosing timing stage. They should also pass
+step 2."
+
+### Fix (this run — DREW-25 reopen)
+
+Land **every** offer (event AND photo/video) on **Step 3 (Session details)**, with the
+timing/dates/times/add-ons locked behind them and shown in the summary — not just events.
+Money-adjacent (locked customer checkout) → **staging money dry-run before prod.**
+
+NOTE: The paid/unpaid toggle + card pill (msg `19faf17fe91bf423`, 14:16) and the Watson
+full-access ask are being handled by the concurrently-running foreman (DREW-27 + Watson
+escalation). This worker owns ONLY the step-two trap.
+
+### SHIPPED + confirmed (Follow-up 1)
+
+- **booking-site PR #107** (squash, merged → Vercel prod) — `initOfferMode` lands ALL offers on Step 3.
+- **Prod-verified** (desktop + mobile): real minted photo/video link lands panel 3 (Session details), offer banner present, locked Total $9.
+- **Staging money dry-run**: single photo/video offer → Step 3 → waiver → pay → sandbox $9 charge → appt `1745771167` on staging cal 14110701 (canceled after).
+- **Confirmed to Drew** `19faf384193750cb` (2026-07-29, no payment mention). DREW-25 → done; revision-status Round 65.
+- Test artifacts cleaned: throwaway drafts deleted + prod offers revoked, staging appt canceled, staging OFFERS env removed, staging branch redeployed, worktrees removed.
