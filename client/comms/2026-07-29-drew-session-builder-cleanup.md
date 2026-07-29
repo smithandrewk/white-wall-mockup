@@ -66,3 +66,22 @@ right, Load / Edit / Delete buttons).
 
 - DREW-22 — Session Builder: remove Good to Know section + tabs (builder-mode only)
 - DREW-23 — Saved sessions cards: session type under price, Get Link button, date/time range by title
+
+---
+
+## HANDLED (2026-07-29)
+
+Both shipped in **wws-dashboard PR #102** (squash `8564986`), merged → deployed to the mini
+(`git pull && npm install && npm run build && kickstart`) → **LIVE + prod-verified on :18794**.
+
+- **DREW-22** (done): Good to Know section removed from the builder aside via `builder-mode.js`
+  (dashboard-only; customer booking site untouched). Prod iframe confirmed `[data-location-policies]`
+  absent, builder panel present.
+- **DREW-23** (done): saved cards show session type under the price, full check-in/out schedule under
+  the title, and a Get Link button. `lib/session-builder/draft-summary.ts` (pure, 7 tests). Prod Get
+  Link minted a real `whitewallstudios.co/book-powdersville?offer=...` URL end-to-end.
+- Verified: 157 unit tests, `npm run build`, live-DB render desktop + 420px mobile (no overflow).
+- Replied to Drew: **`19fae32096faedde`** (both live, refresh once, usage of Get Link + the multi-day
+  check-in/out example). No payment mention (window active). Autonomous send (prior cycles already
+  cleared the cold-start confirm gate).
+- Revision tracker: **Round 62**. Tickets DREW-22 + DREW-23 → done.
