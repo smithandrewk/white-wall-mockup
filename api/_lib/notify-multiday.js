@@ -361,8 +361,36 @@ async function sendResend(payload) {
 }
 
 // --------------------------------------------------------------------------
+// Which sub-notifications should actually fire for this booking (DREW-29).
+// The owner/customer copy this module builds is MULTI-DAY shaped (a date RANGE,
+// a day-by-day recap, "Multi-day event booked"), so those sends belong ONLY to a
+// genuine multi-day event (>= 2 days). The cleaner heads-up is orthogonal: April
+// is needed whenever there is a real cleaning fee (multi-day OR 35+ attendees),
+// never for a one-day, no-fee session. A single-session booking — a photo/short
+// session, or a 1-hour session the operator happened to tag "event" in the Step-1
+// gate — must therefore fire NEITHER the multi-day text NOR the cleaner email.
+// Each concern is gated by its OWN correct condition so no case is over- or
+// under-notified (the old code fired the whole bundle on any-event, which sent a
+// "multi-day event booked" text + cleaner email for a one-hour session).
+function multidaySendPlan(ctx) {
+  const days = (ctx && ctx.days && ctx.days.length) || 0;
+  const isMultiDay = days >= 2;
+  const cleaningNeeded = (Number(ctx && ctx.cleaningFeeCents) || 0) > 0;
+  const crew = !!(ctx && ctx.crewAdded && ctx.crewPlacements);
+  return {
+    customerRecap: isMultiDay,
+    ownerRecap: isMultiDay,
+    ownerSms: isMultiDay,
+    crewSms: isMultiDay && crew,
+    cleaner: cleaningNeeded
+  };
+}
+
+// --------------------------------------------------------------------------
 // Orchestrator — fire ALL event-level notifications ONCE. Every send is isolated
 // so one failure never blocks the others or the (already committed) booking.
+// Each send is gated by multidaySendPlan(ctx) so a single-session/no-fee booking
+// fires nothing (DREW-29).
 // --------------------------------------------------------------------------
 async function notifyMultidayEvent(ctx) {
   if (!ctx || !ctx.days || !ctx.days.length) return;
@@ -373,11 +401,12 @@ async function notifyMultidayEvent(ctx) {
   const name = fullName(contact) || "event";
   const range = fmtDateRange(ctx.days[0].datetime, ctx.days[ctx.days.length - 1].datetime);
   const firstApptId = ctx.days[0].appointmentId;
+  const plan = multidaySendPlan(ctx);
 
-  // ---- Item 1: customer recap email ----
+  // ---- Item 1: customer recap email (multi-day only) ----
   try {
     const to = staging ? sink : contact.email;
-    if (to) {
+    if (plan.customerRecap && to) {
       await sendResend({
         from: "WhiteWall Studios <contact@whitewallstudios.co>",
         to: [to],
@@ -388,10 +417,10 @@ async function notifyMultidayEvent(ctx) {
     }
   } catch (e) { console.error("notify-multiday: customer recap failed", e.message); }
 
-  // ---- Item 2 (companion): owner recap email ----
+  // ---- Item 2 (companion): owner recap email (multi-day only) ----
   try {
     const ownerTo = staging ? sink : process.env.NOTIFICATION_EMAIL;
-    if (ownerTo) {
+    if (plan.ownerRecap && ownerTo) {
       await sendResend({
         from: "WhiteWall Studios <contact@whitewallstudios.co>",
         to: [ownerTo],
@@ -403,9 +432,11 @@ async function notifyMultidayEvent(ctx) {
 
   // ---- Item 4: April cleaner email (keyed to last day + crew-aware) ----
   // Sent BEFORE the owner SMS so the SMS's "cleaners emailed" line is truthful.
+  // Gated on plan.cleaner (a real cleaning fee), NOT on event-ness, so a no-fee
+  // session never emails April (DREW-29).
   try {
     const cleanerTo = staging ? sink : process.env.CLEANER_EMAIL;
-    if (cleanerTo && process.env.RESEND_API_KEY) {
+    if (plan.cleaner && cleanerTo && process.env.RESEND_API_KEY) {
       const lastDay = ctx.days[ctx.days.length - 1];
       const lastEnd = endOfSession(lastDay.datetime, lastDay.typeId);
       const timing = cleanerTiming(lastEnd, ctx.crewAdded);
@@ -413,7 +444,7 @@ async function notifyMultidayEvent(ctx) {
         appointmentId: lastDay.appointmentId,
         start: timing.arrive,
         end: timing.windowEnd,
-        summary: "WhiteWall cleaning — " + name + " (multi-day event)",
+        summary: "WhiteWall cleaning — " + name + " (event)",
         description: name + " event (" + (ctx.headcount || "?") + " ppl) ends " + fmtDateTime(lastEnd.toISOString())
           + (timing.crew ? ". Setup crew resets first; arrive 1.5h after end." : ".") + " Acuity ID " + lastDay.appointmentId,
         location: STUDIO_ADDRESS[ctx.location] || ""
@@ -422,7 +453,7 @@ async function notifyMultidayEvent(ctx) {
         from: "WhiteWall Studios <contact@whitewallstudios.co>",
         to: [cleanerTo],
         reply_to: ["contact@whitewallstudios.co"],
-        subject: "Cleaning needed (multi-day event) — " + name + " — " + fmtDateTime(timing.arrive.toISOString()),
+        subject: "Cleaning needed (event) — " + name + " — " + fmtDateTime(timing.arrive.toISOString()),
         text: buildCleanerEmailBody(ctx, timing),
         attachments: [{
           filename: "wws-cleaning-" + lastDay.appointmentId + ".ics",
@@ -433,13 +464,15 @@ async function notifyMultidayEvent(ctx) {
     }
   } catch (e) { console.error("notify-multiday: cleaner email failed", e.message); }
 
-  // ---- Item 2: owner Watson SMS (event summary) ----
-  try {
-    await sendOwnerSMS(buildOwnerEventSms(ctx), "mdevt-" + firstApptId);
-  } catch (e) { console.error("notify-multiday: owner SMS failed", e.message); }
+  // ---- Item 2: owner Watson SMS (event summary, multi-day only) ----
+  if (plan.ownerSms) {
+    try {
+      await sendOwnerSMS(buildOwnerEventSms(ctx), "mdevt-" + firstApptId);
+    } catch (e) { console.error("notify-multiday: owner SMS failed", e.message); }
+  }
 
   // ---- Item 3: SECOND owner Watson SMS — ONLY if the setup crew was added ----
-  if (ctx.crewAdded && ctx.crewPlacements) {
+  if (plan.crewSms) {
     try {
       await sendOwnerSMS(buildCrewSms(ctx), "mdcrew-" + firstApptId);
     } catch (e) { console.error("notify-multiday: crew SMS failed", e.message); }
@@ -448,6 +481,7 @@ async function notifyMultidayEvent(ctx) {
 
 module.exports = {
   notifyMultidayEvent,
+  multidaySendPlan,
   buildEventRecapLines,
   buildCustomerRecapEmail,
   buildOwnerRecapEmail,

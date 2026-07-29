@@ -1589,10 +1589,19 @@ async function handleCartCheckout(req, res, body) {
 
     // ---- 6c. Event-level notifications (owner + customer + cleaner) ------
     // The cart path previously sent NONE of these (gap #5 / backend audit). Fire
-    // ONCE per event, event-shaped, for EVENT carts only. Best-effort + isolated:
-    // a notification failure never unwinds a paid+booked cart. On staging the
-    // transports self-suppress AND recipients are sinked (verifies wiring only).
-    if (cartIsEvent) {
+    // ONCE per event, event-shaped. Best-effort + isolated: a notification failure
+    // never unwinds a paid+booked cart. On staging the transports self-suppress AND
+    // recipients are sinked (verifies wiring only).
+    //
+    // DREW-29: fire the orchestrator only when there is genuine multi-day event
+    // work (>= 2 days) OR a real cleaning fee. notifyMultidayEvent internally gates
+    // each sub-send (multidaySendPlan): the multi-day owner/customer text ships only
+    // for >= 2 days, the cleaner email only when cleaningFeeCents > 0. A one-hour /
+    // single-session booking — including one the operator tagged "event" in the
+    // Step-1 gate — is neither multi-day nor fee-bearing, so it now fires nothing,
+    // instead of the bogus "multi-day event booked" text + cleaner email that a paid
+    // one-hour session used to trigger.
+    if (cartIsMultiDayEvent || cleaningFeeCents > 0) {
       try {
         var mdDays = priced.sessions.map(function (ps, i) {
           var srcN = normalized.find(function (n) {
