@@ -964,6 +964,21 @@ function offerCartBody(offer, body) {
   var custIntake = universal.intake || body.intake || {};
   var fs = offer.flowState || {};
   var lockedParticipants = offer.participants ? String(offer.participants) : "";
+  // DREW-25: the customer fills the Step-3 fields Drew did NOT lock. Those
+  // answers ride in universal.offerCustomer (the client's session rows are
+  // discarded). They only ever reach the Acuity NOTES — the PRICE stays the
+  // signed offer (cartMaxAttendees is pinned to offer.participants downstream).
+  var cust = universal.offerCustomer || {};
+  // Participants for the notes: Drew's locked count wins; else the customer's
+  // (event field, then the intake field). Empty when nobody supplied one.
+  var notesParticipants = lockedParticipants || (cust.participants || custIntake.participants || "");
+  // Description: locked → the signed one; unlocked → the customer's, else fall
+  // back to whatever the payload carried.
+  var eventDescription = offer.lockEventDescription
+    ? (fs.eventDescription || "")
+    : (cust.eventDescription || fs.eventDescription || "");
+  // Food/drinks is always the customer's to answer.
+  var foodDrinks = cust.foodDrinks != null ? cust.foodDrinks : (fs.foodDrinks != null ? fs.foodDrinks : false);
   var sessions = offer.sessions.map(function (s) {
     return {
       appointmentTypeID: s.appointmentTypeID,
@@ -971,10 +986,10 @@ function offerCartBody(offer, body) {
       location: offer.locationSlug,
       addons: s.addons || {},
       eventIntent: offer.bookingType === "event" ? "yes" : "no",
-      intake: Object.assign({}, custIntake, lockedParticipants ? { participants: lockedParticipants } : {}),
-      participants: lockedParticipants || (custIntake.participants || ""),
-      eventDescription: fs.eventDescription || "",
-      foodDrinks: fs.foodDrinks != null ? fs.foodDrinks : false
+      intake: Object.assign({}, custIntake, notesParticipants ? { participants: notesParticipants } : {}),
+      participants: notesParticipants,
+      eventDescription: eventDescription,
+      foodDrinks: foodDrinks
     };
   });
   return {
@@ -1170,10 +1185,20 @@ async function handleCartCheckout(req, res, body) {
     // single-day event or a photo cart keeps the existing 35+ rule. Applied to the
     // authoritative charge here so the server matches the client display.
     // cartIsEvent is defined above (any session is an event).
-    var cartMaxAttendees = normalized.reduce(function (m, n) {
-      var mm = String(n.participants || "").match(/\d+/);
-      return Math.max(m, mm ? parseInt(mm[0], 10) : 0);
-    }, 0);
+    //
+    // DREW-25: in offer mode the PRICE is locked to the signed finalTotalCents,
+    // so the cleaning fee must be computed from the participant count the
+    // dashboard priced with (offer.participants) — NEVER the customer's own
+    // count. Otherwise a customer entering 35+ on a single-day event where Drew
+    // left the count blank would flip the fee and trip the price-drift 409 below.
+    // The customer's real count still flows into the Acuity notes via
+    // normalized[].participants; it just can't move the price.
+    var cartMaxAttendees = offer
+      ? (String(offer.participants || "").match(/\d+/) ? parseInt(String(offer.participants).match(/\d+/)[0], 10) : 0)
+      : normalized.reduce(function (m, n) {
+          var mm = String(n.participants || "").match(/\d+/);
+          return Math.max(m, mm ? parseInt(mm[0], 10) : 0);
+        }, 0);
     var cartIsMultiDayEvent = cartIsEvent && priced.sessions.length >= 2;
     var cleaningFeeCents = (cartIsMultiDayEvent || cartMaxAttendees >= 35) ? 15000 : 0;
 

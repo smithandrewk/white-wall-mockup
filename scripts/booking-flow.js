@@ -36,33 +36,51 @@
   // from "no offer param at all" (normal flow).
   var OFFER = null;
   var OFFER_TOKEN = "";
+  var OFFER_SHORTID = ""; // DREW-24: ?offer=<draftId>, token fetched from Edge Config
   var OFFER_BROKEN = false;
+  // Decode a "<base64url payload>.<hex sig>" token into the offer payload, or
+  // null when it isn't a well-formed, location-matching v1 offer. Shared by the
+  // synchronous long-link path below and the async short-link resolve (DREW-24).
+  function decodeOfferToken(token) {
+    try {
+      var t = String(token || "").trim();
+      var dot = t.lastIndexOf(".");
+      if (dot <= 0) return null;
+      var b64 = t.slice(0, dot).replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      var bin = atob(b64);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var p = JSON.parse(new TextDecoder("utf-8").decode(bytes));
+      if (p && p.v === 1 &&
+          p.locationSlug === location.slug &&
+          Array.isArray(p.sessions) && p.sessions.length &&
+          p.flowState && typeof p.flowState === "object" &&
+          typeof p.finalTotalCents === "number") {
+        return p;
+      }
+    } catch (e) {}
+    return null;
+  }
   try {
     if (!BUILDER) {
       var offerRaw = new URLSearchParams(window.location.search).get("offer");
       if (offerRaw) {
-        OFFER_TOKEN = offerRaw.trim();
-        OFFER_BROKEN = true; // until proven parseable
-        var offerDot = OFFER_TOKEN.lastIndexOf(".");
-        if (offerDot > 0) {
-          var offerB64 = OFFER_TOKEN.slice(0, offerDot).replace(/-/g, "+").replace(/_/g, "/");
-          while (offerB64.length % 4) offerB64 += "=";
-          var offerBin = atob(offerB64);
-          var offerBytes = new Uint8Array(offerBin.length);
-          for (var obi = 0; obi < offerBin.length; obi++) offerBytes[obi] = offerBin.charCodeAt(obi);
-          var offerPayload = JSON.parse(new TextDecoder("utf-8").decode(offerBytes));
-          if (offerPayload && offerPayload.v === 1 &&
-              offerPayload.locationSlug === location.slug &&
-              Array.isArray(offerPayload.sessions) && offerPayload.sessions.length &&
-              offerPayload.flowState && typeof offerPayload.flowState === "object" &&
-              typeof offerPayload.finalTotalCents === "number") {
-            OFFER = offerPayload;
-            OFFER_BROKEN = false;
-          }
+        offerRaw = offerRaw.trim();
+        if (offerRaw.indexOf(".") >= 0) {
+          // Long link (?offer=<encoded>.<sig>): decode inline so a FULL URL
+          // pasted straight into a browser still works (backward compatible).
+          OFFER_TOKEN = offerRaw;
+          var offerPayload = decodeOfferToken(offerRaw);
+          if (offerPayload) { OFFER = offerPayload; } else { OFFER_BROKEN = true; }
+        } else {
+          // Short link (?offer=<draftId>): the signed token lives in Edge
+          // Config; the boot sequence fetches it from /api/resolve-offer.
+          OFFER_SHORTID = offerRaw;
         }
       }
     }
-  } catch (e) { OFFER = null; OFFER_BROKEN = true; }
+  } catch (e) { OFFER = null; OFFER_SHORTID = ""; OFFER_BROKEN = true; }
 
   // Offer mode: every action that could change WHAT was built or WHAT it costs
   // is locked — the customer can look but not touch (Drew: "completely locked…
@@ -927,6 +945,17 @@
       universal: {
         contact: state.contact,
         intake: state.intake,
+        // DREW-25: in offer mode the session rows above are discarded server-
+        // side, so the customer's own Step-3 answers travel here for the Acuity
+        // notes (participants for the record, food/drinks, and their event
+        // description when Drew left it open). These never move the price — the
+        // server prices the locked offer and pins the cleaning fee to Drew's
+        // count.
+        offerCustomer: OFFER ? {
+          participants: state.participants || "",
+          eventDescription: state.eventDescription || "",
+          foodDrinks: state.foodDrinks
+        } : undefined,
         waiverSigned: state.waiverSigned,
         termsSignature: state.termsSignature,
         emailAcknowledgment: state.emailAcknowledgment,
@@ -1524,6 +1553,9 @@
   // Drew asked for, and survives every re-render because it keys off a body
   // class instead of per-element attributes.
   function injectOfferStyles() {
+    // Idempotent: the short-link path (DREW-24) may inject these for the loading
+    // or stop overlay before initOfferMode runs, and again inside initOfferMode.
+    if (document.querySelector("style[data-offer-styles]")) return;
     var sels = Object.keys(OFFER_LOCKED_ACTIONS).map(function (a) {
       return 'body.wws-offer-mode [data-action="' + a + '"]';
     }).concat(OFFER_LOCKED_INPUTS.map(function (s) {
@@ -1537,6 +1569,7 @@
       "\n.offer-error-overlay { position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.55); display:flex; align-items:center; justify-content:center; padding:1.5rem; }" +
       "\n.offer-error-card { background:#fff; border-radius:1rem; max-width:28rem; width:100%; padding:2rem; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.25); }";
     var tag = document.createElement("style");
+    tag.setAttribute("data-offer-styles", "1");
     tag.textContent = css;
     document.head.appendChild(tag);
   }
@@ -1546,6 +1579,7 @@
   // an inline swap — so no later re-render can accidentally resurrect the flow.
   function showOfferErrorPanel(reason) {
     if (document.querySelector(".offer-error-overlay")) return;
+    injectOfferStyles(); // idempotent — ensures overlay CSS exists on the short-link path too
     var copy;
     if (reason === "revoked") {
       copy = "This session link is no longer active. White Wall may have updated your offer — reach out to the person who sent it and they will send you a fresh link.";
@@ -1578,8 +1612,43 @@
       '</div>');
   }
 
+  // DREW-24: a short link (?offer=<draftId>) has to fetch its token before the
+  // locked flow can render. Cover the un-prefilled flow with a light overlay for
+  // that ~50-100ms so the customer never sees the normal booking page flash.
+  // Self-contained inline styles — injectOfferStyles() has not run yet here.
+  function showOfferLoadingPanel() {
+    if (document.querySelector(".offer-loading-overlay")) return;
+    var overlay = document.createElement("div");
+    overlay.className = "offer-loading-overlay";
+    overlay.setAttribute("style", "position:fixed;inset:0;z-index:9999;background:#f8f7f4;display:flex;align-items:center;justify-content:center;padding:1.5rem;");
+    overlay.innerHTML =
+      '<div style="text-align:center;max-width:24rem">' +
+        '<p class="ui-kicker" style="margin-bottom:0.75rem">Custom session link</p>' +
+        '<p class="ui-copy-strong">Loading your session…</p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+  function removeOfferLoadingPanel() {
+    var el = document.querySelector(".offer-loading-overlay");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
   function initOfferMode() {
     document.body.classList.add("wws-offer-mode");
+    // DREW-25/26: the customer FILLS the Step-3 fields Drew did NOT prefill, so
+    // only lock participants / event description when Drew locked them in the
+    // builder (OFFER.lock* flags). Food/drinks and the required acknowledgements
+    // are always the customer's to answer, so they are never locked here.
+    // Pricing + scheduling stay fully locked (OFFER_LOCKED_ACTIONS unchanged).
+    // Reassign BEFORE injectOfferStyles(), which reads these two lists.
+    OFFER_LOCKED_INPUTS = ["[data-input='high-traffic-note']", "[data-input='coupon-code']"];
+    if (OFFER.lockParticipants) {
+      OFFER_LOCKED_INPUTS.push("[data-input='participants']", "[data-input='intake-participants']");
+    }
+    if (OFFER.lockEventDescription) {
+      OFFER_LOCKED_INPUTS.push("[data-input='event-description']");
+    }
+    OFFER_LOCKED_CHECKS = ["[data-action='set-placement']", "[data-action='set-last-day-leave']"];
     injectOfferStyles();
     // Offers never mix with promos or deposits — the price IS the offer.
     state.coupon = null;
@@ -1597,7 +1666,12 @@
       }
     }, true);
     showGateOrFlow();
-    setStep(1);
+    // DREW-25: land the customer on the first step they actually fill — Step 3
+    // (Session details) for events, Step 2 (Details) for photo/video — instead
+    // of the locked timing gate they used to be stranded on. The timing, dates,
+    // times, and add-ons are all locked and already shown in the summary, so
+    // there is nothing for them to do on steps 1-2 of an event.
+    setStep((OFFER.bookingType === "event" || state.eventIntent === "yes") ? 3 : 2);
     renderOfferBanner();
     // Server verdict: signature + the dashboard's active-offer list. The render
     // above is optimistic; a bad verdict drops the stop card over it. A network
@@ -1628,6 +1702,39 @@
     // the script evaluates. The original boot never called setStep
     // synchronously, so those late definitions were fine until offer mode.
     setTimeout(initOfferMode, 0);
+  } else if (OFFER_SHORTID) {
+    // DREW-24 short link: fetch the signed token from Edge Config, then run
+    // offer mode exactly as a long link would. The loading overlay (shown now,
+    // synchronously) covers the un-prefilled flow until the token resolves.
+    // initOfferMode runs inside the async .then, well after the whole script
+    // has evaluated, so no setTimeout is needed for the const-ordering reason.
+    showOfferLoadingPanel();
+    fetch("/api/resolve-offer?id=" + encodeURIComponent(OFFER_SHORTID))
+      .then(function (r) {
+        return r.json().catch(function () { return null; }).then(function (j) { return { status: r.status, body: j }; });
+      })
+      .then(function (res) {
+        var body = res.body;
+        if (body && body.ok && body.token) {
+          var p = decodeOfferToken(body.token);
+          if (p) {
+            OFFER = p;
+            OFFER_TOKEN = body.token;
+            removeOfferLoadingPanel();
+            initOfferMode();
+            return;
+          }
+          removeOfferLoadingPanel();
+          showOfferErrorPanel("invalid");
+          return;
+        }
+        removeOfferLoadingPanel();
+        showOfferErrorPanel((body && body.reason) || (res.status === 404 ? "revoked" : "unavailable"));
+      })
+      .catch(function () {
+        removeOfferLoadingPanel();
+        showOfferErrorPanel("unavailable");
+      });
   } else {
     showGateOrFlow(); // Step-1 gate: show "What are you booking?" until a type is chosen (PV); TM auto-resolves.
     if (OFFER_BROKEN) showOfferErrorPanel("invalid");
@@ -3898,7 +4005,7 @@
         : "";
 
     const participantLabel = state.eventIntent === "yes"
-      ? "How many people will be attending your event?"
+      ? ("How many people will be attending your event?" + (BUILDER ? " (optional)" : ""))
       : 'Event? How many people will you have? <strong>If this is a photo/video session, leave this blank.</strong>';
 
     container.innerHTML = `
@@ -3979,10 +4086,11 @@
     return `
       <div class="choice-grid" style="margin-top:1.5rem">
         <div>
-          <label class="ui-field-label" for="event-description">${textareaLabel}</label>
+          <label class="ui-field-label" for="event-description">${textareaLabel}${BUILDER ? " (optional)" : ""}</label>
           ${textareaPrompt ? '<p class="ui-copy" style="margin-bottom:0.75rem;color:rgba(0,0,0,0.55);font-size:0.85rem">' + textareaPrompt + '</p>' : ''}
           <textarea class="booking-textarea ${borderClass}" id="event-description" data-input="event-description" placeholder="What are you hosting?">${escapeHtml(state.eventDescription)}</textarea>
         </div>
+        ${!BUILDER ? `
         <fieldset class="booking-panel-soft panel-pad" style="border:0;margin:0">
           <legend class="ui-kicker" style="margin-bottom:1rem;padding:0">Will there be food or drinks at your event?</legend>
           <div style="display:flex;gap:1rem">
@@ -4011,6 +4119,7 @@
             <span>I understand this is a fully self-service event space with no team on site. (Unless you select the Event Setup and Reset Crew add-on)</span>
           </label>
         </div>
+        ` : ""}
       </div>
     `;
   }

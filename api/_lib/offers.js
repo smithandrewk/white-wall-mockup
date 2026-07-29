@@ -108,6 +108,24 @@ async function verifyOfferToken(token) {
   return { ok: true, payload: payload };
 }
 
+// Resolve a short link (?offer=<draftId>) to its full "<encoded>.<sig>" token.
+// DREW-24: the dashboard now stores the full signed token IN the Edge Config
+// entry (`{ h, t, tok }`) and puts only the (uuid) draftId in the URL, so the
+// link is short enough to survive iMessage/Notes/email link-detection. Returns
+// { ok:true, token } when live, or { ok:false, reason } where reason mirrors
+// getOfferEntry's states: "revoked" (no/blank entry), "unavailable" (source
+// unreadable — fail CLOSED, same as verifyOfferToken). The token is still
+// HMAC-verified downstream by verifyOfferToken/create-checkout, so this endpoint
+// hands out nothing a tampered URL couldn't already ask for.
+async function resolveOfferToken(draftId) {
+  var entry = await getOfferEntry(draftId);
+  if (entry === null) return { ok: false, reason: "unavailable" };
+  if (!entry || typeof entry.tok !== "string" || !entry.tok) {
+    return { ok: false, reason: "revoked" };
+  }
+  return { ok: true, token: entry.tok };
+}
+
 // Customer-facing message per failure reason (shared by validate-offer and
 // create-checkout so the two surfaces never disagree).
 function offerErrorMessage(reason) {
@@ -128,5 +146,6 @@ module.exports = {
   getOfferEntry,
   payloadHash,
   verifyOfferToken,
+  resolveOfferToken,
   offerErrorMessage
 };
