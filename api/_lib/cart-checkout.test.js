@@ -32,7 +32,8 @@ function resetCalls() {
     cards: [],
     appointments: [],
     inserts: [],
-    alerts: []
+    alerts: [],
+    multiday: []
   };
 }
 
@@ -122,6 +123,12 @@ function installStubs() {
   stub("api/_lib/notify-cleaner.js", { notifyCleaner: async function () {} });
   stub("api/_lib/notify-sms.js", { notifyOwnerSMS: async function () {} });
   stub("api/_lib/notify-customer-sms.js", { notifyCustomerSMS: async function () {} });
+  // DREW-29: capture whether the cart path invokes the multi-day event notifier
+  // at all, so we can assert the call-site gate (a single-session/no-fee booking
+  // must not reach notifyMultidayEvent).
+  stub("api/_lib/notify-multiday.js", {
+    notifyMultidayEvent: async function (ctx) { calls.multiday.push(ctx); }
+  });
 }
 
 function loadHandler() {
@@ -325,6 +332,43 @@ async function run() {
   assert.strictEqual(res.body.error, "Invalid appointmentTypeID", "T5: hit the single-session validator, not the cart one");
   assert.strictEqual(calls.payments.length, 0, "T5: no charge");
   passed++; console.log("ok 5 - single-session path untouched when `sessions` absent");
+
+  // ---- Test 6: single-session EVENT cart fires NO multi-day notifier --------
+  // DREW-29 incident: a paid ONE-HOUR session, tagged "event" in the Step-1 gate
+  // and booked via an offer link, must NOT trigger notifyMultidayEvent — no
+  // "multi-day event booked" owner text, no cleaner email. One session (< 2 days)
+  // with a small headcount (< 35) means cartIsMultiDayEvent=false AND
+  // cleaningFeeCents=0, so the call-site gate must skip the notifier entirely.
+  resetCalls();
+  acuityPostBehavior = null;
+  installStubs();
+  handler = loadHandler();
+  res = fakeRes();
+  const oneHourEvent = [Object.assign({}, sessionsFixture()[0], { eventIntent: "yes", participants: "6" })];
+  await handler(
+    { method: "POST", headers: {}, body: { sessions: oneHourEvent, universal: UNIVERSAL, paymentMode: "full" } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 200, "T6: single-session event books fine, got " + res.statusCode + " " + JSON.stringify(res.body));
+  assert.strictEqual(calls.payments.length, 1, "T6: the session was charged (booking still works)");
+  assert.strictEqual(calls.appointments.length, 1, "T6: exactly one Acuity appointment");
+  assert.strictEqual(calls.multiday.length, 0, "T6: notifyMultidayEvent NOT invoked for a 1-session, no-fee booking (the fix)");
+  passed++; console.log("ok 6 - single-session event fires no multi-day text / cleaner (DREW-29)");
+
+  // ---- Test 7: genuine 2-day event STILL fires the multi-day notifier -------
+  resetCalls();
+  acuityPostBehavior = null;
+  installStubs();
+  handler = loadHandler();
+  res = fakeRes();
+  await handler(
+    { method: "POST", headers: {}, body: { sessions: sessionsFixture(), universal: UNIVERSAL, paymentMode: "full" } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 200, "T7: 2-day event books fine");
+  assert.strictEqual(calls.multiday.length, 1, "T7: notifyMultidayEvent invoked exactly once for a real multi-day event");
+  assert.strictEqual(calls.multiday[0].cleaningFeeCents, CLEANING_FEE_CENTS, "T7: the notifier gets the real cleaning fee so its cleaner sub-send fires");
+  passed++; console.log("ok 7 - genuine multi-day event still notifies (no over-suppression)");
 
   console.log("\nAll " + passed + " cart-checkout assertions passed.");
 }
