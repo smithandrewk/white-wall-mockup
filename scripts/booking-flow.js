@@ -1666,12 +1666,18 @@
       }
     }, true);
     showGateOrFlow();
-    // DREW-25: land the customer on the first step they actually fill — Step 3
-    // (Session details) for events, Step 2 (Details) for photo/video — instead
-    // of the locked timing gate they used to be stranded on. The timing, dates,
-    // times, and add-ons are all locked and already shown in the summary, so
-    // there is nothing for them to do on steps 1-2 of an event.
-    setStep((OFFER.bookingType === "event" || state.eventIntent === "yes") ? 3 : 2);
+    // DREW-25 (reopened 2026-07-29): land the customer on the first step they
+    // actually fill — Step 3 (Session details) — for EVERY offer type. Timing,
+    // dates, times, add-ons, and price are all locked (OFFER_LOCKED_ACTIONS) and
+    // already shown in the summary, so there is nothing for the customer to do on
+    // Step 1 (Timing) or Step 2 (Schedule) — for events OR photo/video. The
+    // original ship only skipped events to Step 3 and stranded photo/video offers
+    // on the Step-2 date picker (Drew: "still trapping us at step two and not step
+    // three ... it doesn't let you continue to Session details"). The locked
+    // selectedDate/selectedTime rides the offer (dashboard refuses to mint a link
+    // without one), so hasBookableSlot() is already satisfied and Step 3 renders
+    // straight through to Waiver + Pay.
+    setStep(3);
     renderOfferBanner();
     // Server verdict: signature + the dashboard's active-offer list. The render
     // above is optimistic; a bad verdict drops the stop card over it. A network
