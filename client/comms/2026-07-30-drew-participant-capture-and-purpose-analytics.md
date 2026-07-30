@@ -73,4 +73,10 @@ Replied to Drew twice: root cause + plan (`19fb4b959534744e`), then live confirm
 
 **DREW-32 (dashboard, PR #106 squash `6e80418`) — LIVE on :18794.** New Session Purpose tab + Lead Source revamp on a shared engine; Other as its own expandable line item, every row drills to its bookings (name/type/duration) → `/bookings/[id]`, "% since impl date" column (lead-source 2026-06-13, purpose 2026-08-01), both moved to top-level tabs under Session Builder. Verify: build + 177 tests + live-DB drive.
 
-Tickets DREW-31 + DREW-32 → done. Revision-status Round 69. `last-seen-drew.txt` at `19fb4b06b59108aa`. No open loops from this run.
+Tickets DREW-31 + DREW-32 → done. Revision-status Round 69. No open loops from this run.
+
+### Follow-up — Drew msg `19fb4bd0fef8d5d5` (verbatim), Thu 30 Jul 2026 16:35:04 -0400, WhiteWall Studios <contact@whitewallstudios.co>
+
+> Flawless work. Let me know when it's ready to review. Thanks pip.
+
+Arrived WHILE the build was in flight (the launchd watcher deferred to this live foreman and advanced `last-seen-drew.txt` to it). It asks to be told when it is ready to review — which the live-confirmation reply `19fb4dc5e114068d` ("All live... Take a look and tell me if you want any wording, options, or ordering changed") answers directly. **No separate reply owed.** `last-seen-drew.txt` at `19fb4bd0fef8d5d5` (true newest Drew msg — watcher won't re-fire).
