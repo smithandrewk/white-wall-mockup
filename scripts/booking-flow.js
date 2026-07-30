@@ -212,6 +212,11 @@
       instagram: "",
       leadSource: "",
       leadSourceOther: "",
+      // DREW-31: mandatory "what are you using the space for" for photo/video.
+      // A fixed dropdown (purpose) with an "Other" option that reveals a required
+      // free-text box (purposeOther). Events/multi-day use eventDescription instead.
+      purpose: "",
+      purposeOther: "",
       readEmail: false
     },
     emailAcknowledgment: "",
@@ -916,7 +921,7 @@
       location: s.location,
       addons: s.addons || {},
       eventIntent: s.eventIntent === "yes" ? "yes" : "no",
-      intake: { business: pi.business || "", participants: pi.participants || "" },
+      intake: { business: pi.business || "", participants: pi.participants || "", purpose: pi.purpose || "", purposeOther: pi.purposeOther || "" },
       participants: pi.participants || "",
       eventDescription: pi.eventDescription || "",
       foodDrinks: s.foodDrinks != null ? s.foodDrinks : (state.foodDrinks != null ? state.foodDrinks : false)
@@ -2402,6 +2407,12 @@
         updateTermsGate();
       }
 
+      if (target.matches("[data-input='intake-purpose-other']")) {
+        // DREW-31: free text (required, 3-char min) when session purpose is "Other".
+        state.intake.purposeOther = target.value;
+        updateTermsGate();
+      }
+
       if (target.matches("[data-input='email-acknowledgment']")) {
         state.emailAcknowledgment = target.value;
         renderStepContent();
@@ -2519,6 +2530,26 @@
         } else {
           var firstOther = document.querySelector("[data-input='intake-lead-source-other']");
           if (firstOther) firstOther.focus();
+        }
+        updateTermsGate();
+      }
+
+      if (target.matches("[data-input='intake-purpose']")) {
+        // DREW-31: mandatory session-purpose dropdown for photo/video. "Other"
+        // reveals a required free-text box; anything else hides + clears it.
+        state.intake.purpose = target.value;
+        var purposeIsOther = target.value === "Other";
+        var purposeWraps = document.querySelectorAll("[data-purpose-other-wrap]");
+        for (var pw = 0; pw < purposeWraps.length; pw++) {
+          purposeWraps[pw].classList.toggle("hidden", !purposeIsOther);
+        }
+        if (!purposeIsOther) {
+          state.intake.purposeOther = "";
+          var purposeOtherInputs = document.querySelectorAll("[data-input='intake-purpose-other']");
+          for (var poi = 0; poi < purposeOtherInputs.length; poi++) purposeOtherInputs[poi].value = "";
+        } else {
+          var firstPurposeOther = document.querySelector("[data-input='intake-purpose-other']");
+          if (firstPurposeOther) firstPurposeOther.focus();
         }
         updateTermsGate();
       }
@@ -4055,6 +4086,12 @@
     if (intakeRow) {
       intakeRow.style.display = state.eventIntent === "yes" ? "none" : "";
     }
+    // DREW-31: the photo/video purpose dropdown only applies to non-events.
+    // Events/multi-day answer the open-ended event description instead.
+    var purposeRow = document.querySelector("[data-intake-purpose-row]");
+    if (purposeRow) {
+      purposeRow.style.display = state.eventIntent === "yes" ? "none" : "";
+    }
   }
 
   function getEventFormHtml() {
@@ -5012,6 +5049,21 @@
       var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
       if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) return false;
       var count = parseCount(state.participants);
+      // DREW-31: the participant count is now mandatory on EVERY path. It was
+      // silently optional for photo/video, which let bookings (e.g. Evan Silver)
+      // through with no real headcount that the form then faked to "1".
+      var participantCount = state.eventIntent === "yes" ? count : parseCount(state.intake.participants);
+      if (!BUILDER && participantCount < 1) return false;
+      // DREW-31: "what are you using the space for" is mandatory on every path.
+      // Photo/video answers a fixed dropdown ("Other" needs its 3+ char text);
+      // events/multi-day answer the open-ended event description.
+      var purposeComplete;
+      if (state.eventIntent === "yes") {
+        purposeComplete = Boolean(state.eventDescription.trim());
+      } else {
+        purposeComplete = Boolean(state.intake.purpose) && (state.intake.purpose !== "Other" || (state.intake.purposeOther || "").trim().length >= 3);
+      }
+      if (!BUILDER && !purposeComplete) return false;
       // Block PV events with 150+ people
       if (location.slug === "powdersville" && state.eventIntent === "yes" && count > 150) return false;
       // For PV events with 35+ people, require event description
@@ -5050,6 +5102,19 @@
     if (!state.intake.leadSource) errors.push("Please tell us how you heard about us.");
     else if (state.intake.leadSource === "Other" && (state.intake.leadSourceOther || "").trim().length < 3) errors.push("Please tell us exactly how you heard about us (at least 3 characters).");
     if (!state.intake.readEmail) errors.push("Please confirm you will read the confirmation email and watch the linked videos.");
+    // DREW-31: participant count + session purpose are required on every path.
+    var vCount = parseCount(state.participants);
+    var vParticipantCount = state.eventIntent === "yes" ? vCount : parseCount(state.intake.participants);
+    if (!BUILDER && vParticipantCount < 1) errors.push("Please tell us the total number of participants.");
+    if (!BUILDER) {
+      if (state.eventIntent === "yes") {
+        if (!state.eventDescription.trim()) errors.push("Please tell us what you are using the space for.");
+      } else if (!state.intake.purpose) {
+        errors.push("Please tell us what you are using the space for.");
+      } else if (state.intake.purpose === "Other" && (state.intake.purposeOther || "").trim().length < 3) {
+        errors.push("Please tell us what you are using the space for (at least 3 characters).");
+      }
+    }
     var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
     if (!expectedName || state.emailAcknowledgment.trim().toLowerCase() !== expectedName) errors.push("Please sign the email acknowledgment with your full name.");
     if (!isTermsAccepted()) errors.push("Please sign the terms & conditions with your full name.");

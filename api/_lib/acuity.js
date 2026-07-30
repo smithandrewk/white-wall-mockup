@@ -253,7 +253,10 @@ function buildAcuityFields(intake, location) {
   const fields = [];
 
   fields.push({ id: ACUITY_FIELD_IDS.businessName, value: intake.business || "" });
-  fields.push({ id: ACUITY_FIELD_IDS.participants, value: intake.participants || "1" });
+  // DREW-31: never fake the headcount. The count is now a required field on every
+  // path (photo/video via intake.participants, events mirror the attendee count in);
+  // write the real value, or an honest blank when genuinely absent, never "1".
+  fields.push({ id: ACUITY_FIELD_IDS.participants, value: intake.participants ? String(intake.participants) : "" });
   fields.push({ id: ACUITY_FIELD_IDS.instagram, value: intake.instagram || "" });
   fields.push({ id: ACUITY_FIELD_IDS.readEmail, value: intake.readEmail ? "Yes" : "No" });
 
@@ -281,6 +284,23 @@ function buildAppointmentNotes(bookingState) {
         : intake.leadSource;
     lines.push("Heard about us: " + heard);
   }
+
+  // DREW-31: uniform "Session purpose:" line on EVERY booking (what they are using
+  // the space for). Photo/video answers a fixed dropdown ("Other" carries its free
+  // text as "Other: ..."); events/multi-day answer the open-ended event description.
+  // The dashboard purpose analytics parses exactly this label.
+  let sessionPurpose = "";
+  if (bookingState.eventIntent === "yes") {
+    sessionPurpose = (bookingState.eventDescription || "").trim();
+  } else {
+    const purpose = (intake.purpose || "").trim();
+    if (purpose === "Other") {
+      sessionPurpose = intake.purposeOther ? "Other: " + String(intake.purposeOther).trim() : "Other";
+    } else {
+      sessionPurpose = purpose;
+    }
+  }
+  if (sessionPurpose) lines.push("Session purpose: " + sessionPurpose);
 
   if (bookingState.eventIntent === "yes") {
     lines.push("Event booking: Yes");
