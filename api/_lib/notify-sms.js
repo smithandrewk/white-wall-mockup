@@ -48,41 +48,71 @@ function fmtShortDateTime(iso) {
   } catch (e) { return iso; }
 }
 
+// Format the customer-entered phone as (xxx) xxx-xxxx when it is a clean US
+// 10-digit number (or 11 digits with a leading 1). Anything else is shown as
+// the customer typed it, trimmed; empty → "—". Illustrative only — never blocks.
+function fmtPhone(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s) return "—";
+  const digits = s.replace(/\D/g, "");
+  const ten = digits.length === 11 && digits[0] === "1" ? digits.slice(1) : digits;
+  if (ten.length === 10) {
+    return "(" + ten.slice(0, 3) + ") " + ten.slice(3, 6) + "-" + ten.slice(6);
+  }
+  return s;
+}
+
+// Money for the owner texts, with thousands separators, matching the examples
+// Drew approved (e.g. "$1,450.00", "$4,173.30"). Cents in → "$#,###.##".
+function fmtUsd(cents) {
+  const n = (Number(cents) || 0) / 100;
+  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Session Type line — locked to Drew's three options only (DREW-30). The
+// single-session + comp builders can only ever produce Event or Photo/video;
+// the multi-day builder hardcodes "Multi-day event" on its own.
+function sessionTypeLabel(bookingState) {
+  return bookingState && bookingState.eventIntent === "yes" ? "Event" : "Photo/video";
+}
+
+// Section 1 — large / long single booking. Reformatted 2026-07-30 (DREW-30) onto
+// the labeled line-item skeleton Drew standardized on, matching the multi-day text:
+//   [WhiteWall] New booking
+//   Client Name / Session Type / Client Phone / Location / When / People / Use /
+//   Total / Cleaners emailed / Acuity #
+// People and Use lines are omitted when empty (never "People: 0"); "Cleaners
+// emailed" reports whether the booking NEEDED the cleaners (hit the fee), not send
+// success — the truthful reading Drew asked for.
 function buildSmsText(bookingState, appointmentId) {
   const contact = bookingState.contact || {};
   const fullName = ((contact.firstName || "") + " " + (contact.lastName || "")).trim() || "(no name)";
   const session = SESSION_PRICES[String(bookingState.appointmentTypeID)] || { label: "Session" };
-  const durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 0;
   const participants = Number(bookingState.participants) || Number((bookingState.intake || {}).participants) || 0;
   const locName = bookingState.location === "powdersville" ? "Flagship" : "TM";
-
-  // Trigger reason — show why this fired. Flag events whenever eventIntent is
-  // "yes" (not just at the 35+ threshold) so a long event under 35 people still
-  // reads as an event in the header, not just a "3hr shoot".
-  const reasons = [];
-  if (bookingState.eventIntent === "yes") {
-    reasons.push(participants ? "event " + participants + "ppl" : "event");
-  }
-  if (durationMin >= SMS_DURATION_THRESHOLD_MIN) {
-    reasons.push((durationMin / 60).toFixed(0) + "hr shoot");
-  }
+  const cleanersNeeded = !!(bookingState.cleaningFee && bookingState.cleaningFee.amount > 0);
 
   // Total
   let totalCents = 0;
   try {
     const items = buildSquareLineItems(bookingState.appointmentTypeID, bookingState.addons, bookingState.location);
     totalCents = items.reduce(function (s, li) { return s + li.amount * (li.quantity || 1); }, 0);
-    if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) totalCents += bookingState.cleaningFee.amount * 100;
+    if (cleanersNeeded) totalCents += bookingState.cleaningFee.amount * 100;
   } catch (e) { /* fall through with 0 */ }
 
   const lines = [
-    "[WhiteWall] " + reasons.join(" + ") + " booking",
-    fullName + " — " + locName,
-    fmtShortDateTime(bookingState.datetime) + " (" + session.label + ")",
-    "Total: $" + (totalCents / 100).toFixed(2),
-    "Acuity #" + appointmentId
+    "[WhiteWall] New booking",
+    "Client Name: " + fullName,
+    "Session Type: " + sessionTypeLabel(bookingState),
+    "Client Phone: " + fmtPhone(contact.phone),
+    "Location: " + locName,
+    "When: " + fmtShortDateTime(bookingState.datetime) + " (" + session.label + ")"
   ];
-  if (bookingState.eventDescription) lines.push("\"" + bookingState.eventDescription + "\"");
+  if (participants) lines.push("People: " + participants);
+  if (bookingState.eventDescription) lines.push("Use: " + bookingState.eventDescription);
+  lines.push("Total: " + fmtUsd(totalCents));
+  lines.push("Cleaners emailed: " + (cleanersNeeded ? "Yes" : "No"));
+  lines.push("Acuity #" + appointmentId);
   return lines.join("\n");
 }
 
@@ -90,30 +120,6 @@ function buildSmsText(bookingState, appointmentId) {
 // Drew unconditionally — there is no threshold gate, because a comped booking is
 // always notable. Built from the booking state. Best-effort (never throws).
 //
-//   "Yo, WhiteWall just had a 100% off code used. Client name <name>, <photo or
-//    event> booking, <duration> shoot starting <time> on <date>. Add-ons: <list
-//    or 'none'>."
-function fmtCompDateTime(iso) {
-  if (!iso) return "(unknown time) on (unknown date)";
-  try {
-    const d = new Date(iso);
-    const time = d.toLocaleTimeString("en-US", {
-      timeZone: "America/New_York", hour: "numeric", minute: "2-digit"
-    });
-    const date = d.toLocaleDateString("en-US", {
-      timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric"
-    });
-    return time + " on " + date;
-  } catch (e) { return iso; }
-}
-
-function fmtDurationLabel(durationMin) {
-  const m = Number(durationMin) || 0;
-  if (m <= 0) return "session";
-  if (m % 60 === 0) return (m / 60) + "hr";
-  return m + "min";
-}
-
 // Compact, human add-on list for the comp alert. Mirrors the labels in
 // acuity.buildAppointmentNotes but kept short for a text message.
 function compAddonSummary(addons) {
@@ -136,18 +142,33 @@ function compAddonSummary(addons) {
   return parts.length ? parts.join(", ") : "none";
 }
 
-function buildCompSmsText(bookingState) {
+// Section 2 — 100%-off (comp) alert. Reformatted 2026-07-30 (DREW-30) onto the same
+// labeled skeleton as Section 1, keeping the "100% off code used" header so a comp
+// still jumps out, plus the Add-ons line, "Total: $0.00 (100% off)", the Acuity #,
+// and the truthful Cleaners-emailed line.
+function buildCompSmsText(bookingState, appointmentId) {
   const contact = bookingState.contact || {};
   const fullName = ((contact.firstName || "") + " " + (contact.lastName || "")).trim() || "(no name)";
-  const kind = bookingState.eventIntent === "yes" ? "event" : "photo";
-  const durationMin = TYPE_TO_DURATION[String(bookingState.appointmentTypeID)] || 0;
-  const duration = fmtDurationLabel(durationMin);
-  const when = fmtCompDateTime(bookingState.datetime);
-  const addons = compAddonSummary(bookingState.addons);
+  const session = SESSION_PRICES[String(bookingState.appointmentTypeID)] || { label: "Session" };
+  const participants = Number(bookingState.participants) || Number((bookingState.intake || {}).participants) || 0;
+  const locName = bookingState.location === "powdersville" ? "Flagship" : "TM";
+  const cleanersNeeded = !!(bookingState.cleaningFee && bookingState.cleaningFee.amount > 0);
 
-  return "Yo, WhiteWall just had a 100% off code used. Client name " + fullName
-    + ", " + kind + " booking, " + duration + " shoot starting " + when
-    + ". Add-ons: " + addons + ".";
+  const lines = [
+    "[WhiteWall] 100% off code used",
+    "Client Name: " + fullName,
+    "Session Type: " + sessionTypeLabel(bookingState),
+    "Client Phone: " + fmtPhone(contact.phone),
+    "Location: " + locName,
+    "When: " + fmtShortDateTime(bookingState.datetime) + " (" + session.label + ")"
+  ];
+  if (participants) lines.push("People: " + participants);
+  if (bookingState.eventDescription) lines.push("Use: " + bookingState.eventDescription);
+  lines.push("Add-ons: " + compAddonSummary(bookingState.addons));
+  lines.push("Total: $0.00 (100% off)");
+  lines.push("Cleaners emailed: " + (cleanersNeeded ? "Yes" : "No"));
+  lines.push("Acuity #" + appointmentId);
+  return lines.join("\n");
 }
 
 // sendOwnerSMS(body, appointmentId) — the raw Watson/Blue Bubbles transport,
@@ -221,7 +242,7 @@ async function notifyOwnerSMS(bookingState, appointmentId) {
 // Comp alert — fired ONLY for a successful 100%-off (comp) booking. No threshold
 // gate. Best-effort: must never block or fail the booking.
 async function notifyOwnerCompSMS(bookingState, appointmentId) {
-  const body = buildCompSmsText(bookingState);
+  const body = buildCompSmsText(bookingState, appointmentId);
   return sendOwnerSMS(body, appointmentId);
 }
 
@@ -231,5 +252,8 @@ module.exports = {
   shouldNotifyOwnerSMS,
   buildSmsText,
   buildCompSmsText,
-  sendOwnerSMS
+  sendOwnerSMS,
+  fmtPhone,
+  fmtUsd,
+  sessionTypeLabel
 };

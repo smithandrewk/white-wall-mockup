@@ -1936,6 +1936,8 @@ async function handleCartComp(req, res, ctx) {
     eventDescription: firstSrc.eventDescription || "",
     foodDrinks: firstSrc.foodDrinks,
     waiverSigned: true
+    // No cleaningFee here: the comp-cart path computes no cleaning fee and sends
+    // no cleaner email, so the SMS "Cleaners emailed" line correctly reads "No".
   };
   var firstApptId = (createdAppointments[0] && createdAppointments[0].id) || "";
   try { await notifyOwner(alertState, firstApptId); } catch (e) { console.error("notifyOwner:", e.message); }
