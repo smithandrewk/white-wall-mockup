@@ -1,0 +1,76 @@
+# Drew — participant-capture bug + mandatory session-purpose field + purpose/lead-source analytics
+
+Thread: `19fb2c5108d1cb55` ("Re: Whitewall x Watson build"), account `andrew@entrpy.co`.
+
+---
+
+## Message 1 (verbatim)
+
+- Source: Gmail
+- From: WhiteWall Studios <contact@whitewallstudios.co> (Drew)
+- Date: Thu, 30 Jul 2026 16:21:15 -0400
+- msgid: `19fb4b06b59108aa`
+
+> Got them! Absolutely flawless. Great work.
+>
+> Also, check the website. We got a booking today that apparently dint put in the total number of participants. I think it was a photo session. Evan Silver. He booked today. Canyon look into it? We always need to know how many people are going to be there for any session. Honestly, I would also REALLY liek to have mandatory field in all session types (photo/video, event, multiday event) that force them to tell us what exactly theyre using the spade for.
+>
+> For photo video path: let's make it a mandatory field. But lets make it have options they can select from, and then there is an Other, where they can select that, nd it makes them type in an answer.
+>
+> For events, we can leave it open ended where they just type it in no matter what.
+>
+> For the photo/video path, lest make the option:
+> Portraits
+> Headshots
+> Bridal
+> Boudoir
+> Engagement
+> Family
+> Branding
+> Product
+> Christmas Card
+> Other
+>
+> Then on the dashboard, I need an easy to see tab on the live tracker stats as tohwo people are answering that question, and if its other, I want to have list of all the answers people put when they type it in, and who the client was.
+> You already have the exact model I'm looking for on the dashboard underneath the stats tab. You have it titled as lead source. The only thing that lead source doesn't do well is my description of how I want it to work whenever someone does something that's in other. Right now the bottom chart you have on lead source gives all the different answers as a line item. The count, the percent answered, and the percent of all sessions. That's great. But I want other to be its own line item so we can see the percent for other as a whole and then I can click on other and then it will drop down all the individual answers people put in for other both on lead source and also on this new version and then the client name itself. It would also be cool if on all those others I can click on each individual one and then go straight to that specific booking within the dashboard let's make that an option for all the line items here both in lead source and this new version we're making here for example on lead source the first one says friends slash referral then it says there's a count of 18 and about 20 27 answered i should be able to click on that line item and then it opens up all 18 of those sessions and just gives me the client's name and I can click on it and then it takes me to the specific client. It would also be cool if when I click on it and it drops down it tells me the duration of the event and the event type, then I click on it, then it takes me to all the information for that specific booking. It should be like that for every answer within the lead source and also in every answer within this new one we're making here.
+>
+> I also like the last column that you have being percent of all sessions, but it needs to be percent of all sessions after it was implemented. Adjust the lead source one to be percent of all sessions from the date that we actually added this lead source metric system. Also add that same column for this new one that we're building, and then make it from the date of today since we're adding it today. You would just put August first to keep it simple, August first 2026. You're essentially making a new version of this both on the dashboard and then also in reality on the website itself during the booking process. You are also updating the lead source one we already have on the dashboard. I want you to move lead source out of the stats tab and just make it a normal tab underneath session builder. Same thing with this one we're building here too. I'm not sure what to call it, but I'm sure you'll figure it out.
+
+---
+
+## Triage
+
+Accepts DREW-30 owner-text samples ("Got them! Absolutely flawless.") — DREW-30 already done+live, no action.
+
+New, distinct request — split by repo:
+
+**A) Incident — Evan Silver booking captured no participant count** (booking site). Photo session booked today, participant count missing. Drew: "We always need to know how many people are going to be there for any session."
+
+**B) Feature — mandatory session-purpose field, all three session types** (booking site):
+- Photo/video: mandatory SELECT with fixed options + "Other" → free-text required when Other.
+  Options: Portraits, Headshots, Bridal, Boudoir, Engagement, Family, Branding, Product, Christmas Card, Other.
+- Events (and multi-day): open-ended free text, mandatory.
+
+**C) Dashboard analytics** (wws-dashboard):
+- New top-level tab (under Session Builder) for the purpose question, modeled on the existing lead-source chart.
+- "Other" becomes its own line item (aggregate %), expandable to list each free-text answer + client name.
+- Every line item expandable → list sessions (client name, duration, session type), each click-through → that booking's full detail page.
+- New "% of all sessions since <implementation date>" column: lead-source counts from its implementation date; new purpose tab counts from Aug 1 2026.
+- Move BOTH lead-source and the new purpose tab OUT of the Stats tab → normal top-level tabs under Session Builder.
+- Applies to lead-source too (revamp), not just the new one.
+
+Path: deliberative (multi-part, cross-repo, new customer-facing mandatory field + dashboard IA). No money/legal/scale/architecture gate — booking-flow form field + read-only dashboard analytics, both inside the two WW repos, Drew's product call. Foreman ships.
+
+---
+
+## Resolution — SHIPPED + LIVE (2026-07-30)
+
+Replied to Drew twice: root cause + plan (`19fb4b959534744e`), then live confirmation (`19fb4dc5e114068d`).
+
+**Incident root cause:** `api/_lib/acuity.js` wrote the Acuity headcount field as `intake.participants || "1"`; the photo/video count field was optional + ungated, so a blank count silently became 1. Evan Silver booking `1746165452` (Powdersville Four Hours) is the reported case; every long single session in the data showed the same faked 1.
+
+**DREW-31 (booking site, PR #110 squash `ebe74f5`) — LIVE on Vercel prod.** Participant count required on every path; the fake "1" fallback removed (real value or honest blank). New required session-purpose field: photo/video dropdown (`intake-purpose`, 10 options + Other→required text) in both `book-*.html`; events/multi-day event description now always required. Uniform `Session purpose: <value>` note (Other→`Other: <text>`) on every booking. Covers all four checkout paths. Charge/pricing/availability untouched. Verify: 41/41 tests + staging money dry-run PASS all 7 (appt `1746487314`, participants=5 not 1, `Session purpose: Portraits` note, price unchanged). Prod spot-checked live.
+
+**DREW-32 (dashboard, PR #106 squash `6e80418`) — LIVE on :18794.** New Session Purpose tab + Lead Source revamp on a shared engine; Other as its own expandable line item, every row drills to its bookings (name/type/duration) → `/bookings/[id]`, "% since impl date" column (lead-source 2026-06-13, purpose 2026-08-01), both moved to top-level tabs under Session Builder. Verify: build + 177 tests + live-DB drive.
+
+Tickets DREW-31 + DREW-32 → done. Revision-status Round 69. `last-seen-drew.txt` at `19fb4b06b59108aa`. No open loops from this run.
