@@ -149,3 +149,17 @@ Path: fast-ish (dashboard display/IA change, read-only analytics). Verify = `npm
 3. **Divider lines.** Add small black divider lines separating each sidebar tab.
 
 Verify = `npm run build` + tests + live-DB drill-through drive + visual check of the animation + sidebar. No staging money dry-run (no charge/Acuity/pricing path).
+
+---
+
+## Follow-up 4 (verbatim) — dislikes the horizontal bar chart, wants alternatives (DREW-34)
+
+- Source: Gmail
+- From: WhiteWall Studios <contact@whitewallstudios.co> (Drew)
+- Date: Thu, 30 Jul 2026 18:35:28 -0400
+- msgid: `19fb52b4822d5b58`
+- (arrived mid-build, after `19fb525942928f89` and before my live-confirm `19fb52f136cbaea4`)
+
+> I don't like this chart. Are there any other ones that you think woudl work? Ive never liked these horizontal bar graphs.
+
+**Triage — DREW-34 (dashboard only, converse-first).** Refers to the `HBars` horizontal bar chart at the top of the Lead Source + Session Purpose tabs (`components/analytics/notes-analytics.client.tsx` renders `<HBars>` above the drill table). Distinct from DREW-33 (drill/sidebar) → new ticket. Dashboard display, Drew's design call, no money/legal/scale/architecture → no escalation, pre-authorized converse. He explicitly asks for my recommendation before committing, so answer with a concrete pick + options, build on his choice. **Open loop = Drew's chart pick.**
