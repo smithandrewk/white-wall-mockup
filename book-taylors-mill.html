@@ -183,8 +183,28 @@
               <p class="text-xs tracking-[0.2em] uppercase text-black/60 mb-5">Intake form</p>
               <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3" for="intake-business">Business / legal name (optional)</label>
               <input id="intake-business" class="booking-input" data-input="intake-business" placeholder="Business or legal name">
-              <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-participants">Total number of participants (optional)</label>
-              <input id="intake-participants" class="booking-input" data-input="intake-participants" placeholder="How many people total?" type="number" min="1">
+              <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-participants">Total number of participants</label>
+              <input id="intake-participants" class="booking-input" data-input="intake-participants" placeholder="How many people total?" type="number" min="1" required>
+              <div data-intake-purpose-row>
+                <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-purpose">What are you using the space for?</label>
+                <select id="intake-purpose" class="booking-input" data-input="intake-purpose">
+                  <option value="">Please select…</option>
+                  <option value="Portraits">Portraits</option>
+                  <option value="Headshots">Headshots</option>
+                  <option value="Bridal">Bridal</option>
+                  <option value="Boudoir">Boudoir</option>
+                  <option value="Engagement">Engagement</option>
+                  <option value="Family">Family</option>
+                  <option value="Branding">Branding</option>
+                  <option value="Product">Product</option>
+                  <option value="Christmas Card">Christmas Card</option>
+                  <option value="Other">Other</option>
+                </select>
+                <div data-purpose-other-wrap class="hidden mt-3">
+                  <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-2" for="intake-purpose-other">Tell us what you are using the space for</label>
+                  <input id="intake-purpose-other" class="booking-input" data-input="intake-purpose-other" placeholder="Tell us what you are shooting" minlength="3">
+                </div>
+              </div>
               <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-instagram">Instagram handle (optional)</label>
               <input id="intake-instagram" class="booking-input" data-input="intake-instagram" placeholder="@yourstudio">
               <label class="block text-xs tracking-[0.2em] uppercase text-black/60 mb-3 mt-5" for="intake-lead-source">How did you hear about us?</label>
