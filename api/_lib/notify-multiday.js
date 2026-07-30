@@ -24,7 +24,7 @@
 // Watson/Blue-Bubbles vars used by sendOwnerSMS.
 
 const { SESSION_PRICES, TYPE_TO_DURATION, SETUP_CREW_PLACEMENT_ITEMS } = require("./acuity");
-const { sendOwnerSMS } = require("./notify-sms");
+const { sendOwnerSMS, fmtPhone, fmtUsd } = require("./notify-sms");
 const { buildIcs } = require("./notify-cleaner");
 const { isStaging, stagingSinkEmail } = require("./env");
 
@@ -239,21 +239,29 @@ function buildOwnerRecapEmail(ctx) {
   return sections.join("\n");
 }
 
-// Item 2 — owner Watson SMS, fired for every multi-day event booking.
+// Item 2 — owner Watson SMS, fired for every multi-day event booking. Reformatted
+// 2026-07-30 (DREW-30) to match Sections 1 & 2: adds the Client Name / Session Type
+// (always "Multi-day event" here) / Client Phone labeled lines, and the cleaners
+// line reads Yes/No on whether the booking NEEDED the cleaners (a real cleaning
+// fee), not send success.
 function buildOwnerEventSms(ctx) {
+  const contact = ctx.contact || {};
+  const cleanersNeeded = (Number(ctx.cleaningFeeCents) || 0) > 0;
   const lines = [
     "[WhiteWall] Multi-day event booked",
-    fullName(ctx.contact) || "(no name)",
+    "Client Name: " + (fullName(contact) || "(no name)"),
+    "Session Type: Multi-day event",
+    "Client Phone: " + fmtPhone(contact.phone),
     "Dates: " + fmtDateRange(ctx.days[0].datetime, ctx.days[ctx.days.length - 1].datetime),
     "People: " + (ctx.headcount || "?"),
     "Use: " + (ctx.eventDescription || "(not specified)")
   ];
   if (ctx.paymentMode === "deposit") {
-    lines.push("Paid: " + fmtMoney(ctx.chargeCents) + " (60% deposit) · Balance " + fmtMoney(ctx.balanceDueCents));
+    lines.push("Paid: " + fmtUsd(ctx.chargeCents) + " (60% deposit) · Balance " + fmtUsd(ctx.balanceDueCents));
   } else {
-    lines.push("Total: " + fmtMoney(ctx.totalCents));
+    lines.push("Total: " + fmtUsd(ctx.totalCents));
   }
-  lines.push("Cleaners emailed ✓");
+  lines.push("Cleaners emailed: " + (cleanersNeeded ? "Yes" : "No"));
   lines.push(ctx.days.length + " appointments (Acuity #" + ctx.days[0].appointmentId + " …)");
   return lines.join("\n");
 }
