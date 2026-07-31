@@ -136,3 +136,37 @@ Praise on DREW-36 + SIX distinct build asks. All wws-dashboard, read-only, Drew'
 - Reconciled vs Postgres: 363 repeat = 112 active + 251 inactive; **27 on the brink** (24% of active, soonest 5d); 6-mo avg ARC = 105; net gaining ~3.8/mo.
 - Verify: npm run build + 192 unit tests (+7 core) + live-DB Playwright light+dark @1440+390 (0 overflow; columns hold position across Total/Active/Inactive; pie renders; bookings filter 500→293).
 - Judgment calls flagged to Drew: added an "All" default on the Bookings Client toggle (kept the full list); "Months since" reads "Upcoming" for clients with a future session; velocity avg line is over the past 6 months (105). All offered for tuning.
+
+---
+
+## Follow-up 2 — On the Brink urgency order + Bookings pill (not toggles)
+
+- **Source:** Gmail (work mailbox `andrew@entrpy.co`)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Fri, 31 Jul 2026 00:32:45 -0400
+- **Thread:** 19fb2c5108d1cb55 ("Whitewall x Watson build")
+- **Message id:** 19fb672610ac83bd
+- **Ticket:** DREW-37 (reopened for this round)
+
+### Verbatim
+
+> Incredible. Go ahead and order the on the brink clients from most urgent to least urgent. Meaning, who is the closest to being lapsed into inactive, as in the least amount of days. And then vice versa, display it that way.
+>
+> Also, I miss spoke about the bookings tab. I don't need toggles between all, New, active  repeat  and inactive. I just need the actual pill on the individual client to read as so. You currently only have NEW and repeat. I just wanted to be more hyper focused. So it's either new, active or inactive. I don't need the toggles. Just the indicator on each individual booking.
+
+### Triage
+Two tweaks to DREW-37 deliverables (On the Brink section + Bookings client toggle). Same work → reopened DREW-37. wws-dashboard, read-only display layer, Drew's design call → pre-authorized, no escalation. Build-now (unambiguous).
+
+1. **On the Brink ordering** — sort by days-until-transition, most urgent (fewest days) first, with a toggle to reverse ("and then vice versa").
+2. **Bookings tab** — Drew mis-spoke earlier: REMOVE the All/New/Active repeat/Inactive toggle row shipped in #111. Instead the per-booking indicator pill reads New / Active / Inactive (was New / Repeat).
+
+### Replies (Follow-up 2)
+- Ack `19fb67644af11ce6` (read-back of both asks, before build).
+- Confirm live `19fb67b583e7a49f` (SHIPPED + prod-verified).
+
+### Shipped (Follow-up 2)
+- wws-dashboard **PR #112** (squash `88f30b8`), merged + mini pulled/built/kickstarted, **LIVE on :18794 + prod-verified**.
+- On the Brink (27 rows): default most-urgent-first `[5,7,7,8,10,11,14…]` (ascending); "Least urgent first" toggle flips to `[44,44,43,41…]` (descending). `RepeatClientsTable` gained a `defaultSort` prop; On the Brink section remounts via `key` on toggle.
+- Bookings: Client ToggleGroup removed (+ state/filter/unused `BookingClass`/`CLASSES`/`RepeatClass`); per-booking pill now `RepeatClassBadge` fed by `client_class` → New / Active repeat / Inactive repeat. Location + Order toggles untouched.
+- Verify: npm run build + 192 unit tests + live-DB Playwright light @1440+390 (0 overflow both pages) + prod spot-check on :18794.
+- DREW-37 → done. revision-status **Round 75**.
