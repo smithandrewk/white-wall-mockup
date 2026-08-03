@@ -270,9 +270,23 @@ body.booking-page {
   padding: 0.85rem 1.1rem;
 }
 
+.duration-pill-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
 .duration-pill-label {
   font-size: 0.95rem;
   font-weight: 500;
+}
+
+.duration-pill-subtext {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.5);
+  line-height: 1.2;
 }
 
 .duration-pill-badge {

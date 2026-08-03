@@ -2900,7 +2900,10 @@
         const priceTag = duration.price ? currency.format(duration.price) : "";
         return `
           <button type="button" class="booking-choice duration-pill ${isActive ? "is-active" : ""}" data-action="select-duration" data-duration-id="${duration.id}" aria-pressed="${isActive}">
-            <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : ''}</span>
+            <span class="duration-pill-main">
+              <span class="duration-pill-label">${duration.label}${priceTag ? ' <span style="color:rgba(0,0,0,0.6);font-weight:400">' + priceTag + '</span>' : ''}</span>
+              ${duration.subtext ? '<span class="duration-pill-subtext">' + escapeHtml(duration.subtext) + '</span>' : ""}
+            </span>
             ${eventEligible ? '<span class="duration-pill-badge">Event eligible</span>' : ""}
             ${isOneHr ? '<span class="duration-pill-badge is-muted">Not event eligible</span>' : ""}
           </button>
