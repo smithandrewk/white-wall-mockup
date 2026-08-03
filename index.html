@@ -242,8 +242,8 @@
       </div>
     </section>
 
-    <!-- Snap 2: Flagship Location -->
-    <section class="snap-section" id="flagship-snap">
+    <!-- Snap 2: Flagship Location — MUTED per Drew 2026-08-03 (DREW-48). Hidden, NOT deleted; remove style="display:none" to restore. -->
+    <section class="snap-section" id="flagship-snap" style="display:none">
       <img src="images/powdersville/whitewall-powdersville_v2-3.jpg" alt="WhiteWall Studios Flagship Location" class="absolute inset-0 w-full h-full object-cover">
       <div class="hero-overlay absolute inset-0"></div>
       <div class="relative z-10 flex flex-col items-center justify-end h-full px-8 pb-24 text-white text-center">
@@ -258,8 +258,8 @@
       </div>
     </section>
 
-    <!-- Snap 3: Taylor's Mill -->
-    <section class="snap-section" id="taylors-mill-snap">
+    <!-- Snap 3: Taylor's Mill — MUTED per Drew 2026-08-03 (DREW-48). Hidden, NOT deleted; remove style="display:none" to restore. -->
+    <section class="snap-section" id="taylors-mill-snap" style="display:none">
       <img src="images/taylors-mill/taylors-mill-hero.jpg"
            alt="Taylor's Mill Location Interior"
            class="absolute inset-0 w-full h-full object-cover">
@@ -559,7 +559,7 @@
         <div class="w-12 h-[1px] bg-pv-cool mb-6"></div>
         <h2 class="font-display text-5xl md:text-6xl font-light mb-4">Host Your Event</h2>
         <p class="text-sm tracking-wide opacity-80 max-w-lg mb-8">From bridal showers and birthday parties to workshops and pop-ups, our Flagship Location studio transforms into the perfect event space for up to 150 guests.</p>
-        <a href="/powdersville#events" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
+        <a href="/events" class="inline-block bg-white text-black px-10 py-4 text-xs tracking-[0.2em] uppercase font-medium hover:bg-wws-accent transition-all duration-300">
           Book an Event With Us
         </a>
       </div>
@@ -772,13 +772,28 @@
       var toggle = document.getElementById('menu-toggle');
       var themeColor = document.getElementById('theme-color');
       var dots = document.getElementById('snap-dots');
-      var dotEls = dots.querySelectorAll('.snap-dot');
-      var snapSections = container.querySelectorAll('.snap-section');
       var scrollIndicator = container.querySelector('.scroll-indicator');
 
-      // Number of full-screen snap sections (hero + location/event/gallery cards)
-      var snapCount = 6;
-      var gallerySnapIndex = 5; // gallery snap is light-background
+      // The dotted "snap zone" is the run of full-bleed sections from the hero through
+      // the gallery (the light one); the scrollable content section after it is not
+      // dotted. Within that run, VISIBLE sections only — muted ones (display:none, e.g.
+      // the Flagship / Taylor's Mill homepage cards hidden per DREW-48) are skipped so
+      // the dot count, snap count, and light-background gallery index all stay correct.
+      // Self-heals if a muted section is later restored.
+      var allSnap = Array.prototype.slice.call(container.querySelectorAll('.snap-section'));
+      var galleryEl = document.getElementById('gallery-snap');
+      var galleryPos = allSnap.indexOf(galleryEl);
+      var snapSections = allSnap.slice(0, galleryPos + 1).filter(
+        function (s) { return getComputedStyle(s).display !== 'none'; }
+      );
+      var snapCount = snapSections.length;
+      var gallerySnapIndex = snapSections.indexOf(galleryEl);
+
+      // Rebuild the dot indicators to match the visible sections.
+      dots.innerHTML = snapSections.map(function (_, i) {
+        return '<div class="snap-dot' + (i === 0 ? ' active' : '') + '" data-index="' + i + '"></div>';
+      }).join('');
+      var dotEls = dots.querySelectorAll('.snap-dot');
       var lastNavState = null;
 
       function updateNav(state) {
