@@ -36,7 +36,7 @@
     { href: "/floor-plans", label: "Floor Plans" },
     { href: "/sunlight-simulator", label: "Sunlight Simulator" },
     { href: "/faq", label: "FAQ" },
-    { href: "/powdersville#events", label: "Events" },
+    { href: "/events", label: "Events" },
     { href: "/#contact", label: "Contact" },
     { href: "/account", label: "Login/Create Account", account: true }
   ];
