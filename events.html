@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18314188875"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'AW-18314188875');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events at WhiteWall Studios — Event Space in Greenville, SC</title>
+  <meta name="description" content="Host your event at WhiteWall Studios' flagship space in Greenville, SC. A flexible, open-concept venue for bridal and baby showers, birthdays, workshops, and small weddings. Watch the tour, see the gallery and floor plans, and get quick answers before you book.">
+  <link rel="canonical" href="https://whitewallstudios.co/events">
+  <meta property="og:title" content="Events at WhiteWall Studios — Event Space in Greenville, SC">
+  <meta property="og:description" content="A flexible, open-concept event space for showers, birthdays, workshops, and small weddings. Watch the tour, see the gallery and floor plans, and get quick answers before you book.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://whitewallstudios.co/events">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/booking.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { "wws-black": "#000000", "wws-dark": "#383838", "wws-light": "#F4F4F2", "wws-gray": "#E0E0E0", "wws-accent": "#FCD518", "pv-cool": "#4A90D9" },
+        fontFamily: { display: ['"Cormorant Garamond"', "serif"], body: ["Inter", "sans-serif"] }
+      } }
+    }
+  </script>
+  <style>
+    .book-pill { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--wws-text, #000); color: #fff; border-radius: 999px; padding: 0.9rem 2rem; font-size: 0.95rem; letter-spacing: 0.02em; text-decoration: none; transition: opacity .15s; }
+    .book-pill:hover { opacity: 0.85; }
+
+    /* Video */
+    .video-frame { position: relative; aspect-ratio: 16 / 9; border-radius: 1.25rem; overflow: hidden; background: #0a0a0a; cursor: pointer; }
+    .video-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .video-frame .play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.22); transition: background .2s; }
+    .video-frame:hover .play { background: rgba(0,0,0,0.32); }
+    .video-frame .play span { width: 74px; height: 74px; border-radius: 999px; background: rgba(255,255,255,0.94); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
+    .video-frame .play svg { width: 30px; height: 30px; color: #111; margin-left: 4px; }
+
+    /* Big destination cards */
+    .dest-card { display: block; text-decoration: none; color: inherit; border-radius: 1.5rem; overflow: hidden; position: relative; min-height: 320px; background: #111; transition: transform .18s ease, box-shadow .18s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .dest-card:hover { transform: translateY(-3px); box-shadow: 0 18px 44px rgba(0,0,0,0.22); }
+    .dest-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .dest-card .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.32) 42%, rgba(0,0,0,0.82) 100%); }
+    .dest-card .inner { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem 2rem 1.9rem; color: #fff; min-height: 320px; }
+    .dest-card .eyebrow { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.72); }
+    .dest-card h3 { font-family: '"Cormorant Garamond"', serif; font-size: 2.35rem; line-height: 1.05; margin-top: 0.4rem; }
+    .dest-card p { color: rgba(255,255,255,0.82); margin-top: 0.6rem; font-size: 0.95rem; line-height: 1.6; max-width: 30rem; }
+    .dest-card .go { margin-top: 1.1rem; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #fff; }
+    .dest-card .go svg { width: 16px; height: 16px; }
+
+    /* Q&A accordion */
+    .qa-group + .qa-group { margin-top: 2.75rem; }
+    .qa-group-title { font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(0,0,0,0.4); margin-bottom: 1rem; }
+    details.qa { border: 1px solid var(--wws-border, rgba(0,0,0,0.1)); border-radius: 1rem; background: #fff; margin-bottom: 0.75rem; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+    details.qa[open] { border-color: rgba(0,0,0,0.18); box-shadow: 0 6px 22px rgba(0,0,0,0.06); }
+    details.qa summary { list-style: none; cursor: pointer; padding: 1.1rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 1.06rem; font-weight: 500; color: #1a1a1a; }
+    details.qa summary::-webkit-details-marker { display: none; }
+    details.qa summary:hover { color: #000; }
+    details.qa .sign { flex: 0 0 auto; width: 26px; height: 26px; position: relative; }
+    details.qa .sign::before, details.qa .sign::after { content: ""; position: absolute; background: #111; border-radius: 2px; transition: transform .2s ease, opacity .2s ease; }
+    details.qa .sign::before { top: 12px; left: 4px; width: 18px; height: 2px; }
+    details.qa .sign::after { top: 4px; left: 12px; width: 2px; height: 18px; }
+    details.qa[open] .sign::after { transform: rotate(90deg); opacity: 0; }
+    details.qa .answer { padding: 0 1.4rem 1.3rem; color: rgba(0,0,0,0.72); line-height: 1.72; font-size: 0.98rem; }
+    details.qa .answer a { color: #111; text-decoration: underline; text-underline-offset: 2px; }
+    details.qa .answer .soon { display: inline-block; margin-top: 0.7rem; font-size: 12px; letter-spacing: 0.06em; color: rgba(0,0,0,0.45); border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.6rem; }
+  </style>
+  <script src="/scripts/staging-banner.js"></script>
+</head>
+<body class="booking-page min-h-screen">
+  <nav class="border-b border-black/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <img src="images/logo/wws-logo-white.png" alt="WhiteWall Studios" class="h-10" style="filter:brightness(0)">
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-black/50">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <a href="/powdersville" class="hover:text-black transition">Flagship Location</a>
+        <a href="/taylors-mill" class="hover:text-black transition">Taylor's Mill Location</a>
+        <a href="/gallery" class="hover:text-black transition">Gallery</a>
+        <a href="/floor-plans" class="hover:text-black transition">Floor Plans</a>
+        <a href="/events" class="hover:text-black transition">Events</a>
+        <a href="/faq" class="hover:text-black transition">FAQ</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-6 py-12 md:py-16">
+    <div class="max-w-5xl mx-auto">
+
+      <!-- ── Hero: eyebrow + title + video + about summary ── -->
+      <header class="text-center">
+        <p class="text-xs tracking-[0.28em] uppercase text-black/40">WhiteWall Studios · Flagship · Greenville, SC</p>
+        <h1 class="font-display text-5xl md:text-6xl leading-none mt-4">Events at WhiteWall</h1>
+        <p class="text-black/55 mt-5 max-w-2xl mx-auto">A flexible, open-concept space built to become whatever your day needs, from bridal and baby showers to birthdays, workshops, and small weddings. Take the quick tour, then scroll for the gallery, the floor plans, and clear answers to the questions people ask us most.</p>
+      </header>
+
+      <div class="mt-10 md:mt-12 video-frame" id="event-video"
+           onclick="this.innerHTML='&lt;iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' style=\'width:100%;height:100%;border:0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen&gt;&lt;/iframe&gt;'">
+        <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Tour of the WhiteWall event space">
+        <div class="play"><span><svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>
+      </div>
+
+      <!-- ── About Events at WhiteWall (summary from the flagship anchor) ── -->
+      <section class="mt-11 md:mt-14 max-w-3xl mx-auto text-center">
+        <p class="text-xs tracking-[0.24em] uppercase text-black/40">About Events at WhiteWall</p>
+        <div class="mt-4 space-y-3 text-black/70 leading-relaxed">
+          <p>Our flagship is a bright, open studio, over 2,000 square feet, that adapts to any gathering. A 12 foot garage door makes load-in simple and can open for an indoor-outdoor feel. We keep <strong>100 chairs and 10 eight-foot tables</strong> on hand.</p>
+          <p>Use the space as it is, or clear it completely into the storage building for a fully blank canvas. Whatever you are planning, it is easy to picture here, and easy to book.</p>
+        </div>
+      </section>
+
+      <!-- ── Two big destination cards, front and center ── -->
+      <section class="mt-12 md:mt-16 grid gap-6 md:grid-cols-2">
+        <a href="/gallery?location=powdersville" class="dest-card" aria-label="View the flagship gallery">
+          <img src="images/powdersville/whitewall-powdersville_v2-3.jpg" alt="Inside the WhiteWall flagship event space">
+          <div class="scrim"></div>
+          <div class="inner">
+            <span class="eyebrow">See the space</span>
+            <h3>View the Gallery</h3>
+            <p>Photos and video of the flagship location, so you can see exactly what you are walking into.</p>
+            <span class="go">Open the gallery
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <a href="/floor-plans" class="dest-card" aria-label="See the floor plans and occupancy">
+          <img src="/images/floor-plans/max-standing.png" alt="Event floor plan showing occupancy">
+          <div class="scrim"></div>
+          <div class="inner">
+            <span class="eyebrow">See how it fits</span>
+            <h3>Floor Plans &amp; Occupancy</h3>
+            <p>To-scale layouts with real numbers: up to 281 standing, about 160 for a ceremony, or a seated dinner with an open dance floor.</p>
+            <span class="go">See the floor plans
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg>
+            </span>
+          </div>
+        </a>
+      </section>
+
+      <!-- ── Interactive Q&A ── -->
+      <section class="mt-16 md:mt-20">
+        <div class="text-center max-w-2xl mx-auto">
+          <h2 class="font-display text-4xl md:text-5xl leading-none">Quick Answers</h2>
+          <p class="text-black/55 mt-4">Tap any question to open the answer. These are the ones we hear most while you are planning.</p>
+        </div>
+
+        <div class="mt-10 max-w-3xl mx-auto">
+
+          <div class="qa-group">
+            <p class="qa-group-title">The space &amp; capacity</p>
+
+            <details class="qa">
+              <summary>How many people can I fit in there?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>It depends on how you set it up. As a standing event the flagship holds up to <strong>281 guests</strong>, a ceremony seats about <strong>160</strong>, and a seated dinner runs around <strong>80 at banquet tables</strong> with room left for an open dance floor. You can see every layout, drawn to scale, on the <a href="/floor-plans">floor plans page</a>.</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Does it come with tables and chairs?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Yes. We keep <strong>100 chairs and 10 eight-foot tables</strong> on site and available for your event, no rental run required.</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>What will the space look like when we show up?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>However you want it to. The studio can be left in its everyday setup, or cleared completely into the storage building for a fully empty, blank-canvas event space. The <a href="/gallery?location=powdersville">gallery</a> shows it in real life, and the <a href="/floor-plans">floor plans</a> show the exact footprint.</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>How many bathrooms are there?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>There is a private restroom on site at the flagship (you can spot it on the <a href="/floor-plans">floor plans</a>).</p>
+                <span class="soon">Planning for a bigger group? Message us and we will walk you through the setup for your headcount.</span>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Is it soundproof?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>We will confirm the exact sound setup for your event before you book, including music and timing.</p>
+                <span class="soon">Full details coming here soon. In the meantime, <a href="/#contact">reach out</a> and we will answer directly.</span>
+              </div>
+            </details>
+          </div>
+
+          <div class="qa-group">
+            <p class="qa-group-title">Planning your event</p>
+
+            <details class="qa">
+              <summary>Can I host my kind of event there?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Almost certainly. The space regularly hosts bridal and baby showers, birthday parties, workshops and classes, corporate gatherings, launch parties, small weddings, and content shoots. If you have something else in mind, just ask, we are flexible.</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Can I have food and drink there?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Yes, food and drink are welcome, it is a big part of what the space is for. If you are bringing a caterer or planning something specific, let us know and we will make sure everything is set for your date.</p>
+                <span class="soon">We will finalize the catering and beverage details with you as we lock in your event.</span>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Can I set up the night before?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Early access depends on what is on the calendar around your date. Tell us your timeline and we will work out setup, and a night-before window when it is available, with you.</p>
+                <span class="soon">Exact setup windows are something we confirm per booking.</span>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Are there multi-day event options?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Yes. You can book the space across multiple days for a single event. Tell us your dates and we will put it together.</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>How much does it cost?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Pricing depends on your date, how many hours you need, and your guest count. The quickest way to see the exact price for your slot is to <a href="/book-powdersville">start a booking</a>, you will see live pricing before you pay anything. One thing to know up front: events with <strong>35 or more guests</strong> include a <strong>$150 cleaning fee</strong>.</p>
+              </div>
+            </details>
+          </div>
+
+          <div class="qa-group">
+            <p class="qa-group-title">Getting here &amp; booking</p>
+
+            <details class="qa">
+              <summary>How many cars fit in the parking lot?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>There is on-site parking at the flagship location.</p>
+                <span class="soon">We are adding the exact stall count here shortly. Need it now for a bigger group? <a href="/#contact">Reach out</a> and we will confirm for your event.</span>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Is there extra parking?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>For larger events we can point you to additional parking nearby.</p>
+                <span class="soon">Details coming here soon, <a href="/#contact">ask us</a> and we will share the options for your date.</span>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Can I request a tour?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Absolutely. We would love to show you around. <a href="/#contact">Contact us</a> and we will set up a time that works for you.</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>How do I book an event?<span class="sign"></span></summary>
+              <div class="answer">
+                <p>Head to the <a href="/book-powdersville">booking page</a>, choose the flagship location, pick your date and hours, and you are set. Prefer to talk it through first? <a href="/#contact">Reach out</a> and we will help you plan it.</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── Closing CTA ── -->
+      <section class="mt-16 md:mt-20 text-center">
+        <h2 class="font-display text-4xl md:text-5xl leading-none">Ready to plan your event?</h2>
+        <p class="text-black/55 mt-4 max-w-xl mx-auto">Book your date in a couple of minutes, or reach out and we will help you plan the whole thing.</p>
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a href="/book-powdersville" class="book-pill">Book your event</a>
+          <a href="/#contact" class="inline-flex items-center gap-2 px-8 py-[0.9rem] rounded-full border border-black/15 text-sm hover:border-black/40 transition" style="text-decoration:none;color:#111">Request a tour</a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="px-6 pb-10 mt-14">
+    <div class="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs tracking-[0.18em] uppercase text-black/38">
+      <span>WhiteWall Studios</span>
+      <div class="flex flex-wrap gap-4">
+        <a href="/gallery?location=powdersville" class="hover:text-black transition">Gallery</a>
+        <a href="/floor-plans" class="hover:text-black transition">Floor Plans</a>
+        <a href="/faq" class="hover:text-black transition">FAQ</a>
+        <a href="/book-powdersville" class="hover:text-black transition">Book</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/scripts/site-nav.js"></script>
+</body>
+</html>
