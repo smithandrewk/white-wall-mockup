@@ -49,7 +49,7 @@
     .dest-card { display: block; text-decoration: none; color: inherit; border-radius: 1.5rem; overflow: hidden; position: relative; min-height: 320px; background: #111; transition: transform .18s ease, box-shadow .18s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .dest-card:hover { transform: translateY(-3px); box-shadow: 0 18px 44px rgba(0,0,0,0.22); }
     .dest-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .dest-card .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.32) 42%, rgba(0,0,0,0.82) 100%); }
+    .dest-card .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.48) 42%, rgba(0,0,0,0.92) 100%); }
     .dest-card .inner { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem 2rem 1.9rem; color: #fff; min-height: 320px; }
     .dest-card .eyebrow { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.72); }
     .dest-card h3 { font-family: '"Cormorant Garamond"', serif; font-size: 2.35rem; line-height: 1.05; margin-top: 0.4rem; }
@@ -101,7 +101,7 @@
       <header class="text-center">
         <p class="text-xs tracking-[0.28em] uppercase text-black/40">WhiteWall Studios · Flagship · Greenville, SC</p>
         <h1 class="font-display text-5xl md:text-6xl leading-none mt-4">Events at WhiteWall</h1>
-        <p class="text-black/55 mt-5 max-w-2xl mx-auto">A flexible, open-concept space built to become whatever your day needs, from bridal and baby showers to birthdays, workshops, and small weddings. Take the quick tour, then scroll for the gallery, the floor plans, and clear answers to the questions people ask us most.</p>
+        <p class="text-black/60 mt-5 max-w-2xl mx-auto text-lg leading-relaxed">A flexible, self-service, open-concept space with the best natural light in the Upstate, year round. WhiteWall was built from the ground up to be the perfect venue for bridal and baby showers, birthday parties, weddings and elopements, workshops and trainings, dances, graduations, and everything in between. It is an open canvas of massive windows and clean lines, with generous on-site parking, on-site amenities, and an easy location, just twelve minutes from downtown Greenville.</p>
       </header>
 
       <div class="mt-10 md:mt-12 video-frame" id="event-video"
@@ -110,12 +110,27 @@
         <div class="play"><span><svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>
       </div>
 
-      <!-- ── About Events at WhiteWall (summary from the flagship anchor) ── -->
-      <section class="mt-11 md:mt-14 max-w-3xl mx-auto text-center">
-        <p class="text-xs tracking-[0.24em] uppercase text-black/40">About Events at WhiteWall</p>
-        <div class="mt-4 space-y-3 text-black/70 leading-relaxed">
-          <p>Our flagship is a bright, open studio, over 2,000 square feet, that adapts to any gathering. A 12 foot garage door makes load-in simple and can open for an indoor-outdoor feel. We keep <strong>100 chairs and 10 eight-foot tables</strong> on hand.</p>
-          <p>Use the space as it is, or clear it completely into the storage building for a fully blank canvas. Whatever you are planning, it is easy to picture here, and easy to book.</p>
+      <!-- ── About Events at WhiteWall (two blocks: the philosophy, then the space) ── -->
+      <section class="mt-12 md:mt-16 max-w-3xl mx-auto">
+        <p class="text-xs tracking-[0.24em] uppercase text-black/40 text-center">About Events at WhiteWall</p>
+
+        <div class="mt-6 grid gap-9 md:gap-12">
+          <div>
+            <h3 class="font-display text-2xl md:text-[1.75rem] leading-tight">Built to be affordable, without cutting a single corner</h3>
+            <div class="mt-3 space-y-3 text-black/70 leading-relaxed">
+              <p>We built WhiteWall to be an affordable, self-service event space in the Upstate of South Carolina, without ever compromising on the amenities or the look. Event venues get expensive fast, and most of that cost is labor and logistics you do not actually need. So we built the entire model around doing it yourself, online, at your own pace, with the most visually clean and aesthetic room that only ground-up construction can deliver.</p>
+              <p>Everything is a la carte. Have the space exactly as it is, or add chairs, tables, and other rentals only if you want them. Pricing is upfront and transparent from the first click. Even the cleaning fee is not required for smaller events, and when it does apply it is passed straight through to the cleaners, so we make nothing on it.</p>
+              <p>The result is a private, comfortable, genuinely beautiful room, the kind of space people rent as a photo studio by day for the very best light, now open for your event.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="font-display text-2xl md:text-[1.75rem] leading-tight">The space</h3>
+            <div class="mt-3 space-y-3 text-black/70 leading-relaxed">
+              <p>Roughly <strong>2,000 square feet</strong> of private space with massive south-facing windows, so the natural light is the best you will find, year round. A standard door plus a <strong>12 foot garage door</strong> make load-in and load-out simple.</p>
+              <p>All the party rentals live on site, so there is no coordinating chairs and tables with a third party. Parking is right out front, there is a restroom in the space, and an <strong>ADA spot sits directly by the front door</strong>. Every square inch was designed, from the ground up, for your event.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -135,7 +150,7 @@
         </a>
 
         <a href="/floor-plans" class="dest-card" aria-label="See the floor plans and occupancy">
-          <img src="/images/floor-plans/max-standing.png" alt="Event floor plan showing occupancy">
+          <img src="/images/floor-plans/event-standing.png" alt="Event floor plan with banquet tables, an open dance floor, and a DJ booth">
           <div class="scrim"></div>
           <div class="inner">
             <span class="eyebrow">See how it fits</span>
@@ -163,21 +178,21 @@
             <details class="qa">
               <summary>How many people can I fit in there?<span class="sign"></span></summary>
               <div class="answer">
-                <p>It depends on how you set it up. As a standing event the flagship holds up to <strong>281 guests</strong>, a ceremony seats about <strong>160</strong>, and a seated dinner runs around <strong>80 at banquet tables</strong> with room left for an open dance floor. You can see every layout, drawn to scale, on the <a href="/floor-plans">floor plans page</a>.</p>
+                <p>It depends on how you set it up. <strong>281 guests is the absolute maximum</strong>, with nothing in the space at all except people standing. A ceremony seats about <strong>160</strong>, and a seated dinner runs around <strong>80 at banquet tables</strong> with room left for an open dance floor. You can see every layout, drawn to scale, on the <a href="/floor-plans">floor plans page</a>.</p>
               </div>
             </details>
 
             <details class="qa">
               <summary>Does it come with tables and chairs?<span class="sign"></span></summary>
               <div class="answer">
-                <p>Yes. We keep <strong>100 chairs and 10 eight-foot tables</strong> on site and available for your event, no rental run required.</p>
+                <p>Yes. We provide party rentals as an optional add-on. We keep up to <strong>100 chairs and 10 eight-foot tables</strong> on site, available to add to your session as a rental.</p>
               </div>
             </details>
 
             <details class="qa">
               <summary>What will the space look like when we show up?<span class="sign"></span></summary>
               <div class="answer">
-                <p>However you want it to. The studio can be left in its everyday setup, or cleared completely into the storage building for a fully empty, blank-canvas event space. The <a href="/gallery?location=powdersville">gallery</a> shows it in real life, and the <a href="/floor-plans">floor plans</a> show the exact footprint.</p>
+                <p>The studio is left in its default setup after every session, so when you come in it will look exactly like you see in most of the photos. Visit the <a href="/gallery?location=powdersville">gallery</a> to see what the furniture layout looks like, and the <a href="/floor-plans">floor plans</a> to see the exact layout of the props, furniture, and tables that will be out when you walk in. Of course, you can move anything you want wherever you would like, including the storage building directly in front of the garage door, to open up the space.</p>
               </div>
             </details>
 
@@ -192,8 +207,7 @@
             <details class="qa">
               <summary>Is it soundproof?<span class="sign"></span></summary>
               <div class="answer">
-                <p>We will confirm the exact sound setup for your event before you book, including music and timing.</p>
-                <span class="soon">Full details coming here soon. In the meantime, <a href="/#contact">reach out</a> and we will answer directly.</span>
+                <p>Yes. We built this space from the ground up with extra-thick drywall and rock wool insulation on all the walls, including the interior walls. It is extremely soundproof in there, and very private.</p>
               </div>
             </details>
           </div>
@@ -209,32 +223,31 @@
             </details>
 
             <details class="qa">
-              <summary>Can I have food and drink there?<span class="sign"></span></summary>
+              <summary>Can I have food, drink, and alcohol there?<span class="sign"></span></summary>
               <div class="answer">
                 <p>Yes, food and drink are welcome, it is a big part of what the space is for. If you are bringing a caterer or planning something specific, let us know and we will make sure everything is set for your date.</p>
-                <span class="soon">We will finalize the catering and beverage details with you as we lock in your event.</span>
+                <p><strong>We do allow alcohol, but WhiteWall assumes no liability for anything that may happen. That responsibility falls on the person who books the session, not on us.</strong></p>
               </div>
             </details>
 
             <details class="qa">
               <summary>Can I set up the night before?<span class="sign"></span></summary>
               <div class="answer">
-                <p>Early access depends on what is on the calendar around your date. Tell us your timeline and we will work out setup, and a night-before window when it is available, with you.</p>
-                <span class="soon">Exact setup windows are something we confirm per booking.</span>
+                <p>Unfortunately, no. That is not to say it is impossible, but the space is used every single day, often multiple times a day, so any setup and reset needs to be accounted for within the hours you book for your session. If we build you a custom session, we can technically block off time the night before, but that comes with an additional charge, since it is very likely someone else could have booked the time we are holding.</p>
               </div>
             </details>
 
             <details class="qa">
               <summary>Are there multi-day event options?<span class="sign"></span></summary>
               <div class="answer">
-                <p>Yes. You can book the space across multiple days for a single event. Tell us your dates and we will put it together.</p>
+                <p>Yes. You can book the space across multiple days for a single event, and it is all handled online as you book, right inside the system. There is no need to send us dates or wait on anyone, you put it together yourself in the booking flow.</p>
               </div>
             </details>
 
             <details class="qa">
               <summary>How much does it cost?<span class="sign"></span></summary>
               <div class="answer">
-                <p>Pricing depends on your date, how many hours you need, and your guest count. The quickest way to see the exact price for your slot is to <a href="/book-powdersville">start a booking</a>, you will see live pricing before you pay anything. One thing to know up front: events with <strong>35 or more guests</strong> include a <strong>$150 cleaning fee</strong>.</p>
+                <p>As you go through the booking process online, the exact price is shown to you right there. It depends on how long your event runs and whether you add any of the optional add-ons, like chairs, tables, walls, a TV, or a PA system. Those are all optional, and available if you want them. <a href="/book-powdersville">Start a booking</a> to see live pricing before you pay anything. One thing to know up front: there is a <strong>mandatory $150 cleaning fee for events with 35 or more guests</strong>.</p>
               </div>
             </details>
           </div>
@@ -245,16 +258,14 @@
             <details class="qa">
               <summary>How many cars fit in the parking lot?<span class="sign"></span></summary>
               <div class="answer">
-                <p>There is on-site parking at the flagship location.</p>
-                <span class="soon">We are adding the exact stall count here shortly. Need it now for a bigger group? <a href="/#contact">Reach out</a> and we will confirm for your event.</span>
+                <p>You can comfortably fit <strong>45 cars</strong> in the lot itself. On top of that, there is overflow parking next door on both sides: a flat, mowed field directly next door, and the lot at the neighboring building. Parking will never be an issue.</p>
               </div>
             </details>
 
             <details class="qa">
               <summary>Is there extra parking?<span class="sign"></span></summary>
               <div class="answer">
-                <p>For larger events we can point you to additional parking nearby.</p>
-                <span class="soon">Details coming here soon, <a href="/#contact">ask us</a> and we will share the options for your date.</span>
+                <p>Yes, plenty. There is overflow parking directly next door in the grass field, plus the lot at the neighboring building. Parking will never be an issue.</p>
               </div>
             </details>
 
@@ -268,7 +279,7 @@
             <details class="qa">
               <summary>How do I book an event?<span class="sign"></span></summary>
               <div class="answer">
-                <p>Head to the <a href="/book-powdersville">booking page</a>, choose the flagship location, pick your date and hours, and you are set. Prefer to talk it through first? <a href="/#contact">Reach out</a> and we will help you plan it.</p>
+                <p>Head to the <a href="/book-powdersville">booking page</a>, choose the flagship location, pick your date and hours, and you are set.</p>
               </div>
             </details>
           </div>
