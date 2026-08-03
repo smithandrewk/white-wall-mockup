@@ -149,6 +149,18 @@
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(3px); }
     }
+
+    /* Big events-page CTA */
+    .events-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 16px 40px; border-radius: 9999px;
+      font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
+      background: #111; color: #fff; border: none; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      transition: all 0.25s ease;
+    }
+    .events-cta:hover { background: #333; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .events-cta svg { width: 18px; height: 18px; }
   </style>
   <script src="/scripts/staging-banner.js"></script>
   <script type="application/ld+json">
@@ -304,7 +316,7 @@
       <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 px-4 md:px-6">
         <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <h3 class="font-display text-3xl font-light text-center mb-4 shrink-0">What's Included</h3>
-          <div class="flex-1 min-h-0 overflow-hidden fade-light" id="container-features">
+          <div class="flex-initial min-h-0 overflow-hidden fade-light" id="container-features">
             <div class="content-inner" id="inner-features">
               <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div class="bg-white p-5 rounded-sm">
@@ -411,57 +423,40 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="shrink-0 flex flex-col items-center gap-2 pb-10 pt-2">
-          <button class="expand-pill on-light collapsed" data-section="features" data-more="Show More" data-less="Show Less">
-            Show More
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <a href="/book-powdersville" class="expand-pill on-light" style="text-decoration:none">Book Flagship Location <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
+          <div class="shrink-0 flex flex-col items-center gap-2 pb-10 pt-4">
+            <button class="expand-pill on-light collapsed" data-section="features" data-more="Show More" data-less="Show Less">
+              Show More
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <a href="/book-powdersville" class="expand-pill on-light" style="text-decoration:none">Book Flagship Location <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ═══ SNAP 4: Events ═══ -->
-    <section class="snap-section" id="events" data-expand-section="events">
-      <img src="images/powdersville/whitewall-powdersville-event-3.22_-2.jpeg" alt="Event space at Flagship Location" class="absolute inset-0 w-full h-full object-cover">
-      <div class="absolute inset-0 bg-black/30"></div>
+    <section class="snap-section" id="events">
+      <img src="images/powdersville/event-flagship-01.jpg" alt="Bounce houses set up for a private event at the Flagship Location" class="absolute inset-0 w-full h-full object-cover">
+      <div class="absolute inset-0 bg-black/40"></div>
       <div class="relative z-10 flex flex-col h-full pt-20 md:pt-24 px-4 md:px-6">
         <div class="max-w-3xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <div class="inline-block bg-pv-cool/20 text-pv-cool text-[10px] tracking-widest uppercase px-3 py-1.5 rounded-full mb-2 self-start shrink-0 backdrop-blur-sm">Event Space</div>
           <h2 class="font-display text-3xl md:text-5xl font-light mb-3 shrink-0 text-white">Host Your Event</h2>
-          <div class="flex-1 min-h-0 overflow-hidden bg-wws-light/75 backdrop-blur-lg rounded-2xl p-4 md:p-5 fade-light" id="container-events">
-            <div class="content-inner" id="inner-events">
-              <div class="mb-4 aspect-video overflow-hidden rounded-lg relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full rounded-lg\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
-                <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover rounded-lg">
-                <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors rounded-lg">
-                  <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                  </div>
+          <div class="shrink-0 bg-wws-light/75 backdrop-blur-lg rounded-2xl p-4 md:p-5">
+            <div class="aspect-video overflow-hidden rounded-lg relative group cursor-pointer" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/BsyruYsoA-I?autoplay=1\' class=\'w-full h-full rounded-lg\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+              <img src="https://img.youtube.com/vi/BsyruYsoA-I/maxresdefault.jpg" alt="Host Your Event — event space tour" class="w-full h-full object-cover rounded-lg">
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors rounded-lg">
+                <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </div>
               </div>
-              <div class="space-y-2 text-sm text-wws-dark leading-relaxed">
-                <p>Our Flagship Location is a flexible, open-concept space that adapts to any gathering. From birthday parties and bridal showers to workshops, fitness classes, and small weddings.</p>
-                <p>The <strong>12ft garage door</strong> makes load-in simple and can open for an indoor-outdoor feel. We have <strong>100 chairs and 10 eight-foot tables</strong> available.</p>
-              </div>
-              <div class="expand-group"><div>
-                <div class="space-y-2 text-sm text-wws-dark leading-relaxed mt-2">
-                  <p>The space can be used as-is or cleared entirely into the storage building for a completely empty event space.</p>
-                  <p>For events with <strong>35 or more guests</strong>, a mandatory <strong>$150 cleaning fee</strong> is automatically added to your booking.</p>
-                </div>
-              </div></div>
             </div>
+            <p class="text-center text-base md:text-lg text-wws-dark mt-4">Visit our events page to learn more.</p>
           </div>
-        </div>
-        <div class="shrink-0 flex flex-col items-center gap-2 pb-10 pt-2">
-          <button class="expand-pill on-dark collapsed" data-section="events" data-more="See More" data-less="See Less">
-            See More
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <a href="/book-powdersville" class="expand-pill on-dark" style="text-decoration:none; color:#111">
-            Book Your Event
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg>
-          </a>
+          <div class="shrink-0 flex flex-col items-center gap-3 pt-6 pb-10">
+            <a href="/events" class="events-cta" style="text-decoration:none">Visit Events Page <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
+            <a href="/book-powdersville" class="expand-pill on-dark" style="text-decoration:none; color:#111">Book Your Event <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
+          </div>
         </div>
       </div>
     </section>
@@ -472,17 +467,17 @@
         <div class="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <h3 class="font-display text-3xl font-light text-center mb-1 shrink-0">Inside the Location</h3>
           <p class="text-xs text-wws-dark text-center mb-3 shrink-0">2,000+ sq ft of clean, modern space with natural light</p>
-          <div class="flex-1 min-h-0 overflow-hidden fade-light" id="container-photos">
+          <div class="flex-initial min-h-0 overflow-hidden fade-light" id="container-photos">
             <div class="content-inner" id="inner-photos">
               <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-2.jpg" alt="Lounge area" class="w-full h-full object-cover" loading="lazy"></div>
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-26.jpg" alt="Full location wide shot" class="w-full h-full object-cover" loading="lazy"></div>
-                <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-32.jpg" alt="Getting-ready vanity" class="w-full h-full object-cover" loading="lazy"></div>
+                <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/event-flagship-01.jpg" alt="Bounce houses set up for a private event" class="w-full h-full object-cover" style="object-position:20% center" loading="lazy"></div>
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-8.jpg" alt="Open floor with window shadows" class="w-full h-full object-cover" loading="lazy"></div>
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-15.jpg" alt="Lounge seating area" class="w-full h-full object-cover" loading="lazy"></div>
-                <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-34.jpg" alt="Dual vanity stations" class="w-full h-full object-cover" loading="lazy"></div>
+                <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/event-flagship-06.jpg" alt="The Refine Network workshop event in the flagship space" class="w-full h-full object-cover" loading="lazy"></div>
                 <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-24.jpg" alt="Corner detail with plant" class="w-full h-full object-cover" loading="lazy"></div>
-                <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v2-11.jpg" alt="Window curtain detail" class="w-full h-full object-cover" loading="lazy"></div>
+                <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/event-flagship-07.jpg" alt="The Refine Network event at the flagship space" class="w-full h-full object-cover" loading="lazy"></div>
                 <div class="expand-group-flat">
                   <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-6.jpg" alt="Getting-ready area" class="w-full h-full object-cover" loading="lazy"></div>
                   <div class="aspect-[4/5] overflow-hidden rounded-sm"><img src="images/powdersville/whitewall-powdersville_v1-35.jpg" alt="Vanity desk close-up" class="w-full h-full object-cover" loading="lazy"></div>
@@ -492,13 +487,13 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="shrink-0 flex flex-col items-center gap-2 pb-10 pt-2">
-          <button class="expand-pill on-light collapsed" data-section="photos" data-more="See More" data-less="See Less">
-            See More
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <a href="/gallery?location=powdersville" class="expand-pill on-light" style="text-decoration:none">View Full Gallery <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
+          <div class="shrink-0 flex flex-col items-center gap-2 pb-10 pt-4">
+            <button class="expand-pill on-light collapsed" data-section="photos" data-more="See More" data-less="See Less">
+              See More
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <a href="/gallery?location=powdersville" class="expand-pill on-light" style="text-decoration:none">View Full Gallery <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg></a>
+          </div>
         </div>
       </div>
     </section>
