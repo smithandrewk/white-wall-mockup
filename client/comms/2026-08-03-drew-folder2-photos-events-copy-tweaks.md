@@ -57,3 +57,11 @@ scale / architecture → **no escalation**, fast path.
    emphasis and voice otherwise.
 4. **Drop "sits"** from the ADA line: "an ADA spot sits directly by the front door" → "an
    ADA spot directly by the front door".
+
+## Reply sent
+
+- **msgid:** `19fc93a915edfc4f` (from andrew@entrpy.co, in-reply-to `19fc93042ab1b914`)
+- Confirmed all 5 folder-2 photos are up (safe to remove from folder 2); the 4 events
+  copy tweaks are live on `/events`; flagged the one grammar fix ("comes from labor");
+  offered to trim the near-duplicate event photos.
+- **Shipped:** booking PR #115 (squash `17358a1`), LIVE + prod-verified. Round 82.
