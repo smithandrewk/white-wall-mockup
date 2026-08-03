@@ -86,3 +86,39 @@ Access: PAID window active (paid_until 1785837600, ~13.5h left), armed=ON. Verif
   `/Users/pip/code/white-wall/DREW-42-onbrink-reachout-build-plan.md`; respawning to build it fresh
   (context-hygiene). This is a **tracked open loop** (owner=Foreman, next session).
 - Reply sent: `19fc957b270fdc33`. Send approved by Andrew (standing, cycle long-confirmed; armed=ON).
+
+---
+
+## Foreman resolution — DREW-42 SHIPPED + LIVE (2026-08-03, respawned build session)
+
+Built the On the Brink "Reach Out" feature from the cold-start plan
+(`DREW-42-onbrink-reachout-build-plan.md`) after Drew's green light (msg
+`19fc920e574b1158`, "full steam ahead").
+
+**Shipped:** dashboard **PR #115** (squash `62ccf81`), merged → prod pulled
+(clean, no drift conflict) / built / kickstarted → **LIVE + prod-verified on
+:18794.**
+
+- On the Brink list (Repeat Clients tab) gained a **Reach Out** column: an
+  Email | Text editable preview → `mailto:` draft (email) or copyable box (text).
+  Draft only, nothing sends. **Phone + Email** columns added; **Repeat?, First
+  visit, Last visit** dropped in that view only.
+- Warm/personal copy (`lib/reachout/copy.ts`, 5 unit tests) with the **75%
+  `THANKYOU75`** thank-you code + Powdersville-first book link. `THANKYOU75`
+  (75% off, any location, active) minted on prod + synced to Edge Config.
+- Watson `get_metrics` `on_the_brink.clients[]` now carries phone/email + a ready
+  `reach_out` draft so "text the top person on the brink" returns copy already
+  written. Owner still sends.
+
+**Verify:** `npm run build` clean, 200 unit tests, live-DB loopback on :18992
+(columns + dialog + get_metrics payload), mobile-audit 0 overflow @390px; prod
+spot-check on :18794.
+
+**Confirmed live to Drew** — reply `19fc96a321222748` (thread
+`19fa478568fc46a2`). Offered to tune the note's tone / the 75% code. Instagram
+idea stays parked per Drew.
+
+**Separate (not built):** the calendar-control ask (block-off + Refund/Delete/
+Reschedule) on the same thread = **DREW-47, ESCALATED** to Andrew (Acuity+Square
+WRITE, breaks read-only invariant + real refunds); awaiting his architecture +
+money sign-off.
