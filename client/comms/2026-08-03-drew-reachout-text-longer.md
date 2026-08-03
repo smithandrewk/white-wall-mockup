@@ -22,3 +22,7 @@
 ## Deploy note (for the next Foreman) — transient Watson outage, root-caused + recovered
 
 During this run's two dashboard deploys, the `git stash push` of the pre-existing uncommitted WIP was **unnecessary** (the incoming PR files did not overlap the WIP files, so `git pull` fast-forwards cleanly without stashing). Worse, stashing reverted `deploy/run-wws.sh` to its committed OLD-path `poll.env` reference (`/Users/pip/code/wws-dashboard/...`, gone since the repo moved), so the `kickstart` that followed came up **without `AGENT_API_KEYS`** and Watson's `/api/agent/v1/*` surface 503'd (DB pages were fine — `DATABASE_URL` is hardcoded in the script). Fixed by re-kickstarting AFTER `git stash pop` restored the correct-path WIP. **Rule: do not stash the pre-existing WIP for a pull that doesn't touch those files; if you ever do stash, kickstart only AFTER popping.** The real fix is committing the `deploy/*` path-relocation (part of the already-open drift escalation `...prod-has-uncommitted-code-drift...`).
+
+## Crossed-message follow-up (19fc99e3f7fe31d6)
+
+Drew (17:53:25, `19fc99e3f7fe31d6`): "Pip you didn't fix the text copy like I wanted you to" (re-quoted his 17:41 ask). This crossed my fix-confirmation `19fc9a02fdf81bfe` (17:55) by ~2 min — his complaint was a reaction to my 17:45 coupons+status reply (which pre-dated the text fix), not to the fix itself. The fix IS live + prod-verified. Sent a short reassurance owning the crossed-message confusion and pointing at the fix note: reply `19fc9a3750e1f1ac`. No new work.
