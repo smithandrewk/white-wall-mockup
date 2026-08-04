@@ -16,7 +16,7 @@ function ok(label) { passed++; console.log("ok " + passed + " - " + label); }
 
 const KEYS = [
   "WATSON_SMS_URL", "WATSON_CF_ACCESS_CLIENT_ID", "WATSON_CF_ACCESS_CLIENT_SECRET",
-  "BLUEBUBBLES_PASSWORD", "OWNER_PHONE",
+  "BLUEBUBBLES_PASSWORD", "OWNER_PHONE", "MAX_PHONE",
   "FOX_SMS_URL", "FOX_CF_ACCESS_CLIENT_ID", "FOX_CF_ACCESS_CLIENT_SECRET",
   "FOX_BLUEBUBBLES_PASSWORD", "FOX_HANDLE",
 ];
@@ -87,6 +87,49 @@ function clearAll() { KEYS.forEach((k) => delete process.env[k]); }
     restore();
   }
   ok("sendOwnerSMS sends to Drew via Watson and the same body to Fox when configured (dark otherwise)");
+
+  // ---- STOPGAP (DREW-55): Fox dark + MAX_PHONE set -> Max gets a direct text;
+  //      Fox configured -> Fox wins and the direct text falls silent (no double) ----
+  clearAll();
+  process.env.WATSON_SMS_URL = "https://wws-bb.example";
+  process.env.WATSON_CF_ACCESS_CLIENT_ID = "wid";
+  process.env.WATSON_CF_ACCESS_CLIENT_SECRET = "wsecret";
+  process.env.BLUEBUBBLES_PASSWORD = "wpw";
+  process.env.OWNER_PHONE = "+18038738153";
+  process.env.MAX_PHONE = "803-682-5691";
+
+  calls.length = 0;
+  global.fetch = async (url, opts) => {
+    calls.push({ url, chatGuid: JSON.parse(opts.body).chatGuid });
+    return { ok: true, text: async () => "" };
+  };
+  try {
+    // Fox unset + MAX_PHONE set -> Drew via Watson AND Max via a DIRECT text
+    // (Watson's tunnel, normalized handle).
+    await sendOwnerSMS("hello", "S1");
+    assert.strictEqual(calls.length, 2, "Drew + Max (direct)");
+    assert.deepStrictEqual(
+      calls.map((c) => c.chatGuid),
+      ["any;-;+18038738153", "any;-;+18036825691"],
+      "Fox dark + MAX_PHONE -> Drew then Max, both via Watson"
+    );
+    assert.ok(calls[1].url.startsWith("https://wws-bb.example"), "Max direct text uses Watson's tunnel");
+
+    // Configure Fox -> Fox wins; Max gets Fox, NOT the direct text (no double-send).
+    calls.length = 0;
+    process.env.FOX_SMS_URL = "https://fox-bb.example";
+    process.env.FOX_CF_ACCESS_CLIENT_ID = "fid";
+    process.env.FOX_CF_ACCESS_CLIENT_SECRET = "fsecret";
+    process.env.FOX_BLUEBUBBLES_PASSWORD = "fpw";
+    process.env.FOX_HANDLE = "+18036825691";
+    await sendOwnerSMS("hello", "S2");
+    assert.strictEqual(calls.length, 2, "Drew + Fox only (direct text suppressed)");
+    assert.ok(calls[1].url.startsWith("https://fox-bb.example"), "Max via Fox, not the direct text");
+  } finally {
+    global.fetch = realFetch;
+    restore();
+  }
+  ok("stopgap: Fox-dark + MAX_PHONE texts Max directly; Fox config suppresses the direct text");
 
   console.log("\nAll " + passed + " notify-sms assertions passed.");
 })();

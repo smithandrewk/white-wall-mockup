@@ -21,6 +21,8 @@
 //   WATSON_CF_ACCESS_CLIENT_SECRET     Cloudflare Access service token secret
 //   BLUEBUBBLES_PASSWORD               BB Server API password
 //   OWNER_PHONE                        Drew's iMessage handle, e.g. "+18038738153"
+//   MAX_PHONE                          Max's handle for the direct-text STOPGAP
+//                                      (DREW-55); only used while Fox is unset
 
 const { TYPE_TO_DURATION, SESSION_PRICES, buildSquareLineItems } = require("./acuity");
 
@@ -255,6 +257,23 @@ async function sendViaFox(body, appointmentId) {
   await postBlueBubbles(fox.url, fox.cfId, fox.cfSecret, fox.bbPassword, fox.handle, body, tempGuid);
 }
 
+// STOPGAP (DREW-55, 2026-08-04): a DIRECT text to Max via Watson's Blue Bubbles,
+// so Max keeps getting owner alerts while Fox is being wired. Fires ONLY when the
+// Fox transport is NOT configured — the moment FOX_* is set, Fox wins and this
+// falls silent, so Max never gets double-texted and no code change is needed to
+// switch him over. Env: MAX_PHONE (e.g. "803-682-5691" or "+18036825691"); uses
+// the same Watson BB creds as the Drew send. Best-effort; never throws.
+async function sendDirectToMax(body, appointmentId) {
+  const maxPhone = normalizeHandle(process.env.MAX_PHONE);
+  if (!maxPhone) return;
+  const url = process.env.WATSON_SMS_URL;
+  const cfId = process.env.WATSON_CF_ACCESS_CLIENT_ID;
+  const cfSecret = process.env.WATSON_CF_ACCESS_CLIENT_SECRET;
+  const bbPassword = process.env.BLUEBUBBLES_PASSWORD;
+  if (!url || !cfId || !cfSecret || !bbPassword) return;
+  await postBlueBubbles(url, cfId, cfSecret, bbPassword, maxPhone, body, "wws-" + appointmentId + "-max");
+}
+
 // sendOwnerSMS(body, appointmentId) — the owner-notification transport, shared by
 // the threshold-gated owner alert and the comp alert. Env-gated + best-effort
 // (missing env logs and returns, never throws). Sends the body to Drew via
@@ -274,8 +293,14 @@ async function sendOwnerSMS(body, appointmentId) {
       { url: !!url, cfId: !!cfId, cfSecret: !!cfSecret, bbPassword: !!bbPassword, ownerPhone: !!ownerPhone });
   }
 
-  // 2) Max, THROUGH FOX (DREW-55) — dark until FOX_* is configured.
-  await sendViaFox(body, appointmentId);
+  // 2) Max — THROUGH FOX when configured; otherwise a DIRECT-text stopgap so he
+  //    still gets alerts until Fox is wired. Fox wins when FOX_* is set (the
+  //    direct text auto-disables), so Max is never double-texted.
+  if (foxConfig()) {
+    await sendViaFox(body, appointmentId);
+  } else {
+    await sendDirectToMax(body, appointmentId);
+  }
 }
 
 // Threshold-gated owner alert (long shoot / large event). Unchanged behavior:
@@ -301,6 +326,7 @@ module.exports = {
   buildCompSmsText,
   sendOwnerSMS,
   sendViaFox,
+  sendDirectToMax,
   foxConfig,
   normalizeHandle,
   fmtPhone,
