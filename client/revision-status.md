@@ -1246,3 +1246,13 @@ DASHBOARD PR #122 (squash `d66f0b4`) + BOOKING-SITE PR #118 (squash `8c8d7b0`). 
 - [x] **SOFT escalation raised (OPEN, on Andrew):** hard one-time-use at checkout would couple booking→mini. `esc-hard-one-time-use-coupon-enforcement-would-couple-booking-ch-architecture`. Shipped best-effort.
 - [x] Verify: dashboard prod :18794 (agent 401 not 503; `list_coupons` SHARON200 redeemedCount=1; Who?/Uses? render). Booking-site live regression clean. Confirmed live to Drew (`19fcd2720989372e`).
 - [ ] **Still open on DREW-52:** Part 4 = Redemptions per-coupon drill-down + Generate page + toggle rename (Active Coupons · Redemptions · Generate). Plus follow-up batch DREW-53 (boycott block-list, green evergreen styling, generator evergreen/standard picker).
+
+## Feedback Round 93 (2026-08-04) — Drew (msg 19fcd11ae08406fe): three-surface structure + green evergreen + Generate page (DREW-52 part 4 + DREW-53 items 2/3)
+
+DASHBOARD PR #123 (squash `e4a9a2e`). Tickets **DREW-52** (part 4) + **DREW-53** (new, items 2+3). Comms `client/comms/2026-08-04-drew-coupons-boycott-green-generator.md`. Paid window active, armed=ON. Dashboard-only UI → no hard gate, pre-authorized fast path. First slice of Drew's follow-up batch.
+
+- [x] **Three surfaces** (`components/sub-tabs.tsx`): Coupons sub-tabs renamed **Active Coupons · Redemptions · Generate**. Routes unchanged (`/coupons`, `/coupons/tracking`, new `/coupons/generate`) so deep links + redemption history survive.
+- [x] **Generate page** (`app/coupons/generate/page.tsx` + `components/coupon-generate.client.tsx`) — full builder replacing the cramped New Coupon dialog. Opens with an **Evergreen/Standard picker** (DREW-53 item 3); reuses `CouponForm` via a new `kind` prop (Evergreen hides + forces an open-ended window; Standard shows the date grid; dialog path backward-compatible). Active Coupons header "New coupon" now links here.
+- [x] **Green evergreen styling** (DREW-53 item 2, `components/coupons-table.tsx`): Evergreen section gets a dark-green perimeter, its rows a light-green background — desktop table + mobile cards, columns still centered.
+- [x] Verify: `npm run build` clean, **215 unit tests**. Seed server :18993 screenshotted (green Evergreen zone, Generate picker, evergreen form with dates hidden + green note). **Prod-verified on :18794** (all three routes 200, metrics 401 not 503; served HTML carries the new labels + green classes + generate link). Confirmed live to Drew (`19fcd34dfe6b0028`).
+- [ ] **Still open:** DREW-52 Part 4 Redemptions rebuild (per-coupon aggregate + drill-down); DREW-53 item 1 (boycott block-list, dashboard migration 0020 + booking-site enforcement).
