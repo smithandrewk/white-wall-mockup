@@ -1336,3 +1336,11 @@ DASHBOARD PR **#134** (merged). Ticket **DREW-60** (done). Comms `client/comms/2
 - [x] **Category titles bigger** (text-base semibold, a step below the parent) + **category subtotals darkened** (foreground, not light grey).
 - [x] **Mute variable expenses** — a toggle next to the Variable title AND in the Current/Historic/Projected statement card. When on: the Variable section dims + its subtotal strikes, and net profit / company profit / net total expenses all recompute as **income − fixed only**. Ephemeral view state, derived inline from the existing statement fixed/variable cents (no compute/DB change).
 - [x] Verify: `npm run build` + **240 tests** green; live-DB screenshots normal + muted (net profit $4,740 = income − fixed when muted); docOverflow=0. Prod-verified :18794 (/cashflow 200, metrics 401).
+
+## Feedback Round 102 (2026-08-04) — Drew (msg 19fcebc8eacdc7f1): orange mute buttons + hide empty Uncategorized (DREW-61)
+
+DASHBOARD PR **#135** (merged). Ticket **DREW-61** (done). Comms `client/comms/2026-08-04-drew-cashflow-orange-mute-hide-uncategorized.md`. Client-only, no schema/money. Confirmed live to Drew (msg `19fcebfce93d9504`).
+
+- [x] **Both mute buttons → orange background** (statement-card toggle + the toggle next to the Variable Expenses title): solid orange when active, light orange at rest, so the affordance stands out.
+- [x] **Hide the empty Uncategorized section** under Fixed/Variable — the bucket renders only when it holds a line item; the parent stays a drop target so a line dragged out still lands uncategorized and the bucket reappears.
+- [x] Verify: `npm run build` + **240 tests** green; live-DB screenshot confirms orange buttons + zero empty Uncategorized sections. Prod-verified :18794 (/cashflow 200, metrics 401).
