@@ -185,17 +185,25 @@ function normalizeHandle(raw) {
   return s;
 }
 
-// The owner-SMS recipients: Drew (OWNER_PHONE) always, plus Max (MAX_PHONE) when
-// it is set — Drew asked that Max get the EXACT same texts Watson sends him
-// (DREW-55). DARK by default: MAX_PHONE unset ⇒ Drew only, behavior unchanged.
-// De-duped so a MAX_PHONE accidentally equal to OWNER_PHONE never double-texts.
-function ownerRecipients() {
-  const list = [];
-  const owner = normalizeHandle(process.env.OWNER_PHONE);
-  if (owner) list.push(owner);
-  const max = normalizeHandle(process.env.MAX_PHONE);
-  if (max && max !== owner) list.push(max);
-  return list;
+// Fox transport config (DREW-55). Max gets the same notifications THROUGH FOX
+// (his OpenClaw agent on his own mini), NOT a direct text to his phone — Drew's
+// call. Fox runs its own Blue Bubbles behind its own Cloudflare tunnel, so this
+// is the SAME BB API as Watson's, just a separate endpoint + creds + target:
+//   FOX_SMS_URL                    Fox's BB tunnel hostname (e.g. https://fox-bb.entrpy.co)
+//   FOX_CF_ACCESS_CLIENT_ID        CF Access service-token id for Fox's tunnel
+//   FOX_CF_ACCESS_CLIENT_SECRET    CF Access service-token secret
+//   FOX_BLUEBUBBLES_PASSWORD       Fox's BB Server API password
+//   FOX_HANDLE                     the handle Fox ingests on (chatGuid target)
+// DARK by default: unless ALL five are set, nothing is sent to Fox. Returns the
+// resolved config, or null when not fully configured.
+function foxConfig() {
+  const url = process.env.FOX_SMS_URL;
+  const cfId = process.env.FOX_CF_ACCESS_CLIENT_ID;
+  const cfSecret = process.env.FOX_CF_ACCESS_CLIENT_SECRET;
+  const bbPassword = process.env.FOX_BLUEBUBBLES_PASSWORD;
+  const handle = normalizeHandle(process.env.FOX_HANDLE);
+  if (!url || !cfId || !cfSecret || !bbPassword || !handle) return null;
+  return { url, cfId, cfSecret, bbPassword, handle };
 }
 
 // POST one message to ONE handle via Blue Bubbles. Best-effort per recipient:
@@ -236,27 +244,38 @@ async function postBlueBubbles(url, cfId, cfSecret, bbPassword, phone, body, tem
   }
 }
 
-// sendOwnerSMS(body, appointmentId) — the raw Watson/Blue Bubbles transport,
-// shared by the threshold-gated owner alert and the comp alert. Env-gated and
-// best-effort: missing env logs and returns (never throws). Fans the SAME body
-// out to every owner recipient (Drew, + Max when MAX_PHONE set).
+// Deliver the SAME body to Max THROUGH FOX (DREW-55) — Fox's own Blue Bubbles
+// tunnel, when the FOX_* transport is fully configured. DARK by default (no-op
+// when unconfigured); independent + best-effort so it never affects the Drew
+// send or the booking flow.
+async function sendViaFox(body, appointmentId) {
+  const fox = foxConfig();
+  if (!fox) return;
+  const tempGuid = "wws-fox-" + appointmentId + "-" + Date.now();
+  await postBlueBubbles(fox.url, fox.cfId, fox.cfSecret, fox.bbPassword, fox.handle, body, tempGuid);
+}
+
+// sendOwnerSMS(body, appointmentId) — the owner-notification transport, shared by
+// the threshold-gated owner alert and the comp alert. Env-gated + best-effort
+// (missing env logs and returns, never throws). Sends the body to Drew via
+// Watson's Blue Bubbles, and the SAME body to Max THROUGH FOX when configured.
 async function sendOwnerSMS(body, appointmentId) {
   const url = process.env.WATSON_SMS_URL;
   const cfId = process.env.WATSON_CF_ACCESS_CLIENT_ID;
   const cfSecret = process.env.WATSON_CF_ACCESS_CLIENT_SECRET;
   const bbPassword = process.env.BLUEBUBBLES_PASSWORD;
-  const recipients = ownerRecipients();
+  const ownerPhone = normalizeHandle(process.env.OWNER_PHONE);
 
-  if (!url || !cfId || !cfSecret || !bbPassword || recipients.length === 0) {
-    console.warn("notify-sms: one or more required env vars missing, skipping",
-      { url: !!url, cfId: !!cfId, cfSecret: !!cfSecret, bbPassword: !!bbPassword, ownerPhone: recipients.length > 0 });
-    return;
+  // 1) Drew, via Watson's Blue Bubbles (the original owner transport).
+  if (url && cfId && cfSecret && bbPassword && ownerPhone) {
+    await postBlueBubbles(url, cfId, cfSecret, bbPassword, ownerPhone, body, "wws-" + appointmentId + "-owner");
+  } else {
+    console.warn("notify-sms: Watson owner-SMS env incomplete, skipping Drew send",
+      { url: !!url, cfId: !!cfId, cfSecret: !!cfSecret, bbPassword: !!bbPassword, ownerPhone: !!ownerPhone });
   }
 
-  for (let i = 0; i < recipients.length; i++) {
-    const tempGuid = "wws-" + appointmentId + "-" + Date.now() + "-" + i;
-    await postBlueBubbles(url, cfId, cfSecret, bbPassword, recipients[i], body, tempGuid);
-  }
+  // 2) Max, THROUGH FOX (DREW-55) — dark until FOX_* is configured.
+  await sendViaFox(body, appointmentId);
 }
 
 // Threshold-gated owner alert (long shoot / large event). Unchanged behavior:
@@ -281,7 +300,8 @@ module.exports = {
   buildSmsText,
   buildCompSmsText,
   sendOwnerSMS,
-  ownerRecipients,
+  sendViaFox,
+  foxConfig,
   normalizeHandle,
   fmtPhone,
   fmtUsd,
