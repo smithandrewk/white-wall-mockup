@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { code, location, appointmentTypeID } = req.body || {};
+  const { code, location, appointmentTypeID, email } = req.body || {};
 
   if (!code || !String(code).trim()) {
     return res.status(400).json({ error: "Missing promo code" });
@@ -28,7 +28,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const result = await validateCoupon(code, { location: location });
+    // `email` (the booking contact, if entered yet) lets an email-restricted code
+    // ("Who?") preview as reserved-for-a-specific-customer instead of previewing
+    // valid then getting rejected at pay time. Unbound codes ignore it.
+    const result = await validateCoupon(code, { location: location, email: email });
 
     if (!result.valid) {
       // 200 with valid:false — an invalid code is a normal outcome, not an

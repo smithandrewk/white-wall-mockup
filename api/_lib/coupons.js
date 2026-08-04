@@ -134,6 +134,14 @@ function normalizeCode(code) {
   return String(code).trim().toUpperCase();
 }
 
+// Normalize an email for the "Who?" restriction compare (DREW-52 part 3): trim +
+// lowercase, matching how the dashboard stores coupon.restricted_email. "" when
+// absent/blank.
+function normalizeEmail(email) {
+  if (email == null) return "";
+  return String(email).trim().toLowerCase();
+}
+
 // Current calendar date in America/New_York as "YYYY-MM-DD".
 function etDateString(nowDate) {
   // en-CA locale yields ISO-style YYYY-MM-DD.
@@ -182,8 +190,8 @@ function withinValidity(coupon, now) {
 
 // validateCouponAgainst(code, coupons, opts) — PURE matching/validity logic.
 //   code:     customer-typed code
-//   coupons:  [{ code, percentOff, location, validFrom, validUntil }]
-//   opts:     { location, nowISO }
+//   coupons:  [{ code, percentOff, location, validFrom, validUntil, restrictedEmail?, maxUses? }]
+//   opts:     { location, nowISO, email }  // email = the booking contact, for "Who?"
 //
 // This is the original validateCoupon body, refactored to take the coupon
 // array as a parameter so the source (env var vs. Edge Config) is decoupled
@@ -263,6 +271,20 @@ function validateCouponAgainst(code, coupons, opts) {
   // Validity window (America/New_York) — applies to comp and non-comp alike.
   if (!withinValidity(match, now)) {
     return { valid: false, reason: "That promo code has expired or isn’t active yet." };
+  }
+
+  // Email restriction ("Who?", DREW-52 part 3). A code bound to one customer
+  // (restrictedEmail set) is honored ONLY when the booking email matches
+  // (normalized). This is the AIRTIGHT, stateless half — the booking site already
+  // knows the booking email, so it rejects a mismatched code at the instant of
+  // checkout with no coupling to the mini. An UNBOUND code (no restrictedEmail) is
+  // completely unaffected, so every existing company-wide code behaves exactly as
+  // before. Applies to comp / flat-dollar / percent alike.
+  var boundEmail = normalizeEmail(match.restrictedEmail);
+  if (boundEmail) {
+    if (normalizeEmail(opts.email) !== boundEmail) {
+      return { valid: false, reason: "That promo code is reserved for a specific customer." };
+    }
   }
 
   if (isComp) {
