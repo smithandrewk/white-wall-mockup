@@ -1327,3 +1327,12 @@ DASHBOARD PR **#133** (merged). Ticket **DREW-59** (done). Comms `client/comms/2
 ### Still open (on Andrew, not blocking — filed + emailed per never-block policy)
 - **DREW-55 Max alerts** — direct-text stopgap shipped (booking #122, dash #132, `MAX_PHONE` set) but Watson's iMessage can't initiate a new chat with Max (Private API off). Emailed Andrew (msg `19fce746a008f643`); pick = Fox creds / seed the chat / enable Watson Private API. Keep-warmed to Drew.
 - **DREW-57** week-vs-normal-week Overview chart (queued). **DREW-47** calendar write-back (escalated, first upstream write + refunds).
+
+## Feedback Round 101 (2026-08-04) — Drew (msg 19fceb3860159a0b): bigger Cash Flow titles/subtotals + mute-variable toggle (DREW-60)
+
+DASHBOARD PR **#134** (merged). Ticket **DREW-60** (done). Comms `client/comms/2026-08-04-drew-cashflow-bigger-titles-mute-variable.md`. Client-only, no schema/money, fast path. Confirmed live to Drew (msg `19fceba343c1b360`).
+
+- [x] **"Fixed expenses" / "Variable expenses" → large bold anchor titles** (text-2xl) with large matching subtotals.
+- [x] **Category titles bigger** (text-base semibold, a step below the parent) + **category subtotals darkened** (foreground, not light grey).
+- [x] **Mute variable expenses** — a toggle next to the Variable title AND in the Current/Historic/Projected statement card. When on: the Variable section dims + its subtotal strikes, and net profit / company profit / net total expenses all recompute as **income − fixed only**. Ephemeral view state, derived inline from the existing statement fixed/variable cents (no compute/DB change).
+- [x] Verify: `npm run build` + **240 tests** green; live-DB screenshots normal + muted (net profit $4,740 = income − fixed when muted); docOverflow=0. Prod-verified :18794 (/cashflow 200, metrics 401).
