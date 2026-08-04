@@ -1256,3 +1256,13 @@ DASHBOARD PR #123 (squash `e4a9a2e`). Tickets **DREW-52** (part 4) + **DREW-53**
 - [x] **Green evergreen styling** (DREW-53 item 2, `components/coupons-table.tsx`): Evergreen section gets a dark-green perimeter, its rows a light-green background — desktop table + mobile cards, columns still centered.
 - [x] Verify: `npm run build` clean, **215 unit tests**. Seed server :18993 screenshotted (green Evergreen zone, Generate picker, evergreen form with dates hidden + green note). **Prod-verified on :18794** (all three routes 200, metrics 401 not 503; served HTML carries the new labels + green classes + generate link). Confirmed live to Drew (`19fcd34dfe6b0028`).
 - [ ] **Still open:** DREW-52 Part 4 Redemptions rebuild (per-coupon aggregate + drill-down); DREW-53 item 1 (boycott block-list, dashboard migration 0020 + booking-site enforcement).
+
+## Feedback Round 94 (2026-08-04) — Drew (msg 19fcd11ae08406fe): Redemptions rebuild — per-coupon aggregate + drill-down (DREW-52 part 4, COMPLETES DREW-52)
+
+DASHBOARD PR #124 (squash `c00f875`). Ticket **DREW-52** (part 4 — now **done**). Comms `client/comms/2026-08-04-drew-coupons-boycott-green-generator.md`. Paid window active, armed=ON. Dashboard-only read-lens rebuild → no hard gate.
+
+- [x] **Redemptions = one aggregate row per redeemed coupon** (`components/coupon-tracking.client.tsx`): columns **Uses · Total claimed · Powdersville · Taylor's Mill · Avg session · Event / Photo** (Powdersville first). Click a coupon → **dialog** with every individual person who redeemed it (who / when / session / studio / discount).
+- [x] **Reconciles with the KPIs** — the aggregate is built from the redemption LEDGER, not `FROM coupon`, so a code whose coupon was swept still shows its history. A coupon-table aggregate silently undercounted by exactly the 4 swept codes' redemptions ($485 KPI vs $293 table); the ledger source ties the table to the KPIs (8 uses / $485.00). `lib/coupons-tracking.ts` redemption rows gained booking location-slug / duration / is_event to compute the splits.
+- [x] Verify: `npm run build` clean, **215 unit tests**. Aggregate SQL run directly on live `wws`; live-DB seed server :18993 screenshotted (7 codes incl. 4 swept with "—" discount, table totals = KPI 8 uses / $485.00, drill-down opens SHARON200 → Denise Ko's session). **Prod-verified :18794** (all 7 codes, 8 uses, $485.00, metrics 401 not 503). Confirmed live to Drew.
+- [x] **DREW-52 COMPLETE** — all four parts shipped + live + confirmed.
+- [ ] **Still open (DREW-53 item 1):** boycott block-list — per-coupon email/phone block, red, editable on existing codes + generator, enforced at checkout. Dashboard migration 0020 + booking-site PR. Next slice.
