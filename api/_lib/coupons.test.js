@@ -171,4 +171,75 @@ const NOW = "2026-06-26T12:00:00-04:00";
   ok("unbound coupon is unaffected by the email restriction");
 })();
 
+// ---- 13. "Who?" allow-list (allowedContacts) — email OR phone (DREW-53) -----
+(function () {
+  // Allow-list holds one email + one phone (both normalized). A booking matches
+  // by EITHER. Bar everyone else.
+  const coupons = [{
+    code: "VIPONLY", percentOff: 30, location: "any", validFrom: null, validUntil: null,
+    allowedContacts: ["vip@example.com", "8038738153"],
+  }];
+  // Match by email (case/space-insensitive).
+  assert.strictEqual(
+    validateCouponAgainst("VIPONLY", coupons, { location: "powdersville", nowISO: NOW, email: " VIP@Example.com " }).valid,
+    true, "allow-list matches by email"
+  );
+  // Match by phone (any formatting → digits).
+  assert.strictEqual(
+    validateCouponAgainst("VIPONLY", coupons, { location: "powdersville", nowISO: NOW, phone: "(803) 873-8153" }).valid,
+    true, "allow-list matches by phone regardless of formatting"
+  );
+  // Neither matches → reserved-for-a-specific-customer.
+  const no = validateCouponAgainst("VIPONLY", coupons, { location: "powdersville", nowISO: NOW, email: "nobody@x.com", phone: "8645550000" });
+  assert.strictEqual(no.valid, false, "allow-list rejects a non-listed booker");
+  assert.ok(/specific customer/i.test(no.reason), "reason mentions a specific customer");
+  ok("Who? allow-list honors email OR phone (DREW-53)");
+})();
+
+// ---- 14. "Boycott" block-list (blockedContacts) — the inverse (DREW-53 item 1) ----
+(function () {
+  // A live company code that boycotts one abuser by BOTH email and phone.
+  const coupons = [{
+    code: "COMP100", comp: true, location: "any", validFrom: null, validUntil: null,
+    blockedContacts: ["abuser@example.com", "18035551234"],
+  }];
+  // The blocked email → rejected (generic "isn't valid" so the abuser isn't tipped off).
+  const byEmail = validateCouponAgainst("COMP100", coupons, { location: "powdersville", nowISO: NOW, email: "Abuser@Example.com" });
+  assert.strictEqual(byEmail.valid, false, "boycott rejects the blocked email");
+  assert.ok(/isn.t valid/i.test(byEmail.reason), "boycott reason is the generic invalid message");
+  // The blocked phone (any format) → rejected.
+  assert.strictEqual(
+    validateCouponAgainst("COMP100", coupons, { location: "powdersville", nowISO: NOW, phone: "+1 (803) 555-1234" }).valid,
+    false, "boycott rejects the blocked phone regardless of formatting"
+  );
+  // An UNRELATED booker → the code still comps normally (stays live for everyone else).
+  const other = validateCouponAgainst("COMP100", coupons, { location: "powdersville", nowISO: NOW, email: "regular@customer.com", phone: "8645559999" });
+  assert.strictEqual(other.valid, true, "boycotted code still valid for everyone else");
+  assert.strictEqual(other.comp, true, "unrelated booker still gets the comp");
+  ok("Boycott block-list bars a specific person while the code stays live for others");
+})();
+
+// ---- 15. allow-list + block-list on the SAME code (block wins over allow) ----
+(function () {
+  // Allow-listed by phone but ALSO boycotted by email → still rejected (block is
+  // checked after allow, so a listed-then-barred contact can't use it).
+  const coupons = [{
+    code: "MIXED", percentOff: 20, location: "any", validFrom: null, validUntil: null,
+    allowedContacts: ["8038738153"], blockedContacts: ["dupe@example.com"],
+  }];
+  const r = validateCouponAgainst("MIXED", coupons, { location: "powdersville", nowISO: NOW, phone: "8038738153", email: "dupe@example.com" });
+  assert.strictEqual(r.valid, false, "boycott wins even when the phone is on the allow-list");
+  ok("block-list is enforced after the allow-list (block wins)");
+})();
+
+// ---- 16. a code with neither list is completely unaffected ------------------
+(function () {
+  const open = [{ code: "OPEN", percentOff: 10, location: "any", validFrom: null, validUntil: null }];
+  assert.strictEqual(validateCouponAgainst("OPEN", open, { location: "powdersville", nowISO: NOW, email: "a@b.com", phone: "8035551234" }).valid, true, "no lists → any booker valid");
+  // Empty arrays behave the same as absent.
+  const empty = [{ code: "OPEN2", percentOff: 10, location: "any", validFrom: null, validUntil: null, allowedContacts: [], blockedContacts: [] }];
+  assert.strictEqual(validateCouponAgainst("OPEN2", empty, { location: "powdersville", nowISO: NOW, email: "a@b.com" }).valid, true, "empty lists → any booker valid");
+  ok("a code with no allow/block lists is unaffected by the new logic");
+})();
+
 console.log("\nAll " + passed + " coupon assertions passed.");

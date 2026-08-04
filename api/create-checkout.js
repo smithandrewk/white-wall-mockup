@@ -143,7 +143,7 @@ module.exports = async function handler(req, res) {
   var compCoupon = null;
   if (couponCode && String(couponCode).trim()) {
     try {
-      var compCheck = await validateCoupon(couponCode, { location: location, email: contact.email });
+      var compCheck = await validateCoupon(couponCode, { location: location, email: contact.email, phone: contact.phone });
       if (compCheck && compCheck.valid && compCheck.comp === true) {
         compCoupon = compCheck;
       }
@@ -571,7 +571,7 @@ module.exports = async function handler(req, res) {
     let couponDiscountCents = 0;
     if (couponCode && String(couponCode).trim()) {
       try {
-        var couponResult = await validateCoupon(couponCode, { location: location, email: contact.email });
+        var couponResult = await validateCoupon(couponCode, { location: location, email: contact.email, phone: contact.phone });
         if (couponResult.valid) {
           // Session line item = the one carrying the catalog object id; fall
           // back to the first item, which buildSquareLineItems guarantees is
@@ -1072,7 +1072,10 @@ async function handleCartCheckout(req, res, body) {
   var compCoupon = null;
   if (couponCode && String(couponCode).trim()) {
     try {
-      var cartCompCheck = await validateCoupon(couponCode, {});
+      // Pass the contact so a boycotted / non-allow-listed customer can't take
+      // the comp (payment-free) path in the cart flow (DREW-53). Location is
+      // deliberately omitted here — a cart can span both studios.
+      var cartCompCheck = await validateCoupon(couponCode, { email: contact.email, phone: contact.phone });
       if (cartCompCheck && cartCompCheck.valid && cartCompCheck.comp === true) {
         compCoupon = cartCompCheck;
       }

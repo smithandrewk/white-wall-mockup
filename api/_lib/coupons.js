@@ -142,6 +142,38 @@ function normalizeEmail(email) {
   return String(email).trim().toLowerCase();
 }
 
+// Normalize a phone for the contact-list compare: digits only (matches how the
+// dashboard stores coupon.blocked_contacts / allowed_contacts phones). "" when
+// absent/blank.
+function normalizePhone(phone) {
+  if (phone == null) return "";
+  return String(phone).replace(/\D+/g, "");
+}
+
+// True iff the booking's email OR phone matches any entry in a coupon contact
+// list ("Who?" allowedContacts or "Boycott" blockedContacts). Each stored entry
+// is an email (contains "@") or a phone; we normalize BOTH sides the same way
+// (email lowercased, phone digits-only) so the compare is like-for-like even if a
+// hand-authored COUPONS env carried un-normalized values. Empty/absent list =>
+// no match.
+function contactListMatches(contacts, email, phone) {
+  if (!Array.isArray(contacts) || contacts.length === 0) return false;
+  var e = normalizeEmail(email);
+  var p = normalizePhone(phone);
+  for (var i = 0; i < contacts.length; i++) {
+    if (contacts[i] == null) continue;
+    var c = String(contacts[i]).trim();
+    if (!c) continue;
+    if (c.indexOf("@") !== -1) {
+      if (e && e === c.toLowerCase()) return true;
+    } else {
+      var cp = c.replace(/\D+/g, "");
+      if (cp && p && cp === p) return true;
+    }
+  }
+  return false;
+}
+
 // Current calendar date in America/New_York as "YYYY-MM-DD".
 function etDateString(nowDate) {
   // en-CA locale yields ISO-style YYYY-MM-DD.
@@ -190,8 +222,10 @@ function withinValidity(coupon, now) {
 
 // validateCouponAgainst(code, coupons, opts) — PURE matching/validity logic.
 //   code:     customer-typed code
-//   coupons:  [{ code, percentOff, location, validFrom, validUntil, restrictedEmail?, maxUses? }]
-//   opts:     { location, nowISO, email }  // email = the booking contact, for "Who?"
+//   coupons:  [{ code, percentOff, location, validFrom, validUntil, allowedContacts?, blockedContacts?, restrictedEmail?, maxUses? }]
+//   opts:     { location, nowISO, email, phone }  // email + phone = the booking
+//             contact, matched against the code's "Who?" allow-list + "Boycott"
+//             block-list (DREW-53). Unbound codes ignore them.
 //
 // This is the original validateCoupon body, refactored to take the coupon
 // array as a parameter so the source (env var vs. Edge Config) is decoupled
@@ -285,6 +319,28 @@ function validateCouponAgainst(code, coupons, opts) {
     if (normalizeEmail(opts.email) !== boundEmail) {
       return { valid: false, reason: "That promo code is reserved for a specific customer." };
     }
+  }
+
+  // "Who?" allow-list (allowedContacts, DREW-53) — email AND/OR phone, same logic
+  // as the boycott below. When present, the code is honored ONLY if the booking
+  // email OR phone matches an entry. Supersedes the single restrictedEmail above
+  // (both honored). An UNBOUND code (no allow-list) is completely unaffected.
+  // Applies to comp / flat-dollar / percent alike.
+  var allowed = match.allowedContacts;
+  if (Array.isArray(allowed) && allowed.length > 0) {
+    if (!contactListMatches(allowed, opts.email, opts.phone)) {
+      return { valid: false, reason: "That promo code is reserved for a specific customer." };
+    }
+  }
+
+  // "Boycott" block-list (blockedContacts, DREW-53 item 1) — email AND/OR phone.
+  // When the booking email OR phone matches an entry, the code is REJECTED even
+  // though it stays live for everyone else. Checked AFTER the allow-list. The
+  // reason is the generic "isn't valid" so a boycotted abuser is not tipped off
+  // that they were specifically barred. A code with no block-list hits ZERO new
+  // logic (Array.isArray guard) — every existing code behaves exactly as before.
+  if (contactListMatches(match.blockedContacts, opts.email, opts.phone)) {
+    return { valid: false, reason: "That promo code isn’t valid." };
   }
 
   if (isComp) {
