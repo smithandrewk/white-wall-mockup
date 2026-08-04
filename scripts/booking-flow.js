@@ -3738,7 +3738,10 @@
         body: JSON.stringify({
           code: raw,
           location: location.slug,
-          appointmentTypeID: appointmentTypeID
+          appointmentTypeID: appointmentTypeID,
+          // The booking email (if entered), so an email-restricted code ("Who?")
+          // previews correctly. The server re-checks it at pay time regardless.
+          email: (state.contact && state.contact.email) || ""
         })
       });
       var data = await res.json();

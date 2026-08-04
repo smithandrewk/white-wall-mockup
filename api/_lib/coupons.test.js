@@ -139,4 +139,36 @@ const NOW = "2026-06-26T12:00:00-04:00";
   ok("zero amountOff with no percentOff is rejected");
 })();
 
+// ---- 11. "Who?" — email-restricted coupon (DREW-52 part 3) -----------------
+(function () {
+  // Bound to sharon@example.com. Matching email (any case/whitespace) → valid.
+  const bound = [{ code: "SHARON200", amountOff: 20000, location: "any", validFrom: null, validUntil: null, restrictedEmail: "sharon@example.com" }];
+  assert.strictEqual(
+    validateCouponAgainst("SHARON200", bound, { location: "powdersville", nowISO: NOW, email: "  Sharon@Example.COM " }).valid,
+    true,
+    "email-bound code valid when the booking email matches (normalized)"
+  );
+  // Different email → rejected with the reserved-for reason.
+  const wrong = validateCouponAgainst("SHARON200", bound, { location: "powdersville", nowISO: NOW, email: "someone@else.com" });
+  assert.strictEqual(wrong.valid, false, "email-bound code rejected for a mismatched email");
+  assert.ok(/specific customer/i.test(wrong.reason), "mismatch reason mentions a specific customer");
+  // No email provided → rejected (can't prove the match).
+  assert.strictEqual(
+    validateCouponAgainst("SHARON200", bound, { location: "powdersville", nowISO: NOW }).valid,
+    false,
+    "email-bound code rejected when no booking email is provided"
+  );
+  ok("email-restricted coupon honors the Who? binding");
+})();
+
+// ---- 12. unbound coupon is completely unaffected by email -------------------
+(function () {
+  // No restrictedEmail → every existing company-wide code behaves as before,
+  // regardless of whether an email is passed or not.
+  const open = [{ code: "WW10", percentOff: 10, location: "any", validFrom: null, validUntil: null }];
+  assert.strictEqual(validateCouponAgainst("WW10", open, { location: "powdersville", nowISO: NOW }).valid, true, "unbound code valid with no email");
+  assert.strictEqual(validateCouponAgainst("WW10", open, { location: "powdersville", nowISO: NOW, email: "anyone@x.com" }).valid, true, "unbound code valid with any email");
+  ok("unbound coupon is unaffected by the email restriction");
+})();
+
 console.log("\nAll " + passed + " coupon assertions passed.");

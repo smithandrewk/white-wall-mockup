@@ -143,7 +143,7 @@ module.exports = async function handler(req, res) {
   var compCoupon = null;
   if (couponCode && String(couponCode).trim()) {
     try {
-      var compCheck = await validateCoupon(couponCode, { location: location });
+      var compCheck = await validateCoupon(couponCode, { location: location, email: contact.email });
       if (compCheck && compCheck.valid && compCheck.comp === true) {
         compCoupon = compCheck;
       }
@@ -571,7 +571,7 @@ module.exports = async function handler(req, res) {
     let couponDiscountCents = 0;
     if (couponCode && String(couponCode).trim()) {
       try {
-        var couponResult = await validateCoupon(couponCode, { location: location });
+        var couponResult = await validateCoupon(couponCode, { location: location, email: contact.email });
         if (couponResult.valid) {
           // Session line item = the one carrying the catalog object id; fall
           // back to the first item, which buildSquareLineItems guarantees is
