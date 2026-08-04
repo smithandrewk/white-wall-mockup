@@ -3739,9 +3739,11 @@
           code: raw,
           location: location.slug,
           appointmentTypeID: appointmentTypeID,
-          // The booking email (if entered), so an email-restricted code ("Who?")
-          // previews correctly. The server re-checks it at pay time regardless.
-          email: (state.contact && state.contact.email) || ""
+          // The booking email + phone (if entered), so a restricted code ("Who?")
+          // previews correctly and a boycotted contact previews as invalid. The
+          // server re-checks both at pay time regardless.
+          email: (state.contact && state.contact.email) || "",
+          phone: (state.contact && state.contact.phone) || ""
         })
       });
       var data = await res.json();
