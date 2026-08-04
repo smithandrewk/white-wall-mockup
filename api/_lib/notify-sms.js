@@ -171,32 +171,40 @@ function buildCompSmsText(bookingState, appointmentId) {
   return lines.join("\n");
 }
 
-// sendOwnerSMS(body, appointmentId) — the raw Watson/Blue Bubbles transport,
-// shared by the threshold-gated owner alert and the comp alert. Env-gated and
-// best-effort: missing env or a transport error logs and returns (never throws).
-async function sendOwnerSMS(body, appointmentId) {
-  const url = process.env.WATSON_SMS_URL;
-  const cfId = process.env.WATSON_CF_ACCESS_CLIENT_ID;
-  const cfSecret = process.env.WATSON_CF_ACCESS_CLIENT_SECRET;
-  const bbPassword = process.env.BLUEBUBBLES_PASSWORD;
-  const ownerPhone = process.env.OWNER_PHONE;
+// Normalize a phone/handle for Blue Bubbles. OWNER_PHONE is already E.164
+// ("+18038738153"); this makes MAX_PHONE forgiving of a "803-682-5691"-style
+// value: a leading "+" is kept as-is; a bare 10-digit US number becomes +1…; an
+// 11-digit 1-prefixed number gets a "+"; anything else is passed through trimmed.
+function normalizeHandle(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s) return "";
+  if (s[0] === "+") return s;
+  const d = s.replace(/\D/g, "");
+  if (d.length === 10) return "+1" + d;
+  if (d.length === 11 && d[0] === "1") return "+" + d;
+  return s;
+}
 
-  if (!url || !cfId || !cfSecret || !bbPassword || !ownerPhone) {
-    console.warn("notify-sms: one or more required env vars missing, skipping",
-      { url: !!url, cfId: !!cfId, cfSecret: !!cfSecret, bbPassword: !!bbPassword, ownerPhone: !!ownerPhone });
-    return;
-  }
+// The owner-SMS recipients: Drew (OWNER_PHONE) always, plus Max (MAX_PHONE) when
+// it is set — Drew asked that Max get the EXACT same texts Watson sends him
+// (DREW-55). DARK by default: MAX_PHONE unset ⇒ Drew only, behavior unchanged.
+// De-duped so a MAX_PHONE accidentally equal to OWNER_PHONE never double-texts.
+function ownerRecipients() {
+  const list = [];
+  const owner = normalizeHandle(process.env.OWNER_PHONE);
+  if (owner) list.push(owner);
+  const max = normalizeHandle(process.env.MAX_PHONE);
+  if (max && max !== owner) list.push(max);
+  return list;
+}
 
-  // Blue Bubbles API: POST /api/v1/message/text?guid=<password>
-  // chatGuid format for iMessage to a phone number: "iMessage;-;<+phone>"
-  const tempGuid = "wws-" + appointmentId + "-" + Date.now();
+// POST one message to ONE handle via Blue Bubbles. Best-effort per recipient:
+// its own 8s timeout, logs + swallows any error (never throws), so one bad
+// recipient can't block another or the booking flow.
+async function postBlueBubbles(url, cfId, cfSecret, bbPassword, phone, body, tempGuid) {
   const endpoint = url.replace(/\/$/, "") + "/api/v1/message/text?password=" + encodeURIComponent(bbPassword);
-
-  // Hard timeout — BB occasionally hangs in validateText for ~120s when its
-  // primary AppleScript falls back. Don't let that wedge the booking flow.
   const controller = new AbortController();
   const timeoutId = setTimeout(function () { controller.abort(); }, 8000);
-
   try {
     const res = await fetch(endpoint, {
       method: "POST",
@@ -208,26 +216,46 @@ async function sendOwnerSMS(body, appointmentId) {
       },
       body: JSON.stringify({
         // "any;-;" lets BB pick the right service. "iMessage;-;" forces
-        // iMessage but breaks BB's primary AppleScript path on first send
-        // and forces the slow fallback that times out validateText (~120s).
-        chatGuid: "any;-;" + ownerPhone,
+        // iMessage but breaks BB's primary AppleScript path on first send.
+        chatGuid: "any;-;" + phone,
         tempGuid: tempGuid,
         message: body,
         method: "apple-script"
       })
     });
-
     if (!res.ok) {
-      const errText = await res.text();
+      const errText = await res.text().catch(function () { return ""; });
       console.error("notify-sms: Watson/BB error", res.status, errText.slice(0, 500));
     }
   } catch (err) {
-    // Note: BB occasionally returns 500 / aborts after sending the message
-    // (validateText timeout). The message often went out anyway. Logged for
-    // observability but not surfaced to the booking flow.
-    console.error("notify-sms: failed to send", err.message);
+    // BB occasionally returns 500 / aborts after the message already went out
+    // (validateText timeout). Logged for observability, never surfaced.
+    console.error("notify-sms: failed to send to", phone, err.message);
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+// sendOwnerSMS(body, appointmentId) — the raw Watson/Blue Bubbles transport,
+// shared by the threshold-gated owner alert and the comp alert. Env-gated and
+// best-effort: missing env logs and returns (never throws). Fans the SAME body
+// out to every owner recipient (Drew, + Max when MAX_PHONE set).
+async function sendOwnerSMS(body, appointmentId) {
+  const url = process.env.WATSON_SMS_URL;
+  const cfId = process.env.WATSON_CF_ACCESS_CLIENT_ID;
+  const cfSecret = process.env.WATSON_CF_ACCESS_CLIENT_SECRET;
+  const bbPassword = process.env.BLUEBUBBLES_PASSWORD;
+  const recipients = ownerRecipients();
+
+  if (!url || !cfId || !cfSecret || !bbPassword || recipients.length === 0) {
+    console.warn("notify-sms: one or more required env vars missing, skipping",
+      { url: !!url, cfId: !!cfId, cfSecret: !!cfSecret, bbPassword: !!bbPassword, ownerPhone: recipients.length > 0 });
+    return;
+  }
+
+  for (let i = 0; i < recipients.length; i++) {
+    const tempGuid = "wws-" + appointmentId + "-" + Date.now() + "-" + i;
+    await postBlueBubbles(url, cfId, cfSecret, bbPassword, recipients[i], body, tempGuid);
   }
 }
 
@@ -253,6 +281,8 @@ module.exports = {
   buildSmsText,
   buildCompSmsText,
   sendOwnerSMS,
+  ownerRecipients,
+  normalizeHandle,
   fmtPhone,
   fmtUsd,
   sessionTypeLabel
