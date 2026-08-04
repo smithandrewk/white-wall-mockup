@@ -1216,3 +1216,23 @@ DASHBOARD PR #119 (squash `564cb5d`). Ticket **DREW-51** (new). Comms `client/co
 - [x] **Shared `deleteSessionDraft(id)`** extracted into `lib/session-builder/draft-actions.ts` (twin of `createSessionDraft`); the dashboard's own `DELETE /api/session-drafts/{id}` refactored to call it so the two can't drift. Revoke-customer-link-first is required (if it fails the draft is kept); idempotent when no link was minted.
 - [x] `delete_session` added to the agent `capabilities` catalog with steering language (get id from `list_sessions`; only removes the saved draft, never a real Acuity appointment / Square payment / customer).
 - [x] Verify: `npm run build` clean, **200 unit tests**; live-DB loopback round-trip on a non-prod port + **prod-verified on :18794** with the real agent key (401 no key; build_session → list 4 → DELETE 200 → list 3 → second DELETE 404; capabilities lists delete_session; get_metrics 200). Throwaway drafts created + deleted both times, DB left as found (3 real drafts untouched). Confirmed live to Drew (`19fc9d000114d16d`).
+
+## Feedback Round 90 (2026-08-04) — Drew (msg 19fccf4d73481f38): Coupons system redesign — honest list + sections + centering (DREW-52 part 1)
+
+DASHBOARD PR #120 (squash `8bac2ff`). Ticket **DREW-52** (new, high). Comms `client/comms/2026-08-04-drew-coupons-system-redesign.md`. Paid window active (Drew paid $30 for the day), armed=ON. Display-only (no schema, no upstream, no booking-site) → no hard gate, pre-authorized fast path. First of several PRs on the coupons brain-dump.
+
+- [x] **Root-caused the "39 total / 39 active vs 12 live / 27 expired" confusion.** The Coupons list counted the raw `active` boolean (nobody flips it off when a weekend ends → over-reports 39); Coupon Tracking checks the date window → honest 12. New pure `lib/coupons-classify.ts` (`isExpired`/`isEvergreen`/`isLive`/`couponBucket`, ET-date injected) is the single definition so the list, header, and the auto-expiry sweep can't drift. 6 unit tests.
+- [x] **Header now reads `12 live · 8 evergreen · 4 active campaign`** (live = flag on AND in date window), reconciling with Coupon Tracking's 12.
+- [x] **Two sections** (`components/coupons-table.tsx`): Evergreen (always-on standing codes) + Active campaign (live weekend/location codes only). Past-weekend codes hidden with an honest footnote; their redemptions survive in Coupon Tracking.
+- [x] **All columns centered** — fixes the Discount dead-space + right-hug Drew flagged.
+- [x] Verify: `npm run build` clean, **206 unit tests** (+6). Live-DB smoke on :18993 (12 live rows, right 12 codes, 27 hidden footnote); 0 overflow @390px; centering eyeballed on a desktop screenshot. **Prod-verified on :18794** (header `12 live · 8 evergreen · 4 active campaign`, right 12 codes, agent API 401 not 503 — Watson intact).
+
+## Feedback Round 91 (2026-08-04) — Drew (same msg): campaign-coupon auto-expiry sweep (DREW-52 part 2)
+
+DASHBOARD PR #121 (squash on main). Ticket **DREW-52** (same). Local Postgres write only (delete expired coupon rows; redemptions preserved) → Drew-authorized money/policy data op ([[drew-self-authorizes-money]]), backup dumped first → no hard gate.
+
+- [x] **`lib/coupons-sweep.ts` `sweepExpiredCampaignCoupons(now)`** — deletes campaign coupons whose `valid_until` is strictly before today (ET). Evergreen (no end date) never swept. Reads doomed rows + pre-delete redemption counts, deletes, best-effort Edge Config resync. Redemption history survives via `coupon_redemption` ON DELETE SET NULL + preserved `code`.
+- [x] **Auto going forward:** wired into `ingest/poll.ts` (hourly `wws-poll`) in a non-fatal try/catch — no new launchd job. Plus `npm run sweep-coupons` CLI.
+- [x] **First cleanup ran:** 27 dead weekend codes removed (June–Aug 2 weekends); 4 that had been redeemed (TM-SAT-JUN27-25, FS-SUN-JUL12-25, TM-SAT-AUG1-60, TM-SUN-AUG2-60) kept their redemptions in Coupon Tracking. Backup of all 27 rows at `client/comms/attachments/2026-08-04-coupons-redesign/swept-campaign-coupons-backup.sql`.
+- [x] Verify: `npm run build` clean, **206 unit tests**. CLI proven end-to-end on a throwaway expired coupon (removed 1, live 12 untouched). Prod :18794 coupons page: 12 live, no hidden footnote (27 swept), get_metrics 401.
+- [ ] **Still open on DREW-52 (later PRs):** Who?/Uses? columns + generator page + booking-site enforcement (email-restrict stateless; one-time-use best-effort, hard version needs Andrew); Redemptions per-coupon drill-down + toggle rename (Active Coupons · Redemptions · Generate).
