@@ -1356,3 +1356,13 @@ BOOKING-SITE PR **#123** (squash `7a6d80d`, merged + Vercel prod deployed). Tick
 - [x] **Live refresh** — the aside repaints on select-date (date) and select-time (full range) so the times appear the instant a slot is picked, not only on step-advance.
 - [x] **Both surfaces** — the consumer link and the internal Session Builder both run this same `booking-flow.js` (dashboard embeds it in BUILDER mode); the dashboard saved-draft card already shows `draftScheduleLabel`.
 - [x] Verify: `node --check` + `scheduleLine` unit-checked (1h/2h/8h/18h/DST/date-only/no-duration) + Playwright drive on a preview (mocked availability) AND on **live prod** with a real Acuity slot → "Wed, Aug 5, 2026 · 4:00 PM – 6:00 PM". No booking made.
+
+## Feedback Round 104 (2026-08-05) — Drew (email msg 19fd385d40021581, thread 19fd3598d771c14d): saved-session Edit button reopens the builder at the final step (DREW-64)
+
+DASHBOARD PR **#136** (merged + deployed :18794). Ticket **DREW-64** (done). Comms `client/comms/2026-08-05-drew-session-builder-edit-reopens-final-step.md`. Client-side relabel only, no schema/ingest/upstream/money. Confirmed live to Drew (thread `19fd3598d771c14d`). Access window active (Drew paid earlier today for DREW-63, through 2026-08-06 06:00).
+
+- [x] **Root cause:** each saved-session card had a **Load** button (re-hydrates the full builder flow, lands on the final step = add-ons + summary, re-save PUTs over the same draft → "Update Session") and an **Edit** button (inline rename/notes only). Drew clicked Edit expecting the reopen; the action he wanted already existed behind "Load".
+- [x] **Load → Edit** — the reopen-the-builder-at-the-final-step action Drew reaches for; `loadDraft` unchanged (`wws-builder-load` → `WWSBuilderAPI.restore` → `setStep(BUILDER_MAX_STEP)`).
+- [x] **old Edit → Rename** — the inline name + private-notes editor, honestly labeled.
+- [x] Helper text + load toast updated to match ("Edit one to reopen it in the builder at the final step…" / "Opening \"X\" in the builder to edit…").
+- [x] Verify: `npm run build` clean + **240 tests** green; live-DB seed server :18993 — card renders **Edit · Rename · Delete · Get Link** (no "Load"); clicking **Edit** reopens the builder at **STEP 3 (ADD-ONS)** with the saved session's add-ons + summary restored (`stepLabel=STEP 3, hasAddons=true, hasSummary=true`; screenshots). Prod-verified :18794 (/session-builder 200, agent metrics 401, served labels Edit/Rename/Delete/Get Link).
