@@ -1344,3 +1344,15 @@ DASHBOARD PR **#135** (merged). Ticket **DREW-61** (done). Comms `client/comms/2
 - [x] **Both mute buttons → orange background** (statement-card toggle + the toggle next to the Variable Expenses title): solid orange when active, light orange at rest, so the affordance stands out.
 - [x] **Hide the empty Uncategorized section** under Fixed/Variable — the bucket renders only when it holds a line item; the parent stays a drop target so a line dragged out still lands uncategorized and the bucket reappears.
 - [x] Verify: `npm run build` + **240 tests** green; live-DB screenshot confirms orange buttons + zero empty Uncategorized sections. Prod-verified :18794 (/cashflow 200, metrics 401).
+
+## Feedback Round 103 (2026-08-05) — Drew (iMessage + email msg 19fd3598d771c14d): Session Builder show exact date + start/end time (DREW-63)
+
+BOOKING-SITE PR **#123** (squash `7a6d80d`, merged + Vercel prod deployed). Ticket **DREW-63** (done). Comms `client/comms/2026-08-05-drew-session-builder-start-end-times.md`. Drew reached out urgent via iMessage AND email; access gate was expired → paywall fired, Drew paid ($30, `pi_3U1AXLFmjSvxMMa81N1kLgtx`) within a minute, window through 2026-08-06 06:00. Display-only, no pricing/availability/checkout/Acuity/Square path touched. Confirmed live to Drew (msg `19fd3804b8cbcfe0`, thread `19fd3598d771c14d`).
+
+- [x] **Single-session aside summary** — new **Date & time** row showing the exact date + start–end (`data-summary-datetime` on both `book-*.html`), e.g. "Wed, Aug 5, 2026 · 4:00 PM – 6:00 PM". End = start + the duration's hours.
+- [x] **Pre-pay checkout summary** (`renderOrderSummary`) — the confirmation note now shows the full date + start/end range instead of the start alone.
+- [x] **Multi-session cart line** (`describeSession`) — shows the full date + start–end range.
+- [x] **Multi-day event summary** (`renderMultidaySummary`) — adds an "Event runs `<start>` → `<end>`" span line + puts the year on each day's date.
+- [x] **Live refresh** — the aside repaints on select-date (date) and select-time (full range) so the times appear the instant a slot is picked, not only on step-advance.
+- [x] **Both surfaces** — the consumer link and the internal Session Builder both run this same `booking-flow.js` (dashboard embeds it in BUILDER mode); the dashboard saved-draft card already shows `draftScheduleLabel`.
+- [x] Verify: `node --check` + `scheduleLine` unit-checked (1h/2h/8h/18h/DST/date-only/no-duration) + Playwright drive on a preview (mocked availability) AND on **live prod** with a real Acuity slot → "Wed, Aug 5, 2026 · 4:00 PM – 6:00 PM". No booking made.
