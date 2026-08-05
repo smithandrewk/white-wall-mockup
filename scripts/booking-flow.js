@@ -454,13 +454,49 @@
     if (el && !el.hidden) setTimeout(function () { el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50);
   }
 
+  // Exact-schedule formatting (Drew 2026-08-05, DREW-63): every summary must show
+  // the exact DATE plus the START and END time, not just the start or the bare
+  // duration — internally as the operator builds AND on the locked client link.
+  // End time = start + the duration's hours (both live in booking-config).
+  function fmtDateLong(dateStr, startIso) {
+    var d = null;
+    if (startIso) { var st = new Date(startIso); if (!isNaN(st.getTime())) d = st; }
+    if (!d && dateStr) {
+      var dp = String(dateStr).split("-");
+      if (dp.length === 3) d = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]));
+    }
+    if (!d || isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  }
+  function fmtClock(iso) {
+    if (!iso) return "";
+    var t = new Date(iso);
+    if (isNaN(t.getTime())) return "";
+    return t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  }
+  // "Wed, Sep 21, 2026 · 5:00 AM – 7:00 AM"; the date alone until a start time is
+  // picked; "" when nothing is scheduled yet. durHours may be null (no end shown).
+  function scheduleLine(dateStr, startIso, durHours) {
+    var dateLabel = fmtDateLong(dateStr, startIso);
+    if (!startIso) return dateLabel;
+    var startLabel = fmtClock(startIso);
+    if (!startLabel) return dateLabel;
+    var endLabel = "";
+    if (typeof durHours === "number" && durHours > 0) {
+      var end = new Date(new Date(startIso).getTime() + durHours * 3600 * 1000);
+      endLabel = fmtClock(end.toISOString());
+    }
+    var timeLabel = startLabel + (endLabel ? " – " + endLabel : "");
+    return dateLabel ? (dateLabel + " · " + timeLabel) : timeLabel;
+  }
+
   // Human label for one cart session (committed snapshot OR the active draft).
   function describeSession(s) {
     var dur = location.durations.find(function (d) { return d.id === s.durationId; });
     var loc = locations.find(function (l) { return l.slug === s.location; }) || location;
     var when = s.selectedTime
-      ? new Date(s.selectedTime).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
-      : (s.selectedDate || "Date not selected");
+      ? scheduleLine(s.selectedDate, s.selectedTime, dur ? dur.hours : null)
+      : (s.selectedDate ? fmtDateLong(s.selectedDate, "") : "Date not selected");
     return {
       durationLabel: dur ? dur.label : "Session",
       locationName: loc.name,
@@ -565,7 +601,7 @@
       if (s.selectedDate) {
         var dp = s.selectedDate.split("-");
         dateLabel = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
-          .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+          .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
       }
       var role = s._mdRole || (i === 0 ? "first" : (i === days.length - 1 ? "last" : "middle"));
       var tl = s._mdTimeLabel || "";
@@ -601,9 +637,30 @@
     // Builder mode: the live multi-day total is what the override applies to.
     if (BUILDER) state._builderTotalCents = grand;
 
+    // Event span header (Drew 2026-08-05, DREW-63): the exact start and end of the
+    // whole event — first day's access datetime → last day's leave datetime — so a
+    // multi-day event states its start/end as plainly as a single session does.
+    var spanHtml = "";
+    if (days.length) {
+      var firstDay = days[0], lastDay = days[days.length - 1];
+      var startD = fmtDateLong(firstDay.selectedDate, firstDay.selectedTime);
+      var endD = fmtDateLong(lastDay.selectedDate, lastDay.selectedTime);
+      var startT = firstDay._mdTimeLabel || fmtClock(firstDay.selectedTime);
+      var endT = lastDay._mdTimeLabel || fmtClock(lastDay.selectedTime);
+      if (startD || endD) {
+        spanHtml =
+          '<div class="summary-line"><span>Event runs</span><span>' +
+          escapeHtml((startD || "?") + (startT ? ", " + startT : "")) +
+          ' → ' +
+          escapeHtml((endD || "?") + (endT ? ", " + endT : "")) +
+          '</span></div>';
+      }
+    }
+
     var html =
       '<div class="summary-divider my-6"></div>' +
       '<p class="text-xs tracking-[0.2em] uppercase text-black/40">Your event so far</p>' +
+      (spanHtml ? '<div class="mt-4 summary-list">' + spanHtml + '</div>' : '') +
       '<div class="mt-4 summary-list">' +
         (rows || '<div class="summary-line summary-line-muted"><span>No days added yet</span><span></span></div>') +
       '</div>';
@@ -3443,9 +3500,10 @@
       offerDriftCheck(offerAdjSingle.finalCents);
       grandTotal = offerAdjSingle.finalCents / 100;
     }
-    var timeLabel = new Date(state.selectedTime).toLocaleString("en-US", {
-      weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
-    });
+    // Exact date + start–end time (Drew 2026-08-05, DREW-63) on the final pre-pay
+    // summary, matching the aside summary and the locked client link.
+    var _durOS = getSelectedDuration();
+    var timeLabel = scheduleLine(state.selectedDate, state.selectedTime, _durOS ? _durOS.hours : null);
 
     var addonHtml = addonLines.length
       ? addonLines.map(function (item) {
@@ -4522,6 +4580,15 @@
 
     const selectedDuration = getSelectedDuration();
     durationName.textContent = selectedDuration ? selectedDuration.label : "Not selected";
+
+    // Exact date + start–end time on the single-session / single-day summary
+    // (Drew 2026-08-05, DREW-63). This block is hidden for multi-day events,
+    // which render their own dated day-by-day summary in renderMultidaySummary.
+    const dateTimeEl = document.querySelector("[data-summary-datetime]");
+    if (dateTimeEl) {
+      var schedText = scheduleLine(state.selectedDate, state.selectedTime, selectedDuration ? selectedDuration.hours : null);
+      dateTimeEl.textContent = schedText || "Pick a date and time";
+    }
 
     if (sessionPriceEl) {
       sessionPriceEl.textContent = selectedDuration && selectedDuration.price
