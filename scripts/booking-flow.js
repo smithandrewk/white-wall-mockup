@@ -2105,6 +2105,9 @@
         }
         var aptId = getAppointmentTypeID();
         if (aptId) fetchAvailableTimes(aptId, date);
+        // Show the chosen date in the aside summary immediately (the start/end
+        // fills in when they pick a time). Drew 2026-08-05, DREW-63.
+        renderSummary();
         trackEvent("date_selected", { location: location.slug, date: date });
         // Show Powdersville upsell on TM after first date selection
         if (locationSlug === "taylors-mill" && !state._pvUpsellShown) {
@@ -2118,6 +2121,9 @@
         state.selectedTime = actionTarget.dataset.time;
         trackEvent("time_selected", { location: location.slug, date: state.selectedDate, time: state.selectedTime });
         renderScheduleStep();
+        // Keep the aside summary's exact date + start/end time live the moment a
+        // slot is picked, not only on step-advance (Drew 2026-08-05, DREW-63).
+        renderSummary();
         // Auto-apply a URL-prefilled promo code exactly once, now that a slot
         // exists (applyCoupon needs selectedTime). The guard flag stops it from
         // re-firing if the customer picks another time or edits the code.
