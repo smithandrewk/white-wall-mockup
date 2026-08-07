@@ -41,6 +41,26 @@ function getHeaders() {
   };
 }
 
+// Build the Error thrown on a non-2xx Square response. The MESSAGE string is
+// kept byte-for-byte identical to the old inline throws ("Square <context>
+// <status>: <joined details>") so existing callers, logs, and parsers are
+// unaffected. What is NEW: the structured Square error is attached to the Error
+// object (squareStatus / squareErrors / squareCode / squareCategory) so a caller
+// can classify a card decline (e.g. TRANSACTION_LIMIT) RELIABLY off the code,
+// instead of regex-scanning the human-readable detail. See _lib/payment-error.js.
+function squareError(context, status, data) {
+  var errors = (data && Array.isArray(data.errors)) ? data.errors : [];
+  var msg = errors.length
+    ? errors.map(function (e) { return e.detail; }).join(", ")
+    : "Unknown error";
+  var err = new Error("Square " + context + " " + status + ": " + msg);
+  err.squareStatus = status;
+  err.squareErrors = errors;
+  err.squareCode = errors[0] && errors[0].code ? errors[0].code : null;
+  err.squareCategory = errors[0] && errors[0].category ? errors[0].category : null;
+  return err;
+}
+
 // Create a Square Payment Link with itemized line items
 // lineItems: [{ name, amount (cents), quantity }]
 // redirectUrl: where Square sends the customer after payment
@@ -242,8 +262,7 @@ async function createPayment(opts) {
   });
   const data = await res.json();
   if (!res.ok) {
-    const msg = data.errors ? data.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
-    throw new Error("Square createPayment " + res.status + ": " + msg);
+    throw squareError("createPayment", res.status, data);
   }
   return data.payment;
 }
@@ -302,8 +321,7 @@ async function chargeCardOnFile(opts) {
   });
   const data = await res.json();
   if (!res.ok) {
-    const msg = data.errors ? data.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
-    throw new Error("Square chargeCardOnFile " + res.status + ": " + msg);
+    throw squareError("chargeCardOnFile", res.status, data);
   }
   return data.payment;
 }
