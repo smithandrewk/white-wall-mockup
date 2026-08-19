@@ -1948,10 +1948,15 @@
         }
         if (!currentDurationSupportsEvents()) {
           resetEventState();
-          // Builder mode: the gate already answered photo vs event, and step 3
-          // (add-ons) keys off eventIntent — re-derive it so a 1-hour pick
-          // doesn't blank the add-on list.
-          if (BUILDER && state.bookingType) {
+          // WW-32: the step-1 gate already answered photo vs event. resetEventState
+          // blanks eventIntent, and in PUBLIC mode renderEventStep only shows the
+          // step-3 details form (contact + terms + "Continue to sign waiver") when
+          // eventIntent is truthy, while the intent question is suppressed once the
+          // gate set bookingType. So a non-event duration (e.g. the 1-hour pill,
+          // pv-1) would dead-end at step 3 with NO details form and NO waiver
+          // button. Re-derive eventIntent from the gate choice so the form renders.
+          // (Builder keys its add-on list off eventIntent for the same reason.)
+          if (state.bookingType) {
             state.eventIntent = state.bookingType === "event" ? "yes" : "no";
           }
         }
@@ -1975,7 +1980,14 @@
         if (actionTarget.disabled) return;
         const step = Number(actionTarget.dataset.step);
         const maxStep = getMaxAccessibleStep();
-        if (step > maxStep) return; // can't skip ahead past incomplete steps
+        if (step > maxStep) {
+          // WW-32: the CTA out of step 3 stays clickable (aria-disabled) so a
+          // tap on the still-gated button guides the user to what's blocking
+          // them instead of doing nothing. This is a pure side-effect — the
+          // early return below is unchanged, so no step is actually advanced.
+          if (actionTarget.hasAttribute("data-requires-terms")) scrollToFirstIncompleteField();
+          return; // can't skip ahead past incomplete steps
+        }
         setStep(step);
         return;
       }
@@ -4882,12 +4894,59 @@
     var btn = document.querySelector("[data-requires-terms]");
     if (!btn) return;
     var complete = isStepComplete(3);
-    btn.disabled = !complete;
+    // WW-32: keep the CTA clickable while step 3 is incomplete (aria-disabled,
+    // not the .disabled property) so a tap can scroll to + highlight the first
+    // blocking field instead of being a silent dead end. The hard advancement
+    // gate is unchanged — the go-step handler still refuses step > maxStep.
+    btn.setAttribute("aria-disabled", complete ? "false" : "true");
     var hint = document.querySelector("[data-gate-hint='terms']");
     if (hint) {
       hint.textContent = complete ? "" : (getValidationErrors()[0] || "Complete the highlighted fields to continue.");
     }
     updateSignatureHints();
+  }
+
+  // WW-32: pure navigation helper. Walks an ordered list mirroring the
+  // isStepComplete(3) requirements and, for the first unmet + visible field,
+  // scrolls it into view, focuses it, and flashes a highlight ring. Computes NO
+  // authority — it never advances a step; it only points the user at what's
+  // blocking them so the step-3 gate is navigable instead of a dead end.
+  function scrollToFirstIncompleteField() {
+    var expectedName = (state.contact.firstName + " " + state.contact.lastName).trim().toLowerCase();
+    var leadSourceOk = Boolean(state.intake.leadSource) && (state.intake.leadSource !== "Other" || (state.intake.leadSourceOther || "").trim().length >= 3);
+    var participantCount = state.eventIntent === "yes" ? parseCount(state.participants) : parseCount(state.intake.participants);
+    var purposeOk;
+    if (state.eventIntent === "yes") {
+      purposeOk = Boolean(state.eventDescription.trim());
+    } else {
+      purposeOk = Boolean(state.intake.purpose) && (state.intake.purpose !== "Other" || (state.intake.purposeOther || "").trim().length >= 3);
+    }
+    var fields = [
+      { ok: Boolean(state.eventIntent), selector: "[data-action='set-event-intent']" },
+      { ok: Boolean(state.contact.firstName), selector: "#contact-first-name" },
+      { ok: isValidEmail(state.contact.email), selector: "#contact-email" },
+      { ok: leadSourceOk, selector: "#intake-lead-source" },
+      { ok: Boolean(state.intake.readEmail), selector: "[data-check='read-email']" },
+      { ok: participantCount >= 1, selector: "#intake-participants" },
+      { ok: purposeOk, selector: "#intake-purpose" },
+      { ok: Boolean(expectedName) && state.emailAcknowledgment.trim().toLowerCase() === expectedName, selector: "#email-acknowledgment-sig" },
+      { ok: isTermsAccepted(), selector: "#terms-signature-sig" }
+    ];
+    for (var i = 0; i < fields.length; i++) {
+      if (fields[i].ok) continue;
+      var el = document.querySelector(fields[i].selector);
+      // Skip fields that aren't rendered/visible on the current path (e.g. the
+      // photo/video intake rows are hidden on the event path) rather than
+      // scrolling to nothing.
+      if (!el || el.offsetParent === null) continue;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      try { el.focus({ preventScroll: true }); } catch (e) {}
+      el.classList.add("field-flash");
+      (function (node) {
+        setTimeout(function () { node.classList.remove("field-flash"); }, 1600);
+      })(el);
+      break;
+    }
   }
 
   function updateSignatureHints() {

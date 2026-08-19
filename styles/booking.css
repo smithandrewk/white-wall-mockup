@@ -400,7 +400,8 @@ body.booking-page {
   color: var(--wws-text-muted);
 }
 
-.booking-button[disabled] {
+.booking-button[disabled],
+.booking-button[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.56;
   transform: none;
@@ -1063,6 +1064,17 @@ body.booking-page {
 
 .shake {
   animation: shake 0.5s ease-in-out;
+}
+
+/* WW-32: validation-error ring flashed on the first incomplete step-3 field
+   when the still-gated "Continue to sign waiver" CTA is tapped. Uses the same
+   mismatch red (#b91c1c) as .signature-hint.hint-mismatch. */
+.field-flash {
+  animation: field-flash 1.6s ease;
+}
+@keyframes field-flash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0); }
+  20%, 60% { box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.35); }
 }
 
 /* Toast notification */
