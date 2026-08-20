@@ -37,7 +37,11 @@ const SCOPES = [
   "https://www.googleapis.com/auth/adwords",
   "https://www.googleapis.com/auth/datamanager"
 ];
-const REDIRECT = process.env.GOOGLE_OAUTH_REDIRECT_URI || "http://localhost";
+// This OAuth client (entrpy-ads, google-ads-oauth-client.json) is a WEB client
+// whose only registered redirect URI is the OAuth Playground, so that's the
+// default here. Override with GOOGLE_OAUTH_REDIRECT_URI only if you register a
+// different URI on the client in the Cloud console first.
+const REDIRECT = process.env.GOOGLE_OAUTH_REDIRECT_URI || "https://developers.google.com/oauthplayground";
 
 function needEnv(k) {
   if (!process.env[k]) { console.error("Missing " + k + " — source ~/.config/entrpy/google-ads.env first."); process.exit(1); }

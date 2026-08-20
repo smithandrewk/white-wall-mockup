@@ -48,8 +48,15 @@ const SQUARE_FEE_FIXED_CENTS = 30;
 function customerId() {
   return (process.env.GOOGLE_ADS_CUSTOMER_ID || "5061656241").replace(/-/g, "");
 }
-function loginCustomerId() {
-  return (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || customerId()).replace(/-/g, "");
+function loginAccountId() {
+  // Data Manager's loginAccount = the account the calling identity uses to reach
+  // the operating account. We have DIRECT access to 5061656241 (verified: the
+  // ingest 403s when this is the MCC 5084093919, passes when it equals the
+  // operating account), so default to the operating account. NOTE: this is
+  // deliberately NOT GOOGLE_ADS_LOGIN_CUSTOMER_ID — that var is the MCC for the
+  // Ads-API `login-customer-id` header convention and is the wrong value here.
+  // Override only for genuine manager-account access via a DM-specific var.
+  return (process.env.GOOGLE_ADS_DATAMANAGER_LOGIN_ID || customerId()).replace(/-/g, "");
 }
 function conversionActionId() {
   // Numeric conversion action id — used as productDestinationId.
@@ -136,7 +143,7 @@ function bookingDestination() {
   return {
     reference: "wws-booking",
     operatingAccount: { accountType: "GOOGLE_ADS", accountId: customerId() },
-    loginAccount: { accountType: "GOOGLE_ADS", accountId: loginCustomerId() },
+    loginAccount: { accountType: "GOOGLE_ADS", accountId: loginAccountId() },
     productDestinationId: conversionActionId()
   };
 }
