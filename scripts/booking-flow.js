@@ -13,6 +13,38 @@
     return;
   }
 
+  // ---- Google Ads attribution (WWA-3, step 2) ------------------------------
+  // Read the click ids captured on landing by scripts/attribution.js and thread
+  // them into the checkout POST so create-checkout can upload the confirmed
+  // booking back to Google Ads server-side (offline click conversion). Decoupled
+  // from load order: prefer window.WWAttribution, but fall back to reading the
+  // ww_attr store directly so a booking still carries the gclid even if the
+  // attribution module hasn't defined the global yet. Returns null when there is
+  // nothing to attribute (organic / direct traffic) — the server treats a missing
+  // attribution object as "no ad click", never as an error.
+  function readAttribution() {
+    try {
+      if (window.WWAttribution && typeof window.WWAttribution.get === "function") {
+        return window.WWAttribution.get() || null;
+      }
+    } catch (e) {}
+    try {
+      var raw = null;
+      try { raw = window.localStorage.getItem("ww_attr"); } catch (e2) {}
+      if (!raw) {
+        var m = ("; " + document.cookie).split("; ww_attr=");
+        if (m.length === 2) raw = decodeURIComponent(m.pop().split(";").shift());
+      }
+      if (!raw) return null;
+      var rec = JSON.parse(raw);
+      if (!rec || typeof rec.ts !== "number") return null;
+      if (new Date().getTime() - rec.ts > 90 * 24 * 60 * 60 * 1000) return null;
+      return rec;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ---- Builder mode (DREW-17, 2026-07-28) ----------------------------------
   // The wws-dashboard "Session Builder" tab embeds a synced copy of this exact
   // page and sets window.WWS_BUILDER_MODE before this script runs. In builder
@@ -1029,6 +1061,8 @@
         couponCode: (!OFFER && state.coupon) ? state.coupon.code : "",
         squareToken: squareToken,
         clientIdempotencyKey: state.bookingAttemptId,
+        // WWA-3: Google Ads click ids for the server-side conversion upload.
+        attribution: readAttribution(),
         consent: {
           cardOnFile: true,
           timestamp: new Date().toISOString(),
@@ -4027,6 +4061,8 @@
           couponCode: state.coupon ? state.coupon.code : "",
           squareToken: squareToken,
           clientIdempotencyKey: state.bookingAttemptId,
+          // WWA-3: Google Ads click ids for the server-side conversion upload.
+          attribution: readAttribution(),
           consent: {
             cardOnFile: true,
             timestamp: new Date().toISOString(),
