@@ -1,32 +1,41 @@
-// api/_lib/google-ads.js — server-side Google Ads offline conversion upload (WWA-3, steps 3-4)
+// api/_lib/google-ads.js — server-side offline conversion upload (WWA-3, step 4)
 //
 // THE REWARD. On a CONFIRMED booking (Square card charged + Acuity appointment
-// created) create-checkout.js calls reportBooking(), which uploads an OFFLINE
-// CLICK CONVERSION back to Google Ads:
-//   - matched to the ad click by gclid (or wbraid/gbraid),
+// created) create-checkout.js calls reportBooking(), which uploads an offline
+// conversion attributed to the ad click:
+//   - matched by gclid (or wbraid/gbraid),
 //   - valued at WW's actual MARGIN, not gross (see computeMarginCents),
-//   - deduplicated by order_id = the Acuity appointment id,
-//   - immune to client-side tag flakiness (this is a server → Google POST).
+//   - deduplicated by transactionId = the Acuity appointment id,
+//   - server → Google, immune to client-side tag flakiness.
 //
-// This is the "Booking (value)" conversion action, ONE_PER_CLICK, category
-// PURCHASE — the ONLY primary bidding signal. See scripts/google-ads/ for the
-// one-time action-creation script that provisions it on the account.
+// This targets Google's **Data Manager API** (datamanager.googleapis.com), NOT
+// the legacy Google Ads API ConversionUploadService — Google closed that service
+// to new integrations (May 2026; our probe got CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_
+// FEATURE and was told to use Data Manager). Differences that matter here:
+//   - endpoint: POST /v1/events:ingest
+//   - auth: Authorization: Bearer only. NO developer-token, NO login-customer-id
+//     header (the account relationship moves into the request body).
+//   - scope: the refresh token MUST carry https://www.googleapis.com/auth/datamanager
+//     (mint it with ops/google-ads/reauth-datamanager.js — the adwords-only token
+//     the Ads API uses will 403 here).
+//   - conversion action is referenced by its NUMERIC id (productDestinationId),
+//     not a resource name; value is currency units (dollars), not micros.
 //
-// DARK BY DEFAULT. isConfigured() is false until every Google Ads env var AND
-// the conversion-action id are set in Vercel, so on today's prod every call is a
-// clean no-op. Nothing here can ever throw into or slow down a booking — the
-// caller invokes it best-effort + isolated, exactly like the notify-* helpers.
+// DARK BY DEFAULT. isConfigured() is false until the OAuth creds + the conversion
+// action id are set in Vercel, so on today's prod every call is a clean no-op.
+// Nothing here can throw into or slow down a booking — the caller invokes it
+// best-effort + isolated, exactly like the notify-* helpers.
 //
 // Required Vercel env (add before go-live; see the PR / WWA-3):
-//   GOOGLE_ADS_DEVELOPER_TOKEN
 //   GOOGLE_ADS_CLIENT_ID
 //   GOOGLE_ADS_CLIENT_SECRET
-//   GOOGLE_ADS_REFRESH_TOKEN
-//   GOOGLE_ADS_BOOKING_CONVERSION_ACTION_ID   (the "Booking (value)" action id)
+//   GOOGLE_ADS_REFRESH_TOKEN                   (MUST include the datamanager scope)
+//   GOOGLE_ADS_BOOKING_CONVERSION_ACTION_ID    (numeric, e.g. 7727263911 = "Booking (value)")
 //   GOOGLE_ADS_CUSTOMER_ID          (default 5061656241 — White Wall's account)
-//   GOOGLE_ADS_LOGIN_CUSTOMER_ID    (default = GOOGLE_ADS_CUSTOMER_ID; the account's own id, NOT the MCC)
+//   GOOGLE_ADS_LOGIN_CUSTOMER_ID    (default = GOOGLE_ADS_CUSTOMER_ID; direct access)
+// (No developer token needed at runtime — Data Manager doesn't use it.)
 
-const API_VERSION = "v22";
+const INGEST_URL = "https://datamanager.googleapis.com/v1/events:ingest";
 
 // White Wall's pass-through cleaning fee: $150 that WW earns $0 on (it goes
 // straight to the cleaners). Never optimize bidding toward a fee we don't keep.
@@ -43,12 +52,12 @@ function loginCustomerId() {
   return (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || customerId()).replace(/-/g, "");
 }
 function conversionActionId() {
-  return process.env.GOOGLE_ADS_BOOKING_CONVERSION_ACTION_ID || "";
+  // Numeric conversion action id — used as productDestinationId.
+  return (process.env.GOOGLE_ADS_BOOKING_CONVERSION_ACTION_ID || "").replace(/[^0-9]/g, "");
 }
 
 function isConfigured() {
   return !!(
-    process.env.GOOGLE_ADS_DEVELOPER_TOKEN &&
     process.env.GOOGLE_ADS_CLIENT_ID &&
     process.env.GOOGLE_ADS_CLIENT_SECRET &&
     process.env.GOOGLE_ADS_REFRESH_TOKEN &&
@@ -89,6 +98,7 @@ function sanitizeAttribution(raw) {
 
 // OAuth2 access token via the refresh-token grant. Cached in module scope until
 // ~1 min before expiry so a burst of bookings doesn't re-mint on every call.
+// The refresh token must carry the datamanager scope (see file header).
 var _token = { value: "", expMs: 0 };
 async function getAccessToken() {
   var now = Date.now();
@@ -113,49 +123,62 @@ async function getAccessToken() {
   return _token.value;
 }
 
-// Google Ads wants "yyyy-MM-dd HH:mm:ss+00:00" (offset REQUIRED). Emit UTC.
-function formatConversionDateTime(d) {
+// Data Manager wants RFC 3339 (e.g. 2026-08-19T15:07:01.000Z). ISO-8601 from
+// Date.toISOString() is RFC-3339-compliant (fractional seconds + Z allowed).
+function formatEventTimestamp(d) {
   var dt = (d instanceof Date && !isNaN(d)) ? d : new Date();
-  var p = function (n) { return String(n).padStart(2, "0"); };
-  return dt.getUTCFullYear() + "-" + p(dt.getUTCMonth() + 1) + "-" + p(dt.getUTCDate()) +
-    " " + p(dt.getUTCHours()) + ":" + p(dt.getUTCMinutes()) + ":" + p(dt.getUTCSeconds()) + "+00:00";
+  return dt.toISOString();
 }
 
-// Low-level upload. Throws on HTTP/API error. Callers should use reportBooking.
-async function uploadClickConversion(opts) {
-  var token = await getAccessToken();
-  var cid = customerId();
-  var conversion = {
-    conversionAction: "customers/" + cid + "/conversionActions/" + conversionActionId(),
-    conversionValue: (Math.round(opts.valueCents) / 100), // account currency units (USD dollars)
-    currencyCode: "USD",
-    conversionDateTime: opts.conversionDateTime,
-    orderId: String(opts.orderId)
+// Build the Data Manager destinations[] entry pointing at White Wall's Google
+// Ads account + the "Booking (value)" conversion action.
+function bookingDestination() {
+  return {
+    reference: "wws-booking",
+    operatingAccount: { accountType: "GOOGLE_ADS", accountId: customerId() },
+    loginAccount: { accountType: "GOOGLE_ADS", accountId: loginCustomerId() },
+    productDestinationId: conversionActionId()
   };
-  // Prefer gclid; fall back to wbraid/gbraid (iOS / in-app). Exactly one id.
-  if (opts.gclid) conversion.gclid = opts.gclid;
-  else if (opts.wbraid) conversion.wbraid = opts.wbraid;
-  else if (opts.gbraid) conversion.gbraid = opts.gbraid;
+}
 
-  var url = "https://googleads.googleapis.com/" + API_VERSION +
-    "/customers/" + cid + ":uploadClickConversions";
-  var res = await fetch(url, {
+// Low-level ingest. Throws on HTTP/API error or a surfaced field warning that
+// indicates rejection. Callers should use reportBooking. `validateOnly` runs a
+// dry-run (no data written) when true.
+async function ingestConversion(opts) {
+  var token = await getAccessToken();
+  var adIdentifiers = {};
+  if (opts.gclid) adIdentifiers.gclid = opts.gclid;
+  else if (opts.wbraid) adIdentifiers.wbraid = opts.wbraid;
+  else if (opts.gbraid) adIdentifiers.gbraid = opts.gbraid;
+
+  var event = {
+    destinationReferences: ["wws-booking"],
+    transactionId: String(opts.orderId),
+    eventTimestamp: opts.eventTimestamp,
+    eventSource: "WEB",
+    currency: "USD",
+    conversionValue: Math.round(opts.valueCents) / 100, // currency units, not micros
+    adIdentifiers: adIdentifiers,
+    // US (South Carolina) traffic; we don't collect explicit ad-data consent, so
+    // report UNSPECIFIED rather than over-claim GRANTED. Google treats unspecified
+    // as full-use outside the EEA.
+    consent: { adUserData: "CONSENT_STATUS_UNSPECIFIED", adPersonalization: "CONSENT_STATUS_UNSPECIFIED" }
+  };
+
+  var body = {
+    destinations: [bookingDestination()],
+    events: [event],
+    validateOnly: !!opts.validateOnly
+  };
+
+  var res = await fetch(INGEST_URL, {
     method: "POST",
-    headers: {
-      "Authorization": "Bearer " + token,
-      "developer-token": process.env.GOOGLE_ADS_DEVELOPER_TOKEN || "",
-      "login-customer-id": loginCustomerId(),
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ conversions: [conversion], partialFailureError: undefined, partialFailure: true })
+    headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
   });
   var data = await res.json().catch(function () { return {}; });
   if (!res.ok) {
-    throw new Error("uploadClickConversions HTTP " + res.status + ": " + JSON.stringify(data).slice(0, 400));
-  }
-  // partialFailure surfaces per-row errors in partialFailureError even on a 200.
-  if (data.partialFailureError) {
-    throw new Error("uploadClickConversions partial failure: " + JSON.stringify(data.partialFailureError).slice(0, 400));
+    throw new Error("events:ingest HTTP " + res.status + ": " + JSON.stringify(data).slice(0, 500));
   }
   return data;
 }
@@ -167,8 +190,9 @@ async function uploadClickConversion(opts) {
 //   attribution      : sanitized {gclid|wbraid|gbraid,...} or the raw client object
 //   totalCents       : gross booking total (charged + any scheduled balance)
 //   cleaningFeeCents  : the $150 pass-through if it applied, else 0
-//   orderId          : Acuity appointment id (dedupe key)
+//   orderId          : Acuity appointment id (dedupe key → transactionId)
 //   whenIso          : booking timestamp (ISO) — defaults to now
+//   validateOnly     : dry-run when true (no data written)
 async function reportBooking(opts) {
   try {
     opts = opts || {};
@@ -182,13 +206,14 @@ async function reportBooking(opts) {
     });
     if (valueCents <= 0) return { skipped: "non_positive_margin" };
     var when = opts.whenIso ? new Date(opts.whenIso) : new Date();
-    var result = await uploadClickConversion({
+    var result = await ingestConversion({
       gclid: attr.gclid,
       wbraid: attr.wbraid,
       gbraid: attr.gbraid,
       valueCents: valueCents,
       orderId: opts.orderId,
-      conversionDateTime: formatConversionDateTime(when)
+      eventTimestamp: formatEventTimestamp(when),
+      validateOnly: !!opts.validateOnly
     });
     return { uploaded: true, valueCents: valueCents, orderId: String(opts.orderId), result: result };
   } catch (e) {
@@ -204,8 +229,9 @@ module.exports = {
   computeMarginCents: computeMarginCents,
   sanitizeAttribution: sanitizeAttribution,
   getAccessToken: getAccessToken,
-  formatConversionDateTime: formatConversionDateTime,
-  uploadClickConversion: uploadClickConversion,
+  formatEventTimestamp: formatEventTimestamp,
+  bookingDestination: bookingDestination,
+  ingestConversion: ingestConversion,
   reportBooking: reportBooking,
   CLEANING_PASSTHROUGH_CENTS: CLEANING_PASSTHROUGH_CENTS,
   SQUARE_FEE_RATE: SQUARE_FEE_RATE,

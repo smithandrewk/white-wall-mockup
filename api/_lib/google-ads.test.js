@@ -51,11 +51,21 @@ assert.deepStrictEqual(b, { wbraid: "w1", gbraid: "g1" }, "wbraid/gbraid kept");
 var tooLong = "x".repeat(600);
 assert.strictEqual(G.sanitizeAttribution({ gclid: tooLong }), null, "over-long gclid dropped → null");
 
-// --- formatConversionDateTime: 'yyyy-MM-dd HH:mm:ss+00:00' (offset required) ---
-var dt = G.formatConversionDateTime(new Date("2026-08-19T14:05:09Z"));
-assert.strictEqual(dt, "2026-08-19 14:05:09+00:00", "UTC format with offset");
-assert.ok(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\+00:00$/.test(G.formatConversionDateTime(new Date())),
-  "now() matches required shape");
+// --- formatEventTimestamp: RFC 3339 (ISO-8601, Data Manager API) ---
+var dt = G.formatEventTimestamp(new Date("2026-08-19T14:05:09Z"));
+assert.strictEqual(dt, "2026-08-19T14:05:09.000Z", "RFC 3339 / ISO UTC");
+assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(G.formatEventTimestamp(new Date())),
+  "now() matches RFC 3339 shape");
+
+// --- bookingDestination: Google Ads account + conversion action (no dashes) ---
+process.env.GOOGLE_ADS_BOOKING_CONVERSION_ACTION_ID = "7727263911";
+process.env.GOOGLE_ADS_CUSTOMER_ID = "506-165-6241";
+var dest = G.bookingDestination();
+assert.strictEqual(dest.operatingAccount.accountId, "5061656241", "customer id stripped of dashes");
+assert.strictEqual(dest.operatingAccount.accountType, "GOOGLE_ADS", "GOOGLE_ADS account type");
+assert.strictEqual(dest.productDestinationId, "7727263911", "conversion action numeric id");
+delete process.env.GOOGLE_ADS_BOOKING_CONVERSION_ACTION_ID;
+delete process.env.GOOGLE_ADS_CUSTOMER_ID;
 
 // --- isConfigured: dark unless every credential + action id is present ---
 assert.strictEqual(G.isConfigured(), false, "dark by default (no env set in test)");
