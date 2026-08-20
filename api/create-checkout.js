@@ -53,6 +53,7 @@ const { alertFailure } = require("./_lib/alert");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 const sbDB = require("./_lib/supabase");
 const { enrollBooking } = require("./_lib/campaign-enroll");
+const googleAds = require("./_lib/google-ads");
 const crypto = require("crypto");
 
 // Pragmatic email-format check. Guards the Square createCustomer call, which
@@ -101,8 +102,13 @@ module.exports = async function handler(req, res) {
     squareToken,
     clientIdempotencyKey,
     consent,
-    couponCode
+    couponCode,
+    attribution
   } = body;
+
+  // WWA-3: Google Ads click ids captured on landing (or null for organic/direct).
+  // Server-authoritative sanitize — never trust the browser's shape.
+  var gaAttribution = googleAds.sanitizeAttribution(attribution);
 
   // Cardholder name as entered on the payment panel ("Name on card"). May
   // differ from the booker (business card, spouse, planner). Falls back to
@@ -736,6 +742,20 @@ module.exports = async function handler(req, res) {
         "\nconsent_text_hash: " + consentTextHash +
         "\n--- END CONSENT ---";
 
+      // WWA-3: durable ad-attribution record on the Acuity appointment (the
+      // booking record). Migration-free storage for audit + the conversion
+      // upload below; only written when the booking carried a real click id.
+      if (gaAttribution) {
+        notes += "\n\n--- AD ATTRIBUTION (auto, do not edit) ---" +
+          "\ngclid: " + (gaAttribution.gclid || "") +
+          "\nwbraid: " + (gaAttribution.wbraid || "") +
+          "\ngbraid: " + (gaAttribution.gbraid || "") +
+          "\nutm_source: " + (gaAttribution.utm_source || "") +
+          "\nutm_medium: " + (gaAttribution.utm_medium || "") +
+          "\nutm_campaign: " + (gaAttribution.utm_campaign || "") +
+          "\n--- END AD ATTRIBUTION ---";
+      }
+
       // STAGING isolation (ported from the retired booking-callback.js): stamp
       // the name, sink the customer email, and force the STAGING calendar. We
       // ALWAYS pass calendarID so Acuity can't default-misroute to the first
@@ -785,6 +805,28 @@ module.exports = async function handler(req, res) {
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
         coupon_discount_cents: appliedCoupon ? appliedCoupon.discountCents : 0
       });
+
+      // WWA-3: upload the confirmed booking to Google Ads as an offline click
+      // conversion — value = WW's MARGIN (gross − $150 pass-through cleaning fee
+      // − Square fee), attributed by gclid, deduped by the Acuity appt id. Dark
+      // until the Google Ads env is set; best-effort + isolated (reportBooking
+      // never throws) so it can NEVER affect a paid, booked appointment.
+      try {
+        var gaCleaningCentsSingle = (effectiveCleaningFee && effectiveCleaningFee.amount > 0)
+          ? Math.round(effectiveCleaningFee.amount * 100) : 0;
+        var gaReport = await googleAds.reportBooking({
+          attribution: gaAttribution,
+          totalCents: totalCents,
+          cleaningFeeCents: gaCleaningCentsSingle,
+          orderId: appointment.id,
+          whenIso: new Date().toISOString()
+        });
+        if (gaReport && gaReport.uploaded) {
+          console.log("google-ads: booking conversion uploaded", {
+            appointment_id: appointment.id, value_cents: gaReport.valueCents
+          });
+        }
+      } catch (e) { console.error("google-ads reportBooking (single):", e.message); }
 
       // Cleaning fee → 2.5h cleaner buffer block (PV + TM, per Drew 2026-05-05).
       // Skipped in staging-mock mode (no real appointment exists to buffer).
@@ -841,6 +883,15 @@ module.exports = async function handler(req, res) {
               day_index: 0,
               session_price_cents: sessionCents
             });
+
+            // WWA-3: persist the ad-attribution JSON on the booking row.
+            // DECOUPLED from the inserts above (its own try) so an unapplied
+            // migration (no `attribution` column yet) can't lose the booking row.
+            if (gaAttribution) {
+              try {
+                await sbDB.serviceUpdate("bookings", { id: bookingRow.id }, { attribution: gaAttribution });
+              } catch (e) { console.error("supabase attribution persist (single):", e.message); }
+            }
 
             // V3 item 6 — enqueue the 4-touch add-on campaign (this is a
             // full-payment booking, so no balance auto-charge / reminders).
@@ -1032,6 +1083,8 @@ async function handleCartCheckout(req, res, body) {
   const cardholderName = universal.cardholderName || body.cardholderName || "";
   const squareToken = universal.squareToken || body.squareToken;
   const clientIdempotencyKey = universal.clientIdempotencyKey || body.clientIdempotencyKey;
+  // WWA-3: Google Ads click ids for the cart's server-side conversion upload.
+  var gaAttributionCart = googleAds.sanitizeAttribution(universal.attribution || body.attribution);
   // V3 item-6 (60/40 deposit + 40% auto-charge) is DARK on production until the
   // auto-charge scheduler is armed (Andrew's money gate). A deposit collects only
   // 60% now and relies on the (currently dark) scheduler to auto-charge the 40%
@@ -1447,6 +1500,19 @@ async function handleCartCheckout(req, res, body) {
           "\nconsent_text_hash: " + consentTextHash +
           "\n--- END CONSENT ---";
 
+        // WWA-3: durable ad-attribution record, stamped once on the lead (day-1)
+        // appointment — the dedupe key for the cart's single conversion upload.
+        if (gaAttributionCart && si === 0) {
+          notes += "\n\n--- AD ATTRIBUTION (auto, do not edit) ---" +
+            "\ngclid: " + (gaAttributionCart.gclid || "") +
+            "\nwbraid: " + (gaAttributionCart.wbraid || "") +
+            "\ngbraid: " + (gaAttributionCart.gbraid || "") +
+            "\nutm_source: " + (gaAttributionCart.utm_source || "") +
+            "\nutm_medium: " + (gaAttributionCart.utm_medium || "") +
+            "\nutm_campaign: " + (gaAttributionCart.utm_campaign || "") +
+            "\n--- END AD ATTRIBUTION ---";
+        }
+
         var apptFirstName = contact.firstName;
         var apptEmail = contact.email;
         if (isStaging()) {
@@ -1696,6 +1762,14 @@ async function handleCartCheckout(req, res, body) {
             }
           }
 
+          // WWA-3: persist the ad-attribution JSON on the cart booking row.
+          // DECOUPLED (own try) so an unapplied migration can't lose the row.
+          if (gaAttributionCart) {
+            try {
+              await sbDB.serviceUpdate("bookings", { id: bookingRow.id }, { attribution: gaAttributionCart });
+            } catch (e) { console.error("supabase attribution persist (cart):", e.message); }
+          }
+
           // V3 item 6 — enqueue the 4-touch add-on campaign, and (for a deposit
           // cart) the 40% balance auto-charge wake-up + the every-6h payment
           // reminders. fire-times come from the chronological first session.
@@ -1735,6 +1809,27 @@ async function handleCartCheckout(req, res, body) {
       charged_cents: chargeCents,
       balance_due_cents: balanceDueCents || 0
     });
+
+    // WWA-3: ONE offline click conversion for the whole cart. Value = MARGIN on
+    // the full booking total (gross − $150 pass-through cleaning − Square fee);
+    // deduped by the lead (day-1) Acuity appt id so multi-day carts count once.
+    // Dark until configured; best-effort + isolated (reportBooking never throws).
+    try {
+      var gaLeadApptId = (createdAppointments[0] && createdAppointments[0].id) || null;
+      var gaCartReport = await googleAds.reportBooking({
+        attribution: gaAttributionCart,
+        totalCents: totalCents,
+        cleaningFeeCents: cleaningFeeCents,
+        orderId: gaLeadApptId,
+        whenIso: new Date().toISOString()
+      });
+      if (gaCartReport && gaCartReport.uploaded) {
+        console.log("google-ads: cart booking conversion uploaded", {
+          lead_appointment_id: gaLeadApptId, value_cents: gaCartReport.valueCents
+        });
+      }
+    } catch (e) { console.error("google-ads reportBooking (cart):", e.message); }
+
     await flushPostHog();
 
     var fn = encodeURIComponent(contact.firstName);
