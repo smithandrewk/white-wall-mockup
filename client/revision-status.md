@@ -1410,3 +1410,11 @@ Drew replied "Flawless" to the Round 108 build note and asked: once the Block Of
 - [x] **Answer = yes.** Watson triggering "block off time" is a DATA WRITE via the agent API (Watson tells the dashboard to write the Acuity block; the dashboard does it on the same safe path) — an integration, not code. Sits on the OK rungs of the recreation ladder, exactly like the `delete_session` verb Watson already has (Round 89 / DREW-51). Once the human Block Off button is live and armed, adding a `block_off` action to Watson's capabilities catalog is the same pattern.
 - [x] **No new build, no new escalation.** The Watson verb rides on the already-open DREW-47 first-live-write go; it is not a separate gate. Round 108's reply already committed to "Watson can trigger on your word." Kept warm on timing (first-live-write go still finalizing on Andrew's side — not asserted decided/live).
 - [x] Folded into **DREW-47** (add-msg + comments). `last-seen-drew.txt` = `1a02fa18e4d707dd`.
+
+## Feedback Round 111 (2026-08-23) — Drew (email msg 1a02fbc7808bd7f7, thread 1a02f35b23344ffe): "Perfect. Thanks pip." — acknowledgment (no build)
+
+Terminal thank-you closing the Watson-interaction exchange answered in Round 109. Comms `client/comms/2026-08-23-drew-schedule-block-override.md` (Round 111 section). Access window active (through 2026-08-24 06:00).
+
+- [x] **No reply needed** (a bare acknowledgment needs no "you're welcome"). No new request, no question, nothing actionable.
+- [x] **No build / no new gate.** Block Off button (dashboard PR #142) stays built + GATED on Andrew's first-live-write go; the Watson block-off verb rides that same open DREW-47 gate.
+- [x] Folded into **DREW-47** (add-msg + comment). `last-seen-drew.txt` = `1a02fbc7808bd7f7`.
