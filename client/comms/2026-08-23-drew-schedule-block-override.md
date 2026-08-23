@@ -173,3 +173,29 @@ new request, no question, nothing actionable. **No reply sent** (a bare "thanks"
 is already built and correctly GATED on Andrew's first-live-write go; the Watson block-off
 verb rides that same open DREW-47 gate. `last-seen-drew.txt` advanced to `1a02fbc7808bd7f7`
 so the watcher won't re-fire on this. DREW-47 stays escalated + open on Andrew.
+
+---
+
+## Round 112 — Drew status check "How are things coming pip?" (2026-08-23)
+
+- **Source:** Gmail (account `andrew@entrpy.co`)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 14:56:08 -0400
+- **Thread:** 1a02f35b23344ffe
+- **Message id:** 1a02ffb1724a1ce2
+- **In reply to:** Foreman's Round 109 answer 1a02fab1c5c52f39 (via Drew's Round 111 ack 1a02fbc7808bd7f7)
+
+### Verbatim
+
+> How are things coming pip?
+
+### Triage
+
+`question` — a status check / nudge on the Block Off button, ~1h after the Round 109/111
+exchange. Drew called this his top priority today, so he is checking in on progress. Nothing
+new requested, nothing new to build. **Reply = honest keep-warm status:** the Block Off pill +
+studio/day/start/end picker are built and tested on our side (proving clean against a mirror
+calendar); the one remaining piece is the final go on the first-ever live-calendar write, being
+finalized on our end, before it flips onto his real calendar. Do NOT assert it is done/live/
+decided (the DREW-47 first-live-write go/no-go escalation is still OPEN on Andrew). Folded onto
+DREW-47 (add-msg). `last-seen-drew.txt` → `1a02ffb1724a1ce2`.

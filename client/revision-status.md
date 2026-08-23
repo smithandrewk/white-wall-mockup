@@ -1418,3 +1418,11 @@ Terminal thank-you closing the Watson-interaction exchange answered in Round 109
 - [x] **No reply needed** (a bare acknowledgment needs no "you're welcome"). No new request, no question, nothing actionable.
 - [x] **No build / no new gate.** Block Off button (dashboard PR #142) stays built + GATED on Andrew's first-live-write go; the Watson block-off verb rides that same open DREW-47 gate.
 - [x] Folded into **DREW-47** (add-msg + comment). `last-seen-drew.txt` = `1a02fbc7808bd7f7`.
+
+## Feedback Round 112 (2026-08-23) — Drew (email msg 1a02ffb1724a1ce2, thread 1a02f35b23344ffe): "How are things coming pip?" — status check (no build)
+
+Nudge on the Block Off button (his top priority today), ~1h after the Round 109/111 exchange. Comms `client/comms/2026-08-23-drew-schedule-block-override.md` (Round 112 section). Access window active (through 2026-08-24 06:00).
+
+- [x] **Replied** (msg `1a02ffce1c85a0e7`) with honest keep-warm status: Block Off pill + studio/day/start/end picker built and testing clean against a mirror calendar; only the first-live-write go remains (finalizing on our end), then flip to his real calendar + Watson picks up the same action. Did NOT assert done/live/decided.
+- [x] **No new build / no new gate.** Block Off button (dashboard PR #142) stays built + GATED on Andrew's first-live-write go/no-go (escalation OPEN on Andrew). Nothing new to ship.
+- [x] Folded into **DREW-47** (add-msg + comment). `last-seen-drew.txt` = `1a02ffb1724a1ce2`.
