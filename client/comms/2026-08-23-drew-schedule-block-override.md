@@ -149,3 +149,27 @@ pattern — Watson does it on Drew's word. The Round 108 reply already committed
 that Watson can trigger on your word"). Keep-warm on timing (the first-live-write go is still
 being finalized on Andrew's side); do NOT assert it's decided/live. No new escalation — the
 Watson verb is not a separate gate beyond the already-open DREW-47 first-live-write go.
+
+---
+
+## Round 111 — Drew acknowledgment "Perfect. Thanks pip." (2026-08-23)
+
+- **Source:** Gmail (account `andrew@entrpy.co`)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 13:47:45 -0400
+- **Thread:** 1a02f35b23344ffe
+- **Message id:** 1a02fbc7808bd7f7
+- **In reply to:** Foreman's Round 109 answer 1a02fab1c5c52f39 (Watson picks up the block-off verb alongside the write path)
+
+### Verbatim
+
+> Perfect. Thanks pip.
+
+### Triage
+
+`fyi` / acknowledgment — a terminal thank-you closing the Watson-interaction exchange. No
+new request, no question, nothing actionable. **No reply sent** (a bare "thanks" needs no
+"you're welcome"; that would just be noise). Nothing to build — the Block Off button (PR #142)
+is already built and correctly GATED on Andrew's first-live-write go; the Watson block-off
+verb rides that same open DREW-47 gate. `last-seen-drew.txt` advanced to `1a02fbc7808bd7f7`
+so the watcher won't re-fire on this. DREW-47 stays escalated + open on Andrew.
