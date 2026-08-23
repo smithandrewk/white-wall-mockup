@@ -122,3 +122,30 @@ Two asks, both land on **DREW-47** (Calendar-tab manual control, Acuity+Square W
    add-ons + charge card, extend time + charge accordingly. Acuity edit-write + Square
    money-move. Bigger surface; scoped behind the Block Off button. Also gated (money +
    architecture).
+
+---
+
+## Drew follow-up (question) — "will Watson be able to do it too?"
+
+- **Source:** Gmail thread `1a02f35b23344ffe`, account `andrew@entrpy.co`
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 13:18:20 -0400
+- **Msg id:** `1a02fa18e4d707dd` (in reply to Foreman's Round 108 reply `1a02fa0773684d14`)
+- **Classify:** question (rides on DREW-47; no new build)
+
+### Verbatim
+
+> Flawless. And Inherently, once this is built, watson should be able to interact with it and do it too, right?
+
+### Triage
+
+Yes/no question, answered inline — no new build. Watson triggering "block off time" is a
+DATA WRITE via the agent API (Watson tells the dashboard to write an Acuity block), an
+integration on the same write path — NOT Watson writing code. It sits on the OK rungs of the
+recreation ladder (read OK / write-data OK), exactly like the `delete_session` verb Watson
+already has (Round 89, DREW-51). So the answer is yes: once the human Block Off button is
+live and armed, adding a `block_off` action to Watson's capabilities catalog is the same
+pattern — Watson does it on Drew's word. The Round 108 reply already committed to this ("and
+that Watson can trigger on your word"). Keep-warm on timing (the first-live-write go is still
+being finalized on Andrew's side); do NOT assert it's decided/live. No new escalation — the
+Watson verb is not a separate gate beyond the already-open DREW-47 first-live-write go.
