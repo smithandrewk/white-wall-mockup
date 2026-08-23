@@ -50,6 +50,7 @@ const { notifyOwnerSMS, notifyOwnerCompSMS } = require("./_lib/notify-sms");
 const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
 const { notifyMultidayEvent } = require("./_lib/notify-multiday");
 const { alertFailure } = require("./_lib/alert");
+const { classifySquarePaymentError } = require("./_lib/square-errors");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 const sbDB = require("./_lib/supabase");
 const { enrollBooking } = require("./_lib/campaign-enroll");
@@ -933,6 +934,27 @@ module.exports = async function handler(req, res) {
       });
     } catch (innerErr) {
       console.error("create-checkout payment/booking failed:", innerErr.message);
+
+      // WW-29: an ordinary customer card decline (bad card / wrong CVV / NSF /
+      // expired / bad ZIP) is NOT a system failure. Nothing was charged (the
+      // decline happens AT createPayment, so `payment` is undefined), there is
+      // nothing to refund, and it must NOT page a CRITICAL ops alert — that noise
+      // buries real failures like WW-28's TRANSACTION_LIMIT. Return a friendly
+      // "try another card" to the customer (the client surfaces `error` verbatim)
+      // and record analytics only. Guarded on `!payment` so this can never
+      // swallow a post-charge failure.
+      var decline = classifySquarePaymentError(innerErr);
+      if (!payment && decline.isBenignDecline) {
+        console.warn("create-checkout: benign card decline, no ops alert:", decline.codes.join(","));
+        captureServerEvent(contact.email, "booking_card_declined", {
+          location: location,
+          datetime: datetime,
+          decline_codes: decline.codes.join(",")
+        });
+        await flushPostHog();
+        return res.status(402).json({ error: decline.customerMessage, declined: true });
+      }
+
       // Charged but a later step failed → refund automatically.
       if (payment && !appointment) {
         try {
@@ -960,6 +982,7 @@ module.exports = async function handler(req, res) {
         datetime: datetime,
         stage: appointment ? "after_appointment" : (payment ? "after_payment" : "before_payment"),
         error: innerErr.message,
+        square_codes: decline.codes.length ? decline.codes.join(",") : "(none)",
         refunded: !!(payment && !appointment)
       });
       return res.status(500).json({
@@ -1542,6 +1565,23 @@ async function handleCartCheckout(req, res, body) {
         }
       }
     } catch (apptErr) {
+      // WW-29: benign customer card decline on the ONE cart charge — no money
+      // moved (createPayment threw, so `payment` is undefined), nothing to
+      // refund, and no CRITICAL ops page. Friendly "try another card" + analytics
+      // only, mirroring the single-session path. Guarded on `!payment` so a
+      // post-charge appointment failure still takes the refund+alert path below.
+      var cartDecline = classifySquarePaymentError(apptErr);
+      if (!payment && cartDecline.isBenignDecline) {
+        console.warn("create-checkout(cart): benign card decline, no ops alert:", cartDecline.codes.join(","));
+        captureServerEvent(contact.email, "cart_booking_card_declined", {
+          location: cartLocation,
+          session_count: priced.sessions.length,
+          decline_codes: cartDecline.codes.join(",")
+        });
+        await flushPostHog();
+        return res.status(402).json({ error: cartDecline.customerMessage, declined: true });
+      }
+
       // A session appointment failed AFTER the charge succeeded → refund the
       // WHOLE charge, alert, mark booking failed. No partial fulfillment.
       failedAppointment = !!payment;
@@ -1566,6 +1606,7 @@ async function handleCartCheckout(req, res, body) {
         sessions: priced.sessions.length,
         appointments_created: createdAppointments.map(function (a) { return a.id; }),
         error: apptErr.message,
+        square_codes: cartDecline.codes.length ? cartDecline.codes.join(",") : "(none)",
         refunded: !!payment
       });
       // Best-effort: persist a failed booking row for the audit trail so a

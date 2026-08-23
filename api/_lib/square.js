@@ -243,7 +243,15 @@ async function createPayment(opts) {
   const data = await res.json();
   if (!res.ok) {
     const msg = data.errors ? data.errors.map(function (e) { return e.detail; }).join(", ") : "Unknown error";
-    throw new Error("Square createPayment " + res.status + ": " + msg);
+    // WW-29: expose the machine-readable Square error code(s) on the thrown Error
+    // so create-checkout can distinguish a benign customer card decline
+    // (GENERIC_DECLINE / CVV_FAILURE / …) from a real system failure without
+    // string-scraping the message. squareStep pins this as a CHARGE failure.
+    const err = new Error("Square createPayment " + res.status + ": " + msg);
+    err.squareStep = "createPayment";
+    err.squareStatus = res.status;
+    err.squareCodes = data.errors ? data.errors.map(function (e) { return e.code; }).filter(Boolean) : [];
+    throw err;
   }
   return data.payment;
 }
