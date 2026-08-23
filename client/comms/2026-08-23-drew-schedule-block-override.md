@@ -231,3 +231,38 @@ Andrew. **No new build, no new gate** — PR #142 stays BUILT + GATED, unchanged
 (msg **1a0302ccaf00b63d**). Also sent Andrew a brief heads-up that Drew is now explicitly
 waiting on the go (escalation already open + emailed; this keeps it timely, not one-channel).
 Folded onto **DREW-47** (add-msg + comment). `last-seen-drew.txt` → `1a03029dd5a473cd`.
+
+---
+
+## Round 114 — Andrew's in-session GO: Block Off SHIPPED LIVE (phase 1) + Edit-session BUILT gated (phase 2) (2026-08-23)
+
+**Andrew approved BOTH phases in-session**, verbatim intent: *"Go ahead do whatever Drew asks but make him aware of the risks and his liability."* This resolves the DREW-47 first-live-write go/no-go the last several rounds were keep-warming.
+
+### Escalations resolved
+- `esc-drew-47-go-no-go-first-live-acuity-write-block-off-square-ch-architecture` → resolved (Andrew's decision recorded).
+- `esc-drew-67-blocked-slot-permanent-fix-needs-acuity-block-write-architecture` → resolved (superseded).
+- `esc-drew-wants-dashboard-write-back-to-acuity-square-calendar-bl-architecture` → resolved (superseded).
+
+### Phase 1 — Block Off — SHIPPED + LIVE + VERIFIED
+- Dashboard **PR #142 merged**; `ACUITY_WRITE_ARMED=1` set on the mini poll.env; dashboard rebuilt + kickstarted.
+- **Live end-to-end proof** on the real dashboard: `POST /api/calendar/block-off` wrote a real Acuity block on the Powdersville prod calendar (6255578) → confirmed via `GET /blocks` → deleted (204) → confirmed gone. Zero residue. (Also pre-proven directly against Acuity before arming.)
+- Agent surface intact (capabilities 200, no 503 trap); bad body → 400.
+- This is the first sanctioned reversal of the READ-ONLY-upstreams invariant, blocks only, exactly as designed.
+
+### Phase 2 — Edit session (override + add-ons/extra + charge, extend) — BUILT + GATED (NOT live)
+- Dashboard **PR #143** (`worker/drew-47-phase2-edit-charge`). From `/bookings/[id]`:
+  - **Charge card on file** — `lib/square-charge.ts` (dashboard's first money-write; merchant-initiated `chargeCardOnFile` mirroring the booking site's proven primitive). Arm gate `SQUARE_CHARGE_ARMED` (default OFF), per-charge sanity cap, card handle recovered from the booking-notes consent block (no guessing), **every charge a deliberate human click behind a confirm dialog, never auto-fired**.
+  - **Reschedule** — `lib/acuity-edit.ts` (`PUT /appointments/:id/reschedule?admin=true`, always-pass calendarID). Arm gate `ACUITY_EDIT_ARMED` (default OFF).
+  - Route `app/api/calendar/edit-session` returns an honest 403 "pending activation" per action while disarmed; `EditSessionButton` on the booking detail page.
+- **Verify:** `npm run build` + **265 unit tests** (13 new — arm-gate, sanity cap, card-handle parse, exact request shape via injected fetch; NO real money / upstream) + seed-mode route smoke (disarmed charge/extend → 403 armed:false, bad action → 400, detail page renders the button).
+- **NOT armed live.** Go-live = sandbox/staging charge proof + merge #143 + arm both switches. The dashboard's prod Square token is LIVE, so no real charge was executed to prove it (the money-gate forbids moving real customer money to test); the wire contract is unit-proven.
+
+### Drew informed IN WRITING — msg `1a0306b324b3e8ce` (thread `1a02f35b23344ffe`, to `contact@whitewallstudios.co`)
+Told Drew: Block Off is live + verified, phase 2 in progress on our mirror, AND the risk/liability disclosure Andrew required, stated plainly:
+1. **Live calendar writes** — the dashboard now writes real blocks into his live Acuity calendars; a wrong block removes real bookable time and affects real customers; reversible but immediate.
+2. **Card charges (phase 2)** — White Wall is responsible for obtaining each customer's authorization for every charge, and OWNS the chargeback / dispute / refund risk and the correctness of every charge; every charge is a deliberate action he takes.
+3. **Watson on his word** — the same ownership applies to anything Watson executes.
+Framed as legitimate operational client comms (what these live-write + card-charge controls take on), NOT system internals.
+
+### Follow-up (small, next)
+Wire the Watson `block_off` action into the agent capabilities catalog (mirrors the existing `delete_session` verb) so Watson can trigger a block on Drew's word directly. The human path it rides is now live + armed.
