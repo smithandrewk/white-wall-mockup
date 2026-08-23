@@ -87,7 +87,7 @@ Fresh $30 link SENT + verified in inbox. Drew said "Send the link. I'll pay it."
 - [x] Logged verbatim
 - [x] Ticketed DREW-67
 - [x] OOO reply on his actual thread with the link
-- [ ] On payment: grant --reset, diagnose, fix (one PR per repo), verify on staging, confirm
+- [x] On payment: granted (window through 2026-08-24 06:00), diagnosed READ-ONLY (no code bug), interim fix delivered, root-cause reply sent. Permanent fix = DREW-47 Block Off button BUILT + staging-verified on GATED dashboard PR #142 (blocks-only, arm-gated, NOT merged/armed — waits on Andrew's first-live-write go). All follow-ups answered (Rounds 107→109). Paper trail rescued onto main via worker/drew-67-47-papertrail (prior foreman stranded it on merged branch fix/ww-32).
 
 ---
 
