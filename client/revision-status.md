@@ -1426,3 +1426,12 @@ Nudge on the Block Off button (his top priority today), ~1h after the Round 109/
 - [x] **Replied** (msg `1a02ffce1c85a0e7`) with honest keep-warm status: Block Off pill + studio/day/start/end picker built and testing clean against a mirror calendar; only the first-live-write go remains (finalizing on our end), then flip to his real calendar + Watson picks up the same action. Did NOT assert done/live/decided.
 - [x] **No new build / no new gate.** Block Off button (dashboard PR #142) stays built + GATED on Andrew's first-live-write go/no-go (escalation OPEN on Andrew). Nothing new to ship.
 - [x] Folded into **DREW-47** (add-msg + comment). `last-seen-drew.txt` = `1a02ffb1724a1ce2`.
+
+## Feedback Round 113 (2026-08-23) — Drew (email msg 1a03029dd5a473cd, thread 1a02f35b23344ffe): "Does Andrew need to sign off on it as the final step?" — question (no build)
+
+Drew asked directly whether Andrew is the one who signs off as the last step before the Block Off button goes live. Comms `client/comms/2026-08-23-drew-schedule-block-override.md` (Round 113 section). Access window active (through 2026-08-24 06:00).
+
+- [x] **Answered yes** (msg `1a0302ccaf00b63d`), framed as scope + who does the work: the build and testing are done (no more building), the single remaining gate is Andrew's one-time go on the first-ever write into his live Acuity, and I invited Drew to nudge Andrew directly to close it fast (partners; keeps the blocker off one channel). Did NOT assert decided/live.
+- [x] **No new build / no new gate.** Block Off button (dashboard PR #142) stays built + GATED on Andrew's first-live-write go/no-go (escalation OPEN on Andrew). Nothing new to ship.
+- [x] **Andrew heads-up sent** (msg `1a0302d7c305ff7b`) that Drew is now explicitly waiting on the go — the escalation was already open + emailed; this keeps it timely.
+- [x] Folded into **DREW-47** (add-msg + comment). `last-seen-drew.txt` = `1a03029dd5a473cd`.
