@@ -199,3 +199,35 @@ calendar); the one remaining piece is the final go on the first-ever live-calend
 finalized on our end, before it flips onto his real calendar. Do NOT assert it is done/live/
 decided (the DREW-47 first-live-write go/no-go escalation is still OPEN on Andrew). Folded onto
 DREW-47 (add-msg). `last-seen-drew.txt` → `1a02ffb1724a1ce2`.
+
+---
+
+## Round 113 — Drew: "Does Andrew need to sign off on it as the final step?" (2026-08-23)
+
+- **Source:** Gmail (account `andrew@entrpy.co`)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 15:47:13 -0400
+- **Thread:** 1a02f35b23344ffe
+- **Message id:** 1a03029dd5a473cd
+- **In reply to:** Foreman's Round 112 status reply 1a02ffce1c85a0e7 (the "one thing left is the final sign off on that first ever write" note)
+
+### Verbatim
+
+> Status? Does Andrew need to sign off on it as the final step?
+
+### Triage
+
+`question` — Drew picked up on the Round 112 phrasing ("final sign off on that first ever
+write") and asked directly whether Andrew is the one who signs off as the last step. **Answer =
+yes** — that IS the one remaining gate, and it is honest to say so (Drew treats Andrew as the
+principal; a first-ever write into his live Acuity + card path is Andrew's go, per
+`[[drew-ask-andrew-guarantor]]`). Framed as **scope + who does the work**, never a rule:
+the build and testing are done on our side (no more building), the single gate before it goes
+live on his real calendar is Andrew's one-time sign-off on the first-ever live write, and I
+invited Drew to nudge Andrew directly to close it fast (§4 "tell Drew to notify Andrew too" —
+keeps the blocker off one channel; the two are partners). **Did NOT assert decided/live** — the
+DREW-47 first-live-write go/no-go escalation (`esc-drew-47-go-no-go-...`) is still OPEN on
+Andrew. **No new build, no new gate** — PR #142 stays BUILT + GATED, unchanged. Reply sent
+(msg **1a0302ccaf00b63d**). Also sent Andrew a brief heads-up that Drew is now explicitly
+waiting on the go (escalation already open + emailed; this keeps it timely, not one-channel).
+Folded onto **DREW-47** (add-msg + comment). `last-seen-drew.txt` → `1a03029dd5a473cd`.
