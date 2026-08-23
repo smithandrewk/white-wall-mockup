@@ -88,3 +88,37 @@ Fresh $30 link SENT + verified in inbox. Drew said "Send the link. I'll pay it."
 - [x] Ticketed DREW-67
 - [x] OOO reply on his actual thread with the link
 - [ ] On payment: grant --reset, diagnose, fix (one PR per repo), verify on staging, confirm
+
+---
+
+## Follow-up — Drew confirms root cause + requests the permanent fix (2026-08-23 13:10)
+
+- **Source:** Gmail thread `1a02f35b23344ffe`, account `andrew@entrpy.co`
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 13:10:57 -0400
+- **Msg id:** `1a02f9aca12f7545`
+- **Classify:** change-request (the permanent fix = DREW-47)
+
+### Verbatim
+
+> Perfect, thanks pip. I thought that was the case. Yeah we need to fix this asap. That button and UI should probably live on the Calendar tab itself. Basically need to have a button that says Block Off, and be able to block off tike directly within the dashboard from the actual calendar, for either space.
+>
+> We should honestly probably have a way to edit exiting sessions in the calendar view. Manually override what they have and have the ability to edit what a client has alreayd booked – and potentially add add-ons and charge card, or extend their time, etc. and then just charge card accordingly.
+>
+> We should probably get this fixed like asap. Can you make that happen? The Block Off button can be another pill, slightly bigger and a different color, next to the other 3 buttons we have up top.
+>
+> Let me know. This is my priority today.
+
+### Triage
+
+Two asks, both land on **DREW-47** (Calendar-tab manual control, Acuity+Square WRITE — already escalated to Andrew as the first-ever upstream write):
+
+1. **Block Off button + UI on the Calendar tab.** A "Block Off" pill — slightly bigger,
+   different color — next to the 3 scope pills (Company / Powdersville / Taylor's Mill).
+   Blocks time directly from the dashboard, for **either location**. Writes a true Acuity
+   block. This is the FIRST live Acuity write → gated (architecture, reverses READ-ONLY
+   upstreams invariant). Build UI + staging-proven write; live flip waits on Andrew.
+2. **Edit existing sessions in the calendar view.** Override a client's booking, add
+   add-ons + charge card, extend time + charge accordingly. Acuity edit-write + Square
+   money-move. Bigger surface; scoped behind the Block Off button. Also gated (money +
+   architecture).
