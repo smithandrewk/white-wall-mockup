@@ -153,3 +153,23 @@ Access window ACTIVE through 2026-08-24 06:00 (armed). Andrew's Round-114 blanke
 
 ### Reply sent (Round 116)
 - Foreman -> Drew, msg **`1a0316aaeaea7845`** (thread `1a02f35b23344ffe`): confirmed the calendar share received; rolled up the session (all items live + ready to review); named Google Calendar mirroring as the one open item, kept warm ("posting gets wired on our end, I will confirm the moment block-offs start landing on your Google Calendar"); "nothing waiting on you."
+
+---
+
+## Round 116b — Drew inbound (VERBATIM) — "oh and also being able to charge cards from dashboard"
+
+- **Source:** Gmail (andrew@entrpy.co)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 21:38:35 -0400
+- **Msg id:** `1a0316b8d193dbbe`
+- **In reply to:** Foreman's Round-116 roll-up `1a0316aaeaea7845`
+
+> Oh and also being able to charge cards from dashboard.
+
+### Triage (Round 116b)
+- **Maps to existing DREW-47 Phase 2** (edit session + charge card on file for add-ons/extra time). Drew is adding it to his "what are we still waiting on" tally after the roll-up. NOT a new ticket — folds into DREW-47.
+- **Status:** Phase 2 is BUILT + GATED — dashboard **PR #143** (`lib/square-charge.ts`, arm gate `SQUARE_CHARGE_ARMED` default OFF, per-charge sanity cap, card handle from booking notes, every charge a deliberate human click behind a confirm dialog, last-4 shown before charge). **Andrew already approved BOTH phases in Round 114** (esc resolved) → **NO new escalation.** The one remaining step before it touches real cards = a **Square-sandbox charge proof** so the first live charge is not the test (dashboard prod Square token is LIVE), then merge #143 + arm `SQUARE_CHARGE_ARMED`.
+- **No new gate on Andrew** (money already signed off Round 114). Remaining = OUR-side technical proof. Answered inline, kept warm (built + in final safety testing; not asserted live).
+
+### Reply sent (Round 116b)
+- Foreman -> Drew, msg **`1a0316f6ba0f21f9`**: card-charging from the dashboard = DREW-47 Phase 2, already built, in final safety testing (a sandbox charge proof before any real card), always a deliberate manual click with the last-4 shown first; will confirm when it goes live. Restated the two open items: Google Calendar mirroring + card charging, both wrapping on our side, nothing waiting on him.
