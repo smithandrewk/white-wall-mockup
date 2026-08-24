@@ -123,3 +123,33 @@ Access window ACTIVE through 2026-08-24 06:00 (armed). Andrew's Round-114 blanke
 - **Google Calendar:** Drew asks what he needs to do. → Concrete step: share the WhiteWall Google Calendar with **andrew@entrpy.co** (Make changes to events). That's all from him; the posting is wired on our side once the calendar credential is in place (open on Andrew, esc recorded).
 - **1a/1b:** acknowledged; wants to review when ready → confirm when live.
 - **NEW (folds into DREW-69):** place the **Expense Tracker under Cash Flow** in the nav (not a standalone top-level tab), and make it **RED**. The DREW-69 worker is mid-build → redirect it before it PRs.
+
+---
+
+## Round 116 — Drew inbound (VERBATIM) — Google Calendar shared + session status roll-up question
+
+- **Source:** Gmail (andrew@entrpy.co)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 21:23:41 -0400
+- **Msg id:** `1a0315de5204de9a`
+- **In reply to:** Foreman's calendar-share ask `1a031557b7ec95cb`
+
+> Okay go check google calendar ordeal. I just shared it
+
+- **Source:** Gmail (andrew@entrpy.co)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 21:31:19 -0400
+- **Msg id:** `1a03164e6d298d41`
+- **In reply to:** Foreman's 1a/1b live confirm `1a03161857ebb56d`
+
+> And incredible.
+>
+> Is there anything we're waiting on to be done yet? Or is that everything we
+> went through on this email session?
+
+### Triage (Round 116)
+- **Calendar share = fyi/unblock (DREW-74):** Drew has shared the WhiteWall Google Calendar with andrew@entrpy.co -> **Drew's half of DREW-74 is now DONE.** Remaining = our-side wiring of the Google Calendar posting, still gated on the calendar credential (`esc-drew-74-google-calendar-...`, open on Andrew, recorded + emailed). Do NOT assert the posting is live/wired — credential esc still open; keep-warm only.
+- **Status roll-up = question:** answered directly. Everything else this session is LIVE + confirmed (Watson block_off, booking detail, Today's Bookings, Events tab, event-accuracy answer, Net To Our Bank, Expense Tracker + Cash Flow line, red-dot, dashboard block visibility, Watson SOT skill). The **one open item** = Google Calendar mirroring (DREW-74), now waiting only on our-side wiring. No new build. No new escalation (credential esc already open).
+
+### Reply sent (Round 116)
+- Foreman -> Drew, msg **`1a0316aaeaea7845`** (thread `1a02f35b23344ffe`): confirmed the calendar share received; rolled up the session (all items live + ready to review); named Google Calendar mirroring as the one open item, kept warm ("posting gets wired on our end, I will confirm the moment block-offs start landing on your Google Calendar"); "nothing waiting on you."
