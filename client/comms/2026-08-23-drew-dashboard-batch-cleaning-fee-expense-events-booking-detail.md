@@ -56,3 +56,70 @@ Access window ACTIVE through 2026-08-24 06:00 (armed). Andrew's Round-114 blanke
 - **4 booking detail enrichment** → DREW-71 ✅ SHIPPED + LIVE + VERIFIED (PR #145; prod: Alaina WW-2876 card ••1664 '10 days ahead', Ryan Clarke ••7982 '75 days ahead'). Confirmed to Drew (msg 1a0312c3522224bb).
 - **5 Events → its own top-level tab** → new ticket.
 - **6 Watson SOT skill/charter document** → DREW-73 ✅ DELIVERED (client/deliverables/watson-whitewall-skill.md; sent + attached, msg 1a0312c3522224bb).
+
+---
+
+## Round 115b — Drew inbound (VERBATIM) — block-off visibility on both calendars
+
+- **Source:** Gmail (andrew@entrpy.co)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 20:30:10 -0400
+- **Msg id:** `1a0312cf17c4ce44`
+- **In reply to:** Foreman's Watson block-off confirm `1a0312036dac3645` (this crossed the 20:16 confirm)
+
+> I'm confused. Did it work, or not?
+> Also, whenever it's blocked off, from me or Watson, or anywhere, I want it to reflect on my Google Calendar and also on the Calendar in the dashboard too. It should pop up as a "session" that it was manually blocked off for what time.
+>
+> I don't see it there popping up rn. But then again, maybe he didn't do it right I honestly don't know.
+>
+> Status on the other things 1-6?
+
+### Triage (Round 115b)
+- **"Did it work?"** — MY end-to-end test worked (wrote a real block, confirmed, then DELETED it, so it is gone now — that is why he does not see my test block). The real gap he is hitting: an Acuity `/blocks` entry HOLDS the time (site stops selling it) but does NOT render as a visible "session" on his Google Calendar or the dashboard Calendar tab. That is the actual confusion.
+- **NEW REQUIREMENT (DREW-74):** any block-off (him, Watson, anywhere) must reflect on (a) his **Google Calendar** AND (b) the **dashboard Calendar**, popping up as a "session" labeled manually-blocked for that time.
+  - **Dashboard Calendar (in our control):** the poll ingests appointments, not blocks, so blocks are invisible there. Fix = read-only ingest Acuity `/blocks` + render them on the Calendar tab as "Blocked off" sessions. Ships without new write surface.
+  - **Google Calendar:** an Acuity block may not export to WhiteWall's Google Calendar (Acuity's Google sync exports appointments). Cleanest single-mechanism fix = create the hold as an Acuity APPOINTMENT (manual-hold type) which syncs to Google + is ingested by the dashboard + reduces availability, matching Drew's "pop up as a session." BUT that reverses the deliberate blocks-only safety guarantee → architecture decision, soft-escalate to Andrew (blanket go likely covers it, but it reverses a written invariant) + keep moving.
+- **Status 1-6:** answer inline (Watson block-off + item 4 booking detail LIVE; item 3 answered; item 6 skill delivered; items 1a/1b/2/5 in progress).
+
+---
+
+## Round 115c — Drew inbound (VERBATIM) — red dot on month view + Google-sync answer + 1a/1b status
+
+- **Source:** Gmail (andrew@entrpy.co)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 21:03:37 -0400
+- **Msg id:** `1a0314b87ef85c1d`
+- **In reply to:** Foreman's block-visibility update `1a031457f88811a0`
+
+> Looks great.
+>
+> I can see the blocked off sections now when I click on the day in the cal. Lets make block doff session a Red dot on the full month view, so I can also see what days in the month have a blocked off session by seeing a red dot.
+>
+> Normal customer sessions show up on google calendar by default, straight after someone makes a legit session in acuity.
+>
+> How is 1b going? The expense tracker tab? What about 1a?
+
+### Triage (Round 115c)
+- **Positive:** dashboard block visibility (DREW-74 half 1) confirmed working for Drew ("I can see the blocked off sections now when I click on the day").
+- **NEW (folds into DREW-74):** add a **red dot** marker on the full month view for any day that has a block-off, so blocked days are visible at a glance. Small pure UI change on the month calendar component (uses the `days[].blocks` data already shipped in PR #148). No money, no upstream write.
+- **DIAGNOSTIC ANSWERED:** Drew confirms Acuity → Google Calendar sync IS live for APPOINTMENTS ("Normal customer sessions show up on google calendar by default, straight after someone makes a legit session in acuity"). So appointments ride Acuity's Google sync; blocks do not. Path to Google visibility: either (A) make block-offs appointments (rides the sync, but Acuity has no hold type + appointments are fixed-duration → risky for arbitrary windows + fake-booking/QBO pollution) or (B) post blocks directly to his WhiteWall Google Calendar via the Google Calendar API (clean, arbitrary length; needs a service account + Drew shares the calendar). Leaning B (correct for arbitrary durations); send Drew the share address.
+- **1a/1b status:** cleaning-fee accounting (Net To Our Bank + Expense Tracker + Cash Flow line) is building now; give honest status inline.
+
+---
+
+## Round 115d — Drew inbound (VERBATIM) — Google Cal go-ahead + Expense Tracker placement/color
+
+- **Source:** Gmail (andrew@entrpy.co)
+- **From:** WhiteWall Studios <contact@whitewallstudios.co>
+- **Date:** Sun, 23 Aug 2026 21:12:10 -0400
+- **Msg id:** `1a031535a76307a9`
+- **In reply to:** Foreman's red-dot confirm `1a03150a97842bac`
+
+> Flawless. Let me know wheat you need from me for the google calendar side of things.
+>
+> 1a and 1b – great. Let me know when that ready to review. Let's put that new expense tracker under cashflow, and make ti red.
+
+### Triage (Round 115d)
+- **Google Calendar:** Drew asks what he needs to do. → Concrete step: share the WhiteWall Google Calendar with **andrew@entrpy.co** (Make changes to events). That's all from him; the posting is wired on our side once the calendar credential is in place (open on Andrew, esc recorded).
+- **1a/1b:** acknowledged; wants to review when ready → confirm when live.
+- **NEW (folds into DREW-69):** place the **Expense Tracker under Cash Flow** in the nav (not a standalone top-level tab), and make it **RED**. The DREW-69 worker is mid-build → redirect it before it PRs.
