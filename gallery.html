@@ -1197,9 +1197,9 @@
     </div>
   </div>
   <script>
-    function acceptCookies(){localStorage.setItem("wws_cookie_consent","accepted");document.getElementById("cookie-consent").style.display="none";posthog.init("phc_QxOulRmelGJKszTf1CZd1DObWvqGIWdAPsMPDeL7IVm",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only"});if(!window.__vantageLoaded){window.__vantageLoaded=1;var _vs=document.createElement("script");_vs.async=true;_vs.src="https://vantage.entrpy.co/b.js";_vs.setAttribute("data-site","whitewall");document.head.appendChild(_vs)}}
-    function declineCookies(){localStorage.setItem("wws_cookie_consent","declined");document.getElementById("cookie-consent").style.display="none"}
-    if(!localStorage.getItem("wws_cookie_consent")){document.getElementById("cookie-consent").style.display="block"}
+    function acceptCookies(){localStorage.setItem("wws_cookie_consent","accepted");document.getElementById("cookie-consent").style.display="none";document.body.style.paddingBottom="";posthog.init("phc_QxOulRmelGJKszTf1CZd1DObWvqGIWdAPsMPDeL7IVm",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only"});if(!window.__vantageLoaded){window.__vantageLoaded=1;var _vs=document.createElement("script");_vs.async=true;_vs.src="https://vantage.entrpy.co/b.js";_vs.setAttribute("data-site","whitewall");document.head.appendChild(_vs)}}
+    function declineCookies(){localStorage.setItem("wws_cookie_consent","declined");document.getElementById("cookie-consent").style.display="none";document.body.style.paddingBottom=""}
+    if(!localStorage.getItem("wws_cookie_consent")){var _cc=document.getElementById("cookie-consent");_cc.style.display="block";document.body.style.paddingBottom=_cc.offsetHeight+"px"}
   </script>
   <script src="/scripts/nav-account.js"></script>
   <!-- WWA-3: capture gclid/wbraid/gbraid + utm on every page (runs first, before nav) -->
