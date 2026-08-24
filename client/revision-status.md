@@ -1477,3 +1477,6 @@ Big batch. Two screenshots (Watson iMessage; booking-detail WW-2876). Comms `cli
 ### Round 116 (msgs `1a0315de5204de9a`, `1a03164e6d298d41`) — Google Calendar shared + session status roll-up
 - [x] Drew SHARED the WhiteWall Google Calendar with andrew@entrpy.co (`1a0315de5204de9a`) → Drew's half of DREW-74 DONE. Remaining = our-side Google Calendar posting (gated on the calendar credential, open on Andrew).
 - [x] Drew asked "anything we're waiting on / is that everything?" (`1a03164e6d298d41`) → answered inline (reply `1a0316aaeaea7845`): all Round-115 items live + ready to review; the ONE open item is Google Calendar mirroring (DREW-74), waiting only on our-side wiring. Kept warm, not asserted live. No new build, no new escalation.
+
+### Round 116b (msg `1a0316b8d193dbbe`) — "oh and also being able to charge cards from dashboard"
+- [x] Folds into DREW-47 Phase 2 (edit session + charge card, PR #143, built + gated). Andrew already approved both phases (Round 114) → no new escalation. Remaining = Square-sandbox charge proof before real cards, then merge #143 + arm `SQUARE_CHARGE_ARMED`. Answered inline (reply `1a0316f6ba0f21f9`), kept warm (built + in final safety testing, not asserted live). Restated the two open items: Google Calendar mirroring + card charging, both our-side.
