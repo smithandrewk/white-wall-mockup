@@ -1,0 +1,250 @@
+<!--
+  =====================================================================
+  EVENT SETUP AND RESET CREW — REPLACEMENT CONTENT BLOCK
+  =====================================================================
+  DEPLOYMENT INSTRUCTIONS (for Pip):
+
+  1. Deploy this in TWO places:
+     a. The Add-Ons page card for the Event Setup and Reset Crew
+     b. The checkout / booking flow where this add-on is displayed
+
+  2. In both places, KEEP the existing:
+     - Serif title ("Event Setup and Reset Crew")
+     - Italic subtext ("By no means necessary...")
+     - OPTIONAL and $750 pill badges
+     - Crew photo
+     - The "Add the Setup/Reset Crew to Your Booking" button
+
+  3. DELETE all the existing paragraph text between the photo and the
+     button, and insert this entire file (the <style> block and the
+     <section> below) in its place.
+
+  4. Everything is scoped under .wws-crew so it will not collide with
+     existing site CSS. Do not rename the classes.
+
+  5. This block is responsive on its own: cards sit side by side on
+     desktop and stack on mobile. No additional CSS is needed.
+  =====================================================================
+-->
+
+<style>
+  .wws-crew {
+    --wws-ink: #111111;
+    --wws-muted: #555555;
+    --wws-green: #1e5c40;
+    --wws-green-soft: #eaf4ee;
+    --wws-green-glow: #d7ecdf;
+    --wws-brick: #8a4a3a;
+    --wws-brick-soft: #f7efec;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: var(--wws-ink);
+    line-height: 1.55;
+  }
+
+  .wws-crew__intro {
+    font-size: 15px;
+    margin: 0 0 14px;
+  }
+  .wws-crew__intro strong { font-weight: 700; }
+  .wws-crew__hl {
+    background: #ffe33d;
+    color: var(--wws-ink);
+    padding: 1px 4px;
+    border-radius: 3px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  /* Slim video row */
+  .wws-crew__video {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--wws-ink);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 0 0 18px;
+    text-decoration: none;
+    color: var(--wws-ink);
+    font-size: 13.5px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .wws-crew__video:hover { background: var(--wws-ink); color: #ffffff; }
+  .wws-crew__video:focus-visible { outline: 2px solid var(--wws-ink); outline-offset: 3px; }
+  .wws-crew__play {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+  }
+  .wws-crew__play svg { display: block; margin-left: 2px; }
+  .wws-crew__video strong { font-weight: 700; }
+
+  /* Cards */
+  .wws-crew__cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .wws-crew__card {
+    border-radius: 8px;
+    padding: 0 0 18px;
+    overflow: hidden;
+  }
+  .wws-crew__card--included {
+    border: 1px solid var(--wws-green);
+    background: linear-gradient(180deg, var(--wws-green-soft) 0%, #ffffff 110px);
+  }
+  .wws-crew__card--not {
+    border: 1px solid #ddd2ce;
+    background: linear-gradient(180deg, var(--wws-brick-soft) 0%, #ffffff 110px);
+  }
+  .wws-crew__card h3 {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 0;
+    padding: 11px 18px;
+    color: #ffffff;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+  .wws-crew__card--included h3 { background: var(--wws-green); }
+  .wws-crew__card--not h3 { background: var(--wws-brick); }
+
+  .wws-crew__card ul {
+    list-style: none;
+    margin: 0;
+    padding: 14px 18px 0;
+  }
+  .wws-crew__card li {
+    display: flex;
+    gap: 9px;
+    font-size: 13.5px;
+    margin-bottom: 10px;
+  }
+  .wws-crew__card li:last-child { margin-bottom: 0; }
+  .wws-crew__mark {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+  .wws-crew__card--not li { color: var(--wws-muted); }
+
+  /* ROI highlight rows */
+  .wws-crew__card li.wws-crew__roi {
+    background: var(--wws-green-glow);
+    border-left: 4px solid var(--wws-green);
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-left: -10px;
+    margin-right: -10px;
+    font-weight: 600;
+  }
+  .wws-crew__roi-label {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--wws-green);
+    font-weight: 700;
+    margin: 12px 18px 6px;
+  }
+
+  /* Anchor callout */
+  .wws-crew__anchor {
+    margin: 14px 18px 0;
+    padding: 12px 14px;
+    background: var(--wws-green);
+    color: #f0c75e;
+    border-radius: 6px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .wws-crew__anchor strong { font-weight: 700; color: #ffdd7a; }
+
+  @media (max-width: 640px) {
+    .wws-crew__cards { grid-template-columns: 1fr; }
+    .wws-crew__card li.wws-crew__roi { margin-left: -6px; margin-right: -6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wws-crew__video { transition: none; }
+  }
+</style>
+
+<!-- ===== CONTENT BLOCK: goes between the photo and the add-on button ===== -->
+<section class="wws-crew">
+
+  <p class="wws-crew__intro">
+    This add-on is <strong>100% optional</strong>. You are fully welcome to move things yourself, set up, tear down, and reset the space on your own to keep your costs down. <strong class="wws-crew__hl">We built WhiteWall to be as affordable as possible by removing any unnecessary overhead.</strong> By keeping it self-service, we keep the labor cost down, which gives you immediate savings. However, if you would rather have the convenience instead of the savings and you would rather not do that work, our crew will gladly handle it for you.
+  </p>
+
+  <a class="wws-crew__video" href="https://www.instagram.com/reel/DZtLEyQyt7H/?utm_source=ig_web_copy_link&amp;igsi=MzRlODBiNWFlZA==" target="_blank" rel="noopener">
+    <span class="wws-crew__play" aria-hidden="true">
+      <svg width="10" height="12" viewBox="0 0 12 14" fill="currentColor"><path d="M0 0 L12 7 L0 14 Z"/></svg>
+    </span>
+    <span><strong>Want to see what the studio looks like when you walk in, and how it should look before you leave?</strong> Watch this video.</span>
+  </a>
+
+  <div class="wws-crew__cards">
+
+    <div class="wws-crew__card wws-crew__card--included">
+      <h3>What's Included</h3>
+      <ul>
+        <li>
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M3 9 L7 13 L14 4" fill="none" stroke="#1e5c40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Before your event, we will meet on site, FaceTime, or text to plan exactly what stays in the space and what gets moved to storage. Anything that can't fit is tucked into the corner and hidden.</span>
+        </li>
+        <li>
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M3 9 L7 13 L14 4" fill="none" stroke="#1e5c40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Crew tears down the standard studio floor plan before you arrive</span>
+        </li>
+        <li>
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M3 9 L7 13 L14 4" fill="none" stroke="#1e5c40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Your rented items (tables, chairs, PA system, TV, rolling walls) staged in the middle of the space, straps off, ready to take off the dolly and place wherever you like, whenever you walk in</span>
+        </li>
+      </ul>
+
+      <span class="wws-crew__roi-label">Where this add-on really pays off</span>
+      <ul style="padding-top:0;">
+        <li class="wws-crew__roi">
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M3 9 L7 13 L14 4" fill="none" stroke="#1e5c40" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>When your event ends, leave everything exactly where it is</span>
+        </li>
+        <li class="wws-crew__roi">
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M3 9 L7 13 L14 4" fill="none" stroke="#1e5c40" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Full pack-up, reset, and cleanup of the space after your event</span>
+        </li>
+      </ul>
+
+      <p class="wws-crew__anchor">
+        Clean up what you brought in, take out the trash, and <strong>leave the chairs, tables, and add-ons right where they are.</strong> No packing up the chairs and tables and loading them back onto the dollies, no rolling the walls back into the storage building, and no moving the furniture back into position. We pack it all up, bring the furniture back in, set the space back up, and reset everything for the next session, so you don't have to. <strong>You don't worry about a thing.</strong>
+      </p>
+    </div>
+
+    <div class="wws-crew__card wws-crew__card--not">
+      <h3>What's Not Included</h3>
+      <ul>
+        <li>
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M4 4 L13 13 M13 4 L4 13" fill="none" stroke="#8a4a3a" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Physically placing out the chairs, tables, and decor in their final spots (you take them off the dollies, which are already in there for you, ready to go, and arrange your specific setup)</span>
+        </li>
+        <li>
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M4 4 L13 13 M13 4 L4 13" fill="none" stroke="#8a4a3a" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Decorating (balloons, florals, linens, signage)</span>
+        </li>
+        <li>
+          <svg class="wws-crew__mark" viewBox="0 0 17 17" aria-hidden="true"><path d="M4 4 L13 13 M13 4 L4 13" fill="none" stroke="#8a4a3a" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Staffing during your event itself. It is still self-service, we just help out with the annoying logistics.</span>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+
+</section>
+<!-- ===== END CONTENT BLOCK ===== -->
