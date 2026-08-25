@@ -4444,7 +4444,7 @@
         </div>
         <img class="addon-featured-photo" src="${addon.image}" alt="${escapeHtml(addon.name)}">
         <div class="addon-card-content">
-          <p class="ui-copy">${formatAddonDescription(addon)}</p>
+          ${addon.descriptionHtml ? addon.descriptionHtml : '<p class="ui-copy">' + formatAddonDescription(addon) + '</p>'}
           <button type="button" class="booking-button ${added ? "booking-button-secondary" : "booking-button-primary"} addon-featured-btn" data-action="toggle-addon" data-addon-id="${addon.id}">
             ${added ? "Added to your booking &#10003; — tap to remove" : "Add the Setup/Reset Crew to your booking"}
           </button>
