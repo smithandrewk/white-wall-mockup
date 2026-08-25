@@ -7,7 +7,8 @@ const assert = require("assert");
 const {
   hasCrewAddon,
   buildCrewOwnerEmail,
-  buildCrewCleanerEmail
+  buildCrewCleanerEmail,
+  buildClientDraft
 } = require("./notify-crew");
 
 let passed = 0;
@@ -76,5 +77,32 @@ assert.ok(/BEFORE the event/.test(cleaner.text), "cleaner mentions setup BEFORE 
 assert.ok(/AFTER the event/.test(cleaner.text), "cleaner mentions reset AFTER the event");
 assert.ok(!/placement/i.test(cleaner.text), "cleaner must NOT list placements (removed in DREW-80)");
 ok("April dedicated email covers setup-before + reset-after, no placements");
+
+// ---- Client draft (4e) — Drew's dictated copy, DREW-83 ------------------
+const draft = buildClientDraft(crewBookingState(), "10233445566");
+assert.strictEqual(
+  draft.subject,
+  "Your upcoming event at WhiteWall Studios and Events"
+);
+ok("client draft subject is simple + personal");
+
+// Greeting is the customer's FIRST name only, with Drew's "Hey <name>!" shape.
+assert.ok(draft.text.startsWith("Hey Jordan!"), "draft opens 'Hey Jordan!' (first name only)");
+assert.ok(!/Jordan Rivera/.test(draft.text), "draft must NOT use the full name");
+ok("client draft opens with the first-name greeting");
+
+// Drew's verbatim phrases must survive exactly.
+assert.ok(draft.text.includes("WhiteWall Studios and Events"), "draft uses Drew's brand wording");
+assert.ok(draft.text.includes("meet me at the studio to walk through it together"), "draft keeps the walk-through offer");
+assert.ok(draft.text.includes("tucked in the corner/moved into the storage building"), "draft keeps the storage-building line");
+assert.ok(draft.text.includes("The best part is we'll reset everything for you after your event!"), "draft keeps the reset line");
+assert.ok(draft.text.includes("we could always do a face-time call"), "draft keeps the FaceTime offer");
+assert.ok(draft.text.trim().endsWith("Drew Shahoud, Owner of WhiteWall Studios and Events."), "draft is signed as the owner");
+ok("client draft carries Drew's verbatim copy end to end");
+
+// Missing first name degrades gracefully (draft is Drew-reviewed before any send).
+const draftNoName = buildClientDraft({ contact: {} }, "x");
+assert.ok(draftNoName.text.startsWith("Hey there!"), "no first name falls back to 'there'");
+ok("client draft falls back to 'there' when first name is absent");
 
 console.log("\nnotify-crew: all " + passed + " checks passed");
