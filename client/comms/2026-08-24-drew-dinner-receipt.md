@@ -99,3 +99,55 @@ to settle so it runs clean through the company books, recorded + queued, will co
 squared (did NOT assert the money moved — escalation OPEN); (2) add-on carousels gone, every
 add-on now individual buttons in a grid, live on whitewallstudios.co. Offered to keep going
 on the UI while in.
+
+---
+
+## Message 3 — Drew inbound (VERBATIM)
+
+- **Source:** Gmail (pip@entrpy.co)
+- **From:** Drew Shahoud <drewshahoud@gmail.com>
+- **To:** pip@entrpy.co
+- **Date:** Tue, 25 Aug 2026 08:35:30 -0400
+- **Subject:** Re: Dinner receipt
+- **msgid:** 1a038eb55b57aac8
+- Crossed Foreman reply 2 (`1a038f2e58967c55`), which had already handled both items.
+
+> Visa ending in 6884. But yeah that's fine. No this isn't for whitewall - this is for
+> entrpy. This is literally a meal that Andrew and I had together discussing entrpy. Just
+> send it to Andrew and let him know. That's all I need from you there.
+>
+> Update on the Website things I just said?
+
+### Handling — three corrections, no new build
+
+1. **Card last-4: Drew says Visa ****6884.** Foreman reply 1 had read it back as ****4884
+   off the merchant receipt. The Halls receipt image DOES print `XXXXXXXXXXXXX4884` — so
+   there is a genuine mismatch (Drew states 6884, receipt prints 4884). Recorded BOTH in the
+   vault, primary = Drew's stated 6884, with the receipt's printed value flagged for Andrew
+   to reconcile. Does not change who is reimbursed (Drew).
+2. **This is an ENTRPY expense, not White Wall.** Reply 1 loosely said "filed to White
+   Wall's records"; corrected. The actual vault record was always under the **entrpy** books
+   (`~/code/entrpy/vault/finance/expenses/`), so the file location was right — only the
+   wording in reply 1 was wrong. Purpose line updated to note it was a dinner discussing
+   entrpy.
+3. **"Just send it to Andrew and let him know. That's all I need."** No build requested —
+   the earlier offer of a Business Expenses dashboard log stays OFFERED, not green-lit
+   ("that's all I need from you there"). Reimbursement stays Andrew's to settle (money gate).
+
+**Actions taken this round:**
+- Vault record corrected (card 6884 primary / 4884 receipt-printed flagged; tagged entrpy
+  not White Wall). Committed in the entrpy repo.
+- **Andrew emailed a correction** (msgid `1a038fc8bfdf855f`, to andrewsmith1025@gmail.com):
+  card is 6884 per Drew / 4884 on the receipt, it is an entrpy business dinner, $335.40, Drew
+  asked "just send it to Andrew," money not moved — his to settle. The reimbursement
+  escalation `esc-reimburse-drew-335-40-...` stays OPEN.
+- **Website update** was already delivered in reply 2 (carousels → buttons, DREW-76 shipped
+  + live) — restated in reply 3 in case it crossed his note.
+
+## Foreman reply 3 (msgid 1a038fce4ec98a3d)
+
+Acknowledged the corrected card (Visa ****6884); confirmed it is filed under entrpy (not
+White Wall) as a business dinner with Andrew; sent straight to Andrew and told him, so it is
+his to settle, nothing more for Drew to do. Restated the website change is already live
+(add-on carousels gone → individual buttons in a grid, no swiping, on whitewallstudios.co).
+Did NOT assert the money moved (escalation OPEN).
