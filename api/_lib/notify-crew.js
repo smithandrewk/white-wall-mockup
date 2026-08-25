@@ -178,6 +178,40 @@ function buildCrewCleanerEmail(bookingState, appointmentId, opts) {
   };
 }
 
+// 4e — The personalized CLIENT draft Drew reviews and sends. This is NOT
+// auto-sent from here: once Drew's mailbox is connected on our side (a one-time
+// OAuth step on Andrew's list), a draft of this shape lands in Drew's own drafts
+// folder the moment a crew booking comes in, ready for his review + one click to
+// send. This builder is the single source of truth for that copy.
+//
+// The wording below is Drew's OWN dictated copy (2026-08-25, msg 1a03a83d2f5d1370,
+// DREW-83): simpler + more personal, signed as the owner, offering to meet at the
+// studio or FaceTime. Kept VERBATIM — only the customer's first name is filled in.
+// Do not "improve" it; this is Drew's voice by request.
+function buildClientDraft(bookingState, appointmentId, opts) {
+  const contact = (bookingState && bookingState.contact) || {};
+  const first = (contact.firstName || "").trim() || "there";
+
+  const text = [
+    "Hey " + first + "!",
+    "",
+    "Thank you so much for booking your event with us at WhiteWall Studios and Events. It looks like you added on the events setup and reset crew. Would you have time this coming week to meet me at the studio to walk through it together so we can figure out what you want to leave in the space and what you want to be tucked in the corner/moved into the storage building?",
+    "",
+    "Of course, we'll make sure to get all of your add-ons in this space for you so right when you show up, you can start setting up without having to worry about tearing down the studio. The best part is we'll reset everything for you after your event! Just leave it how it is, then we'll take care of it.",
+    "",
+    "What time this coming week works best to meet out there? If you won't have time to meet out there, we could always do a face-time call, and I could walk you through the space digitally. We could figure out the best game plan!",
+    "",
+    "Thanks so much!",
+    "",
+    "Drew Shahoud, Owner of WhiteWall Studios and Events."
+  ].join("\n");
+
+  return {
+    subject: "Your upcoming event at WhiteWall Studios and Events",
+    text: text
+  };
+}
+
 async function sendResend(apiKey, payload) {
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -237,4 +271,4 @@ async function notifyCrew(bookingState, appointmentId, opts) {
   }
 }
 
-module.exports = { notifyCrew, hasCrewAddon, buildCrewOwnerEmail, buildCrewCleanerEmail };
+module.exports = { notifyCrew, hasCrewAddon, buildCrewOwnerEmail, buildCrewCleanerEmail, buildClientDraft };
