@@ -110,6 +110,9 @@
         return "";
       }
       function descHtml(a) {
+        // Crew add-on ships a bespoke scoped .wws-crew HTML block (Drew, 2026-08-25);
+        // inject it verbatim in place of the plain paragraph text.
+        if (a.descriptionHtml) return a.descriptionHtml;
         if (!a.description) return "";
         return a.description.split(/\n{2,}/).map(function (para) { return "<p>" + esc(para.trim()) + "</p>"; }).join("");
       }
