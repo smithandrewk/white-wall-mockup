@@ -331,17 +331,6 @@ function buildAppointmentNotes(bookingState) {
     lines.push("", "Add-ons:", ...addonLines);
   }
 
-  // Event Setup and Reset Crew placement choices (where each item should go).
-  if (addons["setup-crew"] && addons["setup-crew"].selected && addons["setup-crew"].placements) {
-    const placements = addons["setup-crew"].placements;
-    const placementLines = SETUP_CREW_PLACEMENT_ITEMS
-      .filter(function (item) { return placements[item.id]; })
-      .map(function (item) { return item.label + " -> " + placements[item.id]; });
-    if (placementLines.length) {
-      lines.push("", "Event Setup and Reset Crew placements:", ...placementLines);
-    }
-  }
-
   if (bookingState.cleaningFee && bookingState.cleaningFee.amount > 0) {
     lines.push("", "Cleaning fee: $" + bookingState.cleaningFee.amount + " (auto-applied, 35+ participants)");
   }
@@ -657,21 +646,6 @@ async function createAppointment(payload) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Event Setup and Reset Crew placement items (V3 item 5) — server-side source of truth.
-// Each selected booking must specify where every item goes. Mirrors
-// placementItems in scripts/booking-config.js; used for notes + validation.
-// ---------------------------------------------------------------------------
-const SETUP_CREW_PLACEMENT_ITEMS = [
-  { id: "utility-tables", label: "Utility tables and extension cords", options: ["Back garage corner", "Leave where it currently is"] },
-  { id: "white-boxes", label: "White boxes", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
-  { id: "plants", label: "Plants", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
-  { id: "living-room-rug", label: "Living room rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
-  { id: "living-room-furniture", label: "Living room furniture", options: ["Back garage corner", "Leave where it currently is"] },
-  { id: "getting-ready-rug", label: "Getting-Ready area Rug", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
-  { id: "getting-ready-furniture", label: "Getting-Ready area Furniture", options: ["Back garage corner", "Leave where it currently is", "Storage Building"] },
-  { id: "large-table-chairs", label: "Large table and chairs", options: ["Back garage corner", "Leave where it currently is"] }
-];
 
 // Build Square line items array from booking state
 // Returns [{ name, amount (cents), quantity, catalogObjectId? }]
@@ -789,7 +763,6 @@ module.exports = {
   buildSquareLineItems,
   SESSION_PRICES,
   ADDON_PRICES,
-  SETUP_CREW_PLACEMENT_ITEMS,
   TYPE_EARLIEST_START_MINUTES,
   easternMinutesFromISO,
   isStartBeforeEarliest,

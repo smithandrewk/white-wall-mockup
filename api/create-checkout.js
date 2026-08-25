@@ -29,8 +29,7 @@ const {
   TYPE_TO_DURATION,
   CALENDAR_IDS,
   ACUITY_ADDON_IDS,
-  isStartBeforeEarliest,
-  SETUP_CREW_PLACEMENT_ITEMS
+  isStartBeforeEarliest
 } = require("./_lib/acuity");
 const { computeCart } = require("./_lib/cart");
 const pricingShared = require("../scripts/pricing-shared");
@@ -46,6 +45,7 @@ const { isStaging, stagingSinkEmail, stagingCalendarID } = require("./_lib/env")
 const { buildWaiverText } = require("./_lib/waiver-text");
 const { notifyOwner } = require("./notify-owner");
 const { notifyCleaner } = require("./_lib/notify-cleaner");
+const { notifyCrew } = require("./_lib/notify-crew");
 const { notifyOwnerSMS, notifyOwnerCompSMS } = require("./_lib/notify-sms");
 const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
 const { notifyMultidayEvent } = require("./_lib/notify-multiday");
@@ -175,20 +175,12 @@ module.exports = async function handler(req, res) {
   if (isStartBeforeEarliest(appointmentTypeID, datetime)) {
     return res.status(400).json({ error: "Selected start time is before the earliest allowed for this session" });
   }
-  // Event Setup and Reset Crew (V3 item 5): events-only, and every placement must be
-  // chosen. Guard server-side so a crafted POST can't bypass the event gate or
-  // omit the placement choices Drew relies on.
+  // Event Setup and Reset Crew (V3 item 5): events-only. Guard server-side so a
+  // crafted POST can't bypass the event gate. Placement questions were removed in
+  // DREW-80 — the crew coordinates item placement with the client directly.
   if (addons && addons["setup-crew"] && addons["setup-crew"].selected) {
     if (eventIntent !== "yes") {
       return res.status(400).json({ error: "Event Setup and Reset Crew is only available for event bookings" });
-    }
-    var crewPlacements = addons["setup-crew"].placements || {};
-    for (var pi = 0; pi < SETUP_CREW_PLACEMENT_ITEMS.length; pi++) {
-      var pItem = SETUP_CREW_PLACEMENT_ITEMS[pi];
-      var chosen = crewPlacements[pItem.id];
-      if (!chosen || pItem.options.indexOf(chosen) === -1) {
-        return res.status(400).json({ error: "Event Setup and Reset Crew requires a placement choice for each item" });
-      }
     }
   }
 
@@ -316,6 +308,7 @@ module.exports = async function handler(req, res) {
       // Notifications — isolated so one failure can't break the comp booking.
       try { await notifyOwner(compBookingState, compAppointment.id); } catch (e) { console.error("notifyOwner:", e.message); }
       try { await notifyCleaner(compBookingState, compAppointment.id); } catch (e) { console.error("notifyCleaner:", e.message); }
+      try { await notifyCrew(compBookingState, compAppointment.id); } catch (e) { console.error("notifyCrew:", e.message); }
       try { await notifyOwnerSMS(compBookingState, compAppointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
       try { await notifyCustomerSMS(compBookingState, compAppointment.id); } catch (e) { console.error("notifyCustomerSMS:", e.message); }
       // Watson comp alert — a 100% off code was used (best-effort, never blocks).
@@ -849,6 +842,7 @@ module.exports = async function handler(req, res) {
       // Notifications — isolated so one failure can't break a paid booking
       try { await notifyOwner(bookingState, appointment.id); } catch (e) { console.error("notifyOwner:", e.message); }
       try { await notifyCleaner(bookingState, appointment.id); } catch (e) { console.error("notifyCleaner:", e.message); }
+      try { await notifyCrew(bookingState, appointment.id); } catch (e) { console.error("notifyCrew:", e.message); }
       try { await notifyOwnerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyOwnerSMS:", e.message); }
       try { await notifyCustomerSMS(bookingState, appointment.id); } catch (e) { console.error("notifyCustomerSMS:", e.message); }
 
@@ -1172,19 +1166,11 @@ async function handleCartCheckout(req, res, body) {
       }
       var addons = s.addons || {};
       var sEventIntent = (s.eventIntent === "yes") ? "yes" : "no";
-      // Event Setup and Reset Crew: events-only + every placement chosen (same guard as
-      // the single-session path, applied per session).
+      // Event Setup and Reset Crew: events-only (same guard as the single-session
+      // path, applied per session). Placement questions removed in DREW-80.
       if (addons["setup-crew"] && addons["setup-crew"].selected) {
         if (sEventIntent !== "yes") {
           throw new Error("session " + idx + ": Event Setup and Reset Crew is only available for event bookings");
-        }
-        var crewPlacements = addons["setup-crew"].placements || {};
-        for (var pi = 0; pi < SETUP_CREW_PLACEMENT_ITEMS.length; pi++) {
-          var pItem = SETUP_CREW_PLACEMENT_ITEMS[pi];
-          var chosen = crewPlacements[pItem.id];
-          if (!chosen || pItem.options.indexOf(chosen) === -1) {
-            throw new Error("session " + idx + ": Event Setup and Reset Crew requires a placement choice for each item");
-          }
         }
       }
       return {
@@ -1605,13 +1591,6 @@ async function handleCartCheckout(req, res, body) {
     var crewAdded = normalized.some(function (s) {
       return s.addons && s.addons["setup-crew"] && s.addons["setup-crew"].selected;
     });
-    var crewPlacements = null;
-    if (crewAdded) {
-      var crewSession = normalized.find(function (s) {
-        return s.addons && s.addons["setup-crew"] && s.addons["setup-crew"].selected;
-      });
-      crewPlacements = (crewSession && crewSession.addons["setup-crew"].placements) || null;
-    }
     var backBufferMin = crewAdded ? 240 : 150;
 
     // Back-end cleaning/reset buffer after the LAST session's end. A multi-day
@@ -1698,13 +1677,52 @@ async function handleCartCheckout(req, res, body) {
           balanceChargeAt: balanceChargeAt,
           square: { customerId: customerId, cardId: cardOnFile.id, paymentId: payment.id },
           crewAdded: crewAdded,
-          crewPlacements: crewPlacements,
           headcount: cartMaxAttendees || null,
           eventDescription: (normalized.find(function (n) { return n.eventDescription; }) || {}).eventDescription || "",
           foodDrinks: normalized.some(function (n) { return n.foodDrinks; })
         });
       } catch (e) {
         console.error("cart event notifications failed:", e.message);
+      }
+    }
+
+    // DREW-80 item 4: Event Setup and Reset Crew heads-up emails (owner "Action
+    // required" + April dedicated). Fire whenever the cart carries the setup-crew
+    // add-on, INDEPENDENT of the multi-day / cleaning-fee gate above — a small
+    // single-day event can book the crew with no cleaning fee. Best-effort +
+    // isolated; on staging Resend self-suppresses.
+    if (crewAdded) {
+      try {
+        var crewIdx = normalized.findIndex(function (s) {
+          return s.addons && s.addons["setup-crew"] && s.addons["setup-crew"].selected;
+        });
+        if (crewIdx >= 0) {
+          var crewDates = priced.sessions.map(function (ps) { return ps.datetime; });
+          var fmtCrewDate = function (iso) {
+            try {
+              return new Date(iso).toLocaleDateString("en-US", {
+                timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric"
+              });
+            } catch (e) { return iso; }
+          };
+          var crewDateLabel = crewDates.length > 1
+            ? (fmtCrewDate(crewDates[0]) + " to " + fmtCrewDate(crewDates[crewDates.length - 1]))
+            : fmtCrewDate(crewDates[0]);
+          var crewBookingState = {
+            appointmentTypeID: normalized[crewIdx].appointmentTypeID,
+            addons: normalized[crewIdx].addons,
+            location: cartLocation,
+            contact: contact,
+            datetime: crewDates[0]
+          };
+          var crewLeadApptId = (createdAppointments[0] && createdAppointments[0].id) || null;
+          await notifyCrew(crewBookingState, crewLeadApptId, {
+            amountCents: totalCents,
+            dateLabel: crewDateLabel
+          });
+        }
+      } catch (e) {
+        console.error("cart crew notifications failed:", e.message);
       }
     }
 
