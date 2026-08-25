@@ -130,7 +130,7 @@
     "md-add-last": 1, "md-add-multiple": 1, "md-review": 1,
     "range-reset": 1, "range-review": 1,
     "set-event-intent": 1, "set-last-day-leave": 1,
-    "adjust-quantity": 1, "set-addon-mode": 1, "set-placement": 1,
+    "adjust-quantity": 1, "set-addon-mode": 1,
     "set-quantity-max": 1, "set-tier": 1,
     "toggle-addon": 1, "toggle-color": 1, "toggle-wall": 1,
     "apply-coupon": 1, "remove-coupon": 1, "set-payment-mode": 1
@@ -142,7 +142,7 @@
   ];
   var OFFER_LOCKED_CHECKS = [
     "[data-check='food-drinks-yes']", "[data-check='food-drinks-no']",
-    "[data-action='set-placement']", "[data-action='set-last-day-leave']"
+    "[data-action='set-last-day-leave']"
   ];
 
   const currency = new Intl.NumberFormat("en-US", {
@@ -1744,7 +1744,7 @@
     if (OFFER.lockEventDescription) {
       OFFER_LOCKED_INPUTS.push("[data-input='event-description']");
     }
-    OFFER_LOCKED_CHECKS = ["[data-action='set-placement']", "[data-action='set-last-day-leave']"];
+    OFFER_LOCKED_CHECKS = ["[data-action='set-last-day-leave']"];
     injectOfferStyles();
     // Offers never mix with promos or deposits — the price IS the offer.
     state.coupon = null;
@@ -2373,7 +2373,6 @@
           location.addons.forEach(function (a) {
             if (a.eventsOnly && state.addons[a.id]) {
               state.addons[a.id].selected = false;
-              if (state.addons[a.id].placements) state.addons[a.id].placements = {};
             }
           });
         }
@@ -2569,15 +2568,6 @@
         if (target.type === "checkbox" || target.type === "radio") {
           if (target.matches("[data-check='food-drinks-yes']")) target.checked = state.foodDrinks === true;
           if (target.matches("[data-check='food-drinks-no']")) target.checked = state.foodDrinks === false;
-        }
-        return;
-      }
-
-      if (target.matches("[data-action='set-placement']")) {
-        var pAddon = state.addons[target.dataset.addonId];
-        if (pAddon) {
-          if (!pAddon.placements) pAddon.placements = {};
-          pAddon.placements[target.dataset.placementId] = target.value;
         }
         return;
       }
@@ -4391,40 +4381,12 @@
     });
   }
 
-  // Placement dropdowns for an add-on that requires them (Event Setup and Reset
-  // Crew): shown once selected. Extracted so both the standard toggle control and
-  // the featured card can render them. Returns "" when not applicable.
-  function renderPlacementRows(addon, addonState) {
-    if (!addon.requiresPlacements || !addonState.selected || !Array.isArray(addon.placementItems)) return "";
-    var placements = addonState.placements || {};
-    var rows = addon.placementItems.map(function (item) {
-      var chosen = placements[item.id] || "";
-      var opts = ['<option value="" disabled ' + (chosen ? "" : "selected") + '>Select...</option>']
-        .concat(item.options.map(function (opt) {
-          return '<option value="' + escapeHtml(opt) + '"' + (chosen === opt ? " selected" : "") + ">" + escapeHtml(opt) + "</option>";
-        }))
-        .join("");
-      return `
-        <label class="ui-field" style="display:block;margin-top:0.75rem">
-          <span class="ui-copy-strong">${escapeHtml(item.label)}</span>
-          <select class="booking-input" data-action="set-placement" data-addon-id="${addon.id}" data-placement-id="${item.id}" style="margin-top:0.35rem">
-            ${opts}
-          </select>
-        </label>`;
-    }).join("");
-    return `
-      <div class="addon-placements" style="margin-top:1rem">
-        <p class="ui-copy-strong">Tell our crew where each item should go:</p>
-        ${rows}
-      </div>
-    `;
-  }
-
   // Featured add-on card (Event Setup and Reset Crew, Drew 2026-07-11): one large
   // square, stacked on the HORIZONTAL axis — header (title, subtitle, optional +
   // price pills) on top, then a full-width photo, then the full-width description,
-  // ending in a large plain pill button (no photo inside it). Placement dropdowns
-  // appear under the button once added.
+  // ending in a large plain pill button (no photo inside it). The crew coordinates
+  // item placement with the client directly after booking (DREW-80), so there are
+  // no placement questions in the flow.
   function renderFeaturedAddonCard(addon, addonState) {
     const tagline = addon.tagline
       ? '<p class="addon-card-tagline">' + escapeHtml(addon.tagline) + '</p>'
@@ -4448,7 +4410,6 @@
           <button type="button" class="booking-button ${added ? "booking-button-secondary" : "booking-button-primary"} addon-featured-btn" data-action="toggle-addon" data-addon-id="${addon.id}">
             ${added ? "Added to your booking &#10003; — tap to remove" : "Add the Setup/Reset Crew to your booking"}
           </button>
-          ${renderPlacementRows(addon, addonState)}
         </div>
       </article>
     `;
@@ -4500,9 +4461,6 @@
           </button>
         </div>
       `;
-      // Placement dropdowns (e.g. Event Setup and Reset Crew): when selected, the
-      // customer must say where each studio item should go. Required before pay.
-      toggleHtml += renderPlacementRows(addon, addonState);
       return toggleHtml;
     }
 
@@ -5302,15 +5260,6 @@
     var tmCount = parseCount(state.intake.participants);
     if (location.slug === "taylors-mill" && tmCount > 50) errors.push("Taylor\u2019s Mill has a maximum capacity of 50 people.");
     if (location.slug === "taylors-mill" && tmCount > 35 && !state.tmHighTrafficAcknowledged) errors.push("Please acknowledge the high-traffic notice for 35+ participants.");
-    // Event Setup and Reset Crew: every placement must be chosen before pay.
-    location.addons.forEach(function (addon) {
-      if (!addon.requiresPlacements || !Array.isArray(addon.placementItems)) return;
-      var s = state.addons[addon.id];
-      if (!s || !s.selected) return;
-      var placements = s.placements || {};
-      var missing = addon.placementItems.some(function (item) { return !placements[item.id]; });
-      if (missing) errors.push("Please tell our crew where each item should go for the " + addon.name + ".");
-    });
     return errors;
   }
 
@@ -5318,7 +5267,7 @@
 
   function getInitialAddonState(addon) {
     if (addon.type === "toggle") {
-      return addon.requiresPlacements ? { selected: false, placements: {} } : { selected: false };
+      return { selected: false };
     }
     if (addon.type === "quantity") {
       return { quantity: 0 };

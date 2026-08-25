@@ -79,7 +79,7 @@ function fmtLocal(iso) {
 }
 
 function buildCleanerEmailBody(opts) {
-  return [
+  const lines = [
     "Hi April,",
     "",
     "A new booking at our " + opts.locationName + " location needs a full studio reset & clean after the session ends.",
@@ -91,7 +91,23 @@ function buildCleanerEmailBody(opts) {
     "Cleaning window: " + fmtLocal(opts.sessionEnd.toISOString()) + " → " + fmtLocal(opts.bufferEnd.toISOString()),
     "                 (2.5 hour buffer is blocked on the calendar)",
     "",
-    "Studio:          " + opts.address,
+    "Studio:          " + opts.address
+  ];
+  // DREW-80 item 4b: when this event also booked the Event Setup and Reset Crew
+  // add-on, April is on for the crew work too. The crew coordinates item
+  // placement with the client directly, so no placement list here.
+  if (opts.crew) {
+    lines.push(
+      "",
+      "═══════════════════════════════════════",
+      "You are ALSO needed for the Event Setup and Reset Crew for this event.",
+      "═══════════════════════════════════════",
+      "This event booked the setup/reset crew add-on: set the space up before the",
+      "event (tear down the standard floor plan, stage the rented items) and do the",
+      "full reset/cleanup after. We'll share the exact plan with you ahead of time."
+    );
+  }
+  lines.push(
     "",
     "An .ics attachment is included — open it on your phone or computer to add this to your calendar in one tap.",
     "",
@@ -102,7 +118,8 @@ function buildCleanerEmailBody(opts) {
     "",
     "—",
     "Acuity appointment ID: " + opts.appointmentId
-  ].join("\n");
+  );
+  return lines.join("\n");
 }
 
 async function notifyCleaner(bookingState, appointmentId) {
@@ -137,6 +154,9 @@ async function notifyCleaner(bookingState, appointmentId) {
     location: address
   });
 
+  const crew = !!(bookingState.addons && bookingState.addons["setup-crew"]
+    && bookingState.addons["setup-crew"].selected);
+
   const body = buildCleanerEmailBody({
     locationName: locationName,
     customerName: customerName,
@@ -144,7 +164,8 @@ async function notifyCleaner(bookingState, appointmentId) {
     sessionEnd: sessionEnd,
     bufferEnd: bufferEnd,
     address: address,
-    appointmentId: appointmentId
+    appointmentId: appointmentId,
+    crew: crew
   });
 
   try {

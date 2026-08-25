@@ -23,7 +23,7 @@
 // Env vars: RESEND_API_KEY, NOTIFICATION_EMAIL (owner), CLEANER_EMAIL, plus the
 // Watson/Blue-Bubbles vars used by sendOwnerSMS.
 
-const { SESSION_PRICES, TYPE_TO_DURATION, SETUP_CREW_PLACEMENT_ITEMS } = require("./acuity");
+const { SESSION_PRICES, TYPE_TO_DURATION } = require("./acuity");
 const { sendOwnerSMS, fmtPhone, fmtUsd } = require("./notify-sms");
 const { buildIcs } = require("./notify-cleaner");
 const { isStaging, stagingSinkEmail } = require("./env");
@@ -96,8 +96,7 @@ function endOfSession(iso, typeId) {
 }
 
 // Compact, human add-on list for one day (raw addons object). Setup crew is
-// shown so the customer sees it on their recap; placement detail goes to the
-// owner/crew, not the customer recap.
+// shown so the customer sees it on their recap.
 function describeDayAddons(addons) {
   if (!addons) return [];
   const lines = [];
@@ -221,11 +220,8 @@ function buildOwnerRecapEmail(ctx) {
     "═══════════════════════════════════════", "DAY BY DAY", "═══════════════════════════════════════"
   ];
   buildEventRecapLines(ctx).forEach(function (l) { sections.push(l); });
-  if (ctx.crewAdded && ctx.crewPlacements) {
-    sections.push("", "═══════════════════════════════════════", "EVENT SETUP AND RESET CREW — PLACEMENTS", "═══════════════════════════════════════");
-    SETUP_CREW_PLACEMENT_ITEMS.forEach(function (item) {
-      if (ctx.crewPlacements[item.id]) sections.push("  " + item.label + " -> " + ctx.crewPlacements[item.id]);
-    });
+  if (ctx.crewAdded) {
+    sections.push("", "═══════════════════════════════════════", "EVENT SETUP AND RESET CREW", "═══════════════════════════════════════", "  Added — crew coordinates item placement with the client directly.");
   }
   sections.push(
     "",
@@ -267,19 +263,15 @@ function buildOwnerEventSms(ctx) {
 }
 
 // Item 3 — SECOND, back-to-back owner Watson SMS, ONLY when the setup crew was
-// added. Placement choices + recommended front-end crew start + back-end reset.
+// added. Recommended front-end crew start + back-end reset timing.
 function buildCrewSms(ctx) {
   const day1Start = new Date(ctx.days[0].datetime);
   const crewStart = new Date(day1Start.getTime() - CREW_FRONT_LEAD_MIN * 60000);
   const lastEnd = endOfSession(ctx.days[ctx.days.length - 1].datetime, ctx.days[ctx.days.length - 1].typeId);
   const lines = [
     "[WhiteWall] Setup crew — " + (fullName(ctx.contact) || "event"),
-    "Where each item goes (from intake):"
+    "Setup crew add-on is on this event (placement coordinated with the client directly)."
   ];
-  const pl = ctx.crewPlacements || {};
-  SETUP_CREW_PLACEMENT_ITEMS.forEach(function (item) {
-    if (pl[item.id]) lines.push("• " + item.label + ": " + pl[item.id]);
-  });
   lines.push("Recommended crew start: " + fmtDateTime(crewStart) + " (2h before the event start)");
   lines.push("Back-end reset: crew can start at " + fmtDateTime(lastEnd) + " (the event ends then)");
   return lines.join("\n");
@@ -384,7 +376,7 @@ function multidaySendPlan(ctx) {
   const days = (ctx && ctx.days && ctx.days.length) || 0;
   const isMultiDay = days >= 2;
   const cleaningNeeded = (Number(ctx && ctx.cleaningFeeCents) || 0) > 0;
-  const crew = !!(ctx && ctx.crewAdded && ctx.crewPlacements);
+  const crew = !!(ctx && ctx.crewAdded);
   return {
     customerRecap: isMultiDay,
     ownerRecap: isMultiDay,
