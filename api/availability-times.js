@@ -12,7 +12,16 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { appointmentTypeID, date } = req.query;
+  const { appointmentTypeID, date, earlyStartOverride } = req.query;
+
+  // DREW-93: the dashboard Session Builder passes earlyStartOverride=1 when the
+  // owner has toggled the 8-Hour Override on, so the picker can show the
+  // pre-floor slots. This ONLY affects which slots are DISPLAYED — the booking
+  // itself is hard-gated by the HMAC-signed offer at create-checkout, so a
+  // hand-crafted param here cannot book an early 8h start (verify + create-checkout
+  // still reject an early start unless it rides a signed offer with the flag).
+  // The customer site never sends this param (the button is builder-only).
+  const skipEarliestFloor = earlyStartOverride === "1" || earlyStartOverride === "true";
 
   if (!appointmentTypeID || !isValidAppointmentTypeID(appointmentTypeID)) {
     return res.status(400).json({ error: "Invalid appointmentTypeID" });
@@ -40,7 +49,7 @@ module.exports = async function handler(req, res) {
     // ONLY a multi-day pre-event-day BILLING rule, handled in the cart, not a
     // global availability filter. A solo late booking is fine.)
     const times = (data || [])
-      .filter((t) => !isStartBeforeEarliest(appointmentTypeID, t.time))
+      .filter((t) => skipEarliestFloor || !isStartBeforeEarliest(appointmentTypeID, t.time))
       .map((t) => ({ time: t.time }));
 
     // Shorter cache than dates — time slots are more volatile

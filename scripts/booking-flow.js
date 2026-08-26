@@ -281,6 +281,13 @@
     promoActive: false,  // true only while a coupon campaign is live (gates the promo UI)
     selectedDate: "",
     selectedTime: "",
+    // DREW-93: BUILDER-ONLY owner override of a duration's earliest-start floor
+    // (e.g. the 8h Flagship 12:30pm ET floor). Off by default so the floor holds
+    // exactly as on the customer site; toggled per-build in the Session Builder
+    // via the "8-Hour Override" button next to the time slots. Never settable on
+    // the customer site (the button only renders when WWS_BUILDER_MODE is set),
+    // and the actual booking stays hard-gated by the HMAC-signed offer.
+    _earlyStartOverride: false,
     availableDates: [],
     availableTimes: [],
     calendarMonth: new Date().toISOString().slice(0, 7),
@@ -1229,12 +1236,19 @@
     if (state.selectedTime) raw.push(snapshotActiveSession());
     if (!raw.length) raw.push(snapshotActiveSession()); // duration-only build
     return raw.map(function (s) {
+      // DREW-93: carry the 8-hour override per session, but ONLY for a duration
+      // that actually has an earliest-start floor (today the 8h Flagship). On any
+      // other duration the flag is meaningless, so keep it false and let the
+      // server floor stand. buildOfferPayload copies this into the signed offer.
+      var dur = location.durations.find(function (d) { return d.id === s.durationId; });
+      var floored = !!(dur && dur.earliestStartMinutes != null);
       return {
         durationId: s.durationId || "",
         selectedDate: s.selectedDate || "",
         selectedTime: s.selectedTime || "",
         mdRole: s._mdRole || "",
         mdTimeLabel: s._mdTimeLabel || "",
+        earlyStartOverride: !!state._earlyStartOverride && floored,
         addons: JSON.parse(JSON.stringify(s.addons || {}))
       };
     });
@@ -1275,6 +1289,7 @@
       _cartReviewing: state._cartReviewing,
       selectedDate: state.selectedDate,
       selectedTime: state.selectedTime,
+      _earlyStartOverride: state._earlyStartOverride, // DREW-93: persist the 8h override with the draft
       intake: { participants: state.intake.participants, business: state.intake.business }
     }));
   }
@@ -1595,7 +1610,7 @@
       "_eventDurationId", "_eventStartDate", "_eventEndDate",
       "_lastDayDurationId", "durationId", "eventIntent", "participants",
       "eventDescription", "foodDrinks", "highTrafficNote",
-      "_cartReviewing", "selectedDate", "selectedTime"
+      "_cartReviewing", "selectedDate", "selectedTime", "_earlyStartOverride"
     ].forEach(function (k) { if (fs[k] !== undefined) state[k] = fs[k]; });
     state.addons = {};
     location.addons.forEach(function (a) {
@@ -1999,6 +2014,9 @@
         state.availableTimes = [];
         state.selectedDate = "";
         state.selectedTime = "";
+        // DREW-93: a fresh duration starts with the floor back on — the override
+        // is a per-build, per-duration choice, never sticky across durations.
+        state._earlyStartOverride = false;
         var selDuration = getSelectedDuration();
         trackEvent("duration_selected", {
           location: location.slug,
@@ -2159,6 +2177,23 @@
         if (locationSlug === "taylors-mill" && !state._pvUpsellShown) {
           state._pvUpsellShown = true;
           showPowdersvilleUpsell();
+        }
+        return;
+      }
+
+      // DREW-93: BUILDER-only — flip the 8-hour earliest-start override for this
+      // build and reload the day's slots so the earlier starts appear/disappear.
+      // fetchAvailableTimes clears the current pick as it reloads, so an
+      // out-of-range selection can't survive a toggle. Never fires on the
+      // customer site (the button that dispatches it only renders in BUILDER).
+      if (action === "toggle-early-override") {
+        if (!BUILDER) return;
+        state._earlyStartOverride = !state._earlyStartOverride;
+        var atid = getAppointmentTypeID();
+        if (atid && state.selectedDate) {
+          fetchAvailableTimes(atid, state.selectedDate);
+        } else {
+          renderScheduleStep();
         }
         return;
       }
@@ -3070,8 +3105,16 @@
       return;
     }
 
+    // DREW-93: in the Session Builder, when the owner has toggled the 8-Hour
+    // Override on for a floored duration, ask the availability proxy to return
+    // the pre-floor slots too, and skip the client-side floor filter below so
+    // they're offered. Off everywhere else — and always on the customer site,
+    // where BUILDER is false — so the floor holds exactly as before.
+    var overrideFloor = BUILDER && state._earlyStartOverride;
     try {
-      const res = await fetch(`/api/availability-times?appointmentTypeID=${appointmentTypeID}&date=${date}`);
+      var timesUrl = `/api/availability-times?appointmentTypeID=${appointmentTypeID}&date=${date}`;
+      if (overrideFloor) timesUrl += "&earlyStartOverride=1";
+      const res = await fetch(timesUrl);
       if (!res.ok) throw new Error("Failed to load times");
       const data = await res.json();
       var times = (data.times || []).map(function (t) { return t.time; });
@@ -3079,8 +3122,10 @@
       // before the duration's floor so the UI never offers a too-early start.
       // The server (availability-times + verify + create-checkout) enforces the
       // same floor authoritatively; this is just so the customer never sees it.
+      // (DREW-93: the builder override lifts BOTH — the proxy returns the early
+      // slots and this filter is skipped — but only inside the Session Builder.)
       var floorMin = selectedDuration && selectedDuration.earliestStartMinutes;
-      if (floorMin != null) {
+      if (floorMin != null && !overrideFloor) {
         times = times.filter(function (t) { return easternMinutesFromTime(t) >= floorMin; });
       }
       state.availableTimes = times;
@@ -3449,6 +3494,35 @@
     '</div>';
   }
 
+  // DREW-93: minutes-since-midnight → "12:30pm" style label for the floor.
+  function earliestFloorLabel(mins) {
+    var h = Math.floor(mins / 60), m = mins % 60;
+    var ap = h >= 12 ? "pm" : "am";
+    var h12 = ((h + 11) % 12) + 1;
+    return h12 + (m ? ":" + String(m).padStart(2, "0") : "") + ap;
+  }
+
+  // DREW-93: the owner-only "8-Hour Override" pill. Renders ONLY in the Session
+  // Builder (BUILDER) for a duration that actually has an earliest-start floor
+  // (today just the 8h Flagship). Never on the customer site. Toggling it lifts
+  // the floor for THIS build so the earlier slots appear; the booking itself
+  // stays hard-gated by the HMAC-signed offer, so this button can't book an
+  // early start on its own.
+  function earlyOverrideToggle() {
+    var selDur = getSelectedDuration();
+    if (!(BUILDER && selDur && selDur.earliestStartMinutes != null)) return "";
+    var on = !!state._earlyStartOverride;
+    var floorLabel = earliestFloorLabel(selDur.earliestStartMinutes);
+    var base = "display:inline-flex;align-items:center;gap:0.4rem;font-size:0.72rem;font-weight:600;" +
+      "letter-spacing:0.02em;padding:0.35rem 0.7rem;border-radius:999px;cursor:pointer;line-height:1;white-space:nowrap;";
+    var skin = on
+      ? "border:1px solid #111;background:#111;color:#fff;"
+      : "border:1px solid rgba(0,0,0,0.28);background:#fff;color:rgba(0,0,0,0.72);";
+    return '<button type="button" data-action="toggle-early-override" aria-pressed="' + (on ? "true" : "false") +
+      '" title="Owner only: lift the ' + floorLabel + ' earliest-start floor for this build. Not on the customer site." ' +
+      'style="' + base + skin + '">8-Hour Override' + (on ? " · ON" : "") + '</button>';
+  }
+
   function renderTimeSlots() {
     if (!state.selectedDate) return '';
 
@@ -3456,13 +3530,33 @@
       return '<div class="booking-panel-soft p-5 mt-5"><div class="booking-spinner"></div></div>';
     }
 
-    if (state.availableTimes.length === 0) {
-      return '<div class="booking-panel-soft p-5 mt-5"><p class="ui-copy-muted" style="text-align:center">No time slots available for this date</p></div>';
-    }
-
     var dp = state.selectedDate.split("-");
     var humanDate = new Date(Number(dp[0]), Number(dp[1]) - 1, Number(dp[2]))
       .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+    var toggle = earlyOverrideToggle();
+    // Heading + the override pill on one row. Builder-only; on the customer site
+    // `toggle` is "" so this collapses back to the plain heading.
+    var head = '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem">' +
+      '<p class="ui-kicker" id="timeslot-label" style="margin-bottom:0">Available times for ' + escapeHtml(humanDate) + '</p>' +
+      toggle +
+    '</div>';
+
+    if (state.availableTimes.length === 0) {
+      // Customer site (no toggle): keep the original plain empty state exactly.
+      if (!toggle) {
+        return '<div class="booking-panel-soft p-5 mt-5"><p class="ui-copy-muted" style="text-align:center">No time slots available for this date</p></div>';
+      }
+      // Builder + a floored duration + override OFF: the early slots may just be
+      // hidden by the floor, so tell the owner the pill will reveal them.
+      var emptyHint = !state._earlyStartOverride
+        ? '<p class="ui-copy-muted" style="text-align:center;margin-top:0.5rem;font-size:0.8rem">Earlier starts may be hidden by the earliest-start floor — tap 8-Hour Override to show them.</p>'
+        : '';
+      return '<div class="booking-panel-soft p-5 mt-5">' + head +
+        '<p class="ui-copy-muted" style="text-align:center">No time slots available for this date</p>' +
+        emptyHint +
+      '</div>';
+    }
 
     var pills = state.availableTimes.map(function (t) {
       var d = new Date(t);
@@ -3472,8 +3566,7 @@
       return '<button type="button" class="' + cls + '" data-action="select-time" data-time="' + escapeAttribute(t) + '" aria-pressed="' + (isSelected ? "true" : "false") + '" aria-label="' + escapeAttribute(humanDate + " at " + label) + '">' + label + '</button>';
     }).join("");
 
-    return '<div class="booking-panel-soft p-5 mt-5">' +
-      '<p class="ui-kicker" id="timeslot-label" style="margin-bottom:1rem">Available times for ' + escapeHtml(humanDate) + '</p>' +
+    return '<div class="booking-panel-soft p-5 mt-5">' + head +
       '<div class="time-slot-grid" role="group" aria-labelledby="timeslot-label">' + pills + '</div>' +
     '</div>';
   }
