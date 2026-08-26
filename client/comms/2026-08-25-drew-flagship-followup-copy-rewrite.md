@@ -53,3 +53,23 @@ Reversible copy revision, verbatim-directed by Drew → fast path, no money/lega
 - **Reply to Drew:** `1a03bee21ddce450` (new subject + full copy + note on the dropped paragraph + screenshot).
 - **Ticket:** DREW-89 (same flagship follow-up email) → reopened, add-msg `1a03bdf4135e0cdb`, comment, → **done**.
 - Send authorized: post cold-start autonomous, armed=ON (Drew's active $30 window).
+
+---
+
+## Round 130 — Drew sign-off (verbatim, no new work)
+
+- **Source:** Gmail thread `1a036c426017a325` (account pip@entrpy.co)
+- **From:** Drew Shahoud <drewshahoud@gmail.com>
+- **Date:** Tue, 25 Aug 2026 22:38:36 -0400
+- **Msgid:** `1a03bef395134de1`
+- **Subject:** Re: Dinner receipt
+
+> And perfect. Thank you!
+
+**Triage:** approval / fyi. This is Drew's sign-off on the Round 129 flagship follow-up copy
+rewrite (name in subject + snappy offer-first body), replying to pip's reply `1a03bee21ddce450`.
+No new request, no question, no open loop, no promise outstanding. DREW-89 stays **done**.
+
+**Action:** logged verbatim; last-seen advanced to `1a03bef395134de1`. **No reply sent** — a bare
+thank-you closes the exchange (pip's prior message already ended with "Anything else on your list?");
+replying to a thank-you would be noise. Watcher spawns a fresh worker on Drew's next real inbound.
