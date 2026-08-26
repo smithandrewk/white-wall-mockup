@@ -160,7 +160,10 @@ async function run() {
       contact: CONTACT,
       waiverSigned: true,
       couponCode: "WWSHUNDRED",
-      addons: { lighting: { selected: true } }
+      addons: { lighting: { selected: true } },
+      // WWA-12: a comp booking that arrived from an ad click must still record
+      // its gclid on the Acuity record for per-booking paid-vs-organic analysis.
+      attribution: { gclid: "TeSt_Gclid_123", utm_source: "google", ts: Date.now() }
       // NOTE: deliberately NO squareToken and NO consent — comp must not need them.
     }
   }, res);
@@ -171,6 +174,8 @@ async function run() {
   assert.strictEqual(calls.appointments.length, 1, "T1: Acuity appointment created");
   assert.ok(calls.appointments[0].calendarID, "T1: appointment passes calendarID (misroute gotcha)");
   assert.ok(/FULL COMP/.test(calls.appointments[0].notes), "T1: notes mark the booking as full comp");
+  assert.ok(/--- AD ATTRIBUTION/.test(calls.appointments[0].notes), "T1: WWA-12 ad-attribution block stamped on comp booking");
+  assert.ok(/gclid: TeSt_Gclid_123/.test(calls.appointments[0].notes), "T1: WWA-12 gclid recorded on comp booking notes");
   const compBooking = calls.inserts.find(function (c) { return c.table === "bookings"; });
   assert.ok(compBooking, "T1: a bookings row was persisted");
   const cRow = Array.isArray(compBooking.rows) ? compBooking.rows[0] : compBooking.rows;
