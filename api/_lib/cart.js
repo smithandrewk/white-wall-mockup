@@ -63,7 +63,11 @@ function computeCart(sessions, location) {
     }
 
     // Enforce the per-type earliest-start floor (e.g. 8h Flagship 12:30pm ET).
-    if (isStartBeforeEarliest(s.appointmentTypeID, s.datetime)) {
+    // DREW-93: skip it for a session carrying the owner's earlyStartOverride.
+    // create-checkout only sets that flag from a signature-verified offer
+    // (offer && s.earlyStartOverride), so it can't be reached from a raw POST —
+    // the floor still holds for every ordinary booking.
+    if (!s.earlyStartOverride && isStartBeforeEarliest(s.appointmentTypeID, s.datetime)) {
       throw new Error(
         "computeCart: session start " + s.datetime +
         " is before the earliest allowed start for type " + s.appointmentTypeID

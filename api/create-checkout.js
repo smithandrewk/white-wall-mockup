@@ -1030,6 +1030,10 @@ function offerCartBody(offer, body) {
       datetime: s.selectedTime,
       location: offer.locationSlug,
       addons: s.addons || {},
+      // DREW-93: the owner's 8-hour earliest-start override, as signed into the
+      // offer. Only trusted here because it arrived on a verified offer token
+      // (this whole body is rebuilt from `offer`, never the raw client POST).
+      earlyStartOverride: s.earlyStartOverride === true,
       eventIntent: offer.bookingType === "event" ? "yes" : "no",
       intake: Object.assign({}, custIntake, notesParticipants ? { participants: notesParticipants } : {}),
       participants: notesParticipants,
@@ -1161,7 +1165,13 @@ async function handleCartCheckout(req, res, body) {
       if (!loc || !["powdersville", "taylors-mill"].includes(loc)) {
         throw new Error("session " + idx + ": invalid location");
       }
-      if (isStartBeforeEarliest(s.appointmentTypeID, s.datetime)) {
+      // DREW-93: the owner's 8-hour earliest-start override bypasses the floor,
+      // but ONLY when it rode in on a signature-verified offer (`offer` is set by
+      // verifyOfferToken above; `s.earlyStartOverride` is only ever populated by
+      // offerCartBody from that verified payload). A raw client POST has offer=null,
+      // so an injected earlyStartOverride flag is ignored and the floor still holds.
+      var sEarlyOverride = !!(offer && s.earlyStartOverride === true);
+      if (!sEarlyOverride && isStartBeforeEarliest(s.appointmentTypeID, s.datetime)) {
         throw new Error("session " + idx + ": start is before the earliest allowed for this session");
       }
       var addons = s.addons || {};
@@ -1178,6 +1188,7 @@ async function handleCartCheckout(req, res, body) {
         datetime: s.datetime,
         location: loc,
         addons: addons,
+        earlyStartOverride: sEarlyOverride, // DREW-93: carried into computeCart's floor re-check
         eventIntent: sEventIntent,
         intake: s.intake || {},
         participants: s.participants || (s.intake && s.intake.participants) || "",
@@ -1217,7 +1228,7 @@ async function handleCartCheckout(req, res, body) {
 
     var priced = computeCart(
       normalized.map(function (s) {
-        return { appointmentTypeID: s.appointmentTypeID, datetime: s.datetime, addons: s.addons };
+        return { appointmentTypeID: s.appointmentTypeID, datetime: s.datetime, addons: s.addons, earlyStartOverride: s.earlyStartOverride };
       }),
       cartLocation
     );
