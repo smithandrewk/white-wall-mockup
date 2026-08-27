@@ -51,3 +51,25 @@ Also offered to resend the formatted confirmation from the White Wall system to 
 Sent root cause + verified-fix summary + the correct Powdersville info block + offer to resend + Maggie ack. (Full text: `scratchpad/reply_drew.txt`.)
 
 **No escalation.** No money, no architecture, no legal/policy copy, no at-scale customer send (single customer; info relayed via Drew). Acuity email-routing verification is established Foreman scope (DREW-77 precedent). NO code behavior change — a doc-only invariant note in acuity.js.
+
+---
+
+## Drew message — 2026-08-27 12:24:57 -0400 — msgid `1a0440a28fee7092`
+**From:** Drew Shahoud <drewshahoud@gmail.com>
+**In reply to:** pip's `1a044049326c45bd` (root-cause + correct-info + resend offer)
+
+> Perfect. Yes please send it to her with the correct info like normal.
+> Let me know once its done
+
+## Classification
+approval / change-request — Drew greenlit the standing offer to resend Denise the correct Powdersville confirmation from the White Wall system ("like normal"). Single-customer corrective send, Drew-directed. Fast path. No escalation (one customer, no money/architecture/legal/scale; Drew self-authorizes his own customer comms).
+
+## Action (Foreman Round 142, DREW-95 follow-up) — DONE + VERIFIED
+Resent Denise Ko's booking confirmation from the White Wall system (Acuity) so it goes out formatted, with tappable links, from the studio — "like normal." Her appointment (Acuity id 1742001484, type 94823049 "Powdersville Studio - Eight Hours", Powdersville calendar 6255578) is correctly attached to Booking Confirmation 2 (the Powdersville template) after the DREW-77 fix.
+
+- **Pre-send re-verification (belt and suspenders on an irreversible customer send).** Re-opened Acuity Client Emails (pip@entrpy.co Squarespace Contributor login via Playwright) and read the checkbox states of **Booking Confirmation 2** (Powdersville template, body = "In your GPS, put: 2709 Powdersville Rd. Easley, SC 29642"). Confirmed checked = exactly the 7 Powdersville types **including `Powdersville Studio - Eight Hours` [x]**; all 6 Taylor's Mill types **unchecked**. Acuity renders confirmations live from the type's assigned template (not stored original bytes), so the resend regenerates correct Powdersville info. Matches Round 141's checkbox audit — no drift.
+- **Resent.** Acuity appointment panel → gear → **Resend Confirmation Email** → confirmed modal ("resend the initial confirmation email to denise@bloominmama.com?") → **Yes, Resend Confirmation.** Acuity green success banner: **"Appointment confirmation e-mail for appointment on August 29, 2026 12:30pm resent to denise@bloominmama.com."** Denise now holds the correct Powdersville address (2709 Powdersville Rd), Studio Door Code **1923**, storage lockbox 2319, and the Powdersville video links, formatted the normal way.
+- **No escalation.** Single-customer corrective send, explicitly Drew-directed; no money/architecture/legal/scale. Drew self-authorizes his own customer comms.
+
+## pip reply — 2026-08-27 — msgid `1a0442584047594d`
+Confirmed to Drew: resent from the White Wall system to denise@bloominmama.com with the correct Powdersville details + tappable links; noted the routing re-check (8-Hour locked to the Powdersville template, no Taylor's on it) and that her reminder tomorrow will carry correct info too. Closed with "Anything else on your list?"
