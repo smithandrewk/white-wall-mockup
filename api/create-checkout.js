@@ -66,6 +66,25 @@ function isValidEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+// WWA-12: the durable ad-attribution block stamped onto a booking's Acuity notes
+// so paid-vs-organic attribution is queryable PER BOOKING (not just via the
+// server-side conversion upload). Returns "" when the booking carried no click id
+// (organic / direct traffic) so nothing is stamped then. Takes the already
+// -sanitized attribution object from googleAds.sanitizeAttribution(). Stamped on
+// every real booking — paid single, paid cart lead day, AND full-comp bookings —
+// so a comped session that came from an ad click still records its provenance.
+function adAttributionNote(attr) {
+  if (!attr) return "";
+  return "\n\n--- AD ATTRIBUTION (auto, do not edit) ---" +
+    "\ngclid: " + (attr.gclid || "") +
+    "\nwbraid: " + (attr.wbraid || "") +
+    "\ngbraid: " + (attr.gbraid || "") +
+    "\nutm_source: " + (attr.utm_source || "") +
+    "\nutm_medium: " + (attr.utm_medium || "") +
+    "\nutm_campaign: " + (attr.utm_campaign || "") +
+    "\n--- END AD ATTRIBUTION ---";
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -244,6 +263,11 @@ module.exports = async function handler(req, res) {
       // No card-on-file consent block — there is no card and no charge to record.
       compNotes += "\n\nPromo code: " + compCoupon.code +
         " (FULL COMP — entire booking $0.00, no payment collected)";
+
+      // WWA-12: stamp the ad attribution on the comp booking too. No conversion
+      // is uploaded ($0 → zero margin), but the record still carries its gclid so
+      // per-booking paid-vs-organic analysis sees comped sessions.
+      compNotes += adAttributionNote(gaAttribution);
 
       var compApptFirstName = contact.firstName;
       var compApptEmail = contact.email;
@@ -738,16 +762,7 @@ module.exports = async function handler(req, res) {
       // WWA-3: durable ad-attribution record on the Acuity appointment (the
       // booking record). Migration-free storage for audit + the conversion
       // upload below; only written when the booking carried a real click id.
-      if (gaAttribution) {
-        notes += "\n\n--- AD ATTRIBUTION (auto, do not edit) ---" +
-          "\ngclid: " + (gaAttribution.gclid || "") +
-          "\nwbraid: " + (gaAttribution.wbraid || "") +
-          "\ngbraid: " + (gaAttribution.gbraid || "") +
-          "\nutm_source: " + (gaAttribution.utm_source || "") +
-          "\nutm_medium: " + (gaAttribution.utm_medium || "") +
-          "\nutm_campaign: " + (gaAttribution.utm_campaign || "") +
-          "\n--- END AD ATTRIBUTION ---";
-      }
+      notes += adAttributionNote(gaAttribution);
 
       // STAGING isolation (ported from the retired booking-callback.js): stamp
       // the name, sink the customer email, and force the STAGING calendar. We
@@ -1321,7 +1336,8 @@ async function handleCartCheckout(req, res, body) {
         contact: contact,
         termsSignature: termsSignature,
         consent: consent,
-        compCoupon: compCoupon
+        compCoupon: compCoupon,
+        attribution: gaAttributionCart
       });
     }
 
@@ -1499,16 +1515,7 @@ async function handleCartCheckout(req, res, body) {
 
         // WWA-3: durable ad-attribution record, stamped once on the lead (day-1)
         // appointment — the dedupe key for the cart's single conversion upload.
-        if (gaAttributionCart && si === 0) {
-          notes += "\n\n--- AD ATTRIBUTION (auto, do not edit) ---" +
-            "\ngclid: " + (gaAttributionCart.gclid || "") +
-            "\nwbraid: " + (gaAttributionCart.wbraid || "") +
-            "\ngbraid: " + (gaAttributionCart.gbraid || "") +
-            "\nutm_source: " + (gaAttributionCart.utm_source || "") +
-            "\nutm_medium: " + (gaAttributionCart.utm_medium || "") +
-            "\nutm_campaign: " + (gaAttributionCart.utm_campaign || "") +
-            "\n--- END AD ATTRIBUTION ---";
-        }
+        if (si === 0) notes += adAttributionNote(gaAttributionCart);
 
         var apptFirstName = contact.firstName;
         var apptEmail = contact.email;
@@ -1909,6 +1916,7 @@ async function handleCartComp(req, res, ctx) {
   var termsSignature = ctx.termsSignature || "";
   var consent = ctx.consent;
   var compCoupon = ctx.compCoupon;
+  var gaAttributionComp = ctx.attribution || null;
 
   var createdAppointments = [];
   try {
@@ -1943,6 +1951,11 @@ async function handleCartComp(req, res, ctx) {
         + priced.sessions.length + ", day index " + ps.dayIndex + ", FULL COMP]";
       notes += "\n\nPromo code: " + compCoupon.code +
         " (FULL COMP — entire cart $0.00, no payment collected)";
+
+      // WWA-12: stamp ad attribution on the lead (day-1) comp session, matching
+      // the paid-cart convention. No conversion uploads ($0), but the record
+      // keeps its gclid for per-booking paid-vs-organic analysis.
+      if (si === 0) notes += adAttributionNote(gaAttributionComp);
 
       var apptFirstName = contact.firstName;
       var apptEmail = contact.email;
