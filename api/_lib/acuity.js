@@ -109,6 +109,33 @@ const VALID_APPOINTMENT_TYPE_IDS = new Set([
   "28312569"  // Full — $550
 ]);
 
+// ---------------------------------------------------------------------------
+// ⚠️ Acuity per-location EMAIL TEMPLATE routing — dashboard-only, NOT enforced here
+//
+// Confirmation + reminder emails are sent by Acuity, not by this code. Each
+// appointment type is assigned (in the Acuity admin, Emails & Texts > Client
+// Emails) to exactly ONE confirmation template and ONE reminder template, and
+// those templates carry the location's ADDRESS + DOOR CODES + video links.
+// This assignment lives only in the Acuity dashboard — there is no API for it —
+// so nothing in this repo can validate it. Get it wrong and a customer receives
+// the other location's address and door codes.
+//
+//   Powdersville types (89113040, 89113116, 89114444, 89114517, 89114539,
+//     94823049, 89114581)  ->  "Booking Confirmation 2"  +  "Reminder 1B"
+//   Taylor's Mill types (38342199, 28312352, 28312534, 28312549, 36030598,
+//     28312569)            ->  "Booking Confirmation"    +  "Reminder 1A"
+//
+// INVARIANT when adding/creating a NEW appointment type in Acuity: immediately
+// attach it to its location's confirmation AND reminder templates, then verify
+// (checkbox-by-checkbox) that no type is on the wrong location's template.
+//
+// Incident history: the 8-Hour Powdersville type (94823049, added for V3 item 3)
+// shipped attached to the Taylor's Mill templates, so pre-2026-08-25 Powdersville
+// 8-Hour bookings received Taylor's Mill info. Fixed 2026-08-25 (DREW-77). Surfaced
+// again 2026-08-27 by a customer (Denise Ko) who had booked 2026-07-22, before the
+// fix (DREW-95). Routing re-verified correct for all 13 types on 2026-08-27.
+// ---------------------------------------------------------------------------
+
 function isValidAppointmentTypeID(id) {
   return VALID_APPOINTMENT_TYPE_IDS.has(String(id));
 }
