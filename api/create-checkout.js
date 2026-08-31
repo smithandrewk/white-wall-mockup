@@ -85,6 +85,23 @@ function adAttributionNote(attr) {
     "\n--- END AD ATTRIBUTION ---";
 }
 
+// WWA-12 telemetry: a compact, durable record of what the offline ad-conversion
+// upload actually did, folded onto the booking row's attribution jsonb. Without
+// it, a silent prod failure (e.g. a refresh token missing the `datamanager`
+// scope, so every real ad booking 403s) vanishes with the ephemeral function
+// logs — exactly why the Shauna Burnette booking couldn't be diagnosed after the
+// fact. Strips reportBooking's verbose `result` to the fields we reconcile against
+// the Ads account. Returns null when there was no ad click to report.
+function adUploadOutcome(gaReport) {
+  if (!gaReport) return null;
+  var o = { at: new Date().toISOString() };
+  if (gaReport.uploaded) { o.status = "uploaded"; o.valueCents = gaReport.valueCents; o.orderId = gaReport.orderId; }
+  else if (gaReport.error) { o.status = "error"; o.reason = String(gaReport.error).slice(0, 300); }
+  else if (gaReport.skipped) { o.status = "skipped"; o.reason = gaReport.skipped; }
+  else { o.status = "unknown"; }
+  return o;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -833,6 +850,18 @@ module.exports = async function handler(req, res) {
           console.log("google-ads: booking conversion uploaded", {
             appointment_id: appointment.id, value_cents: gaReport.valueCents
           });
+        } else if (gaAttribution && gaReport && gaReport.error) {
+          // An AD-attributed booking whose conversion upload ERRORED (e.g. the prod
+          // refresh token lacks the datamanager scope). Alert the internal ops list
+          // (ALERT_EMAILS, not the customer/owner) so a systemic upload failure is
+          // caught instead of staying invisible. Best-effort — never breaks a booking.
+          try {
+            await alertFailure("alert", "Ad conversion upload failed", {
+              appointment_id: appointment.id,
+              gclid: gaAttribution.gclid || gaAttribution.gbraid || gaAttribution.wbraid || "",
+              reason: gaReport.error
+            });
+          } catch (e2) {}
         }
       } catch (e) { console.error("google-ads reportBooking (single):", e.message); }
 
@@ -898,7 +927,8 @@ module.exports = async function handler(req, res) {
             // migration (no `attribution` column yet) can't lose the booking row.
             if (gaAttribution) {
               try {
-                await sbDB.serviceUpdate("bookings", { id: bookingRow.id }, { attribution: gaAttribution });
+                var singleAttr = Object.assign({}, gaAttribution, { ad_conversion_upload: adUploadOutcome(gaReport) });
+                await sbDB.serviceUpdate("bookings", { id: bookingRow.id }, { attribution: singleAttr });
               } catch (e) { console.error("supabase attribution persist (single):", e.message); }
             }
 
@@ -1863,6 +1893,24 @@ async function handleCartCheckout(req, res, body) {
         console.log("google-ads: cart booking conversion uploaded", {
           lead_appointment_id: gaLeadApptId, value_cents: gaCartReport.valueCents
         });
+      } else if (gaAttributionCart && gaCartReport && gaCartReport.error) {
+        try {
+          await alertFailure("alert", "Ad conversion upload failed (cart)", {
+            lead_appointment_id: gaLeadApptId,
+            gclid: gaAttributionCart.gclid || gaAttributionCart.gbraid || gaAttributionCart.wbraid || "",
+            reason: gaCartReport.error
+          });
+        } catch (e2) {}
+      }
+      // WWA-12 telemetry: fold the upload outcome onto the lead booking row's
+      // attribution jsonb. reportBooking runs AFTER the row persist above, so this
+      // is a second best-effort update; the first persist already saved attribution,
+      // so a failure here can never lose it.
+      if (gaAttributionCart && bookingRow && bookingRow.id) {
+        try {
+          var cartAttr = Object.assign({}, gaAttributionCart, { ad_conversion_upload: adUploadOutcome(gaCartReport) });
+          await sbDB.serviceUpdate("bookings", { id: bookingRow.id }, { attribution: cartAttr });
+        } catch (e) { console.error("supabase attribution outcome persist (cart):", e.message); }
       }
     } catch (e) { console.error("google-ads reportBooking (cart):", e.message); }
 
