@@ -30,6 +30,7 @@ function resetCalls() {
     refunds: [],
     appointments: [],
     inserts: [],
+    updates: [],
     alerts: [],
     ownerSMS: [],
     compSMS: []
@@ -86,7 +87,7 @@ function installStubs() {
       if (table === "booking_sessions") return [{ id: "session_uuid_" + calls.inserts.length }];
       return Array.isArray(rows) ? rows : [rows];
     },
-    serviceUpdate: async function () { return []; },
+    serviceUpdate: async function (table, match, patch) { calls.updates.push({ table: table, match: match, patch: patch }); return []; },
     serviceSelect: async function () { return []; }
   });
 
@@ -226,7 +227,8 @@ async function run() {
       waiverSigned: true,
       squareToken: "cnon_testtoken_abcdefgh",
       consent: { cardOnFile: true, timestamp: "2026-09-01T00:00:00Z", userAgent: "test" },
-      cardholderName: "Comp Tester"
+      cardholderName: "Comp Tester",
+      attribution: { gclid: "T3_gclid_xyz", ts: Date.now() }
     }
   }, res);
   assert.strictEqual(res.statusCode, 200, "T3: paid booking succeeds, got " + res.statusCode + " " + JSON.stringify(res.body));
@@ -234,6 +236,17 @@ async function run() {
   assert.strictEqual(calls.payments[0].amountCents, priceA, "T3: charged the session price");
   assert.strictEqual(calls.cards.length, 1, "T3: paid path saves the card on file");
   assert.strictEqual(calls.compSMS.length, 0, "T3: NO comp alert for a paid booking");
+  // WWA-12 telemetry: the paid booking carried a gclid, so the booking row's
+  // attribution update must fold in the upload outcome. Ads env is unconfigured in
+  // test → reportBooking returns skipped:"unconfigured", recorded as such (never
+  // silently dropped). gclid is preserved alongside it.
+  var t3BookingUpdate = calls.updates.find(function (u) { return u.table === "bookings" && u.patch && u.patch.attribution; });
+  assert.ok(t3BookingUpdate, "T3: a bookings.attribution update was persisted");
+  assert.strictEqual(t3BookingUpdate.patch.attribution.gclid, "T3_gclid_xyz", "T3: gclid preserved on the attribution row");
+  var t3Outcome = t3BookingUpdate.patch.attribution.ad_conversion_upload;
+  assert.ok(t3Outcome, "T3: WWA-12 upload outcome folded onto the attribution row");
+  assert.strictEqual(t3Outcome.status, "skipped", "T3: outcome status recorded (skipped/unconfigured in test)");
+  assert.strictEqual(t3Outcome.reason, "unconfigured", "T3: outcome reason recorded");
   passed++; console.log("ok 3 - normal booking with squareToken charges + saves card (paid path intact)");
 
   // ---- T4: cart COMP -> no Square, N appointments, $0 booking ----------------
