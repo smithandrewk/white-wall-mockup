@@ -50,6 +50,7 @@ const { notifyOwnerSMS, notifyOwnerCompSMS } = require("./_lib/notify-sms");
 const { notifyCustomerSMS } = require("./_lib/notify-customer-sms");
 const { notifyMultidayEvent } = require("./_lib/notify-multiday");
 const { alertFailure } = require("./_lib/alert");
+const { classifyPaymentError } = require("./_lib/payment-error");
 const { captureServerEvent, flushPostHog } = require("./_lib/posthog");
 const sbDB = require("./_lib/supabase");
 const { enrollBooking } = require("./_lib/campaign-enroll");
@@ -985,13 +986,43 @@ module.exports = async function handler(req, res) {
           });
         }
       }
+
+      // WW-28/WW-29: classify the failure. A CARD DECLINE (the charge never
+      // succeeded because the customer's card/issuer refused it, e.g.
+      // TRANSACTION_LIMIT / GENERIC_DECLINE / CVV_FAILURE) is NOT an ops
+      // incident — it must show the booker a clear, recoverable message and page
+      // Drew at WARNING (so he can re-contact the customer), never CRITICAL. A
+      // decline only applies BEFORE the charge succeeds; once `payment` exists,
+      // any failure is a genuine booking/refund problem and stays CRITICAL.
+      var cls = (!payment) ? classifyPaymentError(innerErr) : null;
+      var isDecline = !!(cls && cls.isCardDecline);
+
       captureServerEvent(contact.email, "booking_failed_server", {
         location: location,
         error: innerErr.message,
         stage: appointment ? "after_appointment" : (cardOnFile ? "after_card" : (payment ? "after_payment" : (customerId ? "after_customer" : "before_customer"))),
-        refunded: !!(payment && !appointment)
+        refunded: !!(payment && !appointment),
+        decline: isDecline,
+        decline_code: cls ? cls.code : null
       });
       await flushPostHog();
+
+      if (isDecline) {
+        // WARNING, not CRITICAL: normal card decline, no money moved, nothing to
+        // fix on our side — but Drew may want to re-contact the customer.
+        await alertFailure("warning", "Card declined at checkout — booking not completed", {
+          customer: (contact.firstName || "") + " " + (contact.lastName || ""),
+          email: contact.email,
+          phone: (contact.phone || ""),
+          location: location,
+          datetime: datetime,
+          decline_code: cls.code || "(uncoded)",
+          reason: innerErr.message,
+          refunded: false
+        });
+        return res.status(402).json({ error: cls.customerMessage, declined: true });
+      }
+
       await alertFailure("critical", "Booking failed in create-checkout", {
         customer: (contact.firstName || "") + " " + (contact.lastName || ""),
         email: contact.email,
@@ -1580,6 +1611,35 @@ async function handleCartCheckout(req, res, body) {
       // WHOLE charge, alert, mark booking failed. No partial fulfillment.
       failedAppointment = !!payment;
       console.error("create-checkout(cart) failed:", apptErr.message);
+
+      // WW-28/WW-29: if the charge itself never succeeded (no `payment`), this is
+      // a card decline, not an ops incident — classify it, page WARNING (so Drew
+      // can re-contact), and show the booker a recoverable message. Nothing was
+      // charged, so there is nothing to refund.
+      var cartCls = (!payment) ? classifyPaymentError(apptErr) : null;
+      if (cartCls && cartCls.isCardDecline) {
+        captureServerEvent(contact.email, "booking_failed_server", {
+          location: cartLocation,
+          error: apptErr.message,
+          stage: "before_payment",
+          refunded: false,
+          decline: true,
+          decline_code: cartCls.code
+        });
+        await flushPostHog();
+        await alertFailure("warning", "Card declined at checkout — cart booking not completed", {
+          customer: (contact.firstName || "") + " " + (contact.lastName || ""),
+          email: contact.email,
+          phone: (contact.phone || ""),
+          location: cartLocation,
+          sessions: priced.sessions.length,
+          decline_code: cartCls.code || "(uncoded)",
+          reason: apptErr.message,
+          refunded: false
+        });
+        return res.status(402).json({ error: cartCls.customerMessage, declined: true });
+      }
+
       if (payment) {
         try {
           await refundPayment(payment.id, payment.amount_money.amount, "Cart booking creation failed — automatic full refund");
